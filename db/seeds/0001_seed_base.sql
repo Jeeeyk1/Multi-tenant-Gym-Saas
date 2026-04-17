@@ -1,0 +1,11 @@
+-- Seed    : 0001_seed_base
+-- Description: Base development seed data
+-- Environment: local development only
+--
+-- This file is safe to run multiple times (idempotent).
+-- Add local development fixtures below as features are built out.
+
+-- Example — uncomment once the gyms table exists:
+-- INSERT INTO gyms (id, name, slug, created_at)
+-- VALUES (uuid_generate_v4(), 'Demo Gym', 'demo-gym', NOW())
+-- ON CONFLICT (slug) DO NOTHING;

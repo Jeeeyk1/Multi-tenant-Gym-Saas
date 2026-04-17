@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Gym SaaS",
+    "slug": "gym-saas-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "gymSaasMobile",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gymSaas.mobile"
+    },
+    "android": {
+      "package": "com.gymSaas.mobile"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

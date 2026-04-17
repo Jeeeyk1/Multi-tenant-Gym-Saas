@@ -1,0 +1,27 @@
+// Prisma schema — used for client generation only.
+//
+// DATABASE MIGRATION STRATEGY
+// ────────────────────────────────────────────────────────────────────────────
+// Schema changes must be represented as SQL files in db/migrations/.
+// Prisma is NOT used to generate or run migrations in this project.
+//
+//   pnpm db:migrate      — apply new SQL migration files to the database
+//   pnpm prisma:generate — regenerate the Prisma client after schema changes
+//
+// When adding a new model:
+//   1. Write a SQL migration in db/migrations/<version>_<name>.sql
+//   2. Run pnpm db:migrate
+//   3. Mirror the change in this file
+//   4. Run pnpm prisma:generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Add models here as features are built out.
+// Keep this file in sync with the SQL in db/migrations/.

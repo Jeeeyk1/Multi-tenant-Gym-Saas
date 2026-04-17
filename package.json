@@ -1,0 +1,42 @@
+{
+  "name": "gym-saas",
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@gym-saas/api --filter=@gym-saas/web",
+    "dev:api": "turbo run dev --filter=@gym-saas/api",
+    "dev:web": "turbo run dev --filter=@gym-saas/web",
+    "dev:mobile": "turbo run dev --filter=@gym-saas/mobile",
+    "dev:all": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:up": "docker compose up -d postgres redis",
+    "db:migrate": "tsx db/scripts/apply-migrations.ts",
+    "db:seed": "tsx db/scripts/apply-seeds.ts",
+    "db:reset": "pnpm db:migrate && pnpm db:seed",
+    "prisma:generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "dotenv": "^16.4.0",
+    "eslint": "^8.57.0",
+    "pg": "^8.12.0",
+    "prettier": "^3.3.0",
+    "prisma": "^5.19.0",
+    "tsx": "^4.19.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.5.0"
+  }
+}

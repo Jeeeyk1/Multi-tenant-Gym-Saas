@@ -34,6 +34,11 @@ async function run(): Promise<void> {
     await client.connect();
     console.log('Connected to database\n');
 
+    // Explicitly set search_path for PostgreSQL 15+ compatibility.
+    // PG 15 revoked the automatic CREATE privilege on the public schema,
+    // so we must select it explicitly before any DDL statements.
+    await client.query('SET search_path = public');
+
     // Ensure migration tracking table exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (

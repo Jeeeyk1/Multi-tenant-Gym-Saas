@@ -13,6 +13,10 @@
 //   2. Run pnpm db:migrate
 //   3. Mirror the change in this file
 //   4. Run pnpm prisma:generate
+//
+// updated_at strategy: application-level only.
+// Always set updatedAt: new Date() explicitly in every update() call.
+// Do NOT rely on @updatedAt here — it would conflict with our explicit approach.
 
 generator client {
   provider = "prisma-client-js"
@@ -23,5 +27,600 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Add models here as features are built out.
-// Keep this file in sync with the SQL in db/migrations/.
+// ─────────────────────────────────────────────────────────────────────────────
+// IDENTITY DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String    @unique
+  passwordHash      String?   @map("password_hash")
+  fullName          String    @map("full_name")
+  phone             String?
+  systemRole        String    @default("USER") @map("system_role")
+  isActive          Boolean   @default(true) @map("is_active")
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  // Relations
+  userTokens          UserToken[]
+  refreshTokens       RefreshToken[]
+  organizationMembers OrganizationMember[]
+  gymStaff            GymStaff[]
+  gymMembers          GymMember[]
+  processedCheckIns   CheckIn[]            @relation("ProcessedBy")
+  renewalsProcessed   MembershipRenewal[]  @relation("RenewedBy")
+  sentMessages        Message[]
+  conversationMembers ConversationMember[]
+  messageReads        MessageRead[]
+  messageReactions    MessageReaction[]
+  announcements       Announcement[]
+  announcementReads   AnnouncementRead[]
+  aiUsageLogs         AiUsageLog[]
+  assignedRoles       GymStaffRole[]       @relation("AssignedBy")
+
+  @@map("users")
+}
+
+model UserToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  type      String
+  isUsed    Boolean  @default(false) @map("is_used")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_tokens")
+}
+
+model RefreshToken {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  deviceInfo Json?     @map("device_info")
+  isRevoked  Boolean   @default(false) @map("is_revoked")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ORGANIZATION DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  // Relations
+  members       OrganizationMember[]
+  gyms          Gym[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  aiUsageLogs   AiUsageLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  role           String
+  joinedAt       DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GYM DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Gym {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  name               String
+  code               String    @unique
+  address            String?
+  city               String?
+  country            String    @default("Philippines")
+  timezone           String    @default("Asia/Manila")
+  status             String    @default("ACTIVE")
+  checkinQrToken     String?   @unique @map("checkin_qr_token")
+  is247              Boolean   @default(false) @map("is_247")
+  autoCheckoutHours  Int       @default(5) @map("auto_checkout_hours")
+  autoSuspendMonths  Int       @default(3) @map("auto_suspend_months")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile       GymProfile?
+  schedules     GymSchedule[]
+  features      GymFeature[]
+  staff         GymStaff[]
+  members       GymMember[]
+  membershipPlans MembershipPlan[]
+  checkIns      CheckIn[]
+  conversations Conversation[]
+  announcements Announcement[]
+  aiUsageLogs   AiUsageLog[]
+
+  @@map("gyms")
+}
+
+model GymProfile {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId          String   @unique @map("gym_id") @db.Uuid
+  description    String?
+  logoUrl        String?  @map("logo_url")
+  coverPhotoUrl  String?  @map("cover_photo_url")
+  contactEmail   String?  @map("contact_email")
+  contactPhone   String?  @map("contact_phone")
+  facebookUrl    String?  @map("facebook_url")
+  instagramUrl   String?  @map("instagram_url")
+  primaryColor   String   @default("#000000") @map("primary_color")
+  secondaryColor String   @default("#ffffff") @map("secondary_color")
+  accentColor    String   @default("#FF5722") @map("accent_color")
+  themePreset    String   @default("DEFAULT") @map("theme_preset")
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@map("gym_profile")
+}
+
+model GymSchedule {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId      String   @map("gym_id") @db.Uuid
+  dayOfWeek  Int      @map("day_of_week")
+  openTime   String?  @map("open_time")
+  closeTime  String?  @map("close_time")
+  isClosed   Boolean  @default(false) @map("is_closed")
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, dayOfWeek])
+  @@map("gym_schedules")
+}
+
+model GymFeature {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId      String    @map("gym_id") @db.Uuid
+  featureKey String    @map("feature_key")
+  isEnabled  Boolean   @default(false) @map("is_enabled")
+  config     Json      @default("{}") @map("config")
+  enabledAt  DateTime? @map("enabled_at") @db.Timestamptz
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, featureKey])
+  @@map("gym_features")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAFF & RBAC DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Role {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String   @unique
+  description   String?
+  isSystemRole  Boolean  @default(false) @map("is_system_role")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  rolePermissions RolePermission[]
+  gymStaffRoles   GymStaffRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String  @unique
+  description String?
+  module      String
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model GymStaff {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId    String   @map("gym_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  isActive Boolean  @default(true) @map("is_active")
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  gym   Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles GymStaffRole[]
+
+  @@unique([gymId, userId])
+  @@map("gym_staff")
+}
+
+model GymStaffRole {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymStaffId  String   @map("gym_staff_id") @db.Uuid
+  roleId      String   @map("role_id") @db.Uuid
+  assignedBy  String?  @map("assigned_by") @db.Uuid
+  assignedAt  DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+
+  gymStaff   GymStaff @relation(fields: [gymStaffId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assignedByUser User? @relation("AssignedBy", fields: [assignedBy], references: [id], onDelete: SetNull)
+
+  @@unique([gymStaffId, roleId])
+  @@map("gym_staff_roles")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BILLING DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Plan {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String
+  tier                 String
+  description          String?
+  maxGyms              Int       @default(1) @map("max_gyms")
+  maxMembersPerGym     Int       @default(100) @map("max_members_per_gym")
+  aiTokenQuotaMonthly  Int       @default(0) @map("ai_token_quota_monthly")
+  priceMonthly         Decimal   @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly          Decimal?  @map("price_yearly") @db.Decimal(10, 2)
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  features      PlanFeature[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model PlanFeature {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId     String  @map("plan_id") @db.Uuid
+  featureKey String  @map("feature_key")
+  isIncluded Boolean @default(false) @map("is_included")
+  limits     Json?
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@map("plan_features")
+}
+
+model Subscription {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  planId              String    @map("plan_id") @db.Uuid
+  status              String    @default("TRIALING")
+  billingCycle        String    @default("MONTHLY") @map("billing_cycle")
+  aiTokensUsed        Int       @default(0) @map("ai_tokens_used")
+  currentPeriodStart  DateTime  @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd    DateTime  @map("current_period_end") @db.Timestamptz
+  cancelledAt         DateTime? @map("cancelled_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+  invoices     Invoice[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  subscriptionId String?   @map("subscription_id") @db.Uuid
+  invoiceNumber  String    @unique @map("invoice_number")
+  status         String    @default("OPEN")
+  amount         Decimal   @db.Decimal(10, 2)
+  currency       String    @default("PHP")
+  paymentMethod  String?   @map("payment_method")
+  lineItems      Json      @default("[]") @map("line_items")
+  paidAt         DateTime? @map("paid_at") @db.Timestamptz
+  dueAt          DateTime? @map("due_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEMBERS DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model MembershipPlan {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId        String   @map("gym_id") @db.Uuid
+  name         String
+  type         String
+  description  String?
+  price        Decimal  @db.Decimal(10, 2)
+  durationDays Int      @map("duration_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym        Gym         @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  promos     PlanPromo[]
+  gymMembers GymMember[]
+
+  @@map("membership_plans")
+}
+
+model PlanPromo {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipPlanId String    @map("membership_plan_id") @db.Uuid
+  name             String
+  code             String    @unique
+  discountType     String    @map("discount_type")
+  discountValue    Decimal   @map("discount_value") @db.Decimal(10, 2)
+  maxUses          Int?      @map("max_uses")
+  usedCount        Int       @default(0) @map("used_count")
+  validFrom        DateTime  @map("valid_from") @db.Timestamptz
+  validUntil       DateTime? @map("valid_until") @db.Timestamptz
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  membershipPlan MembershipPlan @relation(fields: [membershipPlanId], references: [id], onDelete: Cascade)
+  gymMembers     GymMember[]
+
+  @@map("plan_promos")
+}
+
+model GymMember {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId            String   @map("gym_id") @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  membershipPlanId String?  @map("membership_plan_id") @db.Uuid
+  promoId          String?  @map("promo_id") @db.Uuid
+  membershipNumber String   @unique @map("membership_number")
+  status           String   @default("ACTIVE")
+  qrCodeToken      String   @unique @map("qr_code_token")
+  expiryDate       DateTime @map("expiry_date") @db.Date
+  joinedAt         DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym            Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipPlan MembershipPlan? @relation(fields: [membershipPlanId], references: [id], onDelete: SetNull)
+  promo          PlanPromo?      @relation(fields: [promoId], references: [id], onDelete: SetNull)
+  privacy        MemberPrivacy?
+  checkIns       CheckIn[]
+  renewals       MembershipRenewal[]
+
+  @@unique([gymId, userId])
+  @@map("gym_members")
+}
+
+model MemberPrivacy {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId              String   @unique @map("member_id") @db.Uuid
+  hideCheckinVisibility Boolean  @default(false) @map("hide_checkin_visibility")
+  hideFromMemberList    Boolean  @default(false) @map("hide_from_member_list")
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("member_privacy")
+}
+
+model MembershipRenewal {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId       String   @map("member_id") @db.Uuid
+  previousExpiry DateTime @map("previous_expiry") @db.Date
+  newExpiry      DateTime @map("new_expiry") @db.Date
+  amountPaid     Decimal  @map("amount_paid") @db.Decimal(10, 2)
+  paymentMethod  String?  @map("payment_method")
+  renewedBy      String   @map("renewed_by") @db.Uuid
+  notes          String?
+  renewedAt      DateTime @default(now()) @map("renewed_at") @db.Timestamptz
+
+  member         GymMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  renewedByUser  User      @relation("RenewedBy", fields: [renewedBy], references: [id], onDelete: Restrict)
+
+  @@map("membership_renewals")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHECK-INS DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CheckIn {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId       String    @map("member_id") @db.Uuid
+  gymId          String    @map("gym_id") @db.Uuid
+  processedBy    String?   @map("processed_by") @db.Uuid
+  method         String
+  checkedInAt    DateTime  @default(now()) @map("checked_in_at") @db.Timestamptz
+  checkedOutAt   DateTime? @map("checked_out_at") @db.Timestamptz
+  isOutOfHours   Boolean   @default(false) @map("is_out_of_hours")
+  isAutoCheckout Boolean   @default(false) @map("is_auto_checkout")
+
+  member          GymMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  gym             Gym       @relation(fields: [gymId], references: [id], onDelete: Restrict)
+  processedByUser User?     @relation("ProcessedBy", fields: [processedBy], references: [id], onDelete: SetNull)
+
+  @@map("check_ins")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAT DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Conversation {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId               String   @map("gym_id") @db.Uuid
+  type                String   @default("COMMUNITY")
+  name                String?
+  description         String?
+  isDefault           Boolean  @default(false) @map("is_default")
+  isAnnouncementOnly  Boolean  @default(false) @map("is_announcement_only")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  gym     Gym                  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  members ConversationMember[]
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  role           String   @default("MEMBER")
+  joinedAt       DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  lastReadAt     DateTime @default(now()) @map("last_read_at") @db.Timestamptz
+  isMuted        Boolean  @default(false) @map("is_muted")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  replyToId      String?   @map("reply_to_id") @db.Uuid
+  type           String    @default("TEXT")
+  content        String?
+  metadata       Json      @default("{}")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
+  isPinned       Boolean   @default(false) @map("is_pinned")
+  sentAt         DateTime  @default(now()) @map("sent_at") @db.Timestamptz
+  editedAt       DateTime? @map("edited_at") @db.Timestamptz
+
+  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User            @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  replyTo      Message?        @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]       @relation("ReplyTo")
+  reads        MessageRead[]
+  reactions    MessageReaction[]
+
+  @@map("messages")
+}
+
+model MessageRead {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  readAt    DateTime @default(now()) @map("read_at") @db.Timestamptz
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("message_reads")
+}
+
+model MessageReaction {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  emoji     String
+  reactedAt DateTime @default(now()) @map("reacted_at") @db.Timestamptz
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANNOUNCEMENTS DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Announcement {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId          String    @map("gym_id") @db.Uuid
+  createdBy      String    @map("created_by") @db.Uuid
+  title          String
+  content        String
+  status         String    @default("DRAFT")
+  targetAudience String    @default("ALL") @map("target_audience")
+  targetFilters  Json      @default("{}") @map("target_filters")
+  isPinned       Boolean   @default(false) @map("is_pinned")
+  publishAt      DateTime? @map("publish_at") @db.Timestamptz
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym         Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdByUser User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  reads       AnnouncementRead[]
+
+  @@map("announcements")
+}
+
+model AnnouncementRead {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  announcementId String   @map("announcement_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  readAt         DateTime @default(now()) @map("read_at") @db.Timestamptz
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@map("announcement_reads")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AiUsageLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  gymId          String?  @map("gym_id") @db.Uuid
+  userId         String?  @map("user_id") @db.Uuid
+  featureKey     String   @map("feature_key")
+  tokensUsed     Int      @map("tokens_used")
+  metadata       Json     @default("{}")
+  usedAt         DateTime @default(now()) @map("used_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  gym          Gym?         @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("ai_usage_log")
+}

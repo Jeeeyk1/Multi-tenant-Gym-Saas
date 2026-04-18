@@ -9,7 +9,7 @@ import { DomainError } from './domain.error';
 export class UnauthorizedError extends DomainError {
   readonly statusCode = 401;
 
-  constructor(message: string, code: string) {
+  constructor(message: string, code = 'UNAUTHORIZED') {
     super(message, code);
   }
 }

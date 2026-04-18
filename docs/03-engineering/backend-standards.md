@@ -144,12 +144,14 @@ Rules:
 
 ## Testing
 
-Focus on:
-- use cases
-- domain logic
+See `docs/03-engineering/testing.md` for the full testing strategy, patterns, and conventions.
 
-Avoid:
-- overtesting framework behavior
+Summary:
+- Every use case gets a `.spec.ts` file
+- Guards and the global exception filter get spec files
+- Cron jobs get spec files
+- Mock `PrismaService`, `JwtService`, `ConfigService`, `RedisService` — never instantiate real ones in unit tests
+- Do not test NestJS wiring or DTO validation rules in unit tests
 
 ---
 

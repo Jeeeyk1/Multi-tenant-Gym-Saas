@@ -9,7 +9,7 @@ import { DomainError } from './domain.error';
 export class ForbiddenError extends DomainError {
   readonly statusCode = 403;
 
-  constructor(message: string, code: string) {
+  constructor(message: string, code = 'FORBIDDEN') {
     super(message, code);
   }
 }

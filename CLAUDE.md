@@ -26,7 +26,7 @@ Before making any non-trivial change, read these files in order:
 Then read only the files relevant to the task.
 
 Examples:
-- API/backend task → read app-level API README and relevant engineering/domain docs
+- API/backend task → read app-level API README, relevant engineering/domain docs, and `docs/03-engineering/testing.md`
 - Web task → read web README and relevant frontend docs
 - Mobile task → read mobile README and relevant mobile docs
 - Database task → read DB migration workflow and schema reference docs

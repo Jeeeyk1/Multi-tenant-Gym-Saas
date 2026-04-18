@@ -10,6 +10,7 @@ import { redisConfig } from './config/redis.config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
 import { HealthModule } from './modules/health/health.module';
+import { IdentityModule } from './modules/identity/identity.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { HealthModule } from './modules/health/health.module';
     PrismaModule,
     RedisModule,
     HealthModule,
+    IdentityModule,
   ],
 })
 export class AppModule {}

@@ -86,12 +86,20 @@ apps/api/src/
       conflict.error.ts
 ```
 
+### Unit tests required
+```
+src/common/guards/jwt-auth.guard.spec.ts
+src/common/guards/permissions.guard.spec.ts
+src/common/filters/global-exception.filter.spec.ts
+```
+
 ### Acceptance criteria
 - Prisma service connects to DB successfully
 - Redis service connects successfully
 - JWT guard rejects requests without valid token
 - Permissions guard enforces `@RequirePermission()` correctly
 - Global exception filter maps domain errors to consistent HTTP responses
+- All unit tests pass
 
 ---
 
@@ -131,12 +139,23 @@ POST /auth/logout            → revoke refresh token
 POST /auth/activate          → set password + verify email
 ```
 
+### Unit tests required
+```
+src/modules/identity/application/use-cases/resolve-code.use-case.spec.ts
+src/modules/identity/application/use-cases/org-login.use-case.spec.ts
+src/modules/identity/application/use-cases/gym-login.use-case.spec.ts
+src/modules/identity/application/use-cases/refresh-token.use-case.spec.ts
+src/modules/identity/application/use-cases/logout.use-case.spec.ts
+src/modules/identity/application/use-cases/activate-account.use-case.spec.ts
+```
+
 ### Acceptance criteria
 - Org login returns JWT with `organizationId` and `orgRole`
 - Gym login returns JWT with `gymId`, `roles`, `permissions`
 - Refresh token rotates atomically (old revoked, new issued in one transaction)
 - Activation sets `password_hash` and `email_verified_at`
 - Invalid credentials return generic 401 (no email enumeration)
+- All unit tests pass
 
 ---
 
@@ -167,10 +186,19 @@ PATCH  /gyms/:id/schedules             → update schedules
 Key use cases:
 - `CreateGymUseCase` — single transaction: gym + profile + schedules (Mon–Sun defaults) + community conversation
 
+### Unit tests required
+```
+src/modules/organization/application/use-cases/create-organization.use-case.spec.ts
+src/modules/gym/application/use-cases/create-gym.use-case.spec.ts
+src/modules/gym/application/use-cases/resolve-gym-code.use-case.spec.ts
+src/modules/gym/domain/gym-code.generator.spec.ts
+```
+
 ### Acceptance criteria
 - Gym creation auto-generates `code` using the name-based algorithm
 - Gym creation auto-creates profile, 7 schedule rows, and one community conversation
 - `resolve-code` correctly distinguishes org slugs from gym codes
+- All unit tests pass
 
 ---
 
@@ -193,11 +221,20 @@ DELETE /gyms/:gymId/staff/:staffId/roles/:roleId   → remove role
 GET    /gyms/:gymId/staff                          → list staff
 ```
 
+### Unit tests required
+```
+src/modules/staff/application/use-cases/invite-staff.use-case.spec.ts
+src/modules/staff/application/use-cases/assign-role.use-case.spec.ts
+src/modules/staff/application/use-cases/remove-role.use-case.spec.ts
+src/modules/staff/application/use-cases/deactivate-staff.use-case.spec.ts
+```
+
 ### Acceptance criteria
 - Inviting staff creates a `users` record + `gym_staff` record + sends invitation email
 - Role assignment unions permissions correctly into JWT on next login
 - `@RequirePermission('staff.manage')` rejects callers without that permission
 - Gym-scoped: staff from Gym A cannot be seen or managed via Gym B's endpoints
+- All unit tests pass
 
 ---
 
@@ -230,12 +267,22 @@ GET    /gyms/:gymId/members/:id/qr     → member QR token
 Key use case:
 - `RegisterMemberUseCase` — single transaction: user + gym_member + member_privacy + conversation_member + invitation token + email
 
+### Unit tests required
+```
+src/modules/membership-plans/application/use-cases/create-plan.use-case.spec.ts
+src/modules/membership-plans/application/use-cases/update-plan.use-case.spec.ts
+src/modules/members/application/use-cases/register-member.use-case.spec.ts
+src/modules/members/application/use-cases/suspend-member.use-case.spec.ts
+src/modules/members/application/use-cases/reactivate-member.use-case.spec.ts
+```
+
 ### Acceptance criteria
 - Member registration auto-generates `qr_code_token` and `membership_number`
 - Invitation email is sent with activation link
 - Member is auto-enrolled in the gym's default community conversation
 - `member_privacy` row auto-created with defaults
 - Suspension blocks check-in but does not affect login
+- All unit tests pass
 
 ---
 
@@ -262,6 +309,14 @@ POST   /gyms/:gymId/members/:id/renew    → process renewal
 GET    /gyms/:gymId/members/:id/renewals → renewal history
 ```
 
+### Unit tests required
+```
+src/modules/check-ins/application/use-cases/check-in.use-case.spec.ts
+src/modules/check-ins/application/use-cases/checkout.use-case.spec.ts
+src/modules/renewals/application/use-cases/renew-membership.use-case.spec.ts
+src/modules/check-ins/domain/schedule-validator.spec.ts
+```
+
 ### Acceptance criteria
 - All 4 check-in methods (`MANUAL_STAFF`, `QR_STAFF_SCAN`, `QR_SELF_SCAN`, `APP_SELF_CHECKIN`) work
 - Duplicate check-in is rejected (DB unique index + runtime check)
@@ -269,6 +324,7 @@ GET    /gyms/:gymId/members/:id/renewals → renewal history
 - `is_out_of_hours = true` when check-in is outside schedule (using gym timezone)
 - 24/7 gyms skip schedule validation entirely
 - Renewal updates `expiry_date` and inserts a `membership_renewals` record in one transaction
+- All unit tests pass
 
 ---
 
@@ -292,6 +348,14 @@ apps/api/src/cron/
     announcement-publisher.job.ts
 ```
 
+### Unit tests required
+```
+src/cron/jobs/membership-expiry.job.spec.ts
+src/cron/jobs/auto-suspend.job.spec.ts
+src/cron/jobs/auto-checkout.job.spec.ts
+src/cron/jobs/announcement-publisher.job.spec.ts
+```
+
 ### Acceptance criteria
 - Each job acquires Redis lock before running
 - If lock is already held, job skips silently with a log entry
@@ -301,6 +365,7 @@ apps/api/src/cron/
 - `AutoCheckoutJob`: closes stale check-ins, sets `is_auto_checkout = true`
 - `AnnouncementPublisherJob`: publishes scheduled, expires outdated announcements
 - All jobs are idempotent (safe to run twice)
+- All unit tests pass
 
 ---
 
@@ -325,11 +390,20 @@ GET    /gyms/:gymId/announcements        → list
 POST   /gyms/:gymId/announcements/:id/read → mark as read
 ```
 
+### Unit tests required
+```
+src/modules/announcements/application/use-cases/create-announcement.use-case.spec.ts
+src/modules/announcements/application/use-cases/update-announcement.use-case.spec.ts
+src/modules/announcements/application/use-cases/archive-announcement.use-case.spec.ts
+src/modules/announcements/application/use-cases/mark-announcement-read.use-case.spec.ts
+```
+
 ### Acceptance criteria
 - Staff see all statuses; members only see PUBLISHED
 - `publish_at` in the future → status set to SCHEDULED
 - `publish_at` null or past → status set to PUBLISHED immediately
 - Read tracking per user per announcement
+- All unit tests pass
 
 ---
 
@@ -354,11 +428,20 @@ POST   /gyms/:gymId/conversations/:id/messages/:msgId/react → emoji reaction
 POST   /gyms/:gymId/conversations/:id/read            → update last_read_at
 ```
 
+### Unit tests required
+```
+src/modules/chat/application/use-cases/send-message.use-case.spec.ts
+src/modules/chat/application/use-cases/delete-message.use-case.spec.ts
+src/modules/chat/application/use-cases/react-to-message.use-case.spec.ts
+src/modules/chat/application/use-cases/mark-conversation-read.use-case.spec.ts
+```
+
 ### Acceptance criteria
 - Only conversation members can read or send messages
 - Deleted messages return "This message was deleted" (soft delete, content wiped)
 - `last_read_at` updated on read, used for unread count
 - Pagination uses `sent_at DESC` with cursor or offset
+- All unit tests pass
 
 ---
 

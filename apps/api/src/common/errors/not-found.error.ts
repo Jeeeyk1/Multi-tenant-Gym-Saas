@@ -9,7 +9,7 @@ import { DomainError } from './domain.error';
 export class NotFoundError extends DomainError {
   readonly statusCode = 404;
 
-  constructor(message: string, code: string) {
+  constructor(message: string, code = 'NOT_FOUND') {
     super(message, code);
   }
 }

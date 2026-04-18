@@ -11,6 +11,11 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { OrganizationModule } from './modules/organization/organization.module';
+import { GymModule } from './modules/gym/gym.module';
+import { StaffModule } from './modules/staff/staff.module';
+import { MembershipPlansModule } from './modules/membership-plans/membership-plans.module';
+import { MembersModule } from './modules/members/members.module';
 
 @Module({
   imports: [
@@ -45,6 +50,11 @@ import { IdentityModule } from './modules/identity/identity.module';
     RedisModule,
     HealthModule,
     IdentityModule,
+    OrganizationModule,
+    GymModule,
+    StaffModule,
+    MembershipPlansModule,
+    MembersModule,
   ],
 })
 export class AppModule {}

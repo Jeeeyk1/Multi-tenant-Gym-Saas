@@ -16,6 +16,11 @@ import { GymModule } from './modules/gym/gym.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { MembershipPlansModule } from './modules/membership-plans/membership-plans.module';
 import { MembersModule } from './modules/members/members.module';
+import { CheckInsModule } from './modules/check-ins/check-ins.module';
+import { RenewalsModule } from './modules/renewals/renewals.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -55,6 +60,11 @@ import { MembersModule } from './modules/members/members.module';
     StaffModule,
     MembershipPlansModule,
     MembersModule,
+    CheckInsModule,
+    RenewalsModule,
+    AnnouncementsModule,
+    ChatModule,
+    CronModule,
   ],
 })
 export class AppModule {}

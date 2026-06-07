@@ -2,11 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 
+function timeStringToDate(time: string): Date {
+  const [h, m, s] = time.split(':').map(Number);
+  const d = new Date(0);
+  d.setUTCHours(h, m ?? 0, s ?? 0, 0);
+  return d;
+}
+
 // 0 = Sunday … 6 = Saturday (matches JS Date.getDay())
 const DEFAULT_SCHEDULES = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
   dayOfWeek,
-  openTime: '06:00',
-  closeTime: '22:00',
+  openTime: timeStringToDate('06:00'),
+  closeTime: timeStringToDate('22:00'),
   isClosed: false,
 }));
 
@@ -176,17 +183,15 @@ export class GymRepository {
     // Upsert each schedule row individually — createMany with update is not supported
     // in all Prisma versions; upsert is safer here.
     await this.prisma.$transaction(
-      schedules.map((s) =>
-        this.prisma.gymSchedule.upsert({
+      schedules.map((s) => {
+        const openTime = s.openTime ? timeStringToDate(s.openTime) : null;
+        const closeTime = s.closeTime ? timeStringToDate(s.closeTime) : null;
+        return this.prisma.gymSchedule.upsert({
           where: { gymId_dayOfWeek: { gymId, dayOfWeek: s.dayOfWeek } },
-          create: { gymId, ...s },
-          update: {
-            openTime: s.openTime,
-            closeTime: s.closeTime,
-            isClosed: s.isClosed,
-          },
-        }),
-      ),
+          create: { gymId, dayOfWeek: s.dayOfWeek, openTime, closeTime, isClosed: s.isClosed },
+          update: { openTime, closeTime, isClosed: s.isClosed },
+        });
+      }),
     );
   }
 }

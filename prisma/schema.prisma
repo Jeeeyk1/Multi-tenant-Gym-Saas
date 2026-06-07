@@ -189,8 +189,8 @@ model GymSchedule {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   gymId      String   @map("gym_id") @db.Uuid
   dayOfWeek  Int      @map("day_of_week")
-  openTime   String?  @map("open_time")
-  closeTime  String?  @map("close_time")
+  openTime   DateTime? @db.Time @map("open_time")
+  closeTime  DateTime? @db.Time @map("close_time")
   isClosed   Boolean  @default(false) @map("is_closed")
 
   gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
@@ -420,11 +420,29 @@ model GymMember {
   membershipPlan MembershipPlan? @relation(fields: [membershipPlanId], references: [id], onDelete: SetNull)
   promo          PlanPromo?      @relation(fields: [promoId], references: [id], onDelete: SetNull)
   privacy        MemberPrivacy?
+  profile        MemberProfile?
   checkIns       CheckIn[]
   renewals       MembershipRenewal[]
 
   @@unique([gymId, userId])
   @@map("gym_members")
+}
+
+model MemberProfile {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId       String   @unique @map("member_id") @db.Uuid
+  age            Int?     @db.SmallInt
+  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  heightCm       Int?     @map("height_cm") @db.SmallInt
+  fitnessGoal    String?  @map("fitness_goal")
+  activityLevel  String?  @map("activity_level")
+  onboardingDone Boolean  @default(false) @map("onboarding_done")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("member_profiles")
 }
 
 model MemberPrivacy {

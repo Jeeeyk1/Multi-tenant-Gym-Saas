@@ -15,11 +15,15 @@ import { CurrentUser } from '../../../../common/decorators/current-user.decorato
 import { RegisterMemberUseCase } from '../../application/use-cases/register-member.use-case';
 import { ListMembersUseCase } from '../../application/use-cases/list-members.use-case';
 import { GetMemberUseCase } from '../../application/use-cases/get-member.use-case';
+import { GetMyMemberUseCase } from '../../application/use-cases/get-my-member.use-case';
+import { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.use-case';
+import { UpsertMyProfileUseCase } from '../../application/use-cases/upsert-my-profile.use-case';
 import { SuspendMemberUseCase } from '../../application/use-cases/suspend-member.use-case';
 import { ReactivateMemberUseCase } from '../../application/use-cases/reactivate-member.use-case';
 import { GetMemberQrUseCase } from '../../application/use-cases/get-member-qr.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
+import { UpsertMyProfileDto } from '../dto/upsert-my-profile.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId/members')
@@ -29,6 +33,9 @@ export class MembersController {
     private readonly registerMemberUseCase: RegisterMemberUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly getMemberUseCase: GetMemberUseCase,
+    private readonly getMyMemberUseCase: GetMyMemberUseCase,
+    private readonly getMyProfileUseCase: GetMyProfileUseCase,
+    private readonly upsertMyProfileUseCase: UpsertMyProfileUseCase,
     private readonly suspendMemberUseCase: SuspendMemberUseCase,
     private readonly reactivateMemberUseCase: ReactivateMemberUseCase,
     private readonly getMemberQrUseCase: GetMemberQrUseCase,
@@ -69,6 +76,46 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.listMembersUseCase.execute(gymId, { page: query.page, limit: query.limit }, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/members/me
+   * Get the authenticated member's own record. No members.view required.
+   * Must be declared before :memberId to avoid route conflict.
+   */
+  @Get('me')
+  getMe(
+    @Param('gymId') gymId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.getMyMemberUseCase.execute(gymId, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/members/me/profile
+   * Get authenticated member's fitness profile. No special permission required.
+   * Must be declared before :memberId.
+   */
+  @Get('me/profile')
+  getMyProfile(
+    @Param('gymId') gymId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.getMyProfileUseCase.execute(gymId, user);
+  }
+
+  /**
+   * PATCH /gyms/:gymId/members/me/profile
+   * Upsert authenticated member's fitness profile.
+   */
+  @Patch('me/profile')
+  @HttpCode(HttpStatus.OK)
+  upsertMyProfile(
+    @Param('gymId') gymId: string,
+    @Body() dto: UpsertMyProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.upsertMyProfileUseCase.execute(gymId, dto, user);
   }
 
   /**

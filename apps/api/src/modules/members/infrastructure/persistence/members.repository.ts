@@ -35,6 +35,28 @@ export class MembersRepository {
     });
   }
 
+  findFullMemberByUserId(gymId: string, userId: string) {
+    return this.prisma.gymMember.findUnique({
+      where: { gymId_userId: { gymId, userId } },
+      select: {
+        id: true,
+        gymId: true,
+        membershipNumber: true,
+        status: true,
+        qrCodeToken: true,
+        expiryDate: true,
+        joinedAt: true,
+        updatedAt: true,
+        user: {
+          select: { id: true, email: true, fullName: true, phone: true },
+        },
+        membershipPlan: {
+          select: { id: true, name: true, type: true, price: true, durationDays: true },
+        },
+      },
+    });
+  }
+
   findMemberById(memberId: string, gymId: string) {
     return this.prisma.gymMember.findFirst({
       where: { id: memberId, gymId },
@@ -114,6 +136,30 @@ export class MembersRepository {
    * 5. Enroll in default community conversation (if exists)
    * 6. Create invite token
    */
+  findMyProfile(memberId: string) {
+    return this.prisma.memberProfile.findUnique({
+      where: { memberId },
+    });
+  }
+
+  upsertMyProfile(
+    memberId: string,
+    data: {
+      age?: number;
+      weightKg?: number;
+      heightCm?: number;
+      fitnessGoal?: string;
+      activityLevel?: string;
+      onboardingDone?: boolean;
+    },
+  ) {
+    return this.prisma.memberProfile.upsert({
+      where: { memberId },
+      create: { memberId, ...data, updatedAt: new Date() },
+      update: { ...data, updatedAt: new Date() },
+    });
+  }
+
   async registerMember(input: {
     gymId: string;
     email: string;

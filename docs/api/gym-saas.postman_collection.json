@@ -1,0 +1,786 @@
+{
+  "info": {
+    "name": "Gym SaaS API",
+    "description": "Full API collection for the Gym SaaS platform.\n\n## Quick start\n1. Run the dev seed: `pnpm db:seed`\n2. Start the API: `pnpm dev` (runs on port 3001)\n3. Run **Auth → Gym Login (Staff)** — the token is auto-saved to `accessToken`\n4. All other requests use `{{accessToken}}` automatically\n\n## Dev credentials\n- Staff (MANAGER): `manager@devgym.com` / `Password123!`\n- Member: `member@devgym.com` / `Password123!`\n- Gym code: `DEVGYM`\n- Gym ID: `00000000-0000-0000-0000-000000000002`\n- Community Conversation ID: `00000000-0000-0000-0000-000000000008`\n\n## WebSocket (Chat)\nPostman supports Socket.IO natively:\n1. Click **New → Socket.IO**\n2. URL: `http://localhost:3001/chat`\n3. Under **Connection → Headers**, add: `Authorization: Bearer {{accessToken}}`\n   OR under **Connection → Auth**, add key `token` = the JWT value\n4. Connect, then emit the events documented in `docs/04-api/api-reference.md`\n\nEvents to test:\n- Emit `join` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\"}`\n- Emit `message.send` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\",\"content\":\"Hello!\"}`\n- Listen for `message.new` → fires for every new message in the room",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",          "value": "http://localhost:3001",                "type": "string" },
+    { "key": "gymId",            "value": "00000000-0000-0000-0000-000000000002", "type": "string" },
+    { "key": "memberId",         "value": "00000000-0000-0000-0000-000000000006", "type": "string" },
+    { "key": "planId",           "value": "00000000-0000-0000-0000-000000000007", "type": "string" },
+    { "key": "conversationId",   "value": "00000000-0000-0000-0000-000000000008", "type": "string" },
+    { "key": "accessToken",      "value": "",                                     "type": "string" },
+    { "key": "refreshToken",     "value": "",                                     "type": "string" },
+    { "key": "announcementId",   "value": "",                                     "type": "string" },
+    { "key": "messageId",        "value": "",                                     "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Resolve Code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"DEVGYM\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/resolve-code", "host": ["{{baseUrl}}"], "path": ["auth", "resolve-code"] }
+          }
+        },
+        {
+          "name": "Gym Login (Staff — MANAGER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "  console.log('Staff token saved.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gymCode\": \"DEVGYM\",\n  \"email\": \"manager@devgym.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/gym/login", "host": ["{{baseUrl}}"], "path": ["auth", "gym", "login"] }
+          }
+        },
+        {
+          "name": "Gym Login (Member)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "  console.log('Member token saved.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gymCode\": \"DEVGYM\",\n  \"email\": \"member@devgym.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/gym/login", "host": ["{{baseUrl}}"], "path": ["auth", "gym", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', res.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', res.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Community Chat (REST)",
+      "description": "REST endpoints for chat history and actions.\n\nFor real-time messaging, use Postman's Socket.IO support:\n- New → Socket.IO → URL: http://localhost:3001/chat\n- Add auth: token = <your JWT> in handshake auth\n- Emit 'join' with { conversationId } before sending messages\n- Listen for 'message.new', 'message.deleted', 'message.reaction'\n\nSee docs/04-api/api-reference.md → WebSocket section for full event reference.",
+      "item": [
+        {
+          "name": "List Messages (latest 50)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages"],
+              "query": [{ "key": "limit", "value": "50" }]
+            }
+          }
+        },
+        {
+          "name": "List Messages (load older — cursor pagination)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages?limit=50&before=2026-04-20T10:00:00.000Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages"],
+              "query": [
+                { "key": "limit", "value": "50" },
+                { "key": "before", "value": "2026-04-20T10:00:00.000Z", "description": "Replace with sentAt of oldest message in current batch" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('messageId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hello community!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Send Message (with reply)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is a reply!\",\n  \"replyToId\": \"{{messageId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages"]
+            }
+          }
+        },
+        {
+          "name": "React to Message (toggle 👍)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emoji\": \"👍\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages/{{messageId}}/react",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages", "{{messageId}}", "react"]
+            }
+          }
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/messages/{{messageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "messages", "{{messageId}}"]
+            }
+          }
+        },
+        {
+          "name": "Mark Conversation Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/conversations/{{conversationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "conversations", "{{conversationId}}", "read"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Announcements",
+      "item": [
+        {
+          "name": "Create — Publish immediately",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) pm.collectionVariables.set('announcementId', res.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Welcome to Dev Gym!\",\n  \"content\": \"This is our first published announcement. We are open 24/7.\",\n  \"isPinned\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "Create — Scheduled (future publishAt)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Upcoming Maintenance\",\n  \"content\": \"We will be doing maintenance next week. Normal operations resume Monday.\",\n  \"publishAt\": \"2099-01-01T08:00:00.000Z\",\n  \"expiresAt\": \"2099-01-08T08:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "List — All statuses (staff view)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements"]
+            }
+          }
+        },
+        {
+          "name": "List — Filter by status=PUBLISHED",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements?status=PUBLISHED",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements"],
+              "query": [{ "key": "status", "value": "PUBLISHED" }]
+            }
+          }
+        },
+        {
+          "name": "List — Filter by status=SCHEDULED",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements?status=SCHEDULED",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements"],
+              "query": [{ "key": "status", "value": "SCHEDULED" }]
+            }
+          }
+        },
+        {
+          "name": "Update — Change title + pin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Welcome to Dev Gym! (Updated)\",\n  \"isPinned\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update — Reschedule (set future publishAt)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publishAt\": \"2099-06-01T09:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update — Publish now (clear publishAt)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publishAt\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements/{{announcementId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements", "{{announcementId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Archive",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "announcements", "{{announcementId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Members",
+      "item": [
+        {
+          "name": "List Members",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "List Members — Filter by status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members?status=ACTIVE",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members"],
+              "query": [{ "key": "status", "value": "ACTIVE", "description": "ACTIVE | EXPIRED | SUSPENDED" }]
+            }
+          }
+        },
+        {
+          "name": "Get Member",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Member QR Token",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}/qr",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}", "qr"]
+            }
+          }
+        },
+        {
+          "name": "Register Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newmember@example.com\",\n  \"fullName\": \"New Member\",\n  \"phone\": \"+639171234567\",\n  \"planId\": \"{{planId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Suspend Member",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}", "suspend"]
+            }
+          }
+        },
+        {
+          "name": "Reactivate Member",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}/reactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}", "reactivate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Membership Plans",
+      "item": [
+        {
+          "name": "List Plans",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Create Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Annual Plan\",\n  \"type\": \"ANNUAL\",\n  \"price\": 12000,\n  \"durationDays\": 365\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "plans"]
+            }
+          }
+        },
+        {
+          "name": "Update Plan",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1800\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "plans", "{{planId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check-ins",
+      "item": [
+        {
+          "name": "Check In (Manual Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"MANUAL_STAFF\",\n  \"memberId\": \"{{memberId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/checkins",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "checkins"]
+            }
+          }
+        },
+        {
+          "name": "Check In (QR Scan by Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"QR_STAFF_SCAN\",\n  \"qrCodeToken\": \"devqrtoken0000000000000000000000000000000000000000000000000000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/checkins",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "checkins"]
+            }
+          }
+        },
+        {
+          "name": "List Active Check-ins",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/checkins/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "checkins", "active"]
+            }
+          }
+        },
+        {
+          "name": "Check-in History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/checkins?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "checkins"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Renewals",
+      "item": [
+        {
+          "name": "Renew Membership",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId}}\",\n  \"amountPaid\": 1500,\n  \"paymentMethod\": \"CASH\",\n  \"notes\": \"Monthly renewal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}", "renew"]
+            }
+          }
+        },
+        {
+          "name": "List Renewals",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/members/{{memberId}}/renewals",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "members", "{{memberId}}", "renewals"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "item": [
+        {
+          "name": "List Staff",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "staff"]
+            }
+          }
+        },
+        {
+          "name": "Invite Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"frontdesk@devgym.com\",\n  \"fullName\": \"Front Desk Staff\",\n  \"phone\": \"+639180000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "staff"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gym",
+      "item": [
+        {
+          "name": "Resolve Code (DEVGYM)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"DEVGYM\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/resolve-code", "host": ["{{baseUrl}}"], "path": ["auth", "resolve-code"] }
+          }
+        },
+        {
+          "name": "Get Gym Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Gym Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated gym description.\",\n  \"contactEmail\": \"contact@devgym.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/gyms/{{gymId}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["gyms", "{{gymId}}", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}

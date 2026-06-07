@@ -480,6 +480,100 @@ Build order within mobile:
 
 ---
 
+---
+
+## Phase 13 — Member Profile + Gym Theme API
+
+**Goal:** Store member fitness profiles and gym branding. Unblocks AI features and theme-aware frontends.
+
+**Requires:** Phases 6 and 11 complete.
+
+### Deliverables
+
+SQL migrations:
+```
+db/migrations/
+  0016_member_profiles.sql          ← member_profiles, member_weight_logs, member_food_logs
+  0017_gym_theme.sql                ← primary_color, logo_url, favicon_url added to gym_profile
+  0018_notification_tokens.sql      ← device push tokens per user
+```
+
+API endpoints:
+```
+GET    /gyms/:gymId/members/:memberId/profile         → get member profile
+PATCH  /gyms/:gymId/members/:memberId/profile         → update profile + onboarding_done
+POST   /gyms/:gymId/members/:memberId/weight-logs     → log a weight entry
+GET    /gyms/:gymId/members/:memberId/weight-logs     → weight history
+```
+
+Theme fields added to existing responses:
+- `POST /auth/resolve-code` → include `{ primaryColor, logoUrl }` in gym response
+- `GET /gyms/:id` → include theme fields in gym detail
+
+---
+
+## Phase 14 — Member Mobile Onboarding + Engagement
+
+**Goal:** First-time members complete an animated onboarding. All members see a personalised greeting.
+
+**Requires:** Phase 12 (mobile) and Phase 13 complete.
+
+### Deliverables
+
+- Animated onboarding questionnaire (one question per screen, Reanimated transitions)
+- `onboarding_done` flag checked on every login — if false, show flow
+- Personalised time-aware greeting on home screen
+- Check-in streak display (derived from recent check-in history)
+- Theme applied from `resolve-code` response on app open
+
+---
+
+## Phase 15 — Push Notifications + Attendance Reminders
+
+**Goal:** Members receive proactive push notifications when they stop attending.
+
+**Requires:** Phase 14 complete.
+
+### Deliverables
+
+```
+apps/api/src/cron/jobs/attendance-reminder.job.ts
+```
+
+- Expo Push Notifications integration (device token registration endpoint)
+- `AttendanceReminderJob` — runs daily at 8am, finds members inactive for 3+ days
+- `notification_logs` table to prevent duplicate notifications
+- Future hook points: membership expiry warning (5 days out), renewal reminder, milestone celebrations
+
+---
+
+## Phase 16 — AI Features
+
+**Goal:** Members can get personalised workout suggestions, meal prep guidance, and calorie estimates from food photos.
+
+**Requires:** Phase 13 complete. Claude API access configured.
+
+### Deliverables
+
+API endpoints:
+```
+POST /gyms/:gymId/members/:memberId/ai/workout-suggestion   → personalised workout plan
+POST /gyms/:gymId/members/:memberId/ai/meal-suggestion      → meal prep / nutrition guidance
+POST /gyms/:gymId/members/:memberId/ai/analyse-meal         → calorie estimate from photo (Claude Vision)
+POST /gyms/:gymId/members/:memberId/food-logs               → save a logged meal
+GET  /gyms/:gymId/members/:memberId/food-logs               → meal history
+```
+
+All AI endpoints:
+- Build context from `member_profiles` + recent check-in history
+- Call Claude API with structured prompt
+- Log usage to `ai_usage` table
+- Enforce subscription quota — return `429 AI_QUOTA_EXCEEDED` if exceeded
+
+See `docs/00-product/member-features.md` for full feature specifications.
+
+---
+
 ## Parallelization notes
 
 After Phase 6 is complete, these phases are independent and can be worked in parallel:
@@ -490,3 +584,7 @@ After Phase 6 is complete, these phases are independent and can be worked in par
 Phase 8 (Cron Jobs) can begin as soon as Phases 6 and 7 are done.
 
 Phases 11 and 12 (web and mobile) can begin in parallel once the API phases they depend on are stable.
+
+Phase 13 can begin as soon as Phase 11 (web) is stable — it is a prerequisite for Phases 14, 15, and 16.
+
+Phases 15 and 16 are independent of each other and can be built in parallel after Phase 14.

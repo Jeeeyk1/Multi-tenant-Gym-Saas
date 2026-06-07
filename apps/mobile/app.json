@@ -1,19 +1,28 @@
 {
   "expo": {
-    "name": "Gym SaaS",
+    "name": "FitZone",
     "slug": "gym-saas-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "gymSaasMobile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0f0f0f"
+    },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.gymSaas.mobile"
     },
     "android": {
-      "package": "com.gymSaas.mobile"
+      "package": "com.gymSaas.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f0f0f"
+      }
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
     "experiments": {
       "typedRoutes": true
     }

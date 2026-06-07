@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background:   0 0% 4%;          /* #0A0A0A */
+    --surface:      0 0% 8%;          /* #141414 */
+    --border:       0 0% 16%;         /* #2A2A2A */
+    --primary:      156 72% 67%;      /* #6EE7B7 mint */
+    --primary-fg:   0 0% 0%;          /* #000000 */
+    --text:         0 0% 100%;        /* #FFFFFF */
+    --muted:        0 0% 53%;         /* #888888 */
+    --warning:      16 100% 60%;      /* #FF6B35 burn orange */
+    --destructive:  0 84% 60%;        /* red */
+    --success:      142 71% 45%;      /* green */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input, textarea, select {
+    @apply bg-surface text-foreground;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: hsl(var(--muted));
+  }
+}

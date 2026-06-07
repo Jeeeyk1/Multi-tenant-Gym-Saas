@@ -199,29 +199,69 @@ Included:
 - direct messaging and group chat
 - complex recommendation systems
 - advanced AI analytics
+- push notifications
+- member fitness profiles and onboarding
 
 ---
 
-## Future features
+## Planned post-MVP features
+
+Full specifications in `docs/00-product/member-features.md`.
+
+### Member onboarding flow
+- Animated first-time questionnaire (goal, weight, age, activity level)
+- Stored in `member_profiles` table
+- Powers AI personalisation across all features
+- Skippable — `onboarding_done` flag prevents repeat
+
+### Gym theme configuration
+- Per-gym branding: primary color, logo, favicon
+- Applied before login screen using resolve-code response
+- Gated by subscription tier (basic → default, premium → custom)
+
+### Personalised greeting
+- Time-aware greeting on every app open ("Good morning, Jake!")
+- Enriched with check-in streak data ("3-day streak! Keep it up.")
+
+### Attendance reminders (push notifications)
+- Daily cron detects members inactive for 3+ days
+- Push notification sent via Expo Push Notifications
+- Prevents notification spam via `notification_logs` table
+- Future: membership expiry warnings, milestone celebrations
+
+### AI workout suggestions
+- Personalised workout plans based on member profile + check-in history
+- Calls Claude API with structured member context
+- Usage logged and quota-enforced per subscription
+
+### AI meal prep and nutrition guidance
+- Personalised meal plans and nutritional advice
+- Based on goal (lose weight / gain muscle / maintain)
+- Same Claude API pattern as workout suggestions
+
+### Calorie tracking via food photo
+- Member photographs a meal
+- Claude Vision estimates calories and macros
+- Member confirms and logs to food diary (`member_food_logs`)
+- Weight progress tracked in `member_weight_logs`
 
 ### AI for gym owners
-- query gym data using natural language
-- insights based on gym-specific data
-
-### Wearable integration
-- connect smartwatches
-- track calories, activity, and workouts
-- historical tracking
+- Query gym data using natural language
+- Insights based on gym-specific data (attendance trends, renewal rates)
 
 ### Advanced community features
-- direct messaging
-- group chats
-- richer engagement tools
+- Direct messaging between members
+- Group chats
+- Richer engagement tools
+
+### Wearable integration
+- Connect smartwatches
+- Track calories, activity, and workouts automatically
 
 ### Advanced analytics
-- retention insights
-- usage trends
-- performance dashboards
+- Retention insights
+- Usage trends
+- Performance dashboards
 
 ---
 

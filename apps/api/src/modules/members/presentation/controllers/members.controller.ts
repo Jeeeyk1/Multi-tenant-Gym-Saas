@@ -18,12 +18,19 @@ import { GetMemberUseCase } from '../../application/use-cases/get-member.use-cas
 import { GetMyMemberUseCase } from '../../application/use-cases/get-my-member.use-case';
 import { GetMyProfileUseCase } from '../../application/use-cases/get-my-profile.use-case';
 import { UpsertMyProfileUseCase } from '../../application/use-cases/upsert-my-profile.use-case';
+import { GetMemberProfileUseCase } from '../../application/use-cases/get-member-profile.use-case';
+import { UpsertMemberProfileUseCase } from '../../application/use-cases/upsert-member-profile.use-case';
+import { LogWeightUseCase } from '../../application/use-cases/log-weight.use-case';
+import { ListWeightLogsUseCase } from '../../application/use-cases/list-weight-logs.use-case';
 import { SuspendMemberUseCase } from '../../application/use-cases/suspend-member.use-case';
 import { ReactivateMemberUseCase } from '../../application/use-cases/reactivate-member.use-case';
 import { GetMemberQrUseCase } from '../../application/use-cases/get-member-qr.use-case';
+import { RegisterDeviceTokenUseCase } from '../../application/use-cases/register-device-token.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
 import { UpsertMyProfileDto } from '../dto/upsert-my-profile.dto';
+import { LogWeightDto } from '../dto/log-weight.dto';
+import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId/members')
@@ -36,9 +43,14 @@ export class MembersController {
     private readonly getMyMemberUseCase: GetMyMemberUseCase,
     private readonly getMyProfileUseCase: GetMyProfileUseCase,
     private readonly upsertMyProfileUseCase: UpsertMyProfileUseCase,
+    private readonly getMemberProfileUseCase: GetMemberProfileUseCase,
+    private readonly upsertMemberProfileUseCase: UpsertMemberProfileUseCase,
+    private readonly logWeightUseCase: LogWeightUseCase,
+    private readonly listWeightLogsUseCase: ListWeightLogsUseCase,
     private readonly suspendMemberUseCase: SuspendMemberUseCase,
     private readonly reactivateMemberUseCase: ReactivateMemberUseCase,
     private readonly getMemberQrUseCase: GetMemberQrUseCase,
+    private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
   ) {}
 
   /**
@@ -119,6 +131,19 @@ export class MembersController {
   }
 
   /**
+   * POST /gyms/:gymId/members/me/device-token
+   * Register or refresh the Expo push token for the authenticated user.
+   */
+  @Post('me/device-token')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  registerDeviceToken(
+    @Body() dto: RegisterDeviceTokenDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.registerDeviceTokenUseCase.execute(dto, user);
+  }
+
+  /**
    * GET /gyms/:gymId/members/:memberId
    * Get member detail. Requires members.view permission.
    */
@@ -170,5 +195,67 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.reactivateMemberUseCase.execute(gymId, memberId, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/members/:memberId/profile
+   * Get a member's fitness profile. Requires members.view permission.
+   */
+  @Get(':memberId/profile')
+  getMemberProfile(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.getMemberProfileUseCase.execute(gymId, memberId, user);
+  }
+
+  /**
+   * PATCH /gyms/:gymId/members/:memberId/profile
+   * Update a member's fitness profile. Requires members.edit permission.
+   */
+  @Patch(':memberId/profile')
+  @HttpCode(HttpStatus.OK)
+  upsertMemberProfile(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: UpsertMyProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.upsertMemberProfileUseCase.execute(gymId, memberId, dto, user);
+  }
+
+  /**
+   * POST /gyms/:gymId/members/:memberId/weight-logs
+   * Log a weight entry for a member.
+   */
+  @Post(':memberId/weight-logs')
+  @HttpCode(HttpStatus.CREATED)
+  logWeight(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: LogWeightDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.logWeightUseCase.execute(gymId, memberId, dto, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/members/:memberId/weight-logs
+   * List weight log history for a member. Requires members.view permission.
+   */
+  @Get(':memberId/weight-logs')
+  listWeightLogs(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Query('limit') limit: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.listWeightLogsUseCase.execute(
+      gymId,
+      memberId,
+      user,
+      limit ? Math.min(parseInt(limit, 10), 200) : 50,
+    );
   }
 }

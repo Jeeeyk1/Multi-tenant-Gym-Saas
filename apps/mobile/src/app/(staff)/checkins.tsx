@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { staffService } from '../../services/staff.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { StaffCheckIn, MemberListItem } from '../../types';
@@ -54,10 +55,11 @@ function CheckInRow({
   onCheckOut: (id: string) => void;
   checkingOut: boolean;
 }) {
+  const { theme } = useTheme();
   return (
     <View style={styles.row}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{getInitials(item.member.user.fullName)}</Text>
+        <Text style={[styles.avatarText, { color: theme.primary }]}>{getInitials(item.member.user.fullName)}</Text>
       </View>
       <View style={styles.rowInfo}>
         <Text style={styles.rowName} numberOfLines={1}>{item.member.user.fullName}</Text>
@@ -95,6 +97,7 @@ function MemberRow({
   onCheckIn: (id: string) => void;
   isLoading: boolean;
 }) {
+  const { theme } = useTheme();
   return (
     <TouchableOpacity
       style={styles.memberRow}
@@ -103,7 +106,7 @@ function MemberRow({
       activeOpacity={0.7}
     >
       <View style={styles.memberAvatar}>
-        <Text style={styles.memberAvatarText}>{getInitials(item.user.fullName)}</Text>
+        <Text style={[styles.memberAvatarText, { color: theme.primary }]}>{getInitials(item.user.fullName)}</Text>
       </View>
       <View style={styles.memberInfo}>
         <Text style={styles.memberName} numberOfLines={1}>{item.user.fullName}</Text>
@@ -111,9 +114,9 @@ function MemberRow({
       </View>
       <View style={[styles.statusDot, { backgroundColor: statusColor(item.status) }]} />
       {isLoading ? (
-        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />
+        <ActivityIndicator size="small" color={theme.primary} style={{ marginLeft: 8 }} />
       ) : (
-        <Ionicons name="add-circle-outline" size={22} color={COLORS.primary} />
+        <Ionicons name="add-circle-outline" size={22} color={theme.primary} />
       )}
     </TouchableOpacity>
   );
@@ -123,6 +126,7 @@ function MemberRow({
 
 export default function CheckInsScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   // Active check-ins state
   const [activeList, setActiveList] = useState<StaffCheckIn[]>([]);
@@ -245,7 +249,7 @@ export default function CheckInsScreen() {
             {activeList.length} active{activeList.length !== 1 ? '' : ''}
           </Text>
         </View>
-        <TouchableOpacity style={styles.checkInFab} onPress={openModal} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.checkInFab, { backgroundColor: theme.primary }]} onPress={openModal} activeOpacity={0.8}>
           <Ionicons name="person-add-outline" size={18} color="#000" />
           <Text style={styles.checkInFabText}>Check In</Text>
         </TouchableOpacity>
@@ -254,13 +258,13 @@ export default function CheckInsScreen() {
       {/* Active list */}
       {listLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={COLORS.primary} size="large" />
+          <ActivityIndicator color={theme.primary} size="large" />
         </View>
       ) : listError ? (
         <View style={styles.centered}>
           <Text style={styles.errorText}>{listError}</Text>
           <TouchableOpacity onPress={loadActiveList} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -271,7 +275,7 @@ export default function CheckInsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); loadActiveList(); }}
-              tintColor={COLORS.primary}
+              tintColor={theme.primary}
             />
           }
           contentContainerStyle={activeList.length === 0 ? styles.listEmpty : styles.listContent}
@@ -348,7 +352,7 @@ export default function CheckInsScreen() {
             {/* Member list */}
             {membersLoading ? (
               <View style={styles.modalLoading}>
-                <ActivityIndicator color={COLORS.primary} />
+                <ActivityIndicator color={theme.primary} />
               </View>
             ) : (
               <FlatList

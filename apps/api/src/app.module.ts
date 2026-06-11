@@ -21,6 +21,9 @@ import { RenewalsModule } from './modules/renewals/renewals.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { CronModule } from './cron/cron.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AiModule } from './modules/ai/ai.module';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -38,6 +41,11 @@ import { CronModule } from './cron/cron.module';
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
+        // AI provider — optional so the server starts without AI configured
+        AI_PROVIDER: Joi.string().valid('groq', 'anthropic').default('groq'),
+        AI_API_KEY: Joi.string().optional(),
+        AI_MODEL: Joi.string().optional(),
+        AI_BASE_URL: Joi.string().uri().optional(),
       }),
     }),
     JwtModule.registerAsync({
@@ -65,6 +73,9 @@ import { CronModule } from './cron/cron.module';
     AnnouncementsModule,
     ChatModule,
     CronModule,
+    NotificationsModule,
+    AiModule,
+    LeaderboardModule,
   ],
 })
 export class AppModule {}

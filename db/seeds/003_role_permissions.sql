@@ -12,28 +12,36 @@ FROM roles r
 JOIN permissions p ON (
   -- MANAGER gets everything
   (r.name = 'MANAGER' AND p.key IN (
-    'members.view', 'members.create', 'members.edit', 'members.renew', 'members.suspend',
+    'members.view', 'members.create', 'members.edit', 'members.renew', 'members.suspend', 'members.manage',
     'checkins.view', 'checkins.manage',
     'reports.view',
     'staff.view', 'staff.manage',
     'announcements.manage',
-    'gym.settings'
+    'chat.manage',
+    'plans.view',
+    'gym.settings',
+    'leaderboard.view', 'leaderboard.submit', 'leaderboard.review', 'leaderboard.manage'
   ))
 
   OR
 
-  -- FRONT_DESK: member operations and check-ins
+  -- FRONT_DESK: member operations, check-ins, chat, plans, leaderboard review
   (r.name = 'FRONT_DESK' AND p.key IN (
-    'members.view', 'members.create', 'members.edit', 'members.renew',
-    'checkins.view', 'checkins.manage'
+    'members.view', 'members.create', 'members.edit', 'members.renew', 'members.manage',
+    'checkins.view', 'checkins.manage',
+    'chat.manage',
+    'plans.view',
+    'leaderboard.view', 'leaderboard.submit', 'leaderboard.review'
   ))
 
   OR
 
-  -- TRAINER: view members and manage check-ins only
+  -- TRAINER: view members, check-ins, chat, leaderboard review
   (r.name = 'TRAINER' AND p.key IN (
     'members.view',
-    'checkins.view', 'checkins.manage'
+    'checkins.view', 'checkins.manage',
+    'chat.manage',
+    'leaderboard.view', 'leaderboard.submit', 'leaderboard.review'
   ))
 )
 ON CONFLICT (role_id, permission_id) DO NOTHING;

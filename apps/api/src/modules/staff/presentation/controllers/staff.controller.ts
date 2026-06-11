@@ -102,4 +102,14 @@ export class StaffController {
   list(@Param('gymId') gymId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.listStaffUseCase.execute(gymId, user);
   }
+
+  /**
+   * GET /gyms/:gymId/staff/roles
+   * List available system roles for role assignment UI.
+   * Must be declared before :staffId to avoid route conflict.
+   */
+  @Get('roles')
+  listRoles() {
+    return this.listStaffUseCase.listRoles();
+  }
 }

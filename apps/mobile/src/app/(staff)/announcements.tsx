@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { staffService } from '../../services/staff.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { StaffAnnouncement } from '../../types';
@@ -88,6 +89,7 @@ interface CreateModalProps {
 }
 
 function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProps) {
+  const { theme } = useTheme();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
@@ -196,7 +198,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
               onPress={() => setIsPinned((v) => !v)}
               activeOpacity={0.75}
             >
-              <View style={[styles.checkbox, isPinned && styles.checkboxActive]}>
+              <View style={[styles.checkbox, isPinned && styles.checkboxActive, isPinned && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
                 {isPinned && <Ionicons name="checkmark" size={13} color={COLORS.onPrimary} />}
               </View>
               <View>
@@ -211,7 +213,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
               onPress={() => setScheduleMode((v) => !v)}
               activeOpacity={0.75}
             >
-              <View style={[styles.checkbox, scheduleMode && styles.checkboxActive]}>
+              <View style={[styles.checkbox, scheduleMode && styles.checkboxActive, scheduleMode && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
                 {scheduleMode && <Ionicons name="checkmark" size={13} color={COLORS.onPrimary} />}
               </View>
               <View>
@@ -251,7 +253,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
             <Text style={styles.fieldHint}>Leave empty for no expiry</Text>
 
             <TouchableOpacity
-              style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               disabled={submitting}
               activeOpacity={0.8}
@@ -292,6 +294,7 @@ function AnnouncementCard({
 }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
   const canArchive = item.status === 'PUBLISHED' || item.status === 'SCHEDULED';
+  const { theme } = useTheme();
 
   return (
     <View style={styles.card}>
@@ -302,7 +305,7 @@ function AnnouncementCard({
             <Ionicons
               name="pin"
               size={13}
-              color={COLORS.primary}
+              color={theme.primary}
               style={styles.pinIcon}
             />
           )}
@@ -361,6 +364,7 @@ function AnnouncementCard({
 
 export default function AnnouncementsScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [announcements, setAnnouncements] = useState<StaffAnnouncement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -447,7 +451,7 @@ export default function AnnouncementsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -462,7 +466,7 @@ export default function AnnouncementsScreen() {
             <Text style={styles.subCount}>{announcements.length} total</Text>
           </View>
           <TouchableOpacity
-            style={styles.newBtn}
+            style={[styles.newBtn, { backgroundColor: theme.primary }]}
             onPress={() => setCreateOpen(true)}
             activeOpacity={0.8}
           >
@@ -483,11 +487,11 @@ export default function AnnouncementsScreen() {
             return (
               <TouchableOpacity
                 key={tab.label}
-                style={[styles.tab, isActive && styles.tabActive]}
+                style={[styles.tab, isActive && styles.tabActive, isActive && { borderColor: theme.primary }]}
                 onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                <Text style={[styles.tabText, isActive && styles.tabTextActive, isActive && { color: theme.primary }]}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -519,7 +523,7 @@ export default function AnnouncementsScreen() {
                 setRefreshing(true);
                 load();
               }}
-              tintColor={COLORS.primary}
+              tintColor={theme.primary}
             />
           }
           ListEmptyComponent={
@@ -534,7 +538,7 @@ export default function AnnouncementsScreen() {
                   onPress={() => setCreateOpen(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.emptyActionText}>Create your first one</Text>
+                  <Text style={[styles.emptyActionText, { color: theme.primary }]}>Create your first one</Text>
                 </TouchableOpacity>
               )}
             </View>

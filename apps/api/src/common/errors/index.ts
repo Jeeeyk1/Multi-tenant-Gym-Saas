@@ -4,3 +4,4 @@ export { ForbiddenError } from './forbidden.error';
 export { ConflictError } from './conflict.error';
 export { UnauthorizedError } from './unauthorized.error';
 export { ValidationError } from './validation.error';
+export { TooManyRequestsError } from './too-many-requests.error';

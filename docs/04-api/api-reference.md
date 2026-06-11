@@ -266,19 +266,43 @@ Response `200`:
 ---
 
 #### PATCH /gyms/:id/profile
-Update gym profile.
+Update gym profile (branding, contact info, social links).
 
-**Requires `gym.manage` permission.**
+**Requires `gym.settings` permission.**
 
 Request (all fields optional):
 ```json
 {
-  "description": "Updated description",
-  "contactEmail": "new@devgym.com"
+  "description": "Your gym description",
+  "logoUrl": "https://res.cloudinary.com/...",
+  "primaryColor": "#6EE7B7",
+  "secondaryColor": "#3B82F6",
+  "contactEmail": "hello@yourgym.com",
+  "contactPhone": "+63 912 345 6789",
+  "facebookUrl": "https://facebook.com/yourgym",
+  "instagramUrl": "https://instagram.com/yourgym"
 }
 ```
 
-Response `200`: updated gym profile.
+Response `200`: updated gym profile fields.
+
+---
+
+#### POST /gyms/:id/profile/logo
+Upload a gym logo image. Stores in Cloudinary and returns the CDN URL.
+
+**Requires `gym.settings` permission.**
+
+Request: `multipart/form-data` with field `file` (image/jpeg, image/png, image/svg+xml, image/webp). Max 5 MB.
+
+Response `200`:
+```json
+{ "url": "https://res.cloudinary.com/gym-saas/image/upload/gym-saas/logos/gym-<id>-logo.jpg" }
+```
+
+Use the returned `url` as the `logoUrl` when calling `PATCH /gyms/:id/profile`.
+
+**Storage is abstracted.** The current implementation uses Cloudinary. To switch to S3, change `StorageModule` provider from `CloudinaryAdapter` to `S3Adapter` — no other files change.
 
 ---
 

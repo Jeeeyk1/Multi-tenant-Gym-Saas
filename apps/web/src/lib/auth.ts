@@ -121,6 +121,8 @@ export async function getSessionUser(): Promise<{
   fullName: string;
   gymId: string;
   gymCode: string;
+  organizationId: string;
+  orgRole: string;
   roles: string[];
   permissions: string[];
   type: string;
@@ -138,6 +140,8 @@ export async function getSessionUser(): Promise<{
     fullName: (payload.fullName as string) ?? '',
     gymId: (payload.gymId as string) ?? '',
     gymCode: (payload.gymCode as string) ?? '',
+    organizationId: (payload.organizationId as string) ?? '',
+    orgRole: (payload.orgRole as string) ?? '',
     roles: (payload.roles as string[]) ?? [],
     permissions: (payload.permissions as string[]) ?? [],
     type: (payload.type as string) ?? 'gym',

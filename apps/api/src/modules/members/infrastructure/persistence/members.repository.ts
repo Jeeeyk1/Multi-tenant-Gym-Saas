@@ -147,9 +147,15 @@ export class MembersRepository {
     data: {
       age?: number;
       weightKg?: number;
+      targetWeightKg?: number;
       heightCm?: number;
       fitnessGoal?: string;
       activityLevel?: string;
+      daysPerWeek?: number;
+      experienceLevel?: string;
+      preferredStyle?: string;
+      dietType?: string;
+      injuries?: string;
       onboardingDone?: boolean;
     },
   ) {
@@ -157,6 +163,26 @@ export class MembersRepository {
       where: { memberId },
       create: { memberId, ...data, updatedAt: new Date() },
       update: { ...data, updatedAt: new Date() },
+    });
+  }
+
+  findProfileByMemberId(memberId: string) {
+    return this.prisma.memberProfile.findUnique({ where: { memberId } });
+  }
+
+  logWeight(memberId: string, weightKg: number, notes?: string) {
+    return this.prisma.memberWeightLog.create({
+      data: { memberId, weightKg, notes },
+      select: { id: true, weightKg: true, notes: true, loggedAt: true },
+    });
+  }
+
+  listWeightLogs(memberId: string, limit: number) {
+    return this.prisma.memberWeightLog.findMany({
+      where: { memberId },
+      select: { id: true, weightKg: true, notes: true, loggedAt: true },
+      orderBy: { loggedAt: 'desc' },
+      take: limit,
     });
   }
 
@@ -218,6 +244,14 @@ export class MembersRepository {
         membershipNumber,
         inviteToken: rawToken,
       };
+    });
+  }
+
+  async upsertDeviceToken(userId: string, token: string, platform: string): Promise<void> {
+    await this.prisma.deviceToken.upsert({
+      where: { token },
+      create: { userId, token, platform },
+      update: { userId, platform, updatedAt: new Date() },
     });
   }
 }

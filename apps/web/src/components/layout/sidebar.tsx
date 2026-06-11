@@ -17,10 +17,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Check-ins', href: '/dashboard/check-ins', icon: '✓', permission: 'checkins.manage' },
   { label: 'Members', href: '/dashboard/members', icon: '◎', permission: 'members.view' },
   { label: 'Plans', href: '/dashboard/plans', icon: '◈', permission: 'plans.view' },
-  { label: 'Renewals', href: '/dashboard/renewals', icon: '↻', permission: 'members.manage' },
+  { label: 'Renewals', href: '/dashboard/renewals', icon: '↻', permission: 'members.renew' },
   { label: 'Announcements', href: '/dashboard/announcements', icon: '◇', permission: 'announcements.manage' },
   { label: 'Chat', href: '/dashboard/chat', icon: '◉', permission: 'chat.manage' },
+  { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: '⬆', permission: 'leaderboard.view' },
   { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
+  { label: 'Settings', href: '/dashboard/settings', icon: '⚙', permission: 'gym.settings' },
 ];
 
 interface SidebarProps {

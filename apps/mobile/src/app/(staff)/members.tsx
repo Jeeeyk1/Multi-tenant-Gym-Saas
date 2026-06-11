@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { staffService } from '../../services/staff.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MemberListItem } from '../../types';
@@ -39,10 +40,11 @@ function formatExpiry(iso: string): string {
 
 function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => void }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
+  const { theme } = useTheme();
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{getInitials(item.user.fullName)}</Text>
+        <Text style={[styles.avatarText, { color: theme.primary }]}>{getInitials(item.user.fullName)}</Text>
       </View>
       <View style={styles.rowInfo}>
         <Text style={styles.memberName} numberOfLines={1}>
@@ -67,6 +69,7 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
 export default function MembersScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [members, setMembers] = useState<MemberListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -106,7 +109,7 @@ export default function MembersScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -164,7 +167,7 @@ export default function MembersScreen() {
               setRefreshing(true);
               load();
             }}
-            tintColor={COLORS.primary}
+            tintColor={theme.primary}
           />
         }
         ListEmptyComponent={

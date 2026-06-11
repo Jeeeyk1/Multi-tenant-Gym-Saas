@@ -177,6 +177,8 @@ Do not make schema changes without updating the SQL migration history.
 - Use domain/application errors for business failures.
 - Use the global exception strategy for consistent API responses.
 - Keep Nest-specific framework code at the edges.
+- **Never hardcode status strings, role names, or domain constants as raw strings.** Define them as TypeScript enums in `apps/api/src/common/enums/` and use `@IsEnum()` in DTOs. This applies to all fields like `status`, `fitnessGoal`, `activityLevel`, `experienceLevel`, `dietType`, `memberStatus`, etc.
+- **Never hardcode service URLs or external API base URLs** in provider/adapter files. Read them from `ConfigService` via environment variables so they are overridable without a code change.
 
 ### Web and mobile
 - Keep UI code focused on presentation and client workflow.

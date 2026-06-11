@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, decodeJwt } from '../services/auth.service';
 import { getAccessToken, clearTokens } from '../services/api';
+import { registerPushToken } from '../services/push.service';
 import type { AuthUser } from '../types';
 
 interface GymInfo {
@@ -86,6 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...payload,
       fullName: res.user.fullName,
     });
+    // Register push token in the background — never block login
+    const gymId = payload.gymId as string;
+    registerPushToken(gymId).catch(() => {});
   };
 
   const signOut = async () => {

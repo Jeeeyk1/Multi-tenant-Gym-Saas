@@ -4,6 +4,8 @@ export interface ResolveCodeResponse {
   gymId?: string;
   gymName?: string;
   logoUrl?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
   organizationId?: string;
   organizationName?: string;
 }
@@ -133,9 +135,15 @@ export interface MemberProfile {
   memberId: string;
   age?: number | null;
   weightKg?: number | null;
+  targetWeightKg?: number | null;
   heightCm?: number | null;
   fitnessGoal?: string | null;
   activityLevel?: string | null;
+  daysPerWeek?: number | null;
+  experienceLevel?: string | null;
+  preferredStyle?: string | null;
+  dietType?: string | null;
+  injuries?: string | null;
   onboardingDone: boolean;
 }
 
@@ -215,6 +223,89 @@ export interface RenewalRecord {
   notes: string | null;
   renewedAt: string;
   renewedByUser: { id: string; fullName: string };
+}
+
+// AI features
+export interface WorkoutSuggestion {
+  suggestion: string;
+}
+
+export interface MealSuggestion {
+  suggestion: string;
+}
+
+export interface MealAnalysis {
+  description: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  notes: string;
+}
+
+export interface FoodLog {
+  id: string;
+  description: string;
+  calories: number | null;
+  proteinG: string | null;
+  carbsG: string | null;
+  fatG: string | null;
+  loggedAt: string;
+}
+
+// Leaderboard
+export interface Exercise {
+  id: string;
+  name: string;
+  category: string;
+  gymId: string | null;
+}
+
+export interface LeaderboardConfigItem {
+  id: string;
+  displayOrder: number;
+  isActive: boolean;
+  exercise: { id: string; name: string; category: string };
+}
+
+export interface PrSubmission {
+  id: string;
+  gymId: string;
+  weightKg: number;
+  reps: number;
+  estimated1rm: number;
+  photoUrl: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  submissionType: 'SELF' | 'STAFF';
+  notes: string | null;
+  rejectionReason: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+  exercise: { id: string; name: string; category: string };
+  member: {
+    id: string;
+    membershipNumber: string;
+    user: { id: string; fullName: string };
+  };
+  submittedByUser: { id: string; fullName: string };
+  reviewedByUser: { id: string; fullName: string } | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  id: string;
+  weightKg: number;
+  reps: number;
+  estimated1rm: number;
+  photoUrl: string;
+  submittedAt: string;
+  member: { user: { fullName: string } };
+}
+
+export interface LeaderboardExerciseResult {
+  exercise: { id: string; name: string; category: string };
+  displayOrder: number;
+  entries: LeaderboardEntry[];
 }
 
 // API errors

@@ -24,7 +24,22 @@ INSERT INTO permissions (key, description, module) VALUES
   -- Announcements module
   ('announcements.manage',  'Create, edit, and publish announcements',  'Announcements'),
 
+  -- Chat module
+  ('chat.manage',           'Send and moderate community chat messages', 'Chat'),
+
+  -- Plans module
+  ('plans.view',            'View membership plans',                     'Plans'),
+
+  -- Members extended
+  ('members.manage',        'Full member management (suspend, renew)',   'Members'),
+
   -- Gym settings module
-  ('gym.settings',          'Edit gym profile and settings',            'Gym')
+  ('gym.settings',          'Edit gym profile and settings',            'Gym'),
+
+  -- Leaderboard module
+  ('leaderboard.view',      'View leaderboard and rankings',            'Leaderboard'),
+  ('leaderboard.submit',    'Submit a personal record to leaderboard',  'Leaderboard'),
+  ('leaderboard.review',    'Approve or reject PR submissions',         'Leaderboard'),
+  ('leaderboard.manage',    'Configure enabled exercises per gym',      'Leaderboard')
 
 ON CONFLICT (key) DO NOTHING;

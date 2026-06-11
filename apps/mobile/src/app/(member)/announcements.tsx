@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { announcementService } from '../../services/announcement.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { Announcement } from '../../types';
@@ -28,6 +29,7 @@ function timeAgo(dateStr: string): string {
 
 export default function AnnouncementsScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selected, setSelected] = useState<Announcement | null>(null);
@@ -60,7 +62,7 @@ export default function AnnouncementsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -72,17 +74,17 @@ export default function AnnouncementsScreen() {
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>News</Text>
 
         <TouchableOpacity
-          style={styles.chatBanner}
+          style={[styles.chatBanner, { borderColor: theme.primary + '40' }]}
           onPress={() => router.push('/(member)/chat')}
           activeOpacity={0.75}
         >
-          <Ionicons name="chatbubbles" size={20} color={COLORS.primary} />
+          <Ionicons name="chatbubbles" size={20} color={theme.primary} />
           <View style={{ flex: 1 }}>
             <Text style={styles.chatBannerTitle}>Community Chat</Text>
             <Text style={styles.chatBannerSub}>Talk with your gym community</Text>
@@ -140,15 +142,16 @@ export default function AnnouncementsScreen() {
 }
 
 function AnnouncementRow({ item, onPress }: { item: Announcement; onPress: (a: Announcement) => void }) {
+  const { theme } = useTheme();
   const isUnread = !item.readAt;
   return (
     <TouchableOpacity
-      style={[styles.row, isUnread && styles.rowUnread]}
+      style={[styles.row, isUnread && styles.rowUnread, isUnread && { borderColor: theme.primary + '66' }]}
       onPress={() => onPress(item)}
       activeOpacity={0.7}
     >
       <View style={styles.rowLeft}>
-        {isUnread && <View style={styles.unreadDot} />}
+        {isUnread && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
         <View style={{ flex: 1 }}>
           <Text style={[styles.rowTitle, isUnread && styles.rowTitleBold]} numberOfLines={1}>
             {item.title}

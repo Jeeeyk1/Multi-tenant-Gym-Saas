@@ -15,6 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
 import { staffService } from '../../../services/staff.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
 import type { MemberDetail, RenewalRecord } from '../../../types';
@@ -67,6 +68,7 @@ interface RenewModalProps {
 }
 
 function RenewModal({ visible, onClose, onSubmit, submitting }: RenewModalProps) {
+  const { theme } = useTheme();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
@@ -153,7 +155,7 @@ function RenewModal({ visible, onClose, onSubmit, submitting }: RenewModalProps)
           />
 
           <TouchableOpacity
-            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+            style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
             activeOpacity={0.8}
@@ -202,6 +204,7 @@ function RenewalRow({ record }: { record: RenewalRecord }) {
 export default function MemberDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [member, setMember] = useState<MemberDetail | null>(null);
@@ -301,7 +304,7 @@ export default function MemberDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -312,7 +315,7 @@ export default function MemberDetailScreen() {
         <Ionicons name="alert-circle-outline" size={40} color={COLORS.error} />
         <Text style={styles.errorMsg}>{error ?? 'Member not found'}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Go back</Text>
+          <Text style={[styles.backLinkText, { color: theme.primary }]}>Go back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -340,8 +343,8 @@ export default function MemberDetailScreen() {
 
         {/* Profile header */}
         <View style={styles.profileSection}>
-          <View style={styles.bigAvatar}>
-            <Text style={styles.bigAvatarText}>{getInitials(member.user.fullName)}</Text>
+          <View style={[styles.bigAvatar, { borderColor: theme.primary }]}>
+            <Text style={[styles.bigAvatarText, { color: theme.primary }]}>{getInitials(member.user.fullName)}</Text>
           </View>
           <Text style={styles.fullName}>{member.user.fullName}</Text>
           <Text style={styles.profileEmail}>{member.user.email}</Text>
@@ -400,7 +403,7 @@ export default function MemberDetailScreen() {
             activeOpacity={0.75}
           >
             <View style={styles.actionIconWrap}>
-              <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
+              <Ionicons name="refresh-outline" size={18} color={theme.primary} />
             </View>
             <Text style={styles.actionText}>Renew Membership</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
@@ -436,9 +439,9 @@ export default function MemberDetailScreen() {
             >
               <View style={[styles.actionIconWrap, styles.actionIconActive]}>
                 {actionLoading ? (
-                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <ActivityIndicator size="small" color={theme.primary} />
                 ) : (
-                  <Ionicons name="play-circle-outline" size={18} color={COLORS.primary} />
+                  <Ionicons name="play-circle-outline" size={18} color={theme.primary} />
                 )}
               </View>
               <Text style={styles.actionText}>Reactivate Member</Text>

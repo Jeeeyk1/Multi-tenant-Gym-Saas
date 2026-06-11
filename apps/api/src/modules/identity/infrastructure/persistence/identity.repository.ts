@@ -22,7 +22,12 @@ export class IdentityRepository {
   findGymByCode(code: string) {
     return this.prisma.gym.findFirst({
       where: { code: code.toUpperCase(), status: 'ACTIVE' },
-      select: { id: true, name: true, code: true },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        profile: { select: { primaryColor: true, secondaryColor: true, logoUrl: true } },
+      },
     });
   }
 

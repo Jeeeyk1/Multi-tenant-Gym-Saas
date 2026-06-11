@@ -14,11 +14,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const { theme } = useTheme();
   const [gymName, setGymName] = useState('');
   const [gymCode, setGymCode] = useState('');
   const [email, setEmail] = useState('');
@@ -71,7 +73,7 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Change code</Text>
+          <Text style={[styles.backText, { color: theme.primary }]}>← Change code</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -120,7 +122,7 @@ export default function LoginScreen() {
                 style={styles.showHide}
                 onPress={() => setShowPassword((v) => !v)}
               >
-                <Text style={styles.showHideText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                <Text style={[styles.showHideText, { color: theme.primary }]}>{showPassword ? 'Hide' : 'Show'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -132,7 +134,7 @@ export default function LoginScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#6EE7B7', '#3B82F6']}
+              colors={theme.gradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}

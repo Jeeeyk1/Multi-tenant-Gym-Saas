@@ -13,10 +13,12 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authService } from '../../services/auth.service';
+import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 export default function ActivateScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { token } = useLocalSearchParams<{ token: string }>();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -62,7 +64,7 @@ export default function ActivateScreen() {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#6EE7B7', '#3B82F6']}
+            colors={theme.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.button}
@@ -128,7 +130,7 @@ export default function ActivateScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#6EE7B7', '#3B82F6']}
+              colors={theme.gradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 import { COLORS, FONT } from '../constants/theme';
 
 const TAGLINE = 'Train. Connect. Grow.';
@@ -10,6 +11,7 @@ interface AppSplashProps {
 
 export function AppSplash({ onDone }: AppSplashProps) {
   const { width } = useWindowDimensions();
+  const { theme } = useTheme();
 
   const mascotScale = useRef(new Animated.Value(0.5)).current;
   const mascotOpacity = useRef(new Animated.Value(0)).current;
@@ -79,7 +81,7 @@ export function AppSplash({ onDone }: AppSplashProps) {
       {/* Logo area with glow ring */}
       <View style={styles.logoArea}>
         <Animated.View
-          style={[styles.glowRing, { opacity: glowOpacity, transform: [{ scale: glowScale }] }]}
+          style={[styles.glowRing, { opacity: glowOpacity, transform: [{ scale: glowScale }], borderColor: theme.primary }]}
         />
         <Animated.Text
           style={[styles.mascot, { opacity: mascotOpacity, transform: [{ scale: mascotScale }] }]}
@@ -104,7 +106,7 @@ export function AppSplash({ onDone }: AppSplashProps) {
 
       {/* Progress bar */}
       <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+        <Animated.View style={[styles.progressFill, { width: progressWidth, backgroundColor: theme.primary }]} />
       </View>
     </Animated.View>
   );

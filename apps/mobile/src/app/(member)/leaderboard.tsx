@@ -1,106 +1,660 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, SPACING, FONT, GRADIENTS, RADIUS } from '../../constants/theme';
+import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import { leaderboardService } from '../../services/leaderboard.service';
+import type { Exercise, LeaderboardEntry, LeaderboardExerciseResult, PrSubmission } from '../../types';
+import { COLORS, FONT, RADIUS, SPACING } from '../../constants/theme';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const MEDAL = ['🥇', '🥈', '🥉'];
+
+// ─── Submit PR Modal ──────────────────────────────────────────────────────────
+
+function SubmitPrModal({
+  visible,
+  gymId,
+  exercises,
+  onClose,
+  onSubmitted,
+}: {
+  visible: boolean;
+  gymId: string;
+  exercises: Exercise[];
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const { theme } = useTheme();
+  const [step, setStep] = useState<'form' | 'uploading' | 'submitting'>('form');
+  const [exerciseId, setExerciseId] = useState('');
+  const [weightKg, setWeightKg] = useState('');
+  const [reps, setReps] = useState('');
+  const [notes, setNotes] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setStep('form');
+      setExerciseId('');
+      setWeightKg('');
+      setReps('');
+      setNotes('');
+      setPhotoUri(null);
+      setError(null);
+    }
+  }, [visible]);
+
+  async function pickPhoto() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow access to your photo library.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
+
+  async function takePhoto() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow camera access.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+    }
+  }
+
+  async function handleSubmit() {
+    if (!exerciseId) { setError('Please select an exercise.'); return; }
+    const w = parseFloat(weightKg);
+    const r = parseInt(reps, 10);
+    if (!weightKg || isNaN(w) || w <= 0) { setError('Enter a valid weight.'); return; }
+    if (!reps || isNaN(r) || r < 1 || r > 60) { setError('Enter reps between 1 and 60.'); return; }
+    if (!photoUri) { setError('A photo is required.'); return; }
+
+    setError(null);
+    setStep('uploading');
+
+    try {
+      const { url } = await leaderboardService.uploadPhoto(gymId, photoUri);
+      setStep('submitting');
+      await leaderboardService.submitPr(gymId, {
+        exerciseId,
+        weightKg: w,
+        reps: r,
+        photoUrl: url,
+        notes: notes.trim() || undefined,
+      });
+      onSubmitted();
+      onClose();
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setError(err.message ?? 'Submission failed. Please try again.');
+      setStep('form');
+    }
+  }
+
+  const busy = step !== 'form';
+  const selectedExercise = exercises.find((e) => e.id === exerciseId);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={busy ? undefined : onClose}
+    >
+      <KeyboardAvoidingView
+        style={[styles.modalRoot, { backgroundColor: COLORS.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Header */}
+        <View style={styles.modalHeader}>
+          <Pressable onPress={busy ? undefined : onClose} style={styles.modalHeaderBtn}>
+            <Text style={[styles.modalCancel, busy && { opacity: 0.4 }]}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.modalTitle}>Submit PR</Text>
+          <Pressable onPress={busy ? undefined : handleSubmit} style={[styles.modalHeaderBtn, busy && { opacity: 0.5 }]}>
+            <Text style={[styles.modalSave, { color: theme.primary }]}>
+              {step === 'uploading' ? 'Uploading…' : step === 'submitting' ? 'Sending…' : 'Submit'}
+            </Text>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.modalContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Exercise picker */}
+          <Text style={styles.fieldLabel}>Exercise</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: SPACING.md }}>
+            <View style={{ flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.md }}>
+              {exercises.map((ex) => (
+                <Pressable
+                  key={ex.id}
+                  onPress={() => setExerciseId(ex.id)}
+                  style={[
+                    styles.exerciseChip,
+                    exerciseId === ex.id && { backgroundColor: theme.primary, borderColor: theme.primary },
+                  ]}
+                >
+                  <Text style={[styles.exerciseChipText, exerciseId === ex.id && { color: '#000' }]}>
+                    {ex.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Weight + Reps */}
+          <View style={{ flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={weightKg}
+                onChangeText={setWeightKg}
+                keyboardType="numeric"
+                placeholder="e.g. 100"
+                placeholderTextColor={COLORS.textMuted}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>Reps</Text>
+              <TextInput
+                style={styles.input}
+                value={reps}
+                onChangeText={setReps}
+                keyboardType="numeric"
+                placeholder="e.g. 5"
+                placeholderTextColor={COLORS.textMuted}
+              />
+            </View>
+          </View>
+
+          {/* 1RM Preview */}
+          {weightKg && reps && !isNaN(parseFloat(weightKg)) && !isNaN(parseInt(reps, 10)) && (
+            <View style={[styles.est1rmBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
+              <Text style={[styles.est1rmText, { color: theme.primary }]}>
+                Est. 1RM: {(parseFloat(weightKg) * (1 + parseInt(reps, 10) / 30)).toFixed(1)} kg
+              </Text>
+            </View>
+          )}
+
+          {/* Notes */}
+          <Text style={[styles.fieldLabel, { marginTop: SPACING.md }]}>Notes (optional)</Text>
+          <TextInput
+            style={[styles.input, { minHeight: 64, textAlignVertical: 'top' }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Any notes about this lift…"
+            placeholderTextColor={COLORS.textMuted}
+            multiline
+          />
+
+          {/* Photo */}
+          <Text style={[styles.fieldLabel, { marginTop: SPACING.md }]}>Photo (required)</Text>
+          {photoUri ? (
+            <View style={styles.photoPreviewWrap}>
+              <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
+              <Pressable
+                onPress={() => setPhotoUri(null)}
+                style={styles.photoRemove}
+              >
+                <Ionicons name="close-circle" size={24} color={COLORS.error} />
+              </Pressable>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+              <Pressable onPress={takePhoto} style={[styles.photoBtn, { borderColor: theme.primary + '60' }]}>
+                <Ionicons name="camera-outline" size={22} color={theme.primary} />
+                <Text style={[styles.photoBtnText, { color: theme.primary }]}>Camera</Text>
+              </Pressable>
+              <Pressable onPress={pickPhoto} style={[styles.photoBtn, { borderColor: COLORS.border }]}>
+                <Ionicons name="image-outline" size={22} color={COLORS.textSecondary} />
+                <Text style={[styles.photoBtnText, { color: COLORS.textSecondary }]}>Gallery</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function LeaderboardScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.pageTitle}>Leaderboard</Text>
+  const { user } = useAuth();
+  const { theme } = useTheme();
 
-      <View style={styles.card}>
-        <LinearGradient
-          colors={GRADIENTS.primary}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.iconCircle}
-        >
-          <Ionicons name="trophy" size={36} color="#000" />
-        </LinearGradient>
+  const [leaderboard, setLeaderboard] = useState<LeaderboardExerciseResult[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [myPrs, setMyPrs] = useState<PrSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [tab, setTab] = useState<'board' | 'mine'>('board');
+  const [submitVisible, setSubmitVisible] = useState(false);
 
-        <Text style={styles.heading}>Coming Soon</Text>
-        <Text style={styles.sub}>
-          See where you rank among your gym community — top check-ins, streaks, and more.
-        </Text>
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [board, exs, prs] = await Promise.all([
+        leaderboardService.getLeaderboard(user.gymId),
+        leaderboardService.listExercises(user.gymId),
+        leaderboardService.getMyPrs(user.gymId).catch(() => [] as PrSubmission[]),
+      ]);
+      setLeaderboard(board);
+      setExercises(exs);
+      setMyPrs(prs);
+      setSelectedIdx(0);
+    } catch {
+      // silent — show empty state
+    }
+  }, [user]);
 
-        <View style={styles.previewRow}>
-          {['🥇', '🥈', '🥉'].map((medal, i) => (
-            <View key={i} style={styles.previewChip}>
-              <Text style={styles.previewMedal}>{medal}</Text>
-              <View style={styles.previewBar}>
-                <View style={[styles.previewFill, { width: `${90 - i * 20}%` as any }]} />
-              </View>
-            </View>
-          ))}
-        </View>
+  useEffect(() => {
+    load().finally(() => setLoading(false));
+  }, [load]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={theme.primary} />
       </View>
+    );
+  }
+
+  const current = leaderboard[selectedIdx] ?? null;
+
+  return (
+    <View style={styles.root}>
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.primary} />}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.pageTitle}>Leaderboard</Text>
+          <View style={styles.tabRow}>
+            {(['board', 'mine'] as const).map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => setTab(t)}
+                style={[styles.tab, tab === t && { borderBottomColor: theme.primary }]}
+              >
+                <Text style={[styles.tabText, tab === t && { color: theme.primary, ...FONT.semibold }]}>
+                  {t === 'board' ? 'Rankings' : 'My PRs'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {tab === 'board' ? (
+          leaderboard.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No leaderboard exercises enabled yet.</Text>
+              <Text style={styles.emptySubText}>Ask your gym staff to configure the leaderboard.</Text>
+            </View>
+          ) : (
+            <>
+              {/* Exercise selector */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.exercisePicker}
+                contentContainerStyle={{ gap: SPACING.xs, paddingHorizontal: SPACING.md }}
+              >
+                {leaderboard.map((item, idx) => (
+                  <Pressable
+                    key={item.exercise.id}
+                    onPress={() => setSelectedIdx(idx)}
+                    style={[
+                      styles.exerciseTab,
+                      idx === selectedIdx && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    ]}
+                  >
+                    <Text style={[styles.exerciseTabText, idx === selectedIdx && { color: '#000' }]}>
+                      {item.exercise.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+
+              {/* Rankings */}
+              {current && (
+                <View style={styles.card}>
+                  <View style={styles.cardTitleRow}>
+                    <Text style={styles.cardTitle}>{current.exercise.name}</Text>
+                    <Text style={styles.cardSubTitle}>{current.exercise.category}</Text>
+                  </View>
+                  {current.entries.length === 0 ? (
+                    <Text style={styles.emptyText}>No approved PRs yet. Be the first!</Text>
+                  ) : (
+                    current.entries.map((entry: LeaderboardEntry) => (
+                      <View key={entry.id} style={styles.rankRow}>
+                        <Text style={styles.rankMedal}>
+                          {entry.rank <= 3 ? MEDAL[entry.rank - 1] : `#${entry.rank}`}
+                        </Text>
+                        <Text style={styles.rankName} numberOfLines={1}>
+                          {entry.member.user.fullName}
+                        </Text>
+                        <View style={styles.rankStats}>
+                          <Text style={[styles.rankORM, { color: theme.primary }]}>
+                            {Number(entry.estimated1rm).toFixed(1)} kg
+                          </Text>
+                          <Text style={styles.rankLifted}>
+                            {Number(entry.weightKg)} × {entry.reps}
+                          </Text>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+            </>
+          )
+        ) : (
+          /* My PRs tab */
+          <View style={styles.myPrsSection}>
+            {myPrs.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>No submissions yet.</Text>
+                <Text style={styles.emptySubText}>Tap the + button to submit your first PR!</Text>
+              </View>
+            ) : (
+              myPrs.map((pr) => (
+                <View key={pr.id} style={styles.prCard}>
+                  <View style={styles.prCardLeft}>
+                    <Text style={styles.prExerciseName}>{pr.exercise.name}</Text>
+                    <Text style={styles.prLifted}>
+                      {Number(pr.weightKg)} kg × {pr.reps} reps
+                    </Text>
+                    <Text style={styles.prDate}>{fmtDate(pr.submittedAt)}</Text>
+                  </View>
+                  <View style={styles.prCardRight}>
+                    <Text style={[styles.prORM, { color: theme.primary }]}>
+                      {Number(pr.estimated1rm).toFixed(1)} kg
+                    </Text>
+                    <Text style={styles.prORMLabel}>Est. 1RM</Text>
+                    <StatusPill status={pr.status} />
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Submit PR FAB */}
+      <Pressable
+        onPress={() => setSubmitVisible(true)}
+        style={[styles.fab, { backgroundColor: theme.primary }]}
+      >
+        <Ionicons name="add" size={28} color="#000" />
+      </Pressable>
+
+      <SubmitPrModal
+        visible={submitVisible}
+        gymId={user?.gymId ?? ''}
+        exercises={exercises}
+        onClose={() => setSubmitVisible(false)}
+        onSubmitted={() => {
+          handleRefresh();
+          setTab('mine');
+        }}
+      />
     </View>
   );
 }
 
+function StatusPill({ status }: { status: PrSubmission['status'] }) {
+  const map = {
+    PENDING:  { label: 'Pending',  bg: COLORS.warningBg,  color: COLORS.warning },
+    APPROVED: { label: 'Approved', bg: COLORS.successBg,  color: COLORS.success },
+    REJECTED: { label: 'Rejected', bg: COLORS.errorBg,    color: COLORS.error },
+  };
+  const s = map[status];
+  return (
+    <View style={[styles.statusPill, { backgroundColor: s.bg }]}>
+      <Text style={[styles.statusPillText, { color: s.color }]}>{s.label}</Text>
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    padding: SPACING.lg,
+  root: { flex: 1, backgroundColor: COLORS.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
+
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: 0,
   },
   pageTitle: {
     fontSize: 24,
     ...FONT.bold,
     color: COLORS.text,
-    marginBottom: SPACING.xl,
-    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
   },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.xl,
+  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  tab: {
+    flex: 1,
+    paddingBottom: SPACING.sm,
     alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium },
+
+  exercisePicker: { paddingVertical: SPACING.md },
+  exerciseTab: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.md,
   },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.sm,
-  },
-  heading: {
-    fontSize: 22,
-    ...FONT.bold,
-    color: COLORS.text,
-  },
-  sub: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 21,
-  },
-  previewRow: {
-    width: '100%',
+  exerciseTabText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.medium },
+
+  card: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.md,
     gap: SPACING.sm,
-    marginTop: SPACING.md,
-    opacity: 0.45,
   },
-  previewChip: {
+  cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xs },
+  cardTitle: { fontSize: 16, ...FONT.semibold, color: COLORS.text },
+  cardSubTitle: { fontSize: 11, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+
+  rankRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border + '60',
     gap: SPACING.sm,
   },
-  previewMedal: { fontSize: 20, width: 28 },
-  previewBar: {
+  rankMedal: { fontSize: 18, width: 30, textAlign: 'center' },
+  rankName: { flex: 1, fontSize: 14, color: COLORS.text, ...FONT.medium },
+  rankStats: { alignItems: 'flex-end' },
+  rankORM: { fontSize: 15, ...FONT.bold },
+  rankLifted: { fontSize: 11, color: COLORS.textMuted },
+
+  myPrsSection: { padding: SPACING.md, gap: SPACING.sm },
+  prCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  prCardLeft: { flex: 1 },
+  prExerciseName: { fontSize: 15, ...FONT.semibold, color: COLORS.text, marginBottom: 2 },
+  prLifted: { fontSize: 13, color: COLORS.textSecondary },
+  prDate: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  prCardRight: { alignItems: 'flex-end', gap: 4 },
+  prORM: { fontSize: 18, ...FONT.bold },
+  prORMLabel: { fontSize: 10, color: COLORS.textMuted, textTransform: 'uppercase' },
+  statusPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
+  statusPillText: { fontSize: 10, ...FONT.semibold },
+
+  emptyCard: {
+    margin: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.xl,
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  emptyText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium, textAlign: 'center' },
+  emptySubText: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
+
+  fab: {
+    position: 'absolute',
+    right: SPACING.lg,
+    bottom: SPACING.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+
+  // ── Modal ──────────────────────────────────────────────────────────────────
+  modalRoot: { flex: 1 },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingTop: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalHeaderBtn: { minWidth: 64, paddingVertical: 4 },
+  modalTitle: { fontSize: 17, ...FONT.semibold, color: COLORS.text },
+  modalCancel: { fontSize: 16, color: COLORS.textSecondary },
+  modalSave: { fontSize: 16, ...FONT.semibold, textAlign: 'right' },
+  modalContent: { padding: SPACING.md, gap: SPACING.xs, paddingBottom: SPACING.xxl },
+
+  errorBanner: { backgroundColor: COLORS.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+  errorBannerText: { color: COLORS.error, fontSize: 13 },
+
+  fieldLabel: { color: COLORS.textSecondary, fontSize: 12, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.xs },
+  input: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    color: COLORS.text,
+    fontSize: 15,
+    ...FONT.medium,
+  },
+
+  est1rmBadge: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    marginVertical: SPACING.xs,
+    alignItems: 'center',
+  },
+  est1rmText: { fontSize: 16, ...FONT.bold },
+
+  exerciseChip: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  exerciseChipText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.medium },
+
+  photoPreviewWrap: { position: 'relative', borderRadius: RADIUS.md, overflow: 'hidden', marginTop: SPACING.xs },
+  photoPreview: { width: '100%', height: 200, borderRadius: RADIUS.md },
+  photoRemove: { position: 'absolute', top: SPACING.sm, right: SPACING.sm },
+  photoBtn: {
     flex: 1,
-    height: 10,
-    backgroundColor: COLORS.border,
-    borderRadius: RADIUS.full,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.md,
+    backgroundColor: COLORS.surface,
   },
-  previewFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.full,
-  },
+  photoBtnText: { fontSize: 14, ...FONT.medium },
 });

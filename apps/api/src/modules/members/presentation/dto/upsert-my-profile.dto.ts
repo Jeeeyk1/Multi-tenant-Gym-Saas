@@ -1,7 +1,11 @@
-import { IsBoolean, IsIn, IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
-
-const FITNESS_GOALS = ['LOSE_WEIGHT', 'BUILD_MUSCLE', 'GET_FIT', 'STAY_HEALTHY', 'OTHER'] as const;
-const ACTIVITY_LEVELS = ['BEGINNER', 'OCCASIONALLY_ACTIVE', 'PRETTY_ACTIVE', 'VERY_ACTIVE'] as const;
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Length, Max, Min } from 'class-validator';
+import {
+  FitnessGoal,
+  ActivityLevel,
+  ExperienceLevel,
+  PreferredStyle,
+  DietType,
+} from '../../../../common/enums';
 
 export class UpsertMyProfileDto {
   @IsOptional()
@@ -17,18 +21,47 @@ export class UpsertMyProfileDto {
   weightKg?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(20)
+  @Max(500)
+  targetWeightKg?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(50)
   @Max(300)
   heightCm?: number;
 
   @IsOptional()
-  @IsIn(FITNESS_GOALS)
-  fitnessGoal?: string;
+  @IsEnum(FitnessGoal)
+  fitnessGoal?: FitnessGoal;
 
   @IsOptional()
-  @IsIn(ACTIVITY_LEVELS)
-  activityLevel?: string;
+  @IsEnum(ActivityLevel)
+  activityLevel?: ActivityLevel;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  daysPerWeek?: number;
+
+  @IsOptional()
+  @IsEnum(ExperienceLevel)
+  experienceLevel?: ExperienceLevel;
+
+  @IsOptional()
+  @IsEnum(PreferredStyle)
+  preferredStyle?: PreferredStyle;
+
+  @IsOptional()
+  @IsEnum(DietType)
+  dietType?: DietType;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 500)
+  injuries?: string;
 
   @IsOptional()
   @IsBoolean()

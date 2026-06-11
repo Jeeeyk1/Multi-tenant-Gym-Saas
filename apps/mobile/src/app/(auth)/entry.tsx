@@ -15,10 +15,12 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Logo } from '../../components/Logo';
 import { authService } from '../../services/auth.service';
+import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 export default function EntryScreen() {
   const router = useRouter();
+  const { theme, setGymTheme } = useTheme();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,9 @@ export default function EntryScreen() {
       const result = await authService.resolveCode(trimmed);
       await AsyncStorage.setItem('pending_gym_code', trimmed);
       await AsyncStorage.setItem('pending_gym_name', result.gymName ?? '');
+      if (result.primaryColor || result.secondaryColor) {
+        await setGymTheme(result.primaryColor ?? '#6EE7B7', result.secondaryColor ?? '#3B82F6');
+      }
       router.push('/(auth)/login');
     } catch (err: unknown) {
       const e = err as { message?: string };
@@ -114,7 +119,7 @@ export default function EntryScreen() {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={['#6EE7B7', '#3B82F6']}
+              colors={theme.gradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}

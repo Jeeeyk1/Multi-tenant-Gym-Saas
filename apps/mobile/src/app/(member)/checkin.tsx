@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { memberService } from '../../services/member.service';
 import { AnimatedMascot } from '../../components/AnimatedMascot';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
@@ -19,6 +20,7 @@ type Status = 'idle' | 'loading' | 'checked_in' | 'already_in' | 'error';
 
 export default function CheckInScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [status, setStatus] = useState<Status>('idle');
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -118,7 +120,7 @@ export default function CheckInScreen() {
     ? isWarn
       ? [COLORS.warning, '#d97706']
       : [COLORS.error, '#dc2626']
-    : ['#6EE7B7', '#3B82F6'];
+    : theme.gradient;
 
   return (
     <View style={styles.container}>
@@ -154,7 +156,7 @@ export default function CheckInScreen() {
         <Animated.View
           style={[
             styles.pulseRing,
-            { transform: [{ scale: pulseScale }], opacity: pulseOpacity },
+            { transform: [{ scale: pulseScale }], opacity: pulseOpacity, backgroundColor: theme.primary },
           ]}
         />
 
@@ -162,7 +164,7 @@ export default function CheckInScreen() {
           <Pressable
             onPress={isIdle ? handleCheckIn : reset}
             disabled={status === 'loading'}
-            style={styles.buttonPressable}
+            style={[styles.buttonPressable, { shadowColor: theme.primary }]}
           >
             <LinearGradient
               colors={buttonColors}

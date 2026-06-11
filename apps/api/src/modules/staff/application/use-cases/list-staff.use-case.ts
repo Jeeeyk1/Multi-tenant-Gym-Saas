@@ -13,6 +13,10 @@ export class ListStaffUseCase {
 
     return this.repo.listStaff(gymId);
   }
+
+  listRoles() {
+    return this.repo.listRoles();
+  }
 }
 
 function assertGymAccess(caller: AuthenticatedUser, gymId: string) {

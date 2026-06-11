@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { staffService } from '../../services/staff.service';
 import { COLORS, SPACING, RADIUS, FONT, GRADIENTS } from '../../constants/theme';
 import type { StaffCheckIn } from '../../types';
@@ -50,10 +51,11 @@ function ActiveRow({
   onCheckOut: (id: string) => void;
   checkingOut: boolean;
 }) {
+  const { theme } = useTheme();
   return (
     <View style={styles.activeRow}>
       <View style={styles.activeAvatar}>
-        <Text style={styles.activeAvatarText}>
+        <Text style={[styles.activeAvatarText, { color: theme.primary }]}>
           {getInitials(item.member.user.fullName)}
         </Text>
       </View>
@@ -82,6 +84,7 @@ function ActiveRow({
 export default function StaffDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [activeCheckIns, setActiveCheckIns] = useState<StaffCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -128,7 +131,7 @@ export default function StaffDashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -138,14 +141,14 @@ export default function StaffDashboardScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={COLORS.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={theme.primary} />
       }
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>{getGreeting()}, {firstName}</Text>
+          <Text style={[styles.greeting, { color: theme.primary }]}>{getGreeting()}, {firstName}</Text>
           <Text style={styles.pageTitle}>Staff Dashboard</Text>
         </View>
         <View style={styles.rolePill}>
@@ -167,7 +170,7 @@ export default function StaffDashboardScreen() {
         style={styles.statCard}
       >
         <Text style={styles.statLabel}>ACTIVE RIGHT NOW</Text>
-        <Text style={styles.statCount}>{activeCheckIns.length}</Text>
+        <Text style={[styles.statCount, { color: theme.primary }]}>{activeCheckIns.length}</Text>
         <Text style={styles.statSub}>
           {activeCheckIns.length === 1 ? 'member in gym' : 'members in gym'}
         </Text>
@@ -181,7 +184,7 @@ export default function StaffDashboardScreen() {
       >
         <View style={styles.quickActionLeft}>
           <View style={styles.quickActionIcon}>
-            <Ionicons name="person-add-outline" size={20} color={COLORS.primary} />
+            <Ionicons name="person-add-outline" size={20} color={theme.primary} />
           </View>
           <Text style={styles.quickActionText}>Check In a Member</Text>
         </View>
@@ -193,7 +196,7 @@ export default function StaffDashboardScreen() {
         <Text style={styles.sectionTitle}>CURRENTLY ACTIVE</Text>
         {activeCheckIns.length > 5 && (
           <TouchableOpacity onPress={() => router.navigate('/(staff)/checkins')}>
-            <Text style={styles.seeAll}>See all →</Text>
+            <Text style={[styles.seeAll, { color: theme.primary }]}>See all →</Text>
           </TouchableOpacity>
         )}
       </View>

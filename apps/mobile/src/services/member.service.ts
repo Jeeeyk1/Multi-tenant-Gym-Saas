@@ -16,4 +16,7 @@ export const memberService = {
 
   updateMyProfile: (gymId: string, data: Partial<Omit<MemberProfile, 'id' | 'memberId'>>) =>
     api.patch<MemberProfile>(`/gyms/${gymId}/members/me/profile`, data),
+
+  registerDeviceToken: (gymId: string, token: string, platform: 'ios' | 'android') =>
+    api.post<void>(`/gyms/${gymId}/members/me/device-token`, { token, platform }),
 };

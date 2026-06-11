@@ -69,6 +69,52 @@ Use DTOs for:
 
 Use class-validator.
 
+Use `@IsEnum(MyEnum)` for any field that has a fixed set of values. Never use `@IsIn(['A', 'B'])` with raw string arrays.
+
+---
+
+## Enums
+
+All domain constants with a fixed set of values must be TypeScript enums, not raw strings.
+
+Location: `apps/api/src/common/enums/`
+
+Rules:
+- One file per concept: `fitness-goal.enum.ts`, `member-status.enum.ts`, etc.
+- Export a barrel from `common/enums/index.ts`
+- Use `@IsEnum(FitnessGoal)` in DTOs — never `@IsIn(['LOSE_WEIGHT', ...])`
+- Mirror the same string values in mobile at `apps/mobile/src/constants/enums.ts`
+- Never hardcode enum values as magic strings in business logic — always reference the enum
+
+Example:
+```typescript
+// common/enums/fitness-goal.enum.ts
+export enum FitnessGoal {
+  LOSE_WEIGHT         = 'LOSE_WEIGHT',
+  BUILD_MUSCLE        = 'BUILD_MUSCLE',
+  GET_FIT             = 'GET_FIT',
+  STAY_HEALTHY        = 'STAY_HEALTHY',
+  OTHER               = 'OTHER',
+}
+```
+
+---
+
+## Environment variables
+
+Never hardcode external service URLs, API base URLs, or provider endpoints in source code.
+Always read them from `ConfigService`:
+
+```typescript
+// Bad
+baseURL: 'https://api.groq.com/openai/v1'
+
+// Good
+baseURL: config.get('AI_BASE_URL', 'https://api.groq.com/openai/v1')
+```
+
+Document all env vars in `apps/api/.env.example` and add them to the Joi validation schema in `app.module.ts`.
+
 ---
 
 ## Errors

@@ -1,0 +1,6 @@
+export enum ActivityLevel {
+  BEGINNER            = 'BEGINNER',
+  OCCASIONALLY_ACTIVE = 'OCCASIONALLY_ACTIVE',
+  PRETTY_ACTIVE       = 'PRETTY_ACTIVE',
+  VERY_ACTIVE         = 'VERY_ACTIVE',
+}

@@ -126,6 +126,13 @@ export class StaffRepository {
     });
   }
 
+  listRoles() {
+    return this.prisma.role.findMany({
+      select: { id: true, name: true, description: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   listStaff(gymId: string) {
     return this.prisma.gymStaff.findMany({
       where: { gymId },

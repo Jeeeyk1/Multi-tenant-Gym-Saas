@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
@@ -24,6 +25,7 @@ const WS_BASE_URL = (() => {
 })();
 
 function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId: string }) {
+  const { theme } = useTheme();
   const isMine = msg.sender.id === currentUserId;
   const time = new Date(msg.sentAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -32,7 +34,7 @@ function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId
 
   if (msg.isDeleted) {
     return (
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
+      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
         <Text style={styles.deletedText}>This message was deleted</Text>
       </View>
     );
@@ -41,9 +43,9 @@ function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId
   return (
     <View style={[styles.bubbleWrap, isMine && styles.bubbleWrapMine]}>
       {!isMine && <Text style={styles.senderName}>{msg.sender.fullName}</Text>}
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
+      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
         {msg.replyTo && !msg.replyTo.isDeleted && (
-          <View style={styles.replyBanner}>
+          <View style={[styles.replyBanner, { borderLeftColor: theme.primary + '99' }]}>
             <Text style={styles.replyText} numberOfLines={1}>
               ↩ {msg.replyTo.content}
             </Text>
@@ -60,6 +62,7 @@ function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId
 
 export default function ChatScreen() {
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -217,7 +220,7 @@ export default function ChatScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -283,7 +286,7 @@ export default function ChatScreen() {
           returnKeyType="default"
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!input.trim() || !isConnected) && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, { backgroundColor: theme.primary }, (!input.trim() || !isConnected) && styles.sendBtnDisabled]}
           onPress={sendMessage}
           disabled={!input.trim() || !isConnected}
           activeOpacity={0.8}

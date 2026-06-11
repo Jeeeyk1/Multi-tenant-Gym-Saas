@@ -10,16 +10,18 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { AppSplash } from '../components/AppSplash';
 import { COLORS } from '../constants/theme';
 
 function RootNavigator() {
   const { isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -52,17 +54,19 @@ export default function RootLayout() {
 
   if (!splashDone) {
     return (
-      <>
+      <ThemeProvider>
         <StatusBar style="light" />
         <AppSplash onDone={() => setSplashDone(true)} />
-      </>
+      </ThemeProvider>
     );
   }
 
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <RootNavigator />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <StatusBar style="light" />
+        <RootNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

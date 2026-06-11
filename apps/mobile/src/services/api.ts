@@ -71,9 +71,35 @@ export const api = {
   post: <T>(endpoint: string, body?: unknown, authenticated = true) =>
     request<T>(endpoint, { method: 'POST', body: body != null ? JSON.stringify(body) : undefined }, authenticated),
 
+  put: <T>(endpoint: string, body?: unknown) =>
+    request<T>(endpoint, { method: 'PUT', body: body != null ? JSON.stringify(body) : undefined }),
+
   patch: <T>(endpoint: string, body?: unknown) =>
     request<T>(endpoint, { method: 'PATCH', body: body != null ? JSON.stringify(body) : undefined }),
 
   delete: <T>(endpoint: string) =>
     request<T>(endpoint, { method: 'DELETE' }),
+
+  /** Upload a file as multipart/form-data. Omit Content-Type so fetch sets the boundary. */
+  async upload<T>(endpoint: string, formData: FormData): Promise<T> {
+    const token = await getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const err = new Error(body.message ?? 'Upload failed') as Error & { code?: string; statusCode?: number };
+      err.code = body.code;
+      err.statusCode = response.status;
+      throw err;
+    }
+
+    return response.json() as Promise<T>;
+  },
 };

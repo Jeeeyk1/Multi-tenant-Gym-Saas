@@ -7,8 +7,10 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 function formatRole(role: string): string {
@@ -24,7 +26,9 @@ function getInitials(name: string): string {
 }
 
 export default function MoreScreen() {
+  const router = useRouter();
   const { user, signOut } = useAuth();
+  const { theme } = useTheme();
 
   const staffRoles = user?.roles.filter((r) => r !== 'MEMBER') ?? [];
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
@@ -43,8 +47,8 @@ export default function MoreScreen() {
 
       {/* Profile card */}
       <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={[styles.avatar, { borderColor: theme.primary }]}>
+          <Text style={[styles.avatarText, { color: theme.primary }]}>{initials}</Text>
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{user?.fullName ?? firstName}</Text>
@@ -57,6 +61,20 @@ export default function MoreScreen() {
             ))}
           </View>
         </View>
+      </View>
+
+      {/* Tools */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>TOOLS</Text>
+        <TouchableOpacity
+          style={styles.navRow}
+          onPress={() => router.push('/(staff)/leaderboard')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="trophy-outline" size={18} color={COLORS.textMuted} />
+          <Text style={styles.navLabel}>Leaderboard</Text>
+          <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
+        </TouchableOpacity>
       </View>
 
       {/* Info row */}
@@ -156,6 +174,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 14,
+  },
+  navLabel: { flex: 1, fontSize: 14, color: COLORS.text, ...FONT.medium },
+
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',

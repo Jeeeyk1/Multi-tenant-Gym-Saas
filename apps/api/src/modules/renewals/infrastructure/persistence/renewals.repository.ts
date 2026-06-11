@@ -36,6 +36,32 @@ export class RenewalsRepository {
     });
   }
 
+  listGymRenewals(gymId: string, limit: number) {
+    return this.prisma.membershipRenewal.findMany({
+      where: { member: { gymId } },
+      select: {
+        id: true,
+        previousExpiry: true,
+        newExpiry: true,
+        amountPaid: true,
+        paymentMethod: true,
+        notes: true,
+        renewedAt: true,
+        renewedByUser: { select: { id: true, fullName: true } },
+        member: {
+          select: {
+            id: true,
+            membershipNumber: true,
+            user: { select: { id: true, fullName: true } },
+            membershipPlan: { select: { id: true, name: true, type: true } },
+          },
+        },
+      },
+      orderBy: { renewedAt: 'desc' },
+      take: limit,
+    });
+  }
+
   /**
    * Processes a renewal in a single transaction:
    * 1. Update gym_member: new expiryDate + status = ACTIVE

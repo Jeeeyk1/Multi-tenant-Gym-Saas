@@ -2,8 +2,9 @@ import { Redirect, Tabs } from 'expo-router';
 import { Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, GRADIENTS } from '../../constants/theme';
+import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -17,16 +18,18 @@ function TabIcon({
   iconUnfocused: IoniconsName;
   focused: boolean;
 }) {
+  const { theme } = useTheme();
   return (
     <Ionicons
       name={focused ? iconFocused : iconUnfocused}
       size={22}
-      color={focused ? COLORS.primary : COLORS.textMuted}
+      color={focused ? theme.primary : COLORS.textMuted}
     />
   );
 }
 
 function CenterTabButton({ onPress, accessibilityLabel }: BottomTabBarButtonProps) {
+  const { theme } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -35,10 +38,10 @@ function CenterTabButton({ onPress, accessibilityLabel }: BottomTabBarButtonProp
       style={styles.centerWrapper}
     >
       <LinearGradient
-        colors={GRADIENTS.primary}
+        colors={theme.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.centerGradient}
+        style={[styles.centerGradient, { shadowColor: theme.primary }]}
       >
         <Ionicons name="scan" size={26} color="#000" />
       </LinearGradient>
@@ -49,6 +52,7 @@ function CenterTabButton({ onPress, accessibilityLabel }: BottomTabBarButtonProp
 
 export default function MemberLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (!isLoading && !isAuthenticated) {
     return <Redirect href="/(auth)/entry" />;
@@ -59,7 +63,7 @@ export default function MemberLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,

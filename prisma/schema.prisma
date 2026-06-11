@@ -44,21 +44,26 @@ model User {
   updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz
 
   // Relations
-  userTokens          UserToken[]
-  refreshTokens       RefreshToken[]
-  organizationMembers OrganizationMember[]
-  gymStaff            GymStaff[]
-  gymMembers          GymMember[]
-  processedCheckIns   CheckIn[]            @relation("ProcessedBy")
-  renewalsProcessed   MembershipRenewal[]  @relation("RenewedBy")
-  sentMessages        Message[]
-  conversationMembers ConversationMember[]
-  messageReads        MessageRead[]
-  messageReactions    MessageReaction[]
-  announcements       Announcement[]
-  announcementReads   AnnouncementRead[]
-  aiUsageLogs         AiUsageLog[]
-  assignedRoles       GymStaffRole[]       @relation("AssignedBy")
+  userTokens                UserToken[]
+  refreshTokens             RefreshToken[]
+  organizationMembers       OrganizationMember[]
+  gymStaff                  GymStaff[]
+  gymMembers                GymMember[]
+  processedCheckIns         CheckIn[]              @relation("ProcessedBy")
+  renewalsProcessed         MembershipRenewal[]    @relation("RenewedBy")
+  sentMessages              Message[]
+  conversationMembers       ConversationMember[]
+  messageReads              MessageRead[]
+  messageReactions          MessageReaction[]
+  announcements             Announcement[]
+  announcementReads         AnnouncementRead[]
+  aiUsageLogs               AiUsageLog[]
+  assignedRoles             GymStaffRole[]         @relation("AssignedBy")
+  deviceTokens              DeviceToken[]
+  notificationLogs          NotificationLog[]
+  submittedPrSubmissions    MemberPrSubmission[]   @relation("SubmittedBy")
+  reviewedPrSubmissions     MemberPrSubmission[]   @relation("ReviewedBy")
+  enabledLeaderboardExercises GymLeaderboardExercise[]
 
   @@map("users")
 }
@@ -149,17 +154,20 @@ model Gym {
   updatedAt          DateTime  @default(now()) @map("updated_at") @db.Timestamptz
 
   // Relations
-  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  profile       GymProfile?
-  schedules     GymSchedule[]
-  features      GymFeature[]
-  staff         GymStaff[]
-  members       GymMember[]
-  membershipPlans MembershipPlan[]
-  checkIns      CheckIn[]
-  conversations Conversation[]
-  announcements Announcement[]
-  aiUsageLogs   AiUsageLog[]
+  organization         Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile              GymProfile?
+  schedules            GymSchedule[]
+  features             GymFeature[]
+  staff                GymStaff[]
+  members              GymMember[]
+  membershipPlans      MembershipPlan[]
+  checkIns             CheckIn[]
+  conversations        Conversation[]
+  announcements        Announcement[]
+  aiUsageLogs          AiUsageLog[]
+  exercises            Exercise[]
+  leaderboardExercises GymLeaderboardExercise[]
+  prSubmissions        MemberPrSubmission[]
 
   @@map("gyms")
 }
@@ -423,22 +431,31 @@ model GymMember {
   profile        MemberProfile?
   checkIns       CheckIn[]
   renewals       MembershipRenewal[]
+  weightLogs     MemberWeightLog[]
+  foodLogs       MemberFoodLog[]
+  prSubmissions  MemberPrSubmission[]
 
   @@unique([gymId, userId])
   @@map("gym_members")
 }
 
 model MemberProfile {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  memberId       String   @unique @map("member_id") @db.Uuid
-  age            Int?     @db.SmallInt
-  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
-  heightCm       Int?     @map("height_cm") @db.SmallInt
-  fitnessGoal    String?  @map("fitness_goal")
-  activityLevel  String?  @map("activity_level")
-  onboardingDone Boolean  @default(false) @map("onboarding_done")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId        String   @unique @map("member_id") @db.Uuid
+  age             Int?     @db.SmallInt
+  weightKg        Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  targetWeightKg  Decimal? @map("target_weight_kg") @db.Decimal(5, 2)
+  heightCm        Int?     @map("height_cm") @db.SmallInt
+  fitnessGoal     String?  @map("fitness_goal")
+  activityLevel   String?  @map("activity_level")
+  daysPerWeek     Int?     @map("days_per_week") @db.SmallInt
+  experienceLevel String?  @map("experience_level")
+  preferredStyle  String?  @map("preferred_style")
+  dietType        String   @default("NONE") @map("diet_type")
+  injuries        String?
+  onboardingDone  Boolean  @default(false) @map("onboarding_done")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
 
   member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
@@ -455,6 +472,60 @@ model MemberPrivacy {
   member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("member_privacy")
+}
+
+model MemberWeightLog {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId String   @map("member_id") @db.Uuid
+  weightKg Decimal  @map("weight_kg") @db.Decimal(5, 2)
+  notes    String?
+  loggedAt DateTime @default(now()) @map("logged_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("member_weight_logs")
+}
+
+model MemberFoodLog {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId    String   @map("member_id") @db.Uuid
+  description String
+  photoUrl    String?  @map("photo_url")
+  calories    Int?
+  proteinG    Decimal? @map("protein_g") @db.Decimal(6, 2)
+  carbsG      Decimal? @map("carbs_g") @db.Decimal(6, 2)
+  fatG        Decimal? @map("fat_g") @db.Decimal(6, 2)
+  loggedAt    DateTime @default(now()) @map("logged_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("member_food_logs")
+}
+
+model DeviceToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  platform  String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_tokens")
+}
+
+model NotificationLog {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  type     String
+  sentDate DateTime @map("sent_date") @db.Date
+  sentAt   DateTime @default(now()) @map("sent_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, sentDate])
+  @@map("notification_logs")
 }
 
 model MembershipRenewal {
@@ -641,4 +712,68 @@ model AiUsageLog {
   user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("ai_usage_log")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEADERBOARD DOMAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Exercise {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  category  String
+  gymId     String?  @map("gym_id") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  gym                  Gym?                     @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  leaderboardExercises GymLeaderboardExercise[]
+  prSubmissions        MemberPrSubmission[]
+
+  @@unique([name, gymId])
+  @@map("exercises")
+}
+
+model GymLeaderboardExercise {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId            String   @map("gym_id") @db.Uuid
+  exerciseId       String   @map("exercise_id") @db.Uuid
+  displayOrder     Int      @default(0) @map("display_order") @db.SmallInt
+  isActive         Boolean  @default(true) @map("is_active")
+  enabledByUserId  String?  @map("enabled_by_user_id") @db.Uuid
+  enabledAt        DateTime @default(now()) @map("enabled_at") @db.Timestamptz
+
+  gym            Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  exercise       Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  enabledByUser  User?     @relation(fields: [enabledByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([gymId, exerciseId])
+  @@map("gym_leaderboard_exercises")
+}
+
+model MemberPrSubmission {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId              String    @map("gym_id") @db.Uuid
+  memberId           String    @map("member_id") @db.Uuid
+  exerciseId         String    @map("exercise_id") @db.Uuid
+  weightKg           Decimal   @map("weight_kg") @db.Decimal(7, 2)
+  reps               Int       @db.SmallInt
+  estimated1rm       Decimal   @map("estimated_1rm") @db.Decimal(7, 2)
+  photoUrl           String    @map("photo_url")
+  status             String    @default("PENDING")
+  submissionType     String    @default("SELF") @map("submission_type")
+  submittedByUserId  String    @map("submitted_by_user_id") @db.Uuid
+  notes              String?
+  reviewedByUserId   String?   @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt         DateTime? @map("reviewed_at") @db.Timestamptz
+  rejectionReason    String?   @map("rejection_reason")
+  submittedAt        DateTime  @default(now()) @map("submitted_at") @db.Timestamptz
+
+  gym             Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  member          GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  submittedByUser User      @relation("SubmittedBy", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  reviewedByUser  User?     @relation("ReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("member_pr_submissions")
 }

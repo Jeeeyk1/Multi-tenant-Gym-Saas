@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { memberService } from '../../services/member.service';
 import { GreetingBanner } from '../../components/GreetingBanner';
 import { MembershipCard } from '../../components/MembershipCard';
@@ -60,6 +61,7 @@ function PressCard({
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [member, setMember] = useState<GymMember | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +94,7 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={theme.primary} size="large" />
       </View>
     );
   }
@@ -104,7 +106,7 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
       showsVerticalScrollIndicator={false}
     >
       <GreetingBanner name={firstName} streak={streak} lastCheckInToday={lastCheckInToday} />
@@ -123,7 +125,7 @@ export default function DashboardScreen() {
       {/* Featured Check-In card */}
       <PressCard onPress={() => router.push('/(member)/checkin')} style={styles.checkInCardWrap}>
         <LinearGradient
-          colors={['#6EE7B7', '#3B82F6']}
+          colors={theme.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.checkInCard}

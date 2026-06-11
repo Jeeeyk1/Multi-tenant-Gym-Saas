@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -17,17 +18,19 @@ function TabIcon({
   focused: boolean;
   size?: number;
 }) {
+  const { theme } = useTheme();
   return (
     <Ionicons
       name={focused ? iconFocused : iconUnfocused}
       size={size}
-      color={focused ? COLORS.primary : COLORS.textMuted}
+      color={focused ? theme.primary : COLORS.textMuted}
     />
   );
 }
 
 export default function StaffLayout() {
   const { isAuthenticated, isLoading, isStaff } = useAuth();
+  const { theme } = useTheme();
 
   if (!isLoading && !isAuthenticated) {
     return <Redirect href="/(auth)/entry" />;
@@ -43,7 +46,7 @@ export default function StaffLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
@@ -102,9 +105,13 @@ export default function StaffLayout() {
           ),
         }}
       />
-      {/* Detail screen — hidden from tab bar */}
+      {/* Detail screens — hidden from tab bar */}
       <Tabs.Screen
         name="member/[id]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="leaderboard"
         options={{ href: null }}
       />
     </Tabs>

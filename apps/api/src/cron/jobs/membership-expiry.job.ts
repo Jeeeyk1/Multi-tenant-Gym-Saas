@@ -26,6 +26,7 @@ export class MembershipExpiryJob {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           const batch = await this.prisma.gymMember.findMany({
             where: { status: 'ACTIVE', expiryDate: { lt: today } },

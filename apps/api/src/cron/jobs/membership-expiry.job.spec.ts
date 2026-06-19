@@ -1,5 +1,4 @@
 import { MembershipExpiryJob } from './membership-expiry.job';
-import type { PrismaService } from '../../common/prisma/prisma.service';
 import type { CronLockService } from '../shared/cron-lock.service';
 
 // withLock mock that invokes fn (lock acquired)

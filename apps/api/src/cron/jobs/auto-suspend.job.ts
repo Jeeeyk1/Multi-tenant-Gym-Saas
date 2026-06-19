@@ -25,6 +25,7 @@ export class AutoSuspendJob {
       try {
         const now = new Date();
 
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           // Load EXPIRED members with their gym's threshold config
           const batch = await this.prisma.gymMember.findMany({

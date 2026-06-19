@@ -1,5 +1,4 @@
 import { AutoCheckoutJob } from './auto-checkout.job';
-import type { PrismaService } from '../../common/prisma/prisma.service';
 import type { CronLockService } from '../shared/cron-lock.service';
 
 function makeLock(acquired = true): jest.Mocked<CronLockService> {

@@ -18,20 +18,6 @@ const orgUser: OrgAuthUser = {
   orgRole: 'OWNER',
 };
 
-function buildContext(
-  user: GymAuthUser | OrgAuthUser | undefined,
-  requiredPermissions: string[],
-): ExecutionContext {
-  const reflector = new Reflector();
-  jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(requiredPermissions);
-
-  return {
-    switchToHttp: () => ({ getRequest: () => ({ user }) }),
-    getHandler: jest.fn(),
-    getClass: jest.fn(),
-    reflector,
-  } as unknown as ExecutionContext;
-}
 
 describe('PermissionsGuard', () => {
   let guard: PermissionsGuard;

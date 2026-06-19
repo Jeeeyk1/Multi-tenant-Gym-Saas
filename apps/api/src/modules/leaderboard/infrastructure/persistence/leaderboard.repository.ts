@@ -165,8 +165,6 @@ export class LeaderboardRepository {
 
     if (rows.length === 0) return [];
 
-    // Fetch member names and best submission details
-    const memberIds = rows.map((r) => r.memberId);
     const bestSubmissions = await Promise.all(
       rows.map(async (row) => {
         const sub = await this.prisma.memberPrSubmission.findFirst({

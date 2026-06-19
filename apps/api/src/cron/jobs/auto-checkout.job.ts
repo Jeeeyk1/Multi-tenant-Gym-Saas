@@ -25,6 +25,7 @@ export class AutoCheckoutJob {
       try {
         const now = new Date();
 
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           // Load open check-ins with their gym's auto-checkout threshold
           const batch = await this.prisma.checkIn.findMany({

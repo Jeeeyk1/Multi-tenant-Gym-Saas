@@ -1,0 +1,108 @@
+name: CI
+
+# WHEN does this workflow run?
+# - On every pull request targeting main (the important one — blocks bad merges)
+# - On every direct push to main (catches anything that slips through)
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ─── Job 1: Type Check ────────────────────────────────────────────────────────
+  # TypeScript catches type errors at compile time, before the code ever runs.
+  # If a developer accidentally passes the wrong type to a function, this fails.
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest   # GitHub spins up a fresh Ubuntu VM for this job
+
+    steps:
+      # Step 1: Download the code from the branch being checked
+      # Without this, the VM has no code to work with
+      - uses: actions/checkout@v4
+
+      # Step 2: Install pnpm (our package manager)
+      # GitHub VMs don't have pnpm by default — only npm and yarn
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # Step 3: Install the correct Node.js version
+      # "cache: pnpm" tells GitHub to cache node_modules between runs
+      # so we don't re-download all packages every time (saves ~1-2 minutes)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Step 4: Install all workspace dependencies
+      # --frozen-lockfile means: fail if pnpm-lock.yaml is out of date
+      # This prevents "works on my machine" issues from lockfile drift
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Step 5 & 6: Run tsc --noEmit for API and Web separately
+      # --filter means "only run this for that specific package"
+      # If tsc finds a type error anywhere, this step fails and the PR is blocked
+      - name: Typecheck API
+        run: pnpm --filter @gym-saas/api typecheck
+
+      - name: Typecheck Web
+        run: pnpm --filter @gym-saas/web typecheck
+
+  # ─── Job 2: Lint ──────────────────────────────────────────────────────────────
+  # ESLint enforces code style and catches common mistakes (unused vars,
+  # missing deps in useEffect, etc.) that TypeScript alone won't catch.
+  # Runs in parallel with typecheck — no reason to wait for one before the other.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint API
+        run: pnpm --filter @gym-saas/api lint
+
+      - name: Lint Web
+        run: pnpm --filter @gym-saas/web lint
+
+  # ─── Job 3: Tests ─────────────────────────────────────────────────────────────
+  # Runs Jest unit tests on the API.
+  # Unit tests verify business logic in isolation (no real DB, no real HTTP).
+  # --passWithNoTests means: don't fail just because a package has no test files yet.
+  # Remove that flag once you have solid coverage.
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run API unit tests
+        run: pnpm --filter @gym-saas/api test --passWithNoTests

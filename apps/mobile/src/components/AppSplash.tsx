@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { Logo } from './Logo';
 import { COLORS, FONT } from '../constants/theme';
 
 const TAGLINE = 'Train. Connect. Grow.';
@@ -12,18 +14,21 @@ interface AppSplashProps {
 export function AppSplash({ onDone }: AppSplashProps) {
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
+  const [gymName, setGymName] = useState<string | null>(null);
 
-  const mascotScale = useRef(new Animated.Value(0.5)).current;
-  const mascotOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    AsyncStorage.getItem('pending_gym_name').then((name) => {
+      if (name) setGymName(name);
+    });
+  }, []);
 
+  const logoScale = useRef(new Animated.Value(0.5)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
   const nameOpacity = useRef(new Animated.Value(0)).current;
   const nameY = useRef(new Animated.Value(14)).current;
-
   const charAnims = useRef(TAGLINE.split('').map(() => new Animated.Value(0))).current;
-
   const glowScale = useRef(new Animated.Value(1)).current;
   const glowOpacity = useRef(new Animated.Value(0)).current;
-
   const progressAnim = useRef(new Animated.Value(0)).current;
   const screenOpacity = useRef(new Animated.Value(1)).current;
 
@@ -31,8 +36,8 @@ export function AppSplash({ onDone }: AppSplashProps) {
     const fallback = setTimeout(onDone, 4000);
 
     Animated.parallel([
-      Animated.spring(mascotScale, { toValue: 1, damping: 10, stiffness: 120, useNativeDriver: true }),
-      Animated.timing(mascotOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, damping: 10, stiffness: 120, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
     ]).start();
 
     Animated.sequence([
@@ -46,7 +51,7 @@ export function AppSplash({ onDone }: AppSplashProps) {
     Animated.sequence([
       Animated.delay(800),
       Animated.stagger(38, charAnims.map((anim) =>
-        Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: true })
+        Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: true }),
       )),
     ]).start();
 
@@ -81,18 +86,21 @@ export function AppSplash({ onDone }: AppSplashProps) {
       {/* Logo area with glow ring */}
       <View style={styles.logoArea}>
         <Animated.View
-          style={[styles.glowRing, { opacity: glowOpacity, transform: [{ scale: glowScale }], borderColor: theme.primary }]}
+          style={[
+            styles.glowRing,
+            { opacity: glowOpacity, transform: [{ scale: glowScale }], borderColor: theme.primary },
+          ]}
         />
-        <Animated.Text
-          style={[styles.mascot, { opacity: mascotOpacity, transform: [{ scale: mascotScale }] }]}
-        >
-          🐔
-        </Animated.Text>
+        <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
+          <Logo size={90} showText={false} />
+        </Animated.View>
       </View>
 
-      {/* App name */}
-      <Animated.Text style={[styles.appName, { opacity: nameOpacity, transform: [{ translateY: nameY }] }]}>
-        GainzOS
+      {/* Gym name (or nothing if we don't know yet) */}
+      <Animated.Text
+        style={[styles.appName, { opacity: nameOpacity, transform: [{ translateY: nameY }] }]}
+      >
+        {gymName ?? ''}
       </Animated.Text>
 
       {/* Tagline — character by character */}
@@ -132,18 +140,14 @@ const styles = StyleSheet.create({
     height: 130,
     borderRadius: 65,
     borderWidth: 1.5,
-    borderColor: COLORS.primary,
-  },
-  mascot: {
-    fontSize: 72,
-    lineHeight: 88,
   },
   appName: {
-    fontSize: 38,
+    fontSize: 28,
     color: COLORS.text,
     ...FONT.bold,
-    letterSpacing: -1.2,
-    marginBottom: 14,
+    letterSpacing: -0.5,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   taglineRow: {
     flexDirection: 'row',
@@ -165,6 +169,5 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: 2,
-    backgroundColor: COLORS.primary,
   },
 });

@@ -79,6 +79,13 @@ export class MembersRepository {
     });
   }
 
+  findGymById(gymId: string) {
+    return this.prisma.gym.findUnique({
+      where: { id: gymId },
+      select: { id: true, name: true, code: true },
+    });
+  }
+
   findPlanById(planId: string, gymId: string) {
     return this.prisma.membershipPlan.findFirst({
       where: { id: planId, gymId, isActive: true },
@@ -125,6 +132,42 @@ export class MembersRepository {
       data: { status, updatedAt: new Date() },
       select: { id: true, status: true, updatedAt: true },
     });
+  }
+
+  /**
+   * Hard-delete a gym member and their associated data.
+   * Deletes check-ins and renewals first (both have onDelete: Restrict on GymMember).
+   * Then deletes the GymMember row (cascades to profile, weight logs, food logs, etc.).
+   * Finally deletes the User if they have no remaining gym memberships or staff records,
+   * which frees the email address for reuse.
+   */
+  async removeMember(memberId: string, gymId: string): Promise<{ userDeleted: boolean }> {
+    const member = await this.prisma.gymMember.findFirst({
+      where: { id: memberId, gymId },
+      select: { id: true, userId: true },
+    });
+    if (!member) return { userDeleted: false };
+
+    await this.prisma.$transaction(async (tx) => {
+      // Must delete Restrict-constrained children before the parent GymMember row.
+      await tx.checkIn.deleteMany({ where: { memberId: member.id } });
+      await tx.membershipRenewal.deleteMany({ where: { memberId: member.id } });
+      await tx.gymMember.delete({ where: { id: member.id } });
+    });
+
+    // Check remaining associations for the user outside the transaction so we
+    // can make a clean decision without holding locks longer than necessary.
+    const [remainingMemberships, remainingStaff] = await Promise.all([
+      this.prisma.gymMember.count({ where: { userId: member.userId } }),
+      this.prisma.gymStaff.count({ where: { userId: member.userId } }),
+    ]);
+
+    if (remainingMemberships === 0 && remainingStaff === 0) {
+      await this.prisma.user.delete({ where: { id: member.userId } });
+      return { userDeleted: true };
+    }
+
+    return { userDeleted: false };
   }
 
   /**
@@ -235,7 +278,7 @@ export class MembersRepository {
       }
 
       await tx.userToken.create({
-        data: { userId: user.id, token: rawToken, type: 'MEMBER_INVITE', expiresAt },
+        data: { userId: user.id, token: rawToken, type: 'INVITE', expiresAt },
       });
 
       return {

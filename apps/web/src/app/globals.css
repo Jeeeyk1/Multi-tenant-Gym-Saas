@@ -4,16 +4,29 @@
 
 @layer base {
   :root {
-    --background:   0 0% 4%;          /* #0A0A0A */
-    --surface:      0 0% 8%;          /* #141414 */
-    --border:       0 0% 16%;         /* #2A2A2A */
-    --primary:      156 72% 67%;      /* #6EE7B7 mint */
-    --primary-fg:   0 0% 0%;          /* #000000 */
-    --text:         0 0% 100%;        /* #FFFFFF */
-    --muted:        0 0% 53%;         /* #888888 */
-    --warning:      16 100% 60%;      /* #FF6B35 burn orange */
-    --destructive:  0 84% 60%;        /* red */
-    --success:      142 71% 45%;      /* green */
+    --background:   0 0% 99%;
+    --surface:      240 9% 97%;
+    --border:       240 6% 90%;
+    --primary:      175 84% 32%;      /* #0D9488 teal */
+    --primary-fg:   0 0% 100%;
+    --text:         240 10% 6%;
+    --muted:        240 4% 46%;
+    --warning:      38 92% 50%;
+    --destructive:  0 84% 60%;
+    --success:      142 71% 45%;
+  }
+
+  .dark {
+    --background:   240 10% 5%;
+    --surface:      240 8% 9%;
+    --border:       240 7% 17%;
+    --primary:      175 72% 42%;
+    --primary-fg:   0 0% 100%;
+    --text:         0 0% 94%;
+    --muted:        240 5% 55%;
+    --warning:      38 90% 58%;
+    --destructive:  0 80% 65%;
+    --success:      142 65% 52%;
   }
 
   * {
@@ -24,6 +37,11 @@
     @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
   input, textarea, select {

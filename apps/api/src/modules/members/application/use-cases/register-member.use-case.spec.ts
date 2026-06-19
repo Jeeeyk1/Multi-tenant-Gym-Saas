@@ -5,8 +5,13 @@ import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 const mockRepo = {
   findUserByEmail: jest.fn(),
   findPlanById: jest.fn(),
+  findGymById: jest.fn(),
   registerMember: jest.fn(),
 } as unknown as jest.Mocked<MembersRepository>;
+
+const mockEmail = {
+  sendMemberInvite: jest.fn().mockResolvedValue(undefined),
+} as any;
 
 const gymCaller: AuthenticatedUser = {
   type: 'gym',
@@ -36,8 +41,9 @@ describe('RegisterMemberUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new RegisterMemberUseCase(mockRepo);
+    useCase = new RegisterMemberUseCase(mockRepo, mockEmail);
     mockRepo.findUserByEmail.mockResolvedValue(null);
+    mockRepo.findGymById.mockResolvedValue({ id: 'gym-1', name: 'Test Gym', code: 'TESTGYM' });
     mockRepo.findPlanById.mockResolvedValue(plan as any);
     mockRepo.registerMember.mockResolvedValue(registrationResult);
   });

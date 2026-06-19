@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { authService, decodeJwt } from '../services/auth.service';
-import { getAccessToken, clearTokens } from '../services/api';
+import { getAccessToken, clearTokens, setUnauthorizedHandler } from '../services/api';
 import { registerPushToken } from '../services/push.service';
 import type { AuthUser } from '../types';
 
@@ -27,6 +27,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [gymInfo, setGymInfo] = useState<GymInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  function applyPayload(payload: Record<string, unknown>) {
+    setUser({
+      id: payload.sub as string,
+      email: payload.email as string,
+      fullName: (payload.fullName as string) ?? '',
+      gymId: payload.gymId as string,
+      gymCode: payload.gymCode as string,
+      roles: (payload.roles as string[]) ?? [],
+      permissions: (payload.permissions as string[]) ?? [],
+    });
+    setGymInfo({
+      gymId: payload.gymId as string,
+      gymCode: payload.gymCode as string,
+      gymName: (payload.gymName as string) ?? '',
+    });
+  }
+
+  const signOut = useCallback(async () => {
+    await authService.logout();
+    setUser(null);
+    setGymInfo(null);
+  }, []);
+
+  // Keep a stable ref so the api module can call signOut without capturing a stale closure.
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      signOutRef.current();
+    });
+  }, []);
 
   const hydrateFromToken = useCallback(async () => {
     const token = await getAccessToken();
@@ -59,23 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  function applyPayload(payload: Record<string, unknown>) {
-    setUser({
-      id: payload.sub as string,
-      email: payload.email as string,
-      fullName: (payload.fullName as string) ?? '',
-      gymId: payload.gymId as string,
-      gymCode: payload.gymCode as string,
-      roles: (payload.roles as string[]) ?? [],
-      permissions: (payload.permissions as string[]) ?? [],
-    });
-    setGymInfo({
-      gymId: payload.gymId as string,
-      gymCode: payload.gymCode as string,
-      gymName: (payload.gymName as string) ?? '',
-    });
-  }
-
   useEffect(() => {
     hydrateFromToken();
   }, [hydrateFromToken]);
@@ -90,12 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Register push token in the background — never block login
     const gymId = payload.gymId as string;
     registerPushToken(gymId).catch(() => {});
-  };
-
-  const signOut = async () => {
-    await authService.logout();
-    setUser(null);
-    setGymInfo(null);
   };
 
   const isStaff = user !== null && !user.roles.every((r) => r === 'MEMBER');

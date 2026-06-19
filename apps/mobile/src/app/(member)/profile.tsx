@@ -12,10 +12,12 @@ import {
   View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { memberService } from '../../services/member.service';
-import type { GymMember, MemberProfile } from '../../types';
+import type { GymMember, MemberBadge, MemberProfile } from '../../types';
 import {
   ActivityLevel,
   DietType,
@@ -188,6 +190,52 @@ function DaysPicker({
           <Text style={[styles.chipText, value === d && styles.chipTextSelected]}>{d}</Text>
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+// ─── Badge helpers ────────────────────────────────────────────────────────────
+
+const BADGE_SOURCE_LABELS: Record<string, string> = {
+  AUTO_SYSTEM: 'Consistency',
+  AUTO_CYCLE: 'Leaderboard',
+  AUTO_MILESTONE: 'Milestone',
+  STAFF_AWARD: 'Staff Award',
+};
+
+function badgeName(b: MemberBadge): string {
+  return b.badgeCatalog?.name ?? b.customBadge?.name ?? b.milestoneBadge?.badgeName ?? 'Badge';
+}
+
+function badgeColor(b: MemberBadge): string {
+  return b.badgeCatalog?.color ?? b.customBadge?.color ?? b.milestoneBadge?.color ?? '#6B7280';
+}
+
+function badgeRankIcon(rank: MemberBadge['badgeRank']): string {
+  if (rank === 'GOLD') return '🥇';
+  if (rank === 'SILVER') return '🥈';
+  if (rank === 'BRONZE') return '🥉';
+  return '◆';
+}
+
+function BadgeItem({ badge }: { badge: MemberBadge }) {
+  const color = badgeColor(badge);
+  const isExpired = badge.expiresAt ? new Date(badge.expiresAt) < new Date() : false;
+  return (
+    <View style={[styles.badgeItem, isExpired && { opacity: 0.5 }]}>
+      <View style={[styles.badgeDot, { backgroundColor: color + '33', borderColor: color }]}>
+        <Text style={styles.badgeDotIcon}>{badgeRankIcon(badge.badgeRank)}</Text>
+      </View>
+      <View style={styles.badgeInfo}>
+        <Text style={styles.badgeItemName}>{badgeName(badge)}</Text>
+        <Text style={styles.badgeSourceLabel}>
+          {BADGE_SOURCE_LABELS[badge.source] ?? badge.source}
+          {isExpired ? ' · Expired' : ''}
+        </Text>
+      </View>
+      <Text style={styles.badgeDate}>
+        {new Date(badge.awardedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      </Text>
     </View>
   );
 }
@@ -419,10 +467,12 @@ function EditProfileModal({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
   const [member, setMember] = useState<GymMember | null>(null);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [badges, setBadges] = useState<MemberBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
@@ -432,10 +482,12 @@ export default function ProfileScreen() {
     Promise.all([
       memberService.getMyMember(user.gymId),
       memberService.getMyProfile(user.gymId).catch(() => null),
+      memberService.getMyBadges(user.gymId).catch(() => [] as MemberBadge[]),
     ])
-      .then(([m, p]) => {
+      .then(([m, p, b]) => {
         setMember(m);
         setProfile(p);
+        setBadges(b);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -548,6 +600,16 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* Badges */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Badges</Text>
+          {badges.length === 0 ? (
+            <Text style={styles.emptyProfileText}>No badges earned yet.</Text>
+          ) : (
+            badges.map((b) => <BadgeItem key={b.id} badge={b} />)
+          )}
+        </View>
+
         {/* QR Code */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Check-in QR</Text>
@@ -562,6 +624,18 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.qrToken}>{member.qrCodeToken.slice(0, 8).toUpperCase()}…</Text>
         </View>
+
+        {/* Quick links */}
+        <Pressable
+          style={styles.navRow}
+          onPress={() => router.push('/(member)/ai')}
+        >
+          <View style={styles.navRowLeft}>
+            <Ionicons name="flash-outline" size={18} color={COLORS.textSecondary} />
+            <Text style={styles.navRowText}>AI Coach</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+        </Pressable>
 
         {/* Sign out */}
         <Pressable
@@ -715,6 +789,28 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginLeft: SPACING.sm,
   },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 15,
+  },
+  navRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  navRowText: {
+    fontSize: 15,
+    color: COLORS.text,
+    ...FONT.medium,
+  },
+
   signOutBtn: {
     backgroundColor: COLORS.errorBg,
     borderRadius: RADIUS.md,
@@ -878,5 +974,43 @@ const styles = StyleSheet.create({
     minHeight: 72,
     textAlignVertical: 'top',
     marginTop: SPACING.xs,
+  },
+
+  // ── Badge gallery ─────────────────────────────────────────────────────────────
+  badgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: 6,
+  },
+  badgeDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  badgeDotIcon: {
+    fontSize: 13,
+  },
+  badgeInfo: {
+    flex: 1,
+  },
+  badgeItemName: {
+    color: COLORS.text,
+    fontSize: 14,
+    ...FONT.medium,
+  },
+  badgeSourceLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 1,
+  },
+  badgeDate: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    flexShrink: 0,
   },
 });

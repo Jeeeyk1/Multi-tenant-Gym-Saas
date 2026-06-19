@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
+    "@google/generative-ai": "^0.24.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.0.0",
     "@nestjs/core": "^10.0.0",
@@ -35,6 +36,7 @@
     "joi": "^17.13.0",
     "openai": "^6.42.0",
     "reflect-metadata": "^0.2.0",
+    "resend": "^6.12.4",
     "rxjs": "^7.8.0",
     "socket.io": "^4.8.3"
   },

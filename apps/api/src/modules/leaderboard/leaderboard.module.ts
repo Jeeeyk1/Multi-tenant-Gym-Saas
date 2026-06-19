@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { StorageModule } from '../../common/adapters/storage/storage.module';
+import { BadgesModule } from '../badges/badges.module';
 import { LeaderboardController } from './presentation/controllers/leaderboard.controller';
 import { LeaderboardRepository } from './infrastructure/persistence/leaderboard.repository';
 import { ListExercisesUseCase } from './application/use-cases/list-exercises.use-case';
@@ -15,7 +16,7 @@ import { GetLeaderboardUseCase } from './application/use-cases/get-leaderboard.u
 import { GetMyPrsUseCase } from './application/use-cases/get-my-prs.use-case';
 
 @Module({
-  imports: [StorageModule],
+  imports: [StorageModule, BadgesModule],
   controllers: [LeaderboardController],
   providers: [
     LeaderboardRepository,

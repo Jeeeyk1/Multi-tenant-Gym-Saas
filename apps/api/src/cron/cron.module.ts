@@ -4,14 +4,18 @@ import { MembershipExpiryJob } from './jobs/membership-expiry.job';
 import { AutoSuspendJob } from './jobs/auto-suspend.job';
 import { AutoCheckoutJob } from './jobs/auto-checkout.job';
 import { AnnouncementPublisherJob } from './jobs/announcement-publisher.job';
+import { LeaderboardCycleJob } from './jobs/leaderboard-cycle.job';
+import { BadgesModule } from '../modules/badges/badges.module';
 
 @Module({
+  imports: [BadgesModule],
   providers: [
     CronLockService,
     MembershipExpiryJob,
     AutoSuspendJob,
     AutoCheckoutJob,
     AnnouncementPublisherJob,
+    LeaderboardCycleJob,
   ],
 })
 export class CronModule {}

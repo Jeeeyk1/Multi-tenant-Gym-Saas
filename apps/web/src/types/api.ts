@@ -140,6 +140,13 @@ export interface GymProfile {
   accentColor: string;
 }
 
+export interface GymSchedule {
+  dayOfWeek: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+}
+
 export interface GymDetail {
   id: string;
   name: string;
@@ -150,6 +157,7 @@ export interface GymDetail {
   city: string | null;
   country: string;
   profile: GymProfile | null;
+  schedules: GymSchedule[];
 }
 
 // ── Leaderboard ────────────────────────────────────────────────────────────
@@ -206,6 +214,61 @@ export interface LeaderboardExerciseResult {
   exercise: { id: string; name: string; category: string };
   displayOrder: number;
   entries: LeaderboardEntry[];
+}
+
+// ── Badges ─────────────────────────────────────────────────────────────────
+
+export interface BadgeCatalogEntry {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  criteriaType: string;
+  criteriaValue: number | null;
+  isAutoAwarded: boolean;
+}
+
+export interface GymCustomBadge {
+  id: string;
+  gymId: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ExerciseMilestoneBadge {
+  id: string;
+  gymId: string;
+  exerciseId: string;
+  badgeName: string;
+  description: string | null;
+  weightKg: number;
+  icon: string;
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+  exercise: { id: string; name: string };
+}
+
+export interface MemberBadge {
+  id: string;
+  memberId: string;
+  gymId: string;
+  source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';
+  badgeRank: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+  proofNotes: string | null;
+  expiresAt: string | null;
+  isEquipped: boolean;
+  awardedAt: string;
+  badgeCatalog: BadgeCatalogEntry | null;
+  customBadge: GymCustomBadge | null;
+  milestoneBadge: (ExerciseMilestoneBadge & { exercise: { id: string; name: string } }) | null;
+  cycle: { id: string; startedAt: string; endedAt: string | null } | null;
 }
 
 export interface StaffAnnouncement {

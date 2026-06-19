@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
+import { BadgesService } from '../../../badges/badges.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 interface ConfigItem {
@@ -11,7 +12,10 @@ interface ConfigItem {
 
 @Injectable()
 export class UpdateLeaderboardConfigUseCase {
-  constructor(private readonly repo: LeaderboardRepository) {}
+  constructor(
+    private readonly repo: LeaderboardRepository,
+    private readonly badges: BadgesService,
+  ) {}
 
   async execute(gymId: string, items: ConfigItem[], caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -39,6 +43,12 @@ export class UpdateLeaderboardConfigUseCase {
         caller.sub,
       );
     }
+
+    const hasActiveItem = items.some((i) => i.isActive);
+    if (hasActiveItem) {
+      void this.badges.ensureCycleExists(gymId);
+    }
+
     return this.repo.getLeaderboardConfig(gymId);
   }
 }

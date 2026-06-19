@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+}
+
+@layer base {
+  :root {
+    --background:   0 0% 100%;
+    --surface:      240 5% 97%;
+    --border:       240 6% 90%;
+    --primary:      175 84% 32%;      /* #0D9488 teal */
+    --primary-fg:   0 0% 100%;
+    --text:         240 10% 4%;
+    --muted:        240 4% 46%;
+    --success:      142 71% 45%;
+  }
+
+  .dark {
+    --background:   240 10% 4%;
+    --surface:      240 6% 9%;
+    --border:       240 5% 17%;
+    --primary:      174 74% 40%;      /* lighter teal on dark bg */
+    --primary-fg:   0 0% 100%;
+    --text:         0 0% 98%;
+    --muted:        240 5% 56%;
+    --success:      142 71% 45%;
+  }
+
+  * { @apply border-border; }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+}

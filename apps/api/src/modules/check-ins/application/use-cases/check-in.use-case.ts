@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { CheckInsRepository } from '../../infrastructure/persistence/check-ins.repository';
 import { isOutOfHours } from '../../domain/schedule-validator';
+import { BadgesService } from '../../../badges/badges.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const VALID_METHODS = ['MANUAL_STAFF', 'QR_STAFF_SCAN', 'QR_SELF_SCAN', 'APP_SELF_CHECKIN'] as const;
@@ -20,7 +21,10 @@ export interface CheckInInput {
 
 @Injectable()
 export class CheckInUseCase {
-  constructor(private readonly repo: CheckInsRepository) {}
+  constructor(
+    private readonly repo: CheckInsRepository,
+    private readonly badges: BadgesService,
+  ) {}
 
   async execute(gymId: string, input: CheckInInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -75,13 +79,18 @@ export class CheckInUseCase {
     const outOfHours = isOutOfHours(gym, new Date(), gym.timezone);
     const processedBy = isStaffMethod ? caller.sub : null;
 
-    return this.repo.createCheckin({
+    const checkin = await this.repo.createCheckin({
       memberId: member.id,
       gymId,
       method,
       processedBy,
       isOutOfHours: outOfHours,
     });
+
+    // Fire-and-forget: badge errors must not fail the check-in
+    void this.badges.checkAuto(member.id, gymId);
+
+    return checkin;
   }
 
   private async resolveMember(

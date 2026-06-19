@@ -24,6 +24,10 @@
     "db:migrate": "tsx db/scripts/apply-migrations.ts",
     "db:seed": "tsx db/scripts/apply-seeds.ts",
     "db:reset": "pnpm db:migrate && pnpm db:seed",
+    "seed:exercises": "tsx db/seeds/seed-exercises.ts",
+    "seed:admin": "tsx db/seeds/seed-admin.ts",
+    "dev:admin": "turbo run dev --filter=@gym-saas/admin",
+    "dev:landing": "turbo run dev --filter=@gym-saas/landing",
     "prisma:generate": "prisma generate"
   },
   "devDependencies": {

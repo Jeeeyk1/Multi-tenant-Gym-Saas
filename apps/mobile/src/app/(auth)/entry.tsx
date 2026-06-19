@@ -56,8 +56,9 @@ export default function EntryScreen() {
       const result = await authService.resolveCode(trimmed);
       await AsyncStorage.setItem('pending_gym_code', trimmed);
       await AsyncStorage.setItem('pending_gym_name', result.gymName ?? '');
+      await AsyncStorage.setItem('pending_gym_logo', result.logoUrl ?? '');
       if (result.primaryColor || result.secondaryColor) {
-        await setGymTheme(result.primaryColor ?? '#6EE7B7', result.secondaryColor ?? '#3B82F6');
+        await setGymTheme(result.primaryColor ?? '#6EE7B7', result.secondaryColor ?? '#3B82F6', result.logoUrl ?? null);
       }
       router.push('/(auth)/login');
     } catch (err: unknown) {
@@ -80,7 +81,7 @@ export default function EntryScreen() {
             { opacity: logoOpacity, transform: [{ scale: logoScale }] },
           ]}
         >
-          <Logo size={80} showText gymName="FitZone" />
+          <Logo size={80} showText={false} />
           <Text style={styles.tagline}>Your gym, in your pocket</Text>
         </Animated.View>
 

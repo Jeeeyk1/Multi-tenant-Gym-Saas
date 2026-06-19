@@ -1,6 +1,7 @@
 import { getSessionUser } from '@/lib/auth';
 import { getGymDetail } from '@/lib/actions/settings';
 import { SettingsForm } from '@/components/settings/settings-form';
+import { SchedulesForm } from '@/components/settings/schedules-form';
 
 export default async function SettingsPage() {
   const user = await getSessionUser();
@@ -13,10 +14,13 @@ export default async function SettingsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your gym's branding, contact info, and social links.
+          Manage your gym&apos;s branding, contact info, and opening hours.
         </p>
       </div>
-      <SettingsForm gymId={user.gymId} gymDetail={gymDetail} />
+      <div className="space-y-6">
+        <SettingsForm gymId={user.gymId} gymDetail={gymDetail} />
+        <SchedulesForm gymId={user.gymId} schedules={gymDetail.schedules ?? []} />
+      </div>
     </div>
   );
 }

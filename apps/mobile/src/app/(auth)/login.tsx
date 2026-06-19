@@ -9,12 +9,14 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { Logo } from '../../components/Logo';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 export default function LoginScreen() {
@@ -22,6 +24,7 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const { theme } = useTheme();
   const [gymName, setGymName] = useState('');
+  const [gymLogo, setGymLogo] = useState('');
   const [gymCode, setGymCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,11 +33,10 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.multiGet(['pending_gym_code', 'pending_gym_name']).then((values) => {
-      const code = values[0][1];
-      const name = values[1][1];
-      if (code) setGymCode(code);
-      if (name) setGymName(name);
+    AsyncStorage.multiGet(['pending_gym_code', 'pending_gym_name', 'pending_gym_logo']).then((values) => {
+      if (values[0][1]) setGymCode(values[0][1]);
+      if (values[1][1]) setGymName(values[1][1]);
+      if (values[2][1]) setGymLogo(values[2][1]);
     });
   }, []);
 
@@ -76,11 +78,17 @@ export default function LoginScreen() {
           <Text style={[styles.backText, { color: theme.primary }]}>← Change code</Text>
         </TouchableOpacity>
 
+        {/* Gym identity header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome back</Text>
+          {gymLogo ? (
+            <Image source={{ uri: gymLogo }} style={styles.gymLogoImg} resizeMode="contain" />
+          ) : (
+            <Logo size={64} showText={false} />
+          )}
           {gymName ? (
-            <Text style={styles.gymName}>{gymName}</Text>
+            <Text style={styles.gymNameTitle}>{gymName}</Text>
           ) : null}
+          <Text style={styles.subtitle}>Welcome back</Text>
         </View>
 
         {error && (
@@ -122,7 +130,9 @@ export default function LoginScreen() {
                 style={styles.showHide}
                 onPress={() => setShowPassword((v) => !v)}
               >
-                <Text style={[styles.showHideText, { color: theme.primary }]}>{showPassword ? 'Hide' : 'Show'}</Text>
+                <Text style={[styles.showHideText, { color: theme.primary }]}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -171,23 +181,30 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   backText: {
-    color: COLORS.primary,
     fontSize: 14,
     ...FONT.medium,
   },
   header: {
+    alignItems: 'center',
     marginBottom: SPACING.xl,
+    gap: SPACING.sm,
   },
-  title: {
-    fontSize: 28,
+  gymLogoImg: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    marginBottom: SPACING.xs,
+  },
+  gymNameTitle: {
+    fontSize: 24,
     ...FONT.bold,
     color: COLORS.text,
-    marginBottom: 4,
+    textAlign: 'center',
   },
-  gymName: {
-    fontSize: 16,
-    color: COLORS.primaryLight,
-    ...FONT.medium,
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    ...FONT.regular,
   },
   errorBox: {
     backgroundColor: COLORS.errorBg,
@@ -233,7 +250,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   showHideText: {
-    color: COLORS.primary,
     fontSize: 13,
     ...FONT.medium,
   },

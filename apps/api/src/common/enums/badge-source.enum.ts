@@ -1,0 +1,6 @@
+export enum BadgeSource {
+  AUTO_SYSTEM    = 'AUTO_SYSTEM',
+  AUTO_CYCLE     = 'AUTO_CYCLE',
+  AUTO_MILESTONE = 'AUTO_MILESTONE',
+  STAFF_AWARD    = 'STAFF_AWARD',
+}

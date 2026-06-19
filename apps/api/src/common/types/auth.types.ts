@@ -32,4 +32,10 @@ export interface GymAuthUser {
   permissions: string[];
 }
 
+export interface SystemAdminAuthUser {
+  sub: string;
+  type: 'system_admin';
+  email: string;
+}
+
 export type AuthenticatedUser = OrgAuthUser | GymAuthUser;

@@ -1,11 +1,9 @@
 import { Redirect, Tabs } from 'expo-router';
-import { Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -28,27 +26,7 @@ function TabIcon({
   );
 }
 
-function CenterTabButton({ onPress, accessibilityLabel }: BottomTabBarButtonProps) {
-  const { theme } = useTheme();
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel}
-      activeOpacity={0.82}
-      style={styles.centerWrapper}
-    >
-      <LinearGradient
-        colors={theme.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.centerGradient, { shadowColor: theme.primary }]}
-      >
-        <Ionicons name="scan" size={26} color="#000" />
-      </LinearGradient>
-      <Text style={styles.centerLabel}>Check In</Text>
-    </TouchableOpacity>
-  );
-}
+const HIDDEN: object = { tabBarItemStyle: { display: 'none' }, tabBarButton: () => null };
 
 export default function MemberLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -62,11 +40,17 @@ export default function MemberLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: COLORS.surface,
+          borderTopColor: COLORS.border,
+          borderTopWidth: 1,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 8,
+        },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
+        tabBarLabelStyle: { fontSize: 10, marginBottom: 2 },
       }}
     >
       <Tabs.Screen
@@ -79,108 +63,49 @@ export default function MemberLayout() {
         }}
       />
       <Tabs.Screen
-        name="announcements"
+        name="train"
         options={{
-          title: 'News',
+          title: 'Train',
           tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="megaphone" iconUnfocused="megaphone-outline" focused={focused} />
+            <TabIcon iconFocused="barbell" iconUnfocused="barbell-outline" focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="checkin"
         options={{
-          title: '',
-          tabBarButton: (props) => <CenterTabButton {...props} />,
-        }}
-      />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Ranks',
+          title: 'Check In',
           tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="trophy" iconUnfocused="trophy-outline" focused={focused} />
+            <TabIcon iconFocused="scan" iconUnfocused="scan-outline" focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
-        name="ai"
+        name="hub"
         options={{
-          title: 'AI',
+          title: 'Community',
           tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="flash" iconUnfocused="flash-outline" focused={focused} />
+            <TabIcon iconFocused="compass" iconUnfocused="compass-outline" focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Me',
           tabBarIcon: ({ focused }) => (
             <TabIcon iconFocused="person" iconUnfocused="person-outline" focused={focused} />
           ),
         }}
       />
-      {/* Chat is still a route but hidden from the tab bar */}
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'Chat',
-          tabBarItemStyle: { display: 'none' },
-          tabBarButton: () => null,
-        }}
-      />
+
+      {/* Routes accessible within tabs — not shown in the tab bar */}
+      <Tabs.Screen name="announcements" options={HIDDEN} />
+      <Tabs.Screen name="chat" options={HIDDEN} />
+      <Tabs.Screen name="leaderboard" options={HIDDEN} />
+      <Tabs.Screen name="ai" options={HIDDEN} />
+      <Tabs.Screen name="workout" options={HIDDEN} />
+      <Tabs.Screen name="workout-history" options={HIDDEN} />
     </Tabs>
   );
 }
-
-const TAB_BAR_HEIGHT = 72;
-const CENTER_BTN_SIZE = 58;
-const CENTER_FLOAT = 20;
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.surface,
-    borderTopColor: COLORS.border,
-    borderTopWidth: 1,
-    height: TAB_BAR_HEIGHT,
-    paddingBottom: Platform.OS === 'ios' ? 12 : 8,
-    paddingTop: 8,
-    overflow: 'visible',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 12,
-  },
-  tabItem: {
-    paddingTop: 4,
-  },
-  tabLabel: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  centerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    width: 70,
-    marginTop: -CENTER_FLOAT,
-  },
-  centerGradient: {
-    width: CENTER_BTN_SIZE,
-    height: CENTER_BTN_SIZE,
-    borderRadius: CENTER_BTN_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  centerLabel: {
-    fontSize: 10,
-    color: COLORS.textMuted,
-    marginTop: 5,
-  },
-});

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EmailService } from '../../../../common/email/email.service';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
@@ -14,13 +15,18 @@ export interface RegisterMemberInput {
 
 @Injectable()
 export class RegisterMemberUseCase {
-  constructor(private readonly repo: MembersRepository) {}
+  constructor(
+    private readonly repo: MembersRepository,
+    private readonly email: EmailService,
+  ) {}
 
   async execute(gymId: string, input: RegisterMemberInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
     assertPermission(caller, 'members.create');
 
-    // Resolve expiry date
+    const gym = await this.repo.findGymById(gymId);
+    if (!gym) throw new NotFoundError('Gym not found', 'GYM_NOT_FOUND');
+
     let expiryDate: Date;
     if (input.planId) {
       const plan = await this.repo.findPlanById(input.planId, gymId);
@@ -37,14 +43,12 @@ export class RegisterMemberUseCase {
       );
     }
 
-    // Check email uniqueness
     const existingUser = await this.repo.findUserByEmail(input.email);
     if (existingUser) {
       throw new ConflictError('Email is already in use', 'EMAIL_TAKEN');
     }
 
-    // MVP: return invite token directly. Production: relay via email.
-    return this.repo.registerMember({
+    const result = await this.repo.registerMember({
       gymId,
       email: input.email,
       fullName: input.fullName,
@@ -52,6 +56,16 @@ export class RegisterMemberUseCase {
       planId: input.planId,
       expiryDate,
     });
+
+    await this.email.sendMemberInvite({
+      to: input.email,
+      fullName: input.fullName,
+      gymName: gym.name,
+      gymCode: gym.code,
+      token: result.inviteToken,
+    });
+
+    return result;
   }
 }
 

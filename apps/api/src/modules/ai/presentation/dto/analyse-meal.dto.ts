@@ -1,7 +1,12 @@
-import { IsString, Length } from 'class-validator';
+import { IsOptional, IsString, IsUrl, Length } from 'class-validator';
 
 export class AnalyseMealDto {
+  @IsOptional()
   @IsString()
   @Length(1, 500)
-  description!: string;
+  description?: string;
+
+  @IsOptional()
+  @IsUrl()
+  photoUrl?: string;
 }

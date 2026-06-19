@@ -27,6 +27,9 @@ export async function resolveCode(
     name: string;
     code?: string;
     slug?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    logoUrl?: string | null;
   };
 
   try {
@@ -43,7 +46,11 @@ export async function resolveCode(
   }
 
   if (data.type === 'GYM') {
-    redirect(`/${data.code}/login?type=gym&name=${encodeURIComponent(data.name)}`);
+    const params = new URLSearchParams({ type: 'gym', name: data.name });
+    if (data.logoUrl) params.set('logo', data.logoUrl);
+    if (data.primaryColor) params.set('primary', data.primaryColor);
+    if (data.secondaryColor) params.set('secondary', data.secondaryColor);
+    redirect(`/${data.code}/login?${params.toString()}`);
   } else {
     redirect(`/${data.slug}/login?type=org&name=${encodeURIComponent(data.name)}`);
   }
@@ -98,13 +105,11 @@ export async function login(
 
 export async function logout(): Promise<void> {
   const cookieStore = await cookies();
+  const refreshToken = cookieStore.get('refresh_token')?.value;
 
-  const token = cookieStore.get('access_token')?.value;
-  if (token) {
+  if (refreshToken) {
     try {
-      await authClient.post('/auth/logout', null, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await authClient.post('/auth/logout', { refreshToken });
     } catch {
       // best-effort — cookies are cleared regardless
     }

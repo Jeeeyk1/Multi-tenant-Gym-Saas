@@ -11,7 +11,15 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.gymSaas.mobile"
+      "bundleIdentifier": "com.gymSaas.mobile",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "FitZone reads your workout calories and heart rate so you can track your fitness progress.",
+        "NSHealthUpdateUsageDescription": "FitZone saves your workout sessions to Apple Health."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
+      }
     },
     "android": {
       "package": "com.gymSaas.mobile",
@@ -21,7 +29,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan member QR codes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

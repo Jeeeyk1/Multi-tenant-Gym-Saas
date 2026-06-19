@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { login } from '@/lib/auth';
 
 interface Props {
@@ -83,9 +84,17 @@ export function LoginForm({ code, type }: Props) {
         {isPending ? 'Signing in…' : 'Sign In'}
       </button>
 
-      <p className="text-xs text-muted-foreground text-center pt-1">
-        First time? Check your email for an activation link.
-      </p>
+      <div className="flex items-center justify-between pt-1">
+        <p className="text-xs text-muted-foreground">
+          First time? Check your email for an activation link.
+        </p>
+        <Link
+          href={`/forgot-password?code=${code}`}
+          className="text-xs text-primary hover:underline shrink-0 ml-2"
+        >
+          Forgot password?
+        </Link>
+      </div>
     </form>
   );
 }

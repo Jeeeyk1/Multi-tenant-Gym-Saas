@@ -107,7 +107,7 @@ export default async function LeaderboardPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {entries.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-white/3 transition">
+                      <tr key={entry.id} className="hover:bg-foreground/5 transition">
                         <td className="px-5 py-3 text-center">
                           {entry.rank === 1 ? (
                             <span className="text-yellow-400 font-bold text-base">🥇</span>

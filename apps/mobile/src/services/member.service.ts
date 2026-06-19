@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { GymMember, CheckIn, MemberProfile } from '../types';
+import type { GymMember, CheckIn, MemberProfile, MemberBadge } from '../types';
 
 export const memberService = {
   getMyMember: (gymId: string) =>
@@ -19,4 +19,7 @@ export const memberService = {
 
   registerDeviceToken: (gymId: string, token: string, platform: 'ios' | 'android') =>
     api.post<void>(`/gyms/${gymId}/members/me/device-token`, { token, platform }),
+
+  getMyBadges: (gymId: string) =>
+    api.get<MemberBadge[]>(`/gyms/${gymId}/badges/my`),
 };

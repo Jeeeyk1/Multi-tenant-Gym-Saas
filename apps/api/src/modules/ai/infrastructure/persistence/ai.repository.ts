@@ -153,4 +153,56 @@ export class AiRepository {
       },
     });
   }
+
+  async saveWorkoutPlan(memberId: string, gymId: string, suggestion: string): Promise<void> {
+    await this.prisma.memberWorkoutPlan.upsert({
+      where: { memberId },
+      create: { memberId, gymId, suggestion, generatedAt: new Date() },
+      update: { suggestion, generatedAt: new Date() },
+    });
+  }
+
+  getLatestWorkoutPlan(memberId: string) {
+    return this.prisma.memberWorkoutPlan.findUnique({
+      where: { memberId },
+      select: { suggestion: true, generatedAt: true },
+    });
+  }
+
+  getExerciseMedia(normalizedName: string) {
+    return this.prisma.exerciseMedia.findUnique({
+      where: { normalizedName },
+      select: { gifUrl: true },
+    });
+  }
+
+  async upsertExerciseMedia(normalizedName: string, gifUrl: string): Promise<void> {
+    await this.prisma.exerciseMedia.upsert({
+      where: { normalizedName },
+      create: { normalizedName, gifUrl },
+      update: { gifUrl, fetchedAt: new Date() },
+    });
+  }
+
+  async listExercisesGrouped(): Promise<Record<string, string[]>> {
+    const rows = await this.prisma.exerciseMedia.findMany({
+      where: { primaryMuscles: { not: null }, category: { not: null } },
+      select: { normalizedName: true, primaryMuscles: true },
+      orderBy: { normalizedName: 'asc' },
+    });
+
+    const groups: Record<string, string[]> = {};
+    for (const row of rows) {
+      const muscle = row.primaryMuscles!;
+      if (!groups[muscle]) groups[muscle] = [];
+      if (groups[muscle].length < 20) {
+        groups[muscle].push(toTitleCase(row.normalizedName));
+      }
+    }
+    return groups;
+  }
+}
+
+function toTitleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
 }

@@ -226,6 +226,38 @@ export interface RenewalRecord {
 }
 
 // AI features
+export interface WorkoutExercise {
+  name: string;
+  sets: number | null;
+  reps: string | null;
+  restSec: number | null;
+  tip: string | null;
+}
+
+export interface WorkoutSection {
+  title: string;
+  exercises: WorkoutExercise[];
+}
+
+export interface WorkoutDay {
+  day: string;
+  focus: string;
+  totalDurationMin: number;
+  sections: WorkoutSection[];
+}
+
+export interface WorkoutWeekPlan {
+  weekPlan: WorkoutDay[];
+}
+
+export interface ExerciseInstructions {
+  targetMuscles: string[];
+  steps: string[];
+  commonMistakes: string[];
+  easier: string;
+  harder: string;
+}
+
 export interface WorkoutSuggestion {
   suggestion: string;
 }
@@ -306,6 +338,47 @@ export interface LeaderboardExerciseResult {
   exercise: { id: string; name: string; category: string };
   displayOrder: number;
   entries: LeaderboardEntry[];
+}
+
+// Workout sessions
+export type WorkoutType = 'Strength' | 'Cardio' | 'HIIT' | 'CrossFit' | 'Yoga' | 'Other';
+
+export interface WorkoutSession {
+  id: string;
+  workoutType: WorkoutType | string;
+  startedAt: string;
+  endedAt: string;
+  durationMinutes: number;
+  caloriesBurned: number | null;
+  avgHeartRate: number | null;
+  source: 'manual' | 'healthkit';
+  createdAt: string;
+}
+
+export interface WorkoutSessionsPage {
+  data: WorkoutSession[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+// Badges
+export interface MemberBadge {
+  id: string;
+  source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';
+  badgeRank: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+  proofNotes: string | null;
+  awardedAt: string;
+  expiresAt: string | null;
+  cycleId: string | null;
+  badgeCatalog: { id: string; key: string; name: string; icon: string; color: string } | null;
+  customBadge: { id: string; name: string; icon: string; color: string; description: string | null } | null;
+  milestoneBadge: {
+    id: string;
+    badgeName: string;
+    icon: string;
+    color: string;
+    weightKg: number;
+    exercise: { name: string };
+  } | null;
 }
 
 // API errors

@@ -12,6 +12,7 @@ import { LogWeightUseCase } from './application/use-cases/log-weight.use-case';
 import { ListWeightLogsUseCase } from './application/use-cases/list-weight-logs.use-case';
 import { SuspendMemberUseCase } from './application/use-cases/suspend-member.use-case';
 import { ReactivateMemberUseCase } from './application/use-cases/reactivate-member.use-case';
+import { RemoveMemberUseCase } from './application/use-cases/remove-member.use-case';
 import { GetMemberQrUseCase } from './application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from './application/use-cases/register-device-token.use-case';
 import { MembersController } from './presentation/controllers/members.controller';
@@ -34,6 +35,7 @@ import { MembersController } from './presentation/controllers/members.controller
     ReactivateMemberUseCase,
     GetMemberQrUseCase,
     RegisterDeviceTokenUseCase,
+    RemoveMemberUseCase,
   ],
   exports: [MembersRepository],
 })

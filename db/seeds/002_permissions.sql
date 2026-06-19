@@ -40,6 +40,10 @@ INSERT INTO permissions (key, description, module) VALUES
   ('leaderboard.view',      'View leaderboard and rankings',            'Leaderboard'),
   ('leaderboard.submit',    'Submit a personal record to leaderboard',  'Leaderboard'),
   ('leaderboard.review',    'Approve or reject PR submissions',         'Leaderboard'),
-  ('leaderboard.manage',    'Configure enabled exercises per gym',      'Leaderboard')
+  ('leaderboard.manage',    'Configure enabled exercises per gym',      'Leaderboard'),
+
+  -- Badges module
+  ('badges.manage',         'Create and configure badge types',          'Badges'),
+  ('badges.award',          'Manually award badges to members',          'Badges')
 
 ON CONFLICT (key) DO NOTHING;

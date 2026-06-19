@@ -157,9 +157,10 @@ export class GymRepository {
       accentColor?: string;
     },
   ) {
-    return this.prisma.gymProfile.update({
+    return this.prisma.gymProfile.upsert({
       where: { gymId },
-      data: { ...data, updatedAt: new Date() },
+      create: { gymId, ...data },
+      update: { ...data, updatedAt: new Date() },
       select: {
         gymId: true,
         description: true,

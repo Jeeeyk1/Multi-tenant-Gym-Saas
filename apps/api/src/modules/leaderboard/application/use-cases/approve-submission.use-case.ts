@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { PrSubmissionStatus } from '../../../../common/enums';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
+import { BadgesService } from '../../../badges/badges.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
 export class ApproveSubmissionUseCase {
-  constructor(private readonly repo: LeaderboardRepository) {}
+  constructor(
+    private readonly repo: LeaderboardRepository,
+    private readonly badges: BadgesService,
+  ) {}
 
   async execute(submissionId: string, gymId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -19,7 +23,18 @@ export class ApproveSubmissionUseCase {
     if (submission.status !== PrSubmissionStatus.PENDING) {
       throw new ForbiddenError('Submission is not pending', 'SUBMISSION_NOT_PENDING');
     }
-    return this.repo.approveSubmission(submissionId, caller.sub);
+
+    const approved = await this.repo.approveSubmission(submissionId, caller.sub);
+
+    // Fire-and-forget: check if this PR unlocks any exercise milestone badge
+    void this.badges.checkMilestone(
+      approved.member.id,
+      gymId,
+      approved.exercise.id,
+      Number(approved.weightKg),
+    );
+
+    return approved;
   }
 }
 

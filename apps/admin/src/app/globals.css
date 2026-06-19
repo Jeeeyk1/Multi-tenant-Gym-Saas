@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background:   0 0% 99%;
+    --surface:      240 9% 97%;
+    --border:       240 6% 90%;
+    --primary:      175 84% 32%;      /* #0D9488 teal */
+    --primary-fg:   0 0% 100%;
+    --text:         240 10% 6%;
+    --muted:        240 4% 46%;
+    --warning:      38 92% 50%;
+    --destructive:  0 84% 60%;
+    --success:      142 71% 45%;
+  }
+
+  * { @apply border-border; }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  input, textarea, select { @apply bg-surface text-foreground; }
+  input::placeholder, textarea::placeholder { color: hsl(var(--muted)); }
+}

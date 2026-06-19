@@ -1,19 +1,38 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
+import { UIProviders } from '@/providers/ui-providers';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
+});
 
 export const metadata: Metadata = {
-  title: 'GainzOS — Staff Portal',
+  title: 'LiftHub — Staff Portal',
   description: 'Gym management platform',
 };
 
+const themeScript = `
+(function(){try{
+  var s=localStorage.getItem('theme');
+  var d=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  if(s==='dark'||(s===null&&d))document.documentElement.classList.add('dark');
+}catch{}})();
+`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body>{children}</body>
+    <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
+        <UIProviders>{children}</UIProviders>
+      </body>
     </html>
   );
 }

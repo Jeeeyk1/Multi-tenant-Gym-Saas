@@ -19,22 +19,24 @@ export async function registerMember(
   if (!fullName || !email) return { error: 'Full name and email are required.' };
   if (!planId && !expiryDate) return { error: 'Select a plan or enter an expiry date.' };
 
+  let member: MemberDetail;
   try {
-    const member = await api.post<MemberDetail>(`/gyms/${gymId}/members`, {
+    member = await api.post<MemberDetail>(`/gyms/${gymId}/members`, {
       fullName,
       email,
       phone,
       planId,
       expiryDate,
     });
-    revalidatePath('/dashboard/members');
-    redirect(`/dashboard/members/${member.id}`);
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string };
     if (e.code === 'CONFLICT' || e.message?.toLowerCase().includes('already'))
       return { error: 'A member with this email already exists.' };
     return { error: e.message ?? 'Registration failed. Please try again.' };
   }
+
+  revalidatePath('/dashboard/members');
+  redirect(`/dashboard/members/${member.id}`);
 }
 
 export async function suspendMember(gymId: string, memberId: string): Promise<{ error?: string }> {
@@ -85,4 +87,15 @@ export async function renewMember(
     const e = err as { message?: string };
     return { error: e.message ?? 'Renewal failed. Please try again.' };
   }
+}
+
+export async function removeMember(gymId: string, memberId: string): Promise<{ error?: string }> {
+  try {
+    await api.delete(`/gyms/${gymId}/members/${memberId}`);
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return { error: e.message ?? 'Could not remove member.' };
+  }
+  revalidatePath('/dashboard/members');
+  redirect('/dashboard/members');
 }

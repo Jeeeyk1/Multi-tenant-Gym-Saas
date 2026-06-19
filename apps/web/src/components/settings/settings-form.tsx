@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { updateGymProfile } from '@/lib/actions/settings';
+import { updateGymProfile, uploadGymLogo } from '@/lib/actions/settings';
 import type { GymDetail } from '@/types/api';
 
 const THEME_PRESETS = [
@@ -25,20 +25,6 @@ function activePreset(primary: string, secondary: string): PresetId {
   return match ? match.id : 'custom';
 }
 
-async function uploadLogoToApi(gymId: string, file: File): Promise<string> {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/gyms/${gymId}/profile/logo`,
-    { method: 'POST', body: form, credentials: 'include' },
-  );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { message?: string };
-    throw new Error(err.message ?? 'Logo upload failed');
-  }
-  const json = await res.json() as { url: string };
-  return json.url;
-}
 
 interface Props {
   gymId: string;
@@ -118,7 +104,9 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
       let finalLogoUrl = logoUrl;
       if (pendingFile) {
         setUploadingLogo(true);
-        finalLogoUrl = await uploadLogoToApi(gymId, pendingFile);
+        const form = new FormData();
+        form.append('file', pendingFile);
+        finalLogoUrl = await uploadGymLogo(gymId, form);
         setLogoUrl(finalLogoUrl);
         setLogoPreview(null);
         setPendingFile(null);

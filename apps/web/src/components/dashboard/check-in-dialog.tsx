@@ -152,7 +152,7 @@ export function CheckInDialog({ gymId }: Props) {
                       onClick={() => handleCheckIn(member)}
                       disabled={isChecking || !!successId}
                       className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition hover:bg-white/5 disabled:opacity-60',
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition hover:bg-foreground/5 disabled:opacity-60',
                         isSuccess && 'bg-success/10',
                       )}
                     >

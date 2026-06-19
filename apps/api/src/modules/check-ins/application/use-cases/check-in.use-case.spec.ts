@@ -1,5 +1,6 @@
 import { CheckInUseCase } from './check-in.use-case';
 import type { CheckInsRepository } from '../../infrastructure/persistence/check-ins.repository';
+import type { BadgesService } from '../../../badges/badges.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const mockRepo = {
@@ -46,12 +47,14 @@ const activeMember = {
 
 const newCheckin = { id: 'checkin-1', memberId: 'member-1', gymId: 'gym-1', method: 'MANUAL_STAFF' };
 
+const mockBadges = { checkAuto: jest.fn().mockResolvedValue(undefined) } as unknown as jest.Mocked<BadgesService>;
+
 describe('CheckInUseCase', () => {
   let useCase: CheckInUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new CheckInUseCase(mockRepo);
+    useCase = new CheckInUseCase(mockRepo, mockBadges);
     mockRepo.findGymForCheckin.mockResolvedValue(gym as any);
     mockRepo.findMemberForCheckin.mockResolvedValue(activeMember as any);
     mockRepo.findMemberByUserId.mockResolvedValue(activeMember as any);

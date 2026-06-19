@@ -24,11 +24,19 @@ import { CronModule } from './cron/cron.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AiModule } from './modules/ai/ai.module';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { PublicModule } from './modules/public/public.module';
+import { EmailModule } from './common/email/email.module';
+import { WorkoutsModule } from './modules/workouts/workouts.module';
+import { BadgesModule } from './modules/badges/badges.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // CWD when the API starts is apps/api/, so ../../.env is the workspace root .env.
+      // All config lives there — apps/api/.env is only for local overrides.
+      envFilePath: ['../../.env', '.env'],
       load: [appConfig, databaseConfig, redisConfig, jwtConfig],
       validationSchema: Joi.object({
         NODE_ENV: Joi.string()
@@ -41,11 +49,18 @@ import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
-        // AI provider — optional so the server starts without AI configured
+        // Text AI provider (Groq by default)
         AI_PROVIDER: Joi.string().valid('groq', 'anthropic').default('groq'),
         AI_API_KEY: Joi.string().optional(),
         AI_MODEL: Joi.string().optional(),
         AI_BASE_URL: Joi.string().uri().optional(),
+        // Vision AI — Gemini Flash (separate key from text AI)
+        GEMINI_API_KEY: Joi.string().optional(),
+        GEMINI_MODEL: Joi.string().default('gemini-2.0-flash'),
+        // Email (Resend)
+        RESEND_API_KEY: Joi.string().required(),
+        EMAIL_FROM: Joi.string().default('noreply@gym.noetecha.com'),
+        WEB_URL: Joi.string().uri().default('http://localhost:3000'),
       }),
     }),
     JwtModule.registerAsync({
@@ -76,6 +91,11 @@ import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
     NotificationsModule,
     AiModule,
     LeaderboardModule,
+    AdminModule,
+    PublicModule,
+    EmailModule,
+    WorkoutsModule,
+    BadgesModule,
   ],
 })
 export class AppModule {}

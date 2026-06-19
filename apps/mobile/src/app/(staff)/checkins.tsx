@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { staffService } from '../../services/staff.service';
@@ -122,6 +123,87 @@ function MemberRow({
   );
 }
 
+// ─── QR Scanner ──────────────────────────────────────────────────────────────
+
+function QrScannerTab({
+  gymId,
+  onSuccess,
+  onError,
+}: {
+  gymId: string;
+  onSuccess: () => void;
+  onError: (msg: string) => void;
+}) {
+  const { theme } = useTheme();
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scanning, setScanning] = useState(false);
+  const scannedRef = useRef(false);
+
+  const handleBarcode = useCallback(
+    async ({ data }: { data: string }) => {
+      if (scannedRef.current || scanning) return;
+      scannedRef.current = true;
+      setScanning(true);
+      try {
+        await staffService.checkInQrScan(gymId, data);
+        onSuccess();
+      } catch (err: unknown) {
+        const e = err as { code?: string; message?: string };
+        const msg =
+          e.code === 'ALREADY_CHECKED_IN' ? 'Member is already checked in' :
+          e.code === 'MEMBER_NOT_ACTIVE'   ? 'Member is not active' :
+          e.code === 'MEMBERSHIP_EXPIRED'  ? 'Membership has expired' :
+          e.code === 'INVALID_QR'          ? 'Invalid or expired QR code' :
+          e.message ?? 'Failed to check in member';
+        onError(msg);
+        // allow re-scan after error
+        setTimeout(() => { scannedRef.current = false; setScanning(false); }, 2000);
+      }
+    },
+    [gymId, onSuccess, onError, scanning],
+  );
+
+  if (!permission) return <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.xl }} />;
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.cameraPermission}>
+        <Ionicons name="camera-outline" size={40} color={COLORS.textMuted} />
+        <Text style={styles.cameraPermissionText}>Camera access is needed to scan QR codes</Text>
+        <TouchableOpacity style={[styles.permissionBtn, { backgroundColor: theme.primary }]} onPress={requestPermission}>
+          <Text style={styles.permissionBtnText}>Allow Camera</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.scannerWrap}>
+      <CameraView
+        style={styles.camera}
+        facing="back"
+        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+        onBarcodeScanned={scanning ? undefined : handleBarcode}
+      />
+      <View style={styles.scannerOverlay}>
+        <View style={styles.scannerFrame}>
+          <View style={[styles.corner, styles.cornerTL, { borderColor: theme.primary }]} />
+          <View style={[styles.corner, styles.cornerTR, { borderColor: theme.primary }]} />
+          <View style={[styles.corner, styles.cornerBL, { borderColor: theme.primary }]} />
+          <View style={[styles.corner, styles.cornerBR, { borderColor: theme.primary }]} />
+        </View>
+      </View>
+      {scanning && (
+        <View style={styles.scanningIndicator}>
+          <ActivityIndicator color="#fff" size="small" />
+          <Text style={styles.scanningText}>Checking in…</Text>
+        </View>
+      )}
+      <Text style={styles.scanHint}>Point the camera at a member's QR code</Text>
+    </View>
+  );
+}
+
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function CheckInsScreen() {
@@ -137,6 +219,7 @@ export default function CheckInsScreen() {
 
   // Check-in modal state
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalTab, setModalTab] = useState<'search' | 'scan'>('scan');
   const [members, setMembers] = useState<MemberListItem[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -181,10 +264,13 @@ export default function CheckInsScreen() {
 
   const openModal = async () => {
     setModalVisible(true);
+    setModalTab('scan');
     setCheckInError(null);
     setSearchQuery('');
-    if (members.length > 0) return; // already loaded
-    if (!user) return;
+  };
+
+  const loadMembersIfNeeded = async () => {
+    if (members.length > 0 || !user) return;
     setMembersLoading(true);
     try {
       const res = await staffService.getMembers(user.gymId);
@@ -201,6 +287,15 @@ export default function CheckInsScreen() {
     setSearchQuery('');
     setCheckInError(null);
   };
+
+  const handleQrSuccess = useCallback(async () => {
+    closeModal();
+    await loadActiveList();
+  }, [loadActiveList]);
+
+  const handleQrError = useCallback((msg: string) => {
+    setCheckInError(msg);
+  }, []);
 
   // ── Check-in a member ──────────────────────────────────────────────────────
 
@@ -322,26 +417,25 @@ export default function CheckInsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Search input */}
-            <View style={styles.searchRow}>
-              <Ionicons name="search-outline" size={18} color={COLORS.textMuted} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Name or membership number"
-                placeholderTextColor={COLORS.textMuted}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCorrect={false}
-                autoCapitalize="none"
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
-                </TouchableOpacity>
-              )}
+            {/* Tab switcher */}
+            <View style={styles.modalTabs}>
+              <TouchableOpacity
+                style={[styles.modalTab, modalTab === 'scan' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
+                onPress={() => { setModalTab('scan'); setCheckInError(null); }}
+              >
+                <Ionicons name="qr-code-outline" size={16} color={modalTab === 'scan' ? theme.primary : COLORS.textMuted} />
+                <Text style={[styles.modalTabText, modalTab === 'scan' && { color: theme.primary }]}>Scan QR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalTab, modalTab === 'search' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
+                onPress={() => { setModalTab('search'); setCheckInError(null); loadMembersIfNeeded(); }}
+              >
+                <Ionicons name="search-outline" size={16} color={modalTab === 'search' ? theme.primary : COLORS.textMuted} />
+                <Text style={[styles.modalTabText, modalTab === 'search' && { color: theme.primary }]}>Search</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Error */}
+            {/* Error banner */}
             {checkInError && (
               <View style={styles.modalError}>
                 <Ionicons name="warning-outline" size={15} color={COLORS.warning} />
@@ -349,33 +443,60 @@ export default function CheckInsScreen() {
               </View>
             )}
 
-            {/* Member list */}
-            {membersLoading ? (
-              <View style={styles.modalLoading}>
-                <ActivityIndicator color={theme.primary} />
-              </View>
-            ) : (
-              <FlatList
-                data={filteredMembers}
-                keyExtractor={(item) => item.id}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.memberListContent}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                ListEmptyComponent={
-                  <View style={styles.modalEmpty}>
-                    <Text style={styles.modalEmptyText}>
-                      {searchQuery ? 'No members match your search' : 'No members found'}
-                    </Text>
+            {/* QR scanner */}
+            {modalTab === 'scan' && (
+              <QrScannerTab gymId={user?.gymId ?? ''} onSuccess={handleQrSuccess} onError={handleQrError} />
+            )}
+
+            {/* Member search */}
+            {modalTab === 'search' && (
+              <>
+                <View style={styles.searchRow}>
+                  <Ionicons name="search-outline" size={18} color={COLORS.textMuted} style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Name or membership number"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {membersLoading ? (
+                  <View style={styles.modalLoading}>
+                    <ActivityIndicator color={theme.primary} />
                   </View>
-                }
-                renderItem={({ item }) => (
-                  <MemberRow
-                    item={item}
-                    onCheckIn={handleCheckIn}
-                    isLoading={checkingInId === item.id}
+                ) : (
+                  <FlatList
+                    data={filteredMembers}
+                    keyExtractor={(item) => item.id}
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={styles.memberListContent}
+                    ItemSeparatorComponent={() => <View style={styles.separator} />}
+                    ListEmptyComponent={
+                      <View style={styles.modalEmpty}>
+                        <Text style={styles.modalEmptyText}>
+                          {searchQuery ? 'No members match your search' : 'No members found'}
+                        </Text>
+                      </View>
+                    }
+                    renderItem={({ item }) => (
+                      <MemberRow
+                        item={item}
+                        onCheckIn={handleCheckIn}
+                        isLoading={checkingInId === item.id}
+                      />
+                    )}
                   />
                 )}
-              />
+              </>
             )}
           </View>
         </KeyboardAvoidingView>
@@ -572,4 +693,100 @@ const styles = StyleSheet.create({
 
   modalEmpty: { paddingVertical: SPACING.xl, alignItems: 'center' },
   modalEmptyText: { fontSize: 14, color: COLORS.textMuted, ...FONT.regular },
+
+  // Modal tabs
+  modalTabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  modalTabText: {
+    fontSize: 14,
+    ...FONT.semibold,
+    color: COLORS.textMuted,
+  },
+
+  // QR scanner
+  scannerWrap: {
+    height: 320,
+    margin: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    position: 'relative',
+  },
+  camera: { flex: 1 },
+  scannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannerFrame: {
+    width: 200,
+    height: 200,
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderColor: '#fff',
+    borderWidth: 3,
+  },
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 4 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 4 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 4 },
+  scanningIndicator: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  scanningText: { color: '#fff', fontSize: 14, ...FONT.medium },
+  scanHint: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    ...FONT.regular,
+    paddingBottom: 10,
+  },
+
+  // Camera permission
+  cameraPermission: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.xl,
+    gap: SPACING.md,
+  },
+  cameraPermissionText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    ...FONT.regular,
+  },
+  permissionBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.button,
+  },
+  permissionBtnText: { fontSize: 14, color: '#000', ...FONT.semibold },
 });

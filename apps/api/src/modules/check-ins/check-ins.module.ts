@@ -6,8 +6,10 @@ import { ListActiveCheckinsUseCase } from './application/use-cases/list-active-c
 import { ListCheckinHistoryUseCase } from './application/use-cases/list-checkin-history.use-case';
 import { ListMyCheckInsUseCase } from './application/use-cases/list-my-checkins.use-case';
 import { CheckInsController } from './presentation/controllers/check-ins.controller';
+import { BadgesModule } from '../badges/badges.module';
 
 @Module({
+  imports: [BadgesModule],
   controllers: [CheckInsController],
   providers: [
     CheckInsRepository,

@@ -45,14 +45,19 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="bg-surface border border-border rounded-xl p-5">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+    <div
+      className={cn(
+        'bg-surface border border-border rounded-xl p-5',
+        accent ? 'border-l-4 border-l-primary' : '',
+      )}
+    >
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
         {label}
       </p>
-      <p className={cn('text-4xl font-bold', accent ? 'text-primary' : 'text-foreground')}>
+      <p className={cn('text-4xl font-bold tracking-tight', accent ? 'text-primary' : 'text-foreground')}>
         {value}
       </p>
-      {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
+      {sub && <p className="text-sm text-muted-foreground mt-1.5">{sub}</p>}
     </div>
   );
 }
@@ -70,18 +75,36 @@ export default async function DashboardPage() {
 
   const totalMembers = membersPage?.meta.total ?? '—';
 
+  const dateLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div>
-        <p className="text-sm text-primary font-medium mb-1">
-          {getGreeting()}, {firstName}
-        </p>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground mb-1.5">
+            {getGreeting()},{' '}
+            <span className="font-semibold text-foreground">{firstName}</span>
+          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-border text-sm text-muted-foreground font-medium select-none">
+              {dateLabel}
+            </span>
+          </div>
+        </div>
+        <div className="shrink-0 pt-1">
+          <CheckInDialog gymId={user.gymId} />
+        </div>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatCard
           label="Active Right Now"
           value={activeCheckIns.length}
@@ -93,10 +116,6 @@ export default async function DashboardPage() {
           value={totalMembers}
           sub="enrolled across all plans"
         />
-        <StatCard
-          label="Today"
-          value={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-        />
       </div>
 
       {/* Active check-ins */}
@@ -105,7 +124,6 @@ export default async function DashboardPage() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Currently Active
           </h2>
-          <CheckInDialog gymId={user.gymId} />
         </div>
 
         {activeCheckIns.length === 0 ? (
@@ -117,11 +135,11 @@ export default async function DashboardPage() {
           <div className="bg-surface border border-border rounded-xl overflow-hidden">
             {/* Table header */}
             <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-5 py-3 border-b border-border">
-              <div /> {/* avatar */}
+              <div />
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Member</p>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Checked In</p>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Duration</p>
-              <div /> {/* action */}
+              <div />
             </div>
 
             {/* Rows */}
@@ -129,18 +147,13 @@ export default async function DashboardPage() {
               {activeCheckIns.map((checkin) => {
                 const elapsed = elapsedMinutes(checkin.checkedInAt);
                 return (
-                  <li
-                    key={checkin.id}
-                    className="flex items-center gap-4 px-5 py-3"
-                  >
-                    {/* Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center shrink-0">
-                      <span className="text-xs font-semibold text-primary">
+                  <li key={checkin.id} className="flex items-center gap-4 px-5 py-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold text-primary">
                         {getInitials(checkin.member.user.fullName)}
                       </span>
                     </div>
 
-                    {/* Name + membership # */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {checkin.member.user.fullName}
@@ -153,12 +166,10 @@ export default async function DashboardPage() {
                       </p>
                     </div>
 
-                    {/* Checked in time */}
                     <p className="text-sm text-muted-foreground hidden sm:block shrink-0">
                       {formatTime(checkin.checkedInAt)}
                     </p>
 
-                    {/* Elapsed */}
                     <p
                       className={cn(
                         'text-sm font-medium shrink-0 hidden sm:block w-14 text-right',
@@ -168,7 +179,6 @@ export default async function DashboardPage() {
                       {formatElapsed(elapsed)}
                     </p>
 
-                    {/* Check out */}
                     <div className="shrink-0">
                       <CheckOutButton gymId={user.gymId} checkinId={checkin.id} />
                     </div>

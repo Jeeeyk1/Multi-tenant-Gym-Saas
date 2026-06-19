@@ -55,7 +55,7 @@ export default async function RenewalsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {renewals.map((r) => (
-                <tr key={r.id} className="hover:bg-white/3 transition">
+                <tr key={r.id} className="hover:bg-foreground/5 transition">
                   <td className="px-5 py-3.5">
                     <Link href={`/dashboard/members/${r.member.id}`} className="hover:text-primary transition">
                       <p className="font-medium text-foreground">{r.member.user.fullName}</p>

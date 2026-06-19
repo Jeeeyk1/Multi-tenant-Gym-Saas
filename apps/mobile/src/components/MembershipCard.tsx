@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../constants/theme';
 import type { GymMember } from '../types';
 
@@ -20,19 +21,28 @@ function statusColor(status: GymMember['status']): string {
 }
 
 export function MembershipCard({ member }: MembershipCardProps) {
+  const { theme } = useTheme();
   const days = daysUntil(member.expiryDate);
   const color = statusColor(member.status);
 
+  // Build dark gradient from the gym's primary colour so the card always feels branded
+  const cardGradient: [string, string] = [
+    theme.primary + '22',
+    theme.secondary + '11',
+  ];
+
+  const accent = theme.primary;
+
   return (
     <LinearGradient
-      colors={['#0D2B22', '#0D1A2E']}
+      colors={cardGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.card}
+      style={[styles.card, { borderColor: accent + '33' }]}
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.label}>Plan</Text>
+          <Text style={[styles.label, { color: accent + 'BB' }]}>Plan</Text>
           <Text style={styles.planName}>{member.plan.name}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: color + '33', borderColor: color }]}>
@@ -41,11 +51,11 @@ export function MembershipCard({ member }: MembershipCardProps) {
       </View>
 
       <Text style={styles.memberName}>{member.user.fullName}</Text>
-      <Text style={styles.memberNumber}>{member.membershipNumber}</Text>
+      <Text style={[styles.memberNumber, { color: accent + 'BB' }]}>{member.membershipNumber}</Text>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: accent + '26' }]}>
         <View>
-          <Text style={styles.label}>Expires</Text>
+          <Text style={[styles.label, { color: accent + 'BB' }]}>Expires</Text>
           <Text style={styles.value}>
             {new Date(member.expiryDate).toLocaleDateString('en-US', {
               month: 'short',
@@ -56,7 +66,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
         </View>
         {member.status === 'ACTIVE' && (
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.label}>Days left</Text>
+            <Text style={[styles.label, { color: accent + 'BB' }]}>Days left</Text>
             <Text style={[styles.value, days <= 7 && { color: COLORS.warning }]}>
               {days}
             </Text>
@@ -70,6 +80,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
 const styles = StyleSheet.create({
   card: {
     borderRadius: RADIUS.lg,
+    borderWidth: 1,
     padding: SPACING.lg,
     marginBottom: SPACING.lg,
   },
@@ -81,7 +92,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    color: 'rgba(110, 231, 183, 0.7)',
     ...FONT.medium,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -112,7 +122,6 @@ const styles = StyleSheet.create({
   },
   memberNumber: {
     fontSize: 12,
-    color: 'rgba(110, 231, 183, 0.7)',
     ...FONT.regular,
     marginBottom: SPACING.lg,
   },
@@ -121,7 +130,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(110, 231, 183, 0.15)',
     paddingTop: SPACING.md,
   },
   value: {

@@ -11,11 +11,17 @@ import { GymLoginUseCase } from '../../application/use-cases/gym-login.use-case'
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
 import { ActivateAccountUseCase } from '../../application/use-cases/activate-account.use-case';
+import { AdminLoginUseCase } from '../../application/use-cases/admin-login.use-case';
+import { RequestPasswordResetUseCase } from '../../application/use-cases/request-password-reset.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
 import { ResolveCodeDto } from '../dto/resolve-code.dto';
 import { OrgLoginDto } from '../dto/org-login.dto';
 import { GymLoginDto } from '../dto/gym-login.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { ActivateAccountDto } from '../dto/activate-account.dto';
+import { AdminLoginDto } from '../dto/admin-login.dto';
+import { RequestPasswordResetDto } from '../dto/request-password-reset.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -26,6 +32,9 @@ export class AuthController {
     private readonly refreshToken: RefreshTokenUseCase,
     private readonly logout: LogoutUseCase,
     private readonly activateAccount: ActivateAccountUseCase,
+    private readonly adminLogin: AdminLoginUseCase,
+    private readonly requestPasswordReset: RequestPasswordResetUseCase,
+    private readonly resetPassword: ResetPasswordUseCase,
   ) {}
 
   /**
@@ -87,5 +96,36 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async activate(@Body() dto: ActivateAccountDto) {
     await this.activateAccount.execute(dto.token, dto.password);
+  }
+
+  /**
+   * POST /auth/admin/login
+   * Issues a system-admin JWT. Only valid for system_admins table entries.
+   */
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  async adminLoginEndpoint(@Body() dto: AdminLoginDto) {
+    return this.adminLogin.execute(dto.email, dto.password);
+  }
+
+  /**
+   * POST /auth/forgot-password
+   * Public. Always returns 200 to prevent email enumeration.
+   * In production the token would be emailed — for MVP it is returned in the response.
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async forgotPassword(@Body() dto: RequestPasswordResetDto) {
+    await this.requestPasswordReset.execute(dto.email);
+  }
+
+  /**
+   * POST /auth/reset-password
+   * Public. Validates the reset token, updates the password, and revokes all active sessions.
+   */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async resetUserPassword(@Body() dto: ResetPasswordDto) {
+    await this.resetPassword.execute(dto.token, dto.password);
   }
 }

@@ -64,6 +64,9 @@ model User {
   submittedPrSubmissions    MemberPrSubmission[]   @relation("SubmittedBy")
   reviewedPrSubmissions     MemberPrSubmission[]   @relation("ReviewedBy")
   enabledLeaderboardExercises GymLeaderboardExercise[]
+  createdCustomBadges         GymCustomBadge[]
+  createdMilestoneBadges      ExerciseMilestoneBadge[]
+  awardedMemberBadges         MemberBadge[]
 
   @@map("users")
 }
@@ -168,6 +171,13 @@ model Gym {
   exercises            Exercise[]
   leaderboardExercises GymLeaderboardExercise[]
   prSubmissions        MemberPrSubmission[]
+  workoutPlans         MemberWorkoutPlan[]
+  workoutSessions      WorkoutSession[]
+  badgeSettings        GymBadgeSetting[]
+  customBadges         GymCustomBadge[]
+  milestoneBadges      ExerciseMilestoneBadge[]
+  leaderboardCycles    LeaderboardCycle[]
+  memberBadges         MemberBadge[]
 
   @@map("gyms")
 }
@@ -434,6 +444,9 @@ model GymMember {
   weightLogs     MemberWeightLog[]
   foodLogs       MemberFoodLog[]
   prSubmissions  MemberPrSubmission[]
+  workoutPlan     MemberWorkoutPlan?
+  workoutSessions WorkoutSession[]
+  memberBadges    MemberBadge[]
 
   @@unique([gymId, userId])
   @@map("gym_members")
@@ -500,6 +513,30 @@ model MemberFoodLog {
   member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("member_food_logs")
+}
+
+model MemberWorkoutPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId    String   @unique @map("member_id") @db.Uuid
+  gymId       String   @map("gym_id") @db.Uuid
+  suggestion  String
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@map("member_workout_plans")
+}
+
+model ExerciseMedia {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  normalizedName  String   @unique @map("normalized_name")
+  gifUrl          String   @map("gif_url")
+  category        String?
+  primaryMuscles  String?  @map("primary_muscles")
+  fetchedAt       DateTime @default(now()) @map("fetched_at") @db.Timestamptz
+
+  @@map("exercise_media")
 }
 
 model DeviceToken {
@@ -729,6 +766,7 @@ model Exercise {
   gym                  Gym?                     @relation(fields: [gymId], references: [id], onDelete: Cascade)
   leaderboardExercises GymLeaderboardExercise[]
   prSubmissions        MemberPrSubmission[]
+  milestoneBadges      ExerciseMilestoneBadge[]
 
   @@unique([name, gymId])
   @@map("exercises")
@@ -776,4 +814,174 @@ model MemberPrSubmission {
   reviewedByUser  User?     @relation("ReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
 
   @@map("member_pr_submissions")
+}
+
+model WorkoutSession {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId        String   @map("member_id") @db.Uuid
+  gymId           String   @map("gym_id") @db.Uuid
+  workoutType     String   @map("workout_type") @db.VarChar(50)
+  startedAt       DateTime @map("started_at") @db.Timestamptz
+  endedAt         DateTime @map("ended_at") @db.Timestamptz
+  durationMinutes Int      @map("duration_minutes")
+  caloriesBurned  Int?     @map("calories_burned")
+  avgHeartRate    Int?     @map("avg_heart_rate")
+  source          String   @default("manual") @db.VarChar(20)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([gymId])
+  @@map("workout_sessions")
+}
+
+model SystemAdmin {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("system_admins")
+}
+
+model SaasPlan {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  description  String?
+  priceMonthly Decimal  @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly  Decimal? @map("price_yearly") @db.Decimal(10, 2)
+  features     Json     @default("[]")
+  isPopular    Boolean  @default(false) @map("is_popular")
+  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@map("saas_plans")
+}
+
+// ─── Badge System ──────────────────────────────────────────────────────────────
+
+model BadgeCatalog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key            String   @unique @db.VarChar(50)
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  icon           String   @db.VarChar(50)
+  color          String   @default("#0D9488") @db.VarChar(7)
+  criteriaType   String   @map("criteria_type") @db.VarChar(30)
+  criteriaValue  Int?     @map("criteria_value")
+  isAutoAwarded  Boolean  @default(true) @map("is_auto_awarded")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  gymSettings    GymBadgeSetting[]
+  memberBadges   MemberBadge[]
+
+  @@map("badge_catalog")
+}
+
+model GymBadgeSetting {
+  gymId           String   @map("gym_id") @db.Uuid
+  badgeCatalogId  String   @map("badge_catalog_id") @db.Uuid
+  isEnabled       Boolean  @default(true) @map("is_enabled")
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym          Gym          @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  badgeCatalog BadgeCatalog @relation(fields: [badgeCatalogId], references: [id], onDelete: Cascade)
+
+  @@id([gymId, badgeCatalogId])
+  @@map("gym_badge_settings")
+}
+
+model GymCustomBadge {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId             String   @map("gym_id") @db.Uuid
+  name              String   @db.VarChar(100)
+  description       String?  @db.Text
+  icon              String   @default("trophy") @db.VarChar(50)
+  color             String   @default("#F59E0B") @db.VarChar(7)
+  createdByUserId   String   @map("created_by_user_id") @db.Uuid
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym             Gym         @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdByUser   User        @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  memberBadges    MemberBadge[]
+
+  @@index([gymId])
+  @@map("gym_custom_badges")
+}
+
+model ExerciseMilestoneBadge {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId             String          @map("gym_id") @db.Uuid
+  exerciseId        String          @map("exercise_id") @db.Uuid
+  badgeName         String          @map("badge_name") @db.VarChar(100)
+  description       String?         @db.Text
+  weightKg          Decimal         @map("weight_kg") @db.Decimal(6, 2)
+  icon              String          @default("barbell") @db.VarChar(50)
+  color             String          @default("#F59E0B") @db.VarChar(7)
+  isActive          Boolean         @default(true) @map("is_active")
+  createdByUserId   String          @map("created_by_user_id") @db.Uuid
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime        @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym             Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  createdByUser   User     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  memberBadges    MemberBadge[]
+
+  @@index([gymId])
+  @@index([exerciseId])
+  @@map("exercise_milestone_badges")
+}
+
+model LeaderboardCycle {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId      String    @map("gym_id") @db.Uuid
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  endedAt    DateTime? @map("ended_at") @db.Timestamptz
+  status     String    @default("ACTIVE") @db.VarChar(20)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  gym          Gym         @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  memberBadges MemberBadge[]
+
+  @@index([gymId])
+  @@index([status])
+  @@map("leaderboard_cycles")
+}
+
+model MemberBadge {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId           String    @map("member_id") @db.Uuid
+  gymId              String    @map("gym_id") @db.Uuid
+  badgeCatalogId     String?   @map("badge_catalog_id") @db.Uuid
+  customBadgeId      String?   @map("custom_badge_id") @db.Uuid
+  milestoneBadgeId   String?   @map("milestone_badge_id") @db.Uuid
+  cycleId            String?   @map("cycle_id") @db.Uuid
+  source             String    @db.VarChar(20)
+  badgeRank          String?   @map("badge_rank") @db.VarChar(10)
+  awardedByUserId    String?   @map("awarded_by_user_id") @db.Uuid
+  proofUrl           String?   @map("proof_url") @db.Text
+  proofNotes         String?   @map("proof_notes") @db.Text
+  expiresAt          DateTime? @map("expires_at") @db.Timestamptz
+  isEquipped         Boolean   @default(false) @map("is_equipped")
+  awardedAt          DateTime  @default(now()) @map("awarded_at") @db.Timestamptz
+
+  member          GymMember              @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gym             Gym                    @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  badgeCatalog    BadgeCatalog?          @relation(fields: [badgeCatalogId], references: [id], onDelete: SetNull)
+  customBadge     GymCustomBadge?        @relation(fields: [customBadgeId], references: [id], onDelete: SetNull)
+  milestoneBadge  ExerciseMilestoneBadge? @relation(fields: [milestoneBadgeId], references: [id], onDelete: SetNull)
+  cycle           LeaderboardCycle?      @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  awardedByUser   User?                  @relation(fields: [awardedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([memberId])
+  @@index([gymId])
+  @@map("member_badges")
 }

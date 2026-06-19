@@ -71,6 +71,17 @@ The API is the source of truth for:
 
 Web and mobile clients must not invent backend business rules.
 
+### External integrations are API-only
+
+All calls to third-party services — AI providers (Groq, Anthropic), payment gateways, SMS, email services, cloud storage — must be made exclusively from the NestJS API.
+
+Frontend and mobile apps must never:
+- hold external API keys
+- call third-party services directly
+- embed provider-specific logic
+
+**Why**: If a provider changes, there is one place to update. Keys are never exposed to clients. Rate limiting, retries, and error handling are consistent across all surfaces.
+
 ---
 
 ## Core architectural rules

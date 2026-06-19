@@ -11,6 +11,12 @@ export const staffService = {
       memberId,
     }),
 
+  checkInQrScan: (gymId: string, qrCodeToken: string) =>
+    api.post<StaffCheckIn>(`/gyms/${gymId}/checkins`, {
+      method: 'QR_STAFF_SCAN',
+      qrCodeToken,
+    }),
+
   checkOut: (gymId: string, checkinId: string) =>
     api.patch<void>(`/gyms/${gymId}/checkins/${checkinId}/checkout`),
 

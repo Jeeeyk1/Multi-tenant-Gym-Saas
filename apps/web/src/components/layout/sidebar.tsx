@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 
@@ -21,6 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Announcements', href: '/dashboard/announcements', icon: '◇', permission: 'announcements.manage' },
   { label: 'Chat', href: '/dashboard/chat', icon: '◉', permission: 'chat.manage' },
   { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: '⬆', permission: 'leaderboard.view' },
+  { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'badges.manage' },
   { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙', permission: 'gym.settings' },
 ];
@@ -30,10 +32,23 @@ interface SidebarProps {
   userName: string;
   gymName?: string;
   gymCode?: string;
+  logoUrl?: string | null;
 }
 
-export function Sidebar({ permissions, userName, gymName, gymCode }: SidebarProps) {
+export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: SidebarProps) {
   const pathname = usePathname();
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  function toggleTheme() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch {}
+  }
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.permission || permissions.includes(item.permission),
@@ -44,12 +59,19 @@ export function Sidebar({ permissions, userName, gymName, gymCode }: SidebarProp
       {/* Gym identity */}
       <div className="px-4 py-5 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm">
-            🐔
+          <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={gymName ?? 'Gym logo'} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold text-muted-foreground">
+                {gymName ? gymName[0].toUpperCase() : '?'}
+              </span>
+            )}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">
-              {gymName ?? 'GainzOS'}
+              {gymName ?? '—'}
             </p>
             {gymCode && (
               <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
@@ -76,7 +98,7 @@ export function Sidebar({ permissions, userName, gymName, gymCode }: SidebarProp
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition',
                 isActive
                   ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
+                  : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5',
               )}
             >
               <span className="text-base leading-none w-4 text-center">{item.icon}</span>
@@ -87,7 +109,7 @@ export function Sidebar({ permissions, userName, gymName, gymCode }: SidebarProp
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-t border-border px-4 py-3 space-y-1">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
             <p className="text-sm text-foreground font-medium truncate">{userName}</p>
@@ -103,6 +125,13 @@ export function Sidebar({ permissions, userName, gymName, gymCode }: SidebarProp
             </button>
           </form>
         </div>
+        <button
+          onClick={toggleTheme}
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+        >
+          <span>{dark ? '☀' : '☾'}</span>
+          {dark ? 'Light mode' : 'Dark mode'}
+        </button>
       </div>
     </aside>
   );

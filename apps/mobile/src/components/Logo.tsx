@@ -41,11 +41,11 @@ export function Logo({ size = 72, showText = true, gymName }: LogoProps) {
         </G>
       </Svg>
 
-      {showText && (
+      {showText && gymName ? (
         <Text style={[styles.appName, { fontSize: size * 0.36 }]}>
-          {gymName ?? 'FitZone'}
+          {gymName}
         </Text>
-      )}
+      ) : null}
     </View>
   );
 }

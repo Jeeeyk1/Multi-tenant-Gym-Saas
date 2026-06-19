@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -24,6 +25,7 @@ import { LogWeightUseCase } from '../../application/use-cases/log-weight.use-cas
 import { ListWeightLogsUseCase } from '../../application/use-cases/list-weight-logs.use-case';
 import { SuspendMemberUseCase } from '../../application/use-cases/suspend-member.use-case';
 import { ReactivateMemberUseCase } from '../../application/use-cases/reactivate-member.use-case';
+import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.use-case';
 import { GetMemberQrUseCase } from '../../application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from '../../application/use-cases/register-device-token.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
@@ -51,6 +53,7 @@ export class MembersController {
     private readonly reactivateMemberUseCase: ReactivateMemberUseCase,
     private readonly getMemberQrUseCase: GetMemberQrUseCase,
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    private readonly removeMemberUseCase: RemoveMemberUseCase,
   ) {}
 
   /**
@@ -195,6 +198,23 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.reactivateMemberUseCase.execute(gymId, memberId, user);
+  }
+
+  /**
+   * DELETE /gyms/:gymId/members/:memberId
+   * Permanently remove a member. Deletes their check-ins and renewals, then the
+   * gym_member record. If the user has no remaining memberships or staff records
+   * their user account is also deleted, freeing the email for reuse.
+   * Requires members.delete permission.
+   */
+  @Delete(':memberId')
+  @HttpCode(HttpStatus.OK)
+  remove(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.removeMemberUseCase.execute(gymId, memberId, user);
   }
 
   /**

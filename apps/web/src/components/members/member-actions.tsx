@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { suspendMember, reactivateMember, renewMember } from '@/lib/actions/members';
+import { suspendMember, reactivateMember, renewMember, removeMember } from '@/lib/actions/members';
+import { useToast } from '@/components/ui/toast-provider';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { MemberDetail, MembershipPlan } from '@/types/api';
 
 interface Props {
@@ -10,8 +12,11 @@ interface Props {
 }
 
 export function MemberActions({ member, plans }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
+
   const [actionPending, setActionPending] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [removeOpen, setRemoveOpen] = useState(false);
   const [renewOpen, setRenewOpen] = useState(false);
   const [renewError, setRenewError] = useState<string | null>(null);
   const [renewPending, setRenewPending] = useState(false);
@@ -20,12 +25,18 @@ export function MemberActions({ member, plans }: Props) {
   const activePlans = plans.filter((p) => p.isActive);
 
   async function handleSuspend() {
-    if (!confirm('Suspend this member? They will be blocked from checking in.')) return;
+    const ok = await confirm({
+      title: 'Suspend member?',
+      message: 'They will be blocked from checking in until reactivated.',
+      confirmLabel: 'Suspend',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     setActionPending('suspend');
-    setActionError(null);
     try {
       const result = await suspendMember(member.gymId, member.id);
-      if (result.error) setActionError(result.error);
+      if (result.error) toast.error(result.error);
+      else toast.success('Member suspended.');
     } finally {
       setActionPending(null);
     }
@@ -33,10 +44,20 @@ export function MemberActions({ member, plans }: Props) {
 
   async function handleReactivate() {
     setActionPending('reactivate');
-    setActionError(null);
     try {
       const result = await reactivateMember(member.gymId, member.id);
-      if (result.error) setActionError(result.error);
+      if (result.error) toast.error(result.error);
+      else toast.success('Member reactivated.');
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function handleRemove() {
+    setActionPending('remove');
+    try {
+      const result = await removeMember(member.gymId, member.id);
+      if (result?.error) toast.error(result.error);
     } finally {
       setActionPending(null);
     }
@@ -53,6 +74,7 @@ export function MemberActions({ member, plans }: Props) {
         setRenewError(result.error);
       } else {
         setRenewSuccess(true);
+        toast.success('Membership renewed successfully.');
         setTimeout(() => {
           setRenewOpen(false);
           setRenewSuccess(false);
@@ -95,10 +117,46 @@ export function MemberActions({ member, plans }: Props) {
             {actionPending === 'reactivate' ? 'Reactivating…' : 'Reactivate'}
           </button>
         )}
+
+        {/* Remove — always available, destructive */}
+        <button
+          onClick={() => setRemoveOpen(true)}
+          disabled={!!actionPending}
+          className="px-4 py-2 text-sm font-medium border border-destructive/50 text-destructive rounded-lg hover:bg-destructive/10 transition disabled:opacity-50 ml-auto"
+        >
+          Remove Member
+        </button>
       </div>
 
-      {actionError && (
-        <p className="text-sm text-destructive mt-2">{actionError}</p>
+      {/* Remove confirmation dialog */}
+      {removeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRemoveOpen(false)} />
+          <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6">
+            <h3 className="text-base font-semibold text-foreground mb-2">Remove member?</h3>
+            <p className="text-sm text-muted-foreground mb-1">
+              This will permanently delete <strong className="text-foreground">{member.user.fullName}</strong>'s membership, check-in history, and all associated data.
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              If this is their only gym, their account will also be deleted and the email address <strong className="text-foreground">{member.user.email}</strong> can be reused.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRemoveOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setRemoveOpen(false); handleRemove(); }}
+                disabled={actionPending === 'remove'}
+                className="flex-1 bg-destructive text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+              >
+                {actionPending === 'remove' ? 'Removing…' : 'Yes, remove'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Renew dialog */}

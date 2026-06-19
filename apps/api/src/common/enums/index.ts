@@ -6,3 +6,7 @@ export { DietType } from './diet-type.enum';
 export { ExerciseCategory } from './exercise-category.enum';
 export { PrSubmissionStatus } from './pr-submission-status.enum';
 export { PrSubmissionType } from './pr-submission-type.enum';
+export { BadgeCriteriaType } from './badge-criteria-type.enum';
+export { BadgeSource } from './badge-source.enum';
+export { BadgeRank } from './badge-rank.enum';
+export { LeaderboardCycleStatus } from './leaderboard-cycle-status.enum';

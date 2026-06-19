@@ -67,6 +67,16 @@ export const api = {
     }
   },
 
+  put: async <T>(endpoint: string, body?: unknown): Promise<T> => {
+    const client = await createClient();
+    try {
+      const { data } = await client.put<T>(endpoint, body);
+      return data;
+    } catch (err) {
+      normalizeError(err);
+    }
+  },
+
   delete: async <T>(endpoint: string): Promise<T> => {
     const client = await createClient();
     try {

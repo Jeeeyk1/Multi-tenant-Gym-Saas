@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Animated,
   View,
   Text,
   ScrollView,
@@ -9,13 +8,14 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { memberService } from '../../services/member.service';
 import { GreetingBanner } from '../../components/GreetingBanner';
 import { MembershipCard } from '../../components/MembershipCard';
+import { useWorkout } from '../../context/WorkoutContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { GymMember, CheckIn } from '../../types';
 
@@ -36,32 +36,11 @@ function computeStreak(checkIns: CheckIn[]): { streak: number; lastCheckInToday:
   return { streak, lastCheckInToday };
 }
 
-// Animated press card — scales down slightly on press
-function PressCard({
-  onPress,
-  children,
-  style,
-}: {
-  onPress: () => void;
-  children: React.ReactNode;
-  style?: object;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const onIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50 }).start();
-  const onOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30 }).start();
-  return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
-      <Pressable onPress={onPress} onPressIn={onIn} onPressOut={onOut}>
-        {children}
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { activeSession } = useWorkout();
   const [member, setMember] = useState<GymMember | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -89,8 +68,6 @@ export default function DashboardScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); load(); };
-
   if (isLoading) {
     return (
       <View style={styles.centered}>
@@ -106,7 +83,13 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => { setRefreshing(true); load(); }}
+          tintColor={theme.primary}
+        />
+      }
       showsVerticalScrollIndicator={false}
     >
       <GreetingBanner name={firstName} streak={streak} lastCheckInToday={lastCheckInToday} />
@@ -119,50 +102,26 @@ export default function DashboardScreen() {
 
       {member && <MembershipCard member={member} />}
 
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-      {/* Featured Check-In card */}
-      <PressCard onPress={() => router.push('/(member)/checkin')} style={styles.checkInCardWrap}>
-        <LinearGradient
-          colors={theme.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.checkInCard}
+      {/* Active workout resume banner */}
+      {activeSession && (
+        <Pressable
+          style={({ pressed }) => [styles.resumeCard, pressed && { opacity: 0.85 }]}
+          onPress={() => router.push('/(member)/workout')}
         >
-          <View style={styles.checkInContent}>
-            <View style={styles.checkInTextCol}>
-              <Text style={styles.checkInEyebrow}>Ready to train?</Text>
-              <Text style={styles.checkInTitle}>Check In Now</Text>
-            </View>
-            <View style={styles.checkInIconBubble}>
-              <Text style={styles.checkInIcon}>⚡</Text>
-            </View>
+          <View style={[styles.resumeDot, { backgroundColor: COLORS.success }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.resumeTitle}>Workout in progress</Text>
+            <Text style={styles.resumeSub}>{activeSession.workoutType} · tap to resume</Text>
           </View>
-        </LinearGradient>
-      </PressCard>
-
-      {/* Secondary actions row */}
-      <View style={styles.secondaryRow}>
-        <PressCard onPress={() => router.push('/(member)/announcements')} style={{ flex: 1 }}>
-          <View style={styles.secondaryCard}>
-            <Text style={styles.secondaryEmoji}>📢</Text>
-            <Text style={styles.secondaryLabel}>News</Text>
-          </View>
-        </PressCard>
-        <PressCard onPress={() => router.push('/(member)/chat')} style={{ flex: 1 }}>
-          <View style={styles.secondaryCard}>
-            <Text style={styles.secondaryEmoji}>💬</Text>
-            <Text style={styles.secondaryLabel}>Chat</Text>
-          </View>
-        </PressCard>
-      </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+        </Pressable>
+      )}
 
       {/* Recent Check-ins */}
       <Text style={styles.sectionTitle}>Recent Visits</Text>
       {checkIns.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No visits yet. Come say hi! 💪</Text>
+          <Text style={styles.emptyText}>No visits yet. Come say hi!</Text>
         </View>
       ) : (
         <View style={styles.checkInList}>
@@ -197,6 +156,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
   centered: { flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
+
   errorBox: {
     backgroundColor: COLORS.errorBg,
     borderWidth: 1,
@@ -206,6 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   errorText: { color: COLORS.error, fontSize: 13 },
+
   sectionTitle: {
     fontSize: 13,
     ...FONT.semibold,
@@ -216,63 +177,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  // Featured check-in card
-  checkInCardWrap: { marginBottom: SPACING.sm },
-  checkInCard: {
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-  },
-  checkInContent: {
+  resumeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  checkInTextCol: { gap: 4 },
-  checkInEyebrow: {
-    fontSize: 12,
-    color: 'rgba(0,0,0,0.6)',
-    ...FONT.medium,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  checkInTitle: {
-    fontSize: 22,
-    color: '#000',
-    ...FONT.bold,
-  },
-  checkInIconBubble: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkInIcon: { fontSize: 26 },
-
-  // Secondary cards
-  secondaryRow: {
-    flexDirection: 'row',
     gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  secondaryCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
-    gap: SPACING.xs,
+    borderColor: COLORS.success + '50',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 14,
+    marginBottom: SPACING.md,
   },
-  secondaryEmoji: { fontSize: 28 },
-  secondaryLabel: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    ...FONT.semibold,
-  },
+  resumeDot: { width: 10, height: 10, borderRadius: 5 },
+  resumeTitle: { fontSize: 14, color: COLORS.text, ...FONT.semibold },
+  resumeSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 
-  // Recent visits
   emptyCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
@@ -282,6 +202,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   emptyText: { color: COLORS.textSecondary, fontSize: 14 },
+
   checkInList: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,

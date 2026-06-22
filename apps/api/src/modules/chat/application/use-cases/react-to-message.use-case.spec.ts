@@ -2,8 +2,10 @@ import { ReactToMessageUseCase } from './react-to-message.use-case';
 import type { ChatRepository } from '../../infrastructure/persistence/chat.repository';
 
 const mockRepo = {
+  findConversation: jest.fn(),
   findMessageById: jest.fn(),
   findMembership: jest.fn(),
+  upsertMembership: jest.fn(),
   findReaction: jest.fn(),
   addReaction: jest.fn(),
   removeReaction: jest.fn(),

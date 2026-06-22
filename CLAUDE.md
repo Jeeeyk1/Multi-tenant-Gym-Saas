@@ -269,6 +269,71 @@ Do:
 
 ---
 
+## CI discipline and test hygiene
+
+The CI pipeline runs on every PR and must pass before merging. These rules prevent the most common CI failures.
+
+### Before pushing any branch
+
+Always run these checks locally before pushing:
+
+```bash
+pnpm --filter @gym-saas/api test -- --passWithNoTests   # API unit tests
+pnpm --filter @gym-saas/web lint                         # Web ESLint
+pnpm tsc --noEmit -p apps/api/tsconfig.json              # API typecheck
+```
+
+Fix all failures before pushing. A green local run means a green CI run.
+
+### Mock completeness — the most common test failure
+
+When you add a new method to a repository or service class, you **must** also add it to every `mockRepo` / `mockService` object in every spec file that mocks that class.
+
+Symptoms: `TypeError: this.repo.X is not a function` at runtime in tests.
+
+Rule: after adding a method to any class, grep for that class name across `*.spec.ts` files and add the new method as `jest.fn()` to every mock object.
+
+```bash
+grep -rl "ChatRepository\|IdentityRepository" apps/api/src --include="*.spec.ts"
+```
+
+### Use case return shape — second most common test failure
+
+When you change what a use case returns (add fields, remove fields, rename), update every `toEqual` / `toMatchObject` assertion in every spec that calls that use case.
+
+### `upsertMembership` vs `findMembership` in chat specs
+
+`upsertMembership` always returns a record (Prisma upsert — never null). Testing the `NOT_CONVERSATION_MEMBER` path requires a non-COMMUNITY conversation type so that `findMembership` (nullable) is called instead. Use `{ ...makeConversation(), type: 'DIRECT' }` in that test case.
+
+### No `console.log` in production code
+
+Use NestJS `Logger` for all runtime logging. `console.log` in production files pollutes test output and is a lint violation.
+
+```typescript
+// wrong
+console.log('user:', user);
+
+// right
+private readonly logger = new Logger(MyService.name);
+this.logger.debug(`user: ${user.id}`);
+```
+
+### Prisma client must be generated before TypeScript compiles
+
+`prisma generate` creates the typed Prisma client. Without it, all `this.prisma.X` calls produce TS2339 errors. This is handled automatically in CI but if you add new models locally, run:
+
+```bash
+pnpm prisma generate
+```
+
+### ESLint in the web app
+
+The web app must have an `.eslintrc.json` file at `apps/web/.eslintrc.json` that extends `next/core-web-vitals`. Without it, Next.js ESLint rules (like `@next/next/no-img-element`) are not reliably loaded in CI.
+
+JSX text that contains apostrophes must use `&apos;` — not bare `'` characters — to satisfy `react/no-unescaped-entities`.
+
+---
+
 ## Definition of done
 
 A task is not complete unless all relevant items below are satisfied:

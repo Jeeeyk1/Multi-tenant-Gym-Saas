@@ -32,21 +32,16 @@ export class GymLoginUseCase {
     if (!gym) throw new InvalidCredentialsError();
 
     const user = await this.repo.findUserByEmail(email);
-    console.log(JSON.stringify(user) + " user..")
     if (!user || !user.isActive || !user.emailVerifiedAt || !user.passwordHash) {
-           console.log("invalid credentials..")
-
       throw new InvalidCredentialsError();
     }
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
-      console.log("password valid? " + passwordValid)
     if (!passwordValid) throw new InvalidCredentialsError();
 
     // Determine if staff or member
     const staff = await this.repo.findGymStaffWithPermissions(user.id, gym.id);
     const isMember = staff === null && (await this.repo.findGymMember(user.id, gym.id)) !== null;
-      console.log("is staff? " + !!staff + " is member? " + isMember)
     if (!staff && !isMember) throw new InvalidCredentialsError();
 
     let payload: GymAuthUser;

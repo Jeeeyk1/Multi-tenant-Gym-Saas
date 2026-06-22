@@ -38,7 +38,7 @@ describe('ResolveCodeUseCase', () => {
 
     const result = await useCase.execute('FITMNL');
 
-    expect(result).toEqual({ type: 'GYM', name: 'Fitlife Manila', code: 'FITMNL' });
+    expect(result).toEqual({ type: 'GYM', name: 'Fitlife Manila', code: 'FITMNL', logoUrl: null, primaryColor: undefined, secondaryColor: undefined });
   });
 
   it('throws NotFoundError when code matches neither org nor gym', async () => {

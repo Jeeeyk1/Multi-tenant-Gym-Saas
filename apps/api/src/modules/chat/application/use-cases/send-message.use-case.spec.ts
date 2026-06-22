@@ -4,6 +4,7 @@ import type { ChatRepository } from '../../infrastructure/persistence/chat.repos
 const mockRepo = {
   findConversation: jest.fn(),
   findMembership: jest.fn(),
+  upsertMembership: jest.fn(),
   findGymMemberStatus: jest.fn(),
   createMessage: jest.fn(),
 } as unknown as jest.Mocked<ChatRepository>;
@@ -35,7 +36,7 @@ describe('SendMessageUseCase', () => {
 
   it('sends a message for an ACTIVE member', async () => {
     mockRepo.findConversation.mockResolvedValue(makeConversation());
-    mockRepo.findMembership.mockResolvedValue(makeMembership());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
     mockRepo.findGymMemberStatus.mockResolvedValue({ status: 'ACTIVE' });
     mockRepo.createMessage.mockResolvedValue(makeMessage());
 
@@ -54,7 +55,7 @@ describe('SendMessageUseCase', () => {
 
   it('sends a message for staff with no gym_member record', async () => {
     mockRepo.findConversation.mockResolvedValue(makeConversation());
-    mockRepo.findMembership.mockResolvedValue(makeMembership());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
     mockRepo.findGymMemberStatus.mockResolvedValue(null); // staff — no member record
     mockRepo.createMessage.mockResolvedValue(makeMessage());
 
@@ -66,7 +67,7 @@ describe('SendMessageUseCase', () => {
 
   it('throws MEMBERSHIP_NOT_ACTIVE when member status is EXPIRED', async () => {
     mockRepo.findConversation.mockResolvedValue(makeConversation());
-    mockRepo.findMembership.mockResolvedValue(makeMembership());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
     mockRepo.findGymMemberStatus.mockResolvedValue({ status: 'EXPIRED' });
 
     const uc = new SendMessageUseCase(mockRepo);
@@ -85,7 +86,7 @@ describe('SendMessageUseCase', () => {
   });
 
   it('throws NOT_CONVERSATION_MEMBER when caller is not in the conversation', async () => {
-    mockRepo.findConversation.mockResolvedValue(makeConversation());
+    mockRepo.findConversation.mockResolvedValue({ ...makeConversation(), type: 'DIRECT' });
     mockRepo.findMembership.mockResolvedValue(null);
 
     const uc = new SendMessageUseCase(mockRepo);

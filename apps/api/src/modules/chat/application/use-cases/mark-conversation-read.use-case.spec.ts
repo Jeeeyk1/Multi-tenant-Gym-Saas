@@ -4,6 +4,7 @@ import type { ChatRepository } from '../../infrastructure/persistence/chat.repos
 const mockRepo = {
   findConversation: jest.fn(),
   findMembership: jest.fn(),
+  upsertMembership: jest.fn(),
   markRead: jest.fn(),
 } as unknown as jest.Mocked<ChatRepository>;
 
@@ -25,7 +26,7 @@ describe('MarkConversationReadUseCase', () => {
   it('updates last_read_at and returns it', async () => {
     const ts = new Date('2026-04-20T10:00:00Z');
     mockRepo.findConversation.mockResolvedValue(makeConversation());
-    mockRepo.findMembership.mockResolvedValue(makeMembership());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
     mockRepo.markRead.mockResolvedValue({ lastReadAt: ts });
 
     const uc = new MarkConversationReadUseCase(mockRepo);
@@ -53,7 +54,7 @@ describe('MarkConversationReadUseCase', () => {
   });
 
   it('throws NOT_CONVERSATION_MEMBER when caller is not in the conversation', async () => {
-    mockRepo.findConversation.mockResolvedValue(makeConversation());
+    mockRepo.findConversation.mockResolvedValue({ ...makeConversation(), type: 'DIRECT' });
     mockRepo.findMembership.mockResolvedValue(null);
 
     const uc = new MarkConversationReadUseCase(mockRepo);

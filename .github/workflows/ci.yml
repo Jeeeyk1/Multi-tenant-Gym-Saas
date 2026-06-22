@@ -41,7 +41,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Step 5 & 6: Run tsc --noEmit for API and Web separately
+      # Step 5: Generate the Prisma client
+      # Prisma generates typed DB client code from prisma/schema.prisma.
+      # Without this, TypeScript has no knowledge of any DB models and
+      # every repository file fails to compile with "Property X does not exist".
+      # This must run before typecheck — it's a code generation step, not a dep install.
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      # Step 6 & 7: Run tsc --noEmit for API and Web separately
       # --filter means "only run this for that specific package"
       # If tsc finds a type error anywhere, this step fails and the PR is blocked
       - name: Typecheck API
@@ -98,6 +106,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
 
       - name: Run API unit tests
         run: pnpm --filter @gym-saas/api test -- --passWithNoTests

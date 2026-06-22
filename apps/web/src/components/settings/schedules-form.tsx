@@ -59,7 +59,7 @@ export function SchedulesForm({ gymId, schedules: initial }: Props) {
     <section className="bg-card border border-border rounded-xl p-6 space-y-4">
       <div>
         <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Opening Hours</h2>
-        <p className="text-xs text-muted-foreground mt-1">Set your gym's operating hours for each day of the week.</p>
+        <p className="text-xs text-muted-foreground mt-1">Set your gym&apos;s operating hours for each day of the week.</p>
       </div>
 
       <div className="divide-y divide-border">

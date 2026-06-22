@@ -135,7 +135,7 @@ export function MemberActions({ member, plans }: Props) {
           <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6">
             <h3 className="text-base font-semibold text-foreground mb-2">Remove member?</h3>
             <p className="text-sm text-muted-foreground mb-1">
-              This will permanently delete <strong className="text-foreground">{member.user.fullName}</strong>'s membership, check-in history, and all associated data.
+              This will permanently delete <strong className="text-foreground">{member.user.fullName}</strong>&apos;s membership, check-in history, and all associated data.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
               If this is their only gym, their account will also be deleted and the email address <strong className="text-foreground">{member.user.email}</strong> can be reused.

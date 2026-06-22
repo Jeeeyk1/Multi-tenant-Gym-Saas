@@ -47,7 +47,7 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
     const next = !dark;
     setDark(next);
     document.documentElement.classList.toggle('dark', next);
-    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch {}
+    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* localStorage unavailable */ }
   }
 
   const visibleItems = NAV_ITEMS.filter(

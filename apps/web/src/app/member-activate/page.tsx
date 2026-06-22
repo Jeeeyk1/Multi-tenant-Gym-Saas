@@ -33,7 +33,7 @@ export default async function MemberActivatePage({ searchParams }: Props) {
         {code && (
           <p className="text-center text-xs text-muted-foreground mt-4">
             Gym code: <span className="font-mono font-semibold text-foreground uppercase">{code}</span>
-            {' '}— you'll need this to sign in on the mobile app.
+            {' '}— you&apos;ll need this to sign in on the mobile app.
           </p>
         )}
       </div>

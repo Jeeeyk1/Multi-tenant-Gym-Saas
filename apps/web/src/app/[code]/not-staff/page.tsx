@@ -15,7 +15,7 @@ export default async function NotStaffPage({ params }: Props) {
         </div>
         <h1 className="text-xl font-bold text-foreground mb-2">Members use the mobile app</h1>
         <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-          This portal is for gym staff and owners only. If you're a member, download the GainzOS
+          This portal is for gym staff and owners only. If you&apos;re a member, download the GainzOS
           mobile app to access your membership.
         </p>
         <Link

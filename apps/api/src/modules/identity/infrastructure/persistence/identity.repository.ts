@@ -176,6 +176,22 @@ export class IdentityRepository {
     });
   }
 
+  findUserWithFirstGymMember(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+        fullName: true,
+        gymMembers: {
+          take: 1,
+          select: {
+            gym: { select: { name: true, code: true } },
+          },
+        },
+      },
+    });
+  }
+
   findResetToken(token: string) {
     return this.prisma.userToken.findFirst({
       where: {

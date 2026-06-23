@@ -10,10 +10,12 @@ const mockRepo = {
   findInviteToken: jest.fn(),
   activateAccount: jest.fn().mockResolvedValue(undefined),
   findUserWithFirstGymStaff: jest.fn().mockResolvedValue(null),
+  findUserWithFirstGymMember: jest.fn().mockResolvedValue(null),
 } as unknown as IdentityRepository;
 
 const mockEmail = {
   sendWelcome: jest.fn().mockResolvedValue(undefined),
+  sendMemberWelcome: jest.fn().mockResolvedValue(undefined),
 } as unknown as EmailService;
 
 describe('ActivateAccountUseCase', () => {
@@ -66,6 +68,32 @@ describe('ActivateAccountUseCase', () => {
       gymName: 'Test Gym',
       gymCode: 'TGYM',
     });
+  });
+
+  it('sends member welcome email for MEMBER_INVITE token', async () => {
+    (mockRepo.findInviteToken as jest.Mock).mockResolvedValue({
+      id: 'token-3',
+      userId: 'user-3',
+      type: 'MEMBER_INVITE',
+    });
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+    (mockRepo.findUserWithFirstGymMember as jest.Mock).mockResolvedValue({
+      email: 'member@gym.com',
+      fullName: 'Member User',
+      gymMembers: [{ gym: { name: 'Test Gym', code: 'TGYM' } }],
+    });
+
+    await useCase.execute('member-invite-token', 'NewPassword1!');
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(mockEmail.sendMemberWelcome).toHaveBeenCalledWith({
+      to: 'member@gym.com',
+      fullName: 'Member User',
+      gymName: 'Test Gym',
+      gymCode: 'TGYM',
+    });
+    expect(mockEmail.sendWelcome).not.toHaveBeenCalled();
   });
 
   it('throws TokenInvalidError when invite token is not found', async () => {

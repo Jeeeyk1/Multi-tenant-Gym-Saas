@@ -23,11 +23,13 @@ export class ActivateAccountUseCase {
     await this.repo.activateAccount(inviteToken.userId, passwordHash, inviteToken.id);
 
     if (inviteToken.type === 'INVITE') {
-      void this.sendWelcomeEmail(inviteToken.userId);
+      void this.sendStaffWelcomeEmail(inviteToken.userId);
+    } else if (inviteToken.type === 'MEMBER_INVITE') {
+      void this.sendMemberWelcomeEmail(inviteToken.userId);
     }
   }
 
-  private async sendWelcomeEmail(userId: string): Promise<void> {
+  private async sendStaffWelcomeEmail(userId: string): Promise<void> {
     try {
       const user = await this.repo.findUserWithFirstGymStaff(userId);
       const gym = user?.gymStaff[0]?.gym;
@@ -39,7 +41,23 @@ export class ActivateAccountUseCase {
         gymCode: gym.code,
       });
     } catch (err) {
-      this.logger.error(`Failed to send welcome email for user ${userId}: ${(err as Error).message}`);
+      this.logger.error(`Failed to send staff welcome email for user ${userId}: ${(err as Error).message}`);
+    }
+  }
+
+  private async sendMemberWelcomeEmail(userId: string): Promise<void> {
+    try {
+      const user = await this.repo.findUserWithFirstGymMember(userId);
+      const gym = user?.gymMembers[0]?.gym;
+      if (!user || !gym) return;
+      await this.email.sendMemberWelcome({
+        to: user.email,
+        fullName: user.fullName,
+        gymName: gym.name,
+        gymCode: gym.code,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send member welcome email for user ${userId}: ${(err as Error).message}`);
     }
   }
 }

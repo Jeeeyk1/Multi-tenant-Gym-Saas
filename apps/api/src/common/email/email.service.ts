@@ -103,6 +103,30 @@ export class EmailService {
     });
   }
 
+  async sendMemberWelcome(opts: { to: string; fullName: string; gymName: string; gymCode: string }) {
+    await this.send({
+      to: opts.to,
+      subject: `You're activated — welcome to ${opts.gymName}!`,
+      html: template({
+        title: `You're all set, ${opts.fullName}!`,
+        preheader: `Your membership is active. Download the app to get started.`,
+        body: `
+          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">
+            Your membership at <strong>${opts.gymName}</strong> is now active.
+            Download the GainzOS mobile app and sign in using your gym code below.
+          </p>
+          <p style="margin:0 0 24px;text-align:center;">
+            <span style="display:inline-block;background:#f4f4f5;border-radius:10px;padding:10px 24px;font-size:22px;font-weight:700;letter-spacing:3px;color:#111827;">${opts.gymCode}</span>
+          </p>
+        `,
+        ctaLabel: 'Download the App',
+        ctaUrl: 'https://gainzos.app/download',
+        footer: `Use code <strong>${opts.gymCode}</strong> when signing in on the mobile app.`,
+      }),
+    });
+  }
+
   async sendWelcome(opts: { to: string; fullName: string; gymName: string; gymCode: string }) {
     await this.send({
       to: opts.to,

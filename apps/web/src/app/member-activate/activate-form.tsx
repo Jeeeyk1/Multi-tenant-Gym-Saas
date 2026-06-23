@@ -1,14 +1,14 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { activateMember } from './actions';
+import { activateMember, type ActivateMemberState } from './actions';
 
 interface Props {
   token: string;
   gymCode: string;
 }
 
-const initial = { error: null as string | null };
+const initial: ActivateMemberState = { error: null, success: false };
 
 export function MemberActivateForm({ token, gymCode }: Props) {
   const [password, setPassword] = useState('');
@@ -30,6 +30,37 @@ export function MemberActivateForm({ token, gymCode }: Props) {
       return;
     }
     setClientError(null);
+  }
+
+  if (state.success) {
+    return (
+      <div className="text-center space-y-5">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 mx-auto">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+            <path d="m9 12 2 2 4-4" />
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+          </svg>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">You&apos;re all set!</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Your membership is now active. Download the GainzOS app to sign in.
+          </p>
+        </div>
+
+        {gymCode && (
+          <div className="bg-muted/50 border border-border rounded-xl px-4 py-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Your gym code</p>
+            <p className="text-2xl font-mono font-bold text-foreground tracking-widest">{gymCode.toUpperCase()}</p>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Open the app, enter your gym code, then sign in with your email and new password.
+        </p>
+      </div>
+    );
   }
 
   const error = clientError ?? state.error;

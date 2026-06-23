@@ -278,7 +278,7 @@ export class MembersRepository {
       }
 
       await tx.userToken.create({
-        data: { userId: user.id, token: rawToken, type: 'INVITE', expiresAt },
+        data: { userId: user.id, token: rawToken, type: 'MEMBER_INVITE', expiresAt },
       });
 
       return {

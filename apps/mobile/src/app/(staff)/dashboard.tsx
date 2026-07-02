@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { staffService } from '../../services/staff.service';
+import { useActiveCheckIns, useCheckOut } from '../../hooks/staff';
+import { usePendingSubmissions } from '../../hooks/leaderboard';
+import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
 import { COLORS, SPACING, RADIUS, FONT, GRADIENTS } from '../../constants/theme';
 import type { StaffCheckIn } from '../../types';
 
@@ -85,43 +87,23 @@ export default function StaffDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
-  const [activeCheckIns, setActiveCheckIns] = useState<StaffCheckIn[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
+  const activeCheckInsQ = useActiveCheckIns();
+  const checkOutMutation = useCheckOut();
+  const pendingSubmissionsQ = usePendingSubmissions();
+  const canViewReports = user?.permissions.includes('reports.view') ?? false;
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await staffService.getActiveCheckIns(user.gymId);
-      setActiveCheckIns(data);
-      setError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? 'Failed to load check-ins');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
+  const activeCheckIns: StaffCheckIn[] = activeCheckInsQ.data ?? [];
+  const pendingCount = pendingSubmissionsQ.data?.length ?? 0;
+  const isLoading = activeCheckInsQ.isLoading;
+  const refreshing = activeCheckInsQ.isRefetching;
+  const error =
+    (activeCheckInsQ.error as { message?: string } | null)?.message ?? null;
+  const checkingOutId = checkOutMutation.isPending
+    ? checkOutMutation.variables ?? null
+    : null;
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleCheckOut = async (checkinId: string) => {
-    if (!user) return;
-    setCheckingOutId(checkinId);
-    setActiveCheckIns((prev) => prev.filter((c) => c.id !== checkinId));
-    try {
-      await staffService.checkOut(user.gymId, checkinId);
-    } catch {
-      // Revert optimistic update on failure
-      load();
-    } finally {
-      setCheckingOutId(null);
-    }
+  const handleCheckOut = (checkinId: string) => {
+    checkOutMutation.mutate(checkinId);
   };
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
@@ -141,7 +123,7 @@ export default function StaffDashboardScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={theme.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => activeCheckInsQ.refetch()} tintColor={theme.primary} />
       }
       showsVerticalScrollIndicator={false}
     >
@@ -190,6 +172,28 @@ export default function StaffDashboardScreen() {
         </View>
         <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
       </TouchableOpacity>
+
+      {/* Pending PR reviews */}
+      {pendingCount > 0 && (
+        <TouchableOpacity
+          style={styles.quickAction}
+          onPress={() => router.push('/(staff)/leaderboard')}
+          activeOpacity={0.75}
+        >
+          <View style={styles.quickActionLeft}>
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="trophy-outline" size={20} color={theme.primary} />
+            </View>
+            <Text style={styles.quickActionText}>
+              {pendingCount} PR {pendingCount === 1 ? 'submission' : 'submissions'} pending review
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+        </TouchableOpacity>
+      )}
+
+      {/* Check-ins trend */}
+      {canViewReports && <CheckinsTrendChart />}
 
       {/* Active now list (preview) */}
       <View style={styles.sectionRow}>

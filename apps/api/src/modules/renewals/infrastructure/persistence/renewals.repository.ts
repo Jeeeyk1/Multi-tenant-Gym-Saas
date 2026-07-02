@@ -12,6 +12,13 @@ export class RenewalsRepository {
     });
   }
 
+  findMemberByUserId(userId: string, gymId: string) {
+    return this.prisma.gymMember.findFirst({
+      where: { userId, gymId },
+      select: { id: true },
+    });
+  }
+
   findPlanById(planId: string, gymId: string) {
     return this.prisma.membershipPlan.findFirst({
       where: { id: planId, gymId, isActive: true },

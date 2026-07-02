@@ -5,21 +5,22 @@ export interface WorkoutMetrics {
   avgHeartRate: number | null;
 }
 
+type HKModule = typeof import('@kingstinct/react-native-healthkit');
+
 // Lazy-load the native module — only available on iOS with the HealthKit entitlement.
 // Using require() avoids crashing on Android where the module isn't linked.
-function getHK() {
+function getHK(): HKModule | null {
   if (Platform.OS !== 'ios') return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const mod = require('react-native-healthkit');
-    return {
-      kit: mod.default as import('react-native-healthkit').default,
-      ids: mod.HKQuantityTypeIdentifier as typeof import('react-native-healthkit').HKQuantityTypeIdentifier,
-    };
+    return require('@kingstinct/react-native-healthkit') as HKModule;
   } catch {
     return null;
   }
 }
+
+const ACTIVE_ENERGY = 'HKQuantityTypeIdentifierActiveEnergyBurned' as const;
+const HEART_RATE = 'HKQuantityTypeIdentifierHeartRate' as const;
 
 export const healthKitService = {
   isAvailable(): boolean {
@@ -30,10 +31,7 @@ export const healthKitService = {
     const hk = getHK();
     if (!hk) return;
     try {
-      await hk.kit.requestAuthorization(
-        [],
-        [hk.ids.activeEnergyBurned, hk.ids.heartRate],
-      );
+      await hk.requestAuthorization({ toRead: [ACTIVE_ENERGY, HEART_RATE] });
     } catch {
       // System dialog cancelled or HealthKit unavailable — not fatal
     }
@@ -43,13 +41,14 @@ export const healthKitService = {
     const hk = getHK();
     if (!hk) return { caloriesBurned: null, avgHeartRate: null };
 
-    const from = new Date(startedAt);
-    const to = new Date(endedAt);
+    const startDate = new Date(startedAt);
+    const endDate = new Date(endedAt);
 
     try {
+      const dateFilter = { date: { startDate, endDate } };
       const [calSamples, hrSamples] = await Promise.all([
-        hk.kit.queryQuantitySamples(hk.ids.activeEnergyBurned, { from, to, unit: 'kcal' }),
-        hk.kit.queryQuantitySamples(hk.ids.heartRate, { from, to, unit: 'count/min' }),
+        hk.queryQuantitySamples(ACTIVE_ENERGY, { limit: -1, unit: 'kcal', filter: dateFilter }),
+        hk.queryQuantitySamples(HEART_RATE, { limit: -1, unit: 'count/min', filter: dateFilter }),
       ]);
 
       const totalCals = calSamples.reduce((sum, s) => sum + s.quantity, 0);

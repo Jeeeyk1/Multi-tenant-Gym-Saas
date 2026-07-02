@@ -59,6 +59,60 @@ export class NotificationsRepository {
     }));
   }
 
+  /**
+   * Returns active members whose membership expires exactly `daysUntilExpiry`
+   * days from today, who have at least one registered device token, and have
+   * not received the given notification type today.
+   */
+  async findMembersExpiringSoonWithTokens(
+    daysUntilExpiry: number,
+    notificationType: string,
+  ) {
+    const target = new Date();
+    target.setDate(target.getDate() + daysUntilExpiry);
+    target.setHours(0, 0, 0, 0);
+    const dayAfter = new Date(target);
+    dayAfter.setDate(dayAfter.getDate() + 1);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const members = await this.prisma.gymMember.findMany({
+      where: {
+        status: 'ACTIVE',
+        expiryDate: { gte: target, lt: dayAfter },
+        user: {
+          deviceTokens: { some: {} },
+          notificationLogs: {
+            none: {
+              type: notificationType,
+              sentDate: { gte: today, lt: tomorrow },
+            },
+          },
+        },
+      },
+      select: {
+        expiryDate: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            deviceTokens: { select: { token: true } },
+          },
+        },
+      },
+    });
+
+    return members.map((m) => ({
+      userId: m.user.id,
+      fullName: m.user.fullName,
+      expiryDate: m.expiryDate,
+      tokens: m.user.deviceTokens.map((t) => t.token),
+    }));
+  }
+
   async logNotification(userId: string, type: string): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

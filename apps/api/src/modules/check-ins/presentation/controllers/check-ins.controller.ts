@@ -15,6 +15,7 @@ import { CurrentUser } from '../../../../common/decorators/current-user.decorato
 import { CheckInUseCase } from '../../application/use-cases/check-in.use-case';
 import { CheckoutUseCase } from '../../application/use-cases/checkout.use-case';
 import { ListActiveCheckinsUseCase } from '../../application/use-cases/list-active-checkins.use-case';
+import { ListActivePublicCheckinsUseCase } from '../../application/use-cases/list-active-public-checkins.use-case';
 import { ListCheckinHistoryUseCase } from '../../application/use-cases/list-checkin-history.use-case';
 import { ListMyCheckInsUseCase } from '../../application/use-cases/list-my-checkins.use-case';
 import { CheckInDto } from '../dto/check-in.dto';
@@ -28,6 +29,7 @@ export class CheckInsController {
     private readonly checkInUseCase: CheckInUseCase,
     private readonly checkoutUseCase: CheckoutUseCase,
     private readonly listActiveCheckinsUseCase: ListActiveCheckinsUseCase,
+    private readonly listActivePublicCheckinsUseCase: ListActivePublicCheckinsUseCase,
     private readonly listCheckinHistoryUseCase: ListCheckinHistoryUseCase,
     private readonly listMyCheckInsUseCase: ListMyCheckInsUseCase,
   ) {}
@@ -73,6 +75,21 @@ export class CheckInsController {
   @Get('active')
   listActive(@Param('gymId') gymId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.listActiveCheckinsUseCase.execute(gymId, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/checkins/active-public
+   * Member-facing "who's at the gym" view. Always returns the total active count.
+   * The `visible` list only includes members who opted in to display their identity
+   * (member_privacy.hide_checkin_visibility = false). No permission required beyond
+   * gym access — every authenticated member of this gym can see this.
+   */
+  @Get('active-public')
+  listActivePublic(
+    @Param('gymId') gymId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.listActivePublicCheckinsUseCase.execute(gymId, user);
   }
 
   /**

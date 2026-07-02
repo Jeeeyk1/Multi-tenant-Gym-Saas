@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-import { memberService } from '../../services/member.service';
+import { useMyMember } from '../../hooks/members';
 import { aiService } from '../../services/ai.service';
 import { COLORS, SPACING, FONT, RADIUS } from '../../constants/theme';
 import type { FoodLog, MealAnalysis, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions } from '../../types';
@@ -30,13 +30,8 @@ export default function AIScreen() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('workout');
-  const [memberId, setMemberId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user?.gymId) {
-      memberService.getMyMember(user.gymId).then((m) => setMemberId(m.id));
-    }
-  }, [user?.gymId]);
+  const memberQ = useMyMember();
+  const memberId = memberQ.data?.id ?? null;
 
   return (
     <View style={styles.container}>
@@ -591,7 +586,6 @@ function LogMealModal({
 }) {
   const [step, setStep] = useState<ModalStep>('photo');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<MealAnalysis | null>(null);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -600,7 +594,6 @@ function LogMealModal({
   const reset = () => {
     setStep('photo');
     setPhotoUri(null);
-    setPhotoUrl(null);
     setAnalysis(null);
     setNote('');
     setError(null);
@@ -653,7 +646,6 @@ function LogMealModal({
     try {
       setStep('uploading');
       const { url } = await aiService.uploadFoodPhoto(gymId, memberId, uri);
-      setPhotoUrl(url);
 
       setStep('analysing');
       const result = await aiService.analyseMeal(gymId, memberId, { photoUrl: url });

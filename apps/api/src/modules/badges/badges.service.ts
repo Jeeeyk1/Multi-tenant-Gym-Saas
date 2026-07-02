@@ -36,4 +36,8 @@ export class BadgesService {
       await this.repo.createCycle(gymId);
     }
   }
+
+  getOldActiveCycles(olderThanDays: number) {
+    return this.repo.getOldActiveCycles(olderThanDays);
+  }
 }

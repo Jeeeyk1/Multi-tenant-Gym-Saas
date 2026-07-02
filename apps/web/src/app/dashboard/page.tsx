@@ -2,8 +2,9 @@ import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
 import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
+import { CheckinsTrendChart } from '@/components/dashboard/checkins-trend-chart';
 import { cn } from '@/lib/utils';
-import type { StaffCheckIn, MembersPage } from '@/types/api';
+import type { StaffCheckIn, MembersPage, CheckinsTrendPoint } from '@/types/api';
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -67,10 +68,14 @@ export default async function DashboardPage() {
   if (!user) return null;
 
   const firstName = user.fullName?.split(' ')[0] ?? user.email;
+  const canViewReports = user.permissions.includes('reports.view');
 
-  const [activeCheckIns, membersPage] = await Promise.all([
+  const [activeCheckIns, membersPage, checkinsTrend] = await Promise.all([
     api.get<StaffCheckIn[]>(`/gyms/${user.gymId}/checkins/active`).catch(() => [] as StaffCheckIn[]),
     api.get<MembersPage>(`/gyms/${user.gymId}/members?page=1&limit=1`).catch(() => null),
+    canViewReports
+      ? api.get<CheckinsTrendPoint[]>(`/gyms/${user.gymId}/reports/checkins-trend?days=7`).catch(() => [] as CheckinsTrendPoint[])
+      : Promise.resolve([] as CheckinsTrendPoint[]),
   ]);
 
   const totalMembers = membersPage?.meta.total ?? '—';
@@ -117,6 +122,9 @@ export default async function DashboardPage() {
           sub="enrolled across all plans"
         />
       </div>
+
+      {/* Check-ins trend */}
+      {canViewReports && <CheckinsTrendChart gymId={user.gymId} initialData={checkinsTrend} />}
 
       {/* Active check-ins */}
       <div>

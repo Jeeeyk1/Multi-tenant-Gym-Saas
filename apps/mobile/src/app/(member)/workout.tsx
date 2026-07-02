@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useWorkout } from '../../context/WorkoutContext';
-import { workoutService } from '../../services/workout.service';
+import { useLogWorkoutSession } from '../../hooks/workouts';
 import { healthKitService } from '../../services/healthkit.service';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { WorkoutType } from '../../types';
@@ -55,9 +55,10 @@ export default function WorkoutScreen() {
 
   const [stage, setStage] = useState<Stage>(activeSession ? 'active' : 'select');
   const [elapsed, setElapsed] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
   const [isReadingHealth, setIsReadingHealth] = useState(false);
   const [summary, setSummary] = useState<SessionSummary | null>(null);
+  const logSession = useLogWorkoutSession();
+  const isSaving = logSession.isPending;
 
   // Request HealthKit permissions once when the screen mounts (non-blocking)
   useEffect(() => {
@@ -107,9 +108,8 @@ export default function WorkoutScreen() {
     setIsReadingHealth(false);
 
     if (user?.gymId) {
-      setIsSaving(true);
       try {
-        await workoutService.logSession(user.gymId, {
+        await logSession.mutateAsync({
           workoutType: result.workoutType,
           startedAt: result.startedAt,
           endedAt: result.endedAt,
@@ -119,8 +119,6 @@ export default function WorkoutScreen() {
         });
       } catch {
         // Non-blocking — summary is shown even if the API call fails
-      } finally {
-        setIsSaving(false);
       }
     }
   }

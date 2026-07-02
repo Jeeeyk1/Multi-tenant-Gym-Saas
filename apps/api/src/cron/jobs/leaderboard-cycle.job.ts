@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CronLockService } from '../shared/cron-lock.service';
 import { CRON_LOCK_TTL, CRON_SCHEDULE } from '../../config/cron.config';
-import { BadgesRepository } from '../../modules/badges/infrastructure/persistence/badges.repository';
+import { BadgesService } from '../../modules/badges/badges.service';
 import { CloseCycleUseCase } from '../../modules/badges/application/use-cases/close-cycle.use-case';
 
 const LOCK_KEY = 'lock:cron:leaderboard-cycle';
@@ -13,7 +13,7 @@ export class LeaderboardCycleJob {
   private readonly logger = new Logger(LeaderboardCycleJob.name);
 
   constructor(
-    private readonly badgesRepo: BadgesRepository,
+    private readonly badgesService: BadgesService,
     private readonly closeCycleUseCase: CloseCycleUseCase,
     private readonly lock: CronLockService,
   ) {}
@@ -26,7 +26,7 @@ export class LeaderboardCycleJob {
       let closed = 0;
 
       try {
-        const oldCycles = await this.badgesRepo.getOldActiveCycles(CYCLE_DURATION_DAYS);
+        const oldCycles = await this.badgesService.getOldActiveCycles(CYCLE_DURATION_DAYS);
 
         for (const cycle of oldCycles) {
           await this.closeCycleUseCase.execute(cycle.id, cycle.gymId, cycle.startedAt);

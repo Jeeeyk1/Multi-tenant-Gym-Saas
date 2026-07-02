@@ -1,20 +1,10 @@
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { memberService } from '../services/member.service';
+import { useMyProfile } from '../hooks/members';
 
 export default function IndexScreen() {
-  const { isAuthenticated, isLoading, isStaff, user } = useAuth();
-  const [onboardingStatus, setOnboardingStatus] = useState<'checking' | 'done' | 'pending'>('checking');
-
-  useEffect(() => {
-    if (!isAuthenticated || !user || isStaff) return;
-
-    memberService
-      .getMyProfile(user.gymId)
-      .then((profile) => setOnboardingStatus(profile.onboardingDone ? 'done' : 'pending'))
-      .catch(() => setOnboardingStatus('done'));
-  }, [isAuthenticated, isStaff, user]);
+  const { isAuthenticated, isLoading, isStaff } = useAuth();
+  const profileQ = useMyProfile();
 
   if (isLoading) return null;
   if (!isAuthenticated) return <Redirect href="/(auth)/entry" />;
@@ -22,8 +12,12 @@ export default function IndexScreen() {
   // Staff bypass onboarding and go straight to their dashboard
   if (isStaff) return <Redirect href="/(staff)/dashboard" />;
 
-  if (onboardingStatus === 'checking') return null;
-  if (onboardingStatus === 'pending') return <Redirect href="/onboarding" />;
+  // Profile query: data === undefined → still loading; data === null → no profile (treat as done);
+  // data with onboardingDone false → onboarding pending.
+  if (profileQ.isLoading) return null;
+  if (profileQ.data && !profileQ.data.onboardingDone) {
+    return <Redirect href="/onboarding" />;
+  }
 
   return <Redirect href="/(member)/dashboard" />;
 }

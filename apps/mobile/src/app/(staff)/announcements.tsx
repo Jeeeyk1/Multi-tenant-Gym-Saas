@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,12 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { staffService } from '../../services/staff.service';
+import {
+  useArchiveStaffAnnouncement,
+  useCreateStaffAnnouncement,
+  useStaffAnnouncements,
+} from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { StaffAnnouncement } from '../../types';
 
@@ -363,35 +366,23 @@ function AnnouncementCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AnnouncementsScreen() {
-  const { user } = useAuth();
   const { theme } = useTheme();
-  const [announcements, setAnnouncements] = useState<StaffAnnouncement[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const announcementsQ = useStaffAnnouncements();
+  const createMutation = useCreateStaffAnnouncement();
+  const archiveMutation = useArchiveStaffAnnouncement();
+
+  const announcements: StaffAnnouncement[] = announcementsQ.data ?? [];
+  const isLoading = announcementsQ.isLoading;
+  const refreshing = announcementsQ.isRefetching;
+  const error =
+    (announcementsQ.error as { message?: string } | null)?.message ?? null;
+  const createSubmitting = createMutation.isPending;
+  const archivingId = archiveMutation.isPending
+    ? archiveMutation.variables ?? null
+    : null;
+
   const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createSubmitting, setCreateSubmitting] = useState(false);
-  const [archivingId, setArchivingId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await staffService.listAnnouncements(user.gymId);
-      setAnnouncements(data);
-      setError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? 'Failed to load announcements');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const filtered = useMemo(() => {
     if (!activeTab) return announcements;
@@ -405,17 +396,13 @@ export default function AnnouncementsScreen() {
     publishAt?: string;
     expiresAt?: string;
   }) => {
-    if (!user) return;
-    setCreateSubmitting(true);
     try {
-      const created = await staffService.createAnnouncement(user.gymId, dto);
-      setAnnouncements((prev) => [created, ...prev]);
+      await createMutation.mutateAsync(dto);
       setCreateOpen(false);
-    } catch (err: unknown) {
+    } catch (err) {
       const e = err as { message?: string };
       Alert.alert('Error', e?.message ?? 'Failed to create announcement');
-    } finally {
-      setCreateSubmitting(false);
+      throw err;
     }
   };
 
@@ -428,20 +415,13 @@ export default function AnnouncementsScreen() {
         {
           text: 'Archive',
           style: 'destructive',
-          onPress: async () => {
-            if (!user) return;
-            setArchivingId(id);
-            try {
-              await staffService.archiveAnnouncement(user.gymId, id);
-              setAnnouncements((prev) =>
-                prev.map((a) => (a.id === id ? { ...a, status: 'ARCHIVED' as const } : a)),
-              );
-            } catch (err: unknown) {
-              const e = err as { message?: string };
-              Alert.alert('Error', e?.message ?? 'Failed to archive');
-            } finally {
-              setArchivingId(null);
-            }
+          onPress: () => {
+            archiveMutation.mutate(id, {
+              onError: (err: unknown) => {
+                const e = err as { message?: string };
+                Alert.alert('Error', e?.message ?? 'Failed to archive');
+              },
+            });
           },
         },
       ],
@@ -519,10 +499,7 @@ export default function AnnouncementsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                load();
-              }}
+              onRefresh={() => announcementsQ.refetch()}
               tintColor={theme.primary}
             />
           }

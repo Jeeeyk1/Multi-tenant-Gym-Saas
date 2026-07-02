@@ -30,6 +30,11 @@ export interface CheckInsPage {
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
+export interface CheckinsTrendPoint {
+  date: string;
+  count: number;
+}
+
 export interface MemberListItem {
   id: string;
   membershipNumber: string;
@@ -284,4 +289,9 @@ export interface StaffAnnouncement {
   createdAt: string;
   updatedAt: string;
   createdByUser: { id: string; fullName: string };
+}
+
+export interface InsightsResult {
+  answer: string;
+  toolsUsed: string[];
 }

@@ -133,3 +133,87 @@ Each entry includes what it is, why it matters, and rough effort.
 - `pnpm test` runs in CI on every PR
 
 **Effort:** L (ongoing — 1–2 weeks to reach meaningful coverage)
+
+---
+
+## 10. Frontend data-fetching — adopt TanStack Query
+
+**What:** Both frontends fetch data ad-hoc with no caching, deduping, or background sync.
+
+- **Web** ([apps/web](apps/web)) uses axios via two clients ([src/lib/api.ts](apps/web/src/lib/api.ts) server-side, [src/lib/client-api.ts](apps/web/src/lib/client-api.ts) client-side). Server components fetch directly; client components call server actions which re-fetch. Cache invalidation is `revalidatePath()` only.
+- **Mobile** ([apps/mobile](apps/mobile)) uses a `fetch` wrapper ([src/services/api.ts](apps/mobile/src/services/api.ts)) with a custom 401-refresh mutex. Every screen is `useEffect` + `useState` — no cache, no dedupe, no retry, no background refetch.
+- ~45 call sites on web, ~50 on mobile. No `@tanstack/react-query` anywhere yet.
+
+**Why it matters:**
+- **Mobile re-fetches everything on every screen mount.** No stale-while-revalidate, no shared cache between screens (e.g. `getMyProfile` is called on three different screens with no dedup).
+- No optimistic updates → mutations feel sluggish; UI waits for the round-trip.
+- Manual `loading` / `error` / `data` triplets in every component — boilerplate and inconsistent error UX.
+- Pull-to-refresh on mobile is hand-rolled per screen instead of `refetch()`.
+- Server actions on web mean every interactive mutation does a full route revalidate even when only one widget needs to update.
+
+**Important framing — what TanStack Query is and isn't:**
+TanStack Query is **not a replacement for axios or fetch**. It's a server-state cache/sync layer that sits on top of whichever HTTP client you already have. The plan below keeps the existing fetchers and adds TanStack Query as the data-fetching state manager. Auth refresh logic stays in the fetcher layer (where it already lives correctly).
+
+**What good looks like — phased migration:**
+
+### Phase 0 — Decisions and conventions (½ day)
+- Confirm we keep axios on web and `fetch` wrapper on mobile. Do **not** unify HTTP clients as part of this migration — out of scope, separate decision.
+- Agree on a query-key factory convention per resource, e.g.:
+  ```ts
+  export const memberKeys = {
+    all: ['members'] as const,
+    detail: (id: string) => [...memberKeys.all, 'detail', id] as const,
+    list: (filters: MemberFilters) => [...memberKeys.all, 'list', filters] as const,
+  };
+  ```
+- Agree default `QueryClient` options: `staleTime: 30s`, `gcTime: 5min`, `retry: 1`, `refetchOnWindowFocus: true` (web) / `refetchOnAppFocus: true` (mobile).
+- Decide where hooks live: `apps/<app>/src/features/<domain>/hooks/use<Resource>.ts`. Co-located with the feature, not a global `hooks/` dump.
+
+### Phase 1 — Foundation (1 day, mobile first)
+- Add `@tanstack/react-query` and `@tanstack/react-query-devtools` to `apps/mobile`.
+- Wrap the root with `QueryClientProvider` in [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx).
+- Wire `AppState` → `focusManager` so RN focus events trigger refetch (standard TanStack Query RN recipe).
+- Wire `NetInfo` → `onlineManager` for offline awareness.
+- Make sure 401 refresh stays in [src/services/api.ts](apps/mobile/src/services/api.ts) — TanStack Query should never see a 401 (the fetcher handles it transparently). Set `retry: (failureCount, err) => !isAuthError(err)` so we don't loop on truly unauthenticated states.
+
+### Phase 2 — Mobile pilot, two screens (1–2 days)
+- Migrate **profile** and **dashboard** screens end-to-end.
+- Establish patterns for: `useQuery`, `useMutation` with `onSuccess` invalidation, optimistic updates, pull-to-refresh via `refetch()`, error boundaries.
+- Document the patterns in `docs/03-engineering/frontend-data-fetching.md`.
+
+### Phase 3 — Mobile rollout (3–5 days)
+- Migrate remaining screens resource-by-resource (auth, member, staff, leaderboard, announcements, chat, workout). One PR per resource — small and reviewable.
+- Delete `useEffect`/`useState` data-fetching boilerplate as each resource lands.
+- Keep `services/*.ts` as the thin transport layer — they become the function bodies inside `queryFn` / `mutationFn`. Don't merge them into hooks; the separation is useful for testing.
+
+### Phase 4 — Web client components only (2–3 days)
+- Add `@tanstack/react-query` to `apps/web` with a per-request `QueryClient` (Next.js App Router recipe — important to avoid cross-request cache leakage).
+- **Server components stay as-is.** They already fetch on the server and benefit from Next.js cache; TanStack Query adds nothing there.
+- For hybrid pages (server prefetch + interactive client widget): server component calls `queryClient.prefetchQuery(...)`, then wraps the client subtree in `<HydrationBoundary state={dehydrate(queryClient)}>`. Client widget calls `useQuery` with the same key and gets instant data.
+- Migrate the most interactive screens first: live check-ins list, chat, plans table. Static dashboards can stay server-rendered.
+
+### Phase 5 — Guardrails and cleanup (½ day)
+- Add `@tanstack/eslint-plugin-query` to both apps. Catches missing query keys, exhaustive-deps issues.
+- Add a custom lint rule (or PR-review checklist) flagging `useEffect` + `setState({ data })` patterns in `apps/mobile/src/app/**`.
+- Remove any now-dead service code, manual loading flags, or one-off cache hacks.
+- Update [docs/03-engineering/](docs/03-engineering/) with the final pattern doc and an FAQ section ("when do I use a server component vs `useQuery`?").
+
+**Out of scope for this migration (call out so they don't sneak in):**
+- Switching axios → fetch (or vice versa).
+- Re-architecting auth/refresh.
+- Moving server actions to client-side mutations wholesale (only do this where there's a clear UX win — optimistic update, instant feedback).
+- Persisted-cache / offline-first mobile (`@tanstack/query-async-storage-persister`). Worth it later, but a separate effort once the basics land.
+
+**Risks to watch:**
+- **SSR hydration mismatches on web** if `staleTime` differs between server prefetch and client mount. The HydrationBoundary recipe solves this; deviate at your peril.
+- **React Native `AppState` focus refetch can hammer the API** on cheap reactivations. Tune `staleTime` per query, not globally.
+- **401 retry loops** if auth refresh logic isn't carefully bypassed by TanStack Query's retry.
+- **Devtools must be tree-shaken from production** builds.
+
+**Effort:** L total, broken into shippable phases:
+- Phase 0+1 (mobile foundation): **1.5 days**
+- Phase 2 (mobile pilot): **1–2 days**
+- Phase 3 (mobile rollout): **3–5 days**
+- Phase 4 (web client components): **2–3 days**
+- Phase 5 (guardrails + cleanup): **½ day**
+- **Realistic total: 8–12 dev-days**, ideally spread across 3–4 PR-sized increments rather than one big-bang merge.

@@ -158,3 +158,19 @@ VALUES
   ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000003', 'MODERATOR'),
   ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000004', 'MEMBER')
 ON CONFLICT (conversation_id, user_id) DO NOTHING;
+
+-- ─── Subscription ─────────────────────────────────────────────────────────────
+-- Puts the dev org on the Growth plan so the AI insights assistant (gated on the
+-- 'ai_assistant' plan feature + monthly token quota) is available locally.
+INSERT INTO subscriptions (id, organization_id, plan_id, status, billing_cycle, current_period_start, current_period_end)
+SELECT
+  '00000000-0000-0000-0000-000000000009',
+  '00000000-0000-0000-0000-000000000001',
+  p.id,
+  'ACTIVE',
+  'MONTHLY',
+  date_trunc('month', now()),
+  date_trunc('month', now()) + interval '1 month'
+FROM plans p
+WHERE p.tier = 'GROWTH'
+ON CONFLICT (id) DO NOTHING;

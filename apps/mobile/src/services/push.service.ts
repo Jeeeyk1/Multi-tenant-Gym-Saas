@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { memberService } from './member.service';
 
 Notifications.setNotificationHandler({
@@ -13,6 +14,42 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+/**
+ * Subscribe to notification taps. When the user taps a push, we route by the
+ * `screen` field in the notification's `data` payload (set server-side).
+ * Returns an unsubscribe function for cleanup.
+ */
+export function subscribeToNotificationTaps(): () => void {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = response.notification.request.content.data as
+      | { screen?: string; type?: string }
+      | undefined;
+    routeFromNotification(data);
+  });
+
+  // Also handle the case where the app was launched cold from a push.
+  Notifications.getLastNotificationResponseAsync().then((response) => {
+    if (!response) return;
+    const data = response.notification.request.content.data as
+      | { screen?: string; type?: string }
+      | undefined;
+    routeFromNotification(data);
+  });
+
+  return () => subscription.remove();
+}
+
+function routeFromNotification(data: { screen?: string; type?: string } | undefined) {
+  if (!data?.screen) return;
+  switch (data.screen) {
+    case 'membership':
+      router.push('/(member)/membership');
+      return;
+    default:
+      return;
+  }
+}
 
 export async function registerPushToken(gymId: string): Promise<void> {
   // Push tokens only exist on physical devices

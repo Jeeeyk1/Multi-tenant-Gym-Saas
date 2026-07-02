@@ -53,7 +53,27 @@ export class MembersRepository {
         membershipPlan: {
           select: { id: true, name: true, type: true, price: true, durationDays: true },
         },
+        privacy: {
+          select: { hideCheckinVisibility: true, hideFromMemberList: true },
+        },
       },
+    });
+  }
+
+  /**
+   * Upsert privacy flags for a member. Returns the updated row.
+   * Privacy rows are created on member registration but this upsert handles
+   * the safety case where one is missing.
+   */
+  upsertMemberPrivacy(
+    memberId: string,
+    patch: { hideCheckinVisibility?: boolean; hideFromMemberList?: boolean },
+  ) {
+    return this.prisma.memberPrivacy.upsert({
+      where: { memberId },
+      create: { memberId, ...patch },
+      update: { ...patch, updatedAt: new Date() },
+      select: { hideCheckinVisibility: true, hideFromMemberList: true },
     });
   }
 

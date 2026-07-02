@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,16 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { staffService } from '../../../services/staff.service';
+import {
+  useReactivateMember,
+  useRenewMembership,
+  useStaffMember,
+  useStaffRenewals,
+  useSuspendMember,
+} from '../../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
-import type { MemberDetail, RenewalRecord } from '../../../types';
+import type { RenewalRecord } from '../../../types';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE: COLORS.active,
@@ -203,43 +208,28 @@ function RenewalRow({ record }: { record: RenewalRecord }) {
 
 export default function MemberDetailScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [member, setMember] = useState<MemberDetail | null>(null);
-  const [renewals, setRenewals] = useState<RenewalRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const memberQ = useStaffMember(id);
+  const renewalsQ = useStaffRenewals(id);
+  const suspendMutation = useSuspendMember();
+  const reactivateMutation = useReactivateMember();
+  const renewMutation = useRenewMembership(id ?? '');
 
-  const [actionLoading, setActionLoading] = useState(false);
+  const member = memberQ.data ?? null;
+  const renewals: RenewalRecord[] = renewalsQ.data ?? [];
+  const isLoading = memberQ.isLoading || renewalsQ.isLoading;
+  const error =
+    (memberQ.error as { message?: string } | null)?.message ??
+    (renewalsQ.error as { message?: string } | null)?.message ??
+    null;
+  const actionLoading = suspendMutation.isPending || reactivateMutation.isPending;
+  const renewSubmitting = renewMutation.isPending;
   const [renewModalOpen, setRenewModalOpen] = useState(false);
-  const [renewSubmitting, setRenewSubmitting] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!user || !id) return;
-    try {
-      const [memberData, renewalData] = await Promise.all([
-        staffService.getMember(user.gymId, id),
-        staffService.listRenewals(user.gymId, id),
-      ]);
-      setMember(memberData);
-      setRenewals(renewalData);
-      setError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? 'Failed to load member');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleSuspend = async () => {
-    if (!user || !member) return;
+  const handleSuspend = () => {
+    if (!member) return;
     Alert.alert(
       'Suspend Member',
       `Suspend ${member.user.fullName}? They will not be able to check in.`,
@@ -248,35 +238,27 @@ export default function MemberDetailScreen() {
         {
           text: 'Suspend',
           style: 'destructive',
-          onPress: async () => {
-            setActionLoading(true);
-            try {
-              await staffService.suspendMember(user.gymId, member.id);
-              setMember((prev) => (prev ? { ...prev, status: 'SUSPENDED' } : prev));
-            } catch (err: unknown) {
-              const e = err as { message?: string };
-              Alert.alert('Error', e?.message ?? 'Failed to suspend member');
-            } finally {
-              setActionLoading(false);
-            }
+          onPress: () => {
+            suspendMutation.mutate(member.id, {
+              onError: (err: unknown) => {
+                const e = err as { message?: string };
+                Alert.alert('Error', e?.message ?? 'Failed to suspend member');
+              },
+            });
           },
         },
       ],
     );
   };
 
-  const handleReactivate = async () => {
-    if (!user || !member) return;
-    setActionLoading(true);
-    try {
-      await staffService.reactivateMember(user.gymId, member.id);
-      setMember((prev) => (prev ? { ...prev, status: 'ACTIVE' } : prev));
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      Alert.alert('Error', e?.message ?? 'Failed to reactivate member');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleReactivate = () => {
+    if (!member) return;
+    reactivateMutation.mutate(member.id, {
+      onError: (err: unknown) => {
+        const e = err as { message?: string };
+        Alert.alert('Error', e?.message ?? 'Failed to reactivate member');
+      },
+    });
   };
 
   const handleRenew = async (dto: {
@@ -285,19 +267,14 @@ export default function MemberDetailScreen() {
     paymentMethod?: string;
     notes?: string;
   }) => {
-    if (!user || !member) return;
-    setRenewSubmitting(true);
+    if (!member) return;
     try {
-      await staffService.renewMembership(user.gymId, member.id, dto);
+      await renewMutation.mutateAsync(dto);
       setRenewModalOpen(false);
-      // Reload to get updated expiry + new renewal record
-      setIsLoading(true);
-      await load();
-    } catch (err: unknown) {
+    } catch (err) {
       const e = err as { message?: string };
       Alert.alert('Renewal Failed', e?.message ?? 'Could not process renewal');
-    } finally {
-      setRenewSubmitting(false);
+      throw err;
     }
   };
 

@@ -28,11 +28,13 @@ import { ReactivateMemberUseCase } from '../../application/use-cases/reactivate-
 import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.use-case';
 import { GetMemberQrUseCase } from '../../application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from '../../application/use-cases/register-device-token.use-case';
+import { UpdateMyPrivacyUseCase } from '../../application/use-cases/update-my-privacy.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
 import { UpsertMyProfileDto } from '../dto/upsert-my-profile.dto';
 import { LogWeightDto } from '../dto/log-weight.dto';
 import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
+import { UpdateMyPrivacyDto } from '../dto/update-my-privacy.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId/members')
@@ -53,6 +55,7 @@ export class MembersController {
     private readonly reactivateMemberUseCase: ReactivateMemberUseCase,
     private readonly getMemberQrUseCase: GetMemberQrUseCase,
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    private readonly updateMyPrivacyUseCase: UpdateMyPrivacyUseCase,
     private readonly removeMemberUseCase: RemoveMemberUseCase,
   ) {}
 
@@ -144,6 +147,23 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.registerDeviceTokenUseCase.execute(dto, user);
+  }
+
+  /**
+   * PATCH /gyms/:gymId/members/me/privacy
+   * Update the caller's privacy flags. Currently supports:
+   *   - hideCheckinVisibility: hide identity in the public "who's checked in" view
+   *   - hideFromMemberList:    hide from staff member search results
+   * Returns the updated privacy row.
+   */
+  @Patch('me/privacy')
+  @HttpCode(HttpStatus.OK)
+  updateMyPrivacy(
+    @Param('gymId') gymId: string,
+    @Body() dto: UpdateMyPrivacyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.updateMyPrivacyUseCase.execute(gymId, dto, user);
   }
 
   /**

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,11 +16,17 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { leaderboardService } from '../../services/leaderboard.service';
+import {
+  useApproveSubmission,
+  useExercises,
+  useLeaderboardConfig,
+  usePendingSubmissions,
+  useRejectSubmission,
+  useUpdateLeaderboardConfig,
+} from '../../hooks/leaderboard';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { PrSubmission, Exercise, LeaderboardConfigItem } from '../../types';
+import type { PrSubmission, Exercise } from '../../types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -204,112 +210,62 @@ type TabKey = 'pending' | 'config';
 
 export default function StaffLeaderboardScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
 
-  // ── Pending tab state ──────────────────────────────────────────────────────
+  // ── Pending tab ────────────────────────────────────────────────────────────
 
-  const [pending, setPending] = useState<PrSubmission[]>([]);
-  const [pendingLoading, setPendingLoading] = useState(true);
-  const [pendingRefreshing, setPendingRefreshing] = useState(false);
-  const [pendingError, setPendingError] = useState<string | null>(null);
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const pendingQ = usePendingSubmissions();
+  const approveMutation = useApproveSubmission();
+  const rejectMutation = useRejectSubmission();
+  const pending: PrSubmission[] = pendingQ.data ?? [];
+  const pendingLoading = pendingQ.isLoading;
+  const pendingRefreshing = pendingQ.isRefetching;
+  const pendingError =
+    (pendingQ.error as { message?: string } | null)?.message ?? null;
+  const approvingId = approveMutation.isPending ? approveMutation.variables ?? null : null;
+  const rejectingId = rejectMutation.isPending
+    ? rejectMutation.variables?.submissionId ?? null
+    : null;
 
-  // ── Config tab state ───────────────────────────────────────────────────────
+  // ── Config tab ─────────────────────────────────────────────────────────────
 
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [config, setConfig] = useState<LeaderboardConfigItem[]>([]);
-  const [configLoading, setConfigLoading] = useState(false);
-  const [configLoaded, setConfigLoaded] = useState(false);
-  const [configSaving, setConfigSaving] = useState(false);
-  const [configError, setConfigError] = useState<string | null>(null);
+  const exercisesQ = useExercises();
+  const configQ = useLeaderboardConfig(activeTab === 'config');
+  const updateConfigMutation = useUpdateLeaderboardConfig();
+  const exercises: Exercise[] = exercisesQ.data ?? [];
+  const config = configQ.data ?? [];
+  const configLoading =
+    activeTab === 'config' && (exercisesQ.isLoading || configQ.isLoading);
+  const configSaving = updateConfigMutation.isPending;
+  const configError =
+    (exercisesQ.error as { message?: string } | null)?.message ??
+    (configQ.error as { message?: string } | null)?.message ??
+    (updateConfigMutation.error as { message?: string } | null)?.message ??
+    null;
   const [localActive, setLocalActive] = useState<Record<string, boolean>>({});
   const [hasConfigChanges, setHasConfigChanges] = useState(false);
 
-  // ── Load pending ───────────────────────────────────────────────────────────
-
-  const loadPending = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await leaderboardService.getPendingSubmissions(user.gymId);
-      setPending(data);
-      setPendingError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setPendingError(e?.message ?? 'Failed to load submissions');
-    } finally {
-      setPendingLoading(false);
-      setPendingRefreshing(false);
-    }
-  }, [user]);
-
   useEffect(() => {
-    loadPending();
-  }, [loadPending]);
-
-  // ── Load config ────────────────────────────────────────────────────────────
-
-  const loadConfig = useCallback(async () => {
-    if (!user || configLoaded) return;
-    setConfigLoading(true);
-    setConfigError(null);
-    try {
-      const [ex, cfg] = await Promise.all([
-        leaderboardService.listExercises(user.gymId),
-        leaderboardService.getLeaderboardConfig(user.gymId),
-      ]);
-      setExercises(ex);
-      setConfig(cfg);
-      const activeMap: Record<string, boolean> = {};
-      ex.forEach((e) => { activeMap[e.id] = false; });
-      cfg.forEach((c) => { activeMap[c.exercise.id] = c.isActive; });
-      setLocalActive(activeMap);
-      setConfigLoaded(true);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setConfigError(e?.message ?? 'Failed to load config');
-    } finally {
-      setConfigLoading(false);
-    }
-  }, [user, configLoaded]);
-
-  useEffect(() => {
-    if (activeTab === 'config') {
-      loadConfig();
-    }
-  }, [activeTab, loadConfig]);
+    if (!configQ.data || !exercisesQ.data) return;
+    const activeMap: Record<string, boolean> = {};
+    exercisesQ.data.forEach((e) => { activeMap[e.id] = false; });
+    configQ.data.forEach((c) => { activeMap[c.exercise.id] = c.isActive; });
+    setLocalActive(activeMap);
+    setHasConfigChanges(false);
+  }, [configQ.data, exercisesQ.data]);
 
   // ── Approve ────────────────────────────────────────────────────────────────
 
-  const handleApprove = async (submissionId: string) => {
-    if (!user) return;
-    setApprovingId(submissionId);
-    setPending((prev) => prev.filter((s) => s.id !== submissionId));
-    try {
-      await leaderboardService.approveSubmission(user.gymId, submissionId);
-    } catch {
-      loadPending();
-    } finally {
-      setApprovingId(null);
-    }
+  const handleApprove = (submissionId: string) => {
+    approveMutation.mutate(submissionId);
   };
 
   // ── Reject ─────────────────────────────────────────────────────────────────
 
-  const handleReject = async (submissionId: string, reason: string) => {
-    if (!user) return;
-    setRejectingId(submissionId);
-    setPending((prev) => prev.filter((s) => s.id !== submissionId));
-    try {
-      await leaderboardService.rejectSubmission(user.gymId, submissionId, reason);
-    } catch {
-      loadPending();
-    } finally {
-      setRejectingId(null);
-    }
+  const handleReject = (submissionId: string, reason: string) => {
+    rejectMutation.mutate({ submissionId, reason });
   };
 
   // ── Config toggle ──────────────────────────────────────────────────────────
@@ -321,34 +277,23 @@ export default function StaffLeaderboardScreen() {
 
   // ── Save config ────────────────────────────────────────────────────────────
 
-  const handleSaveConfig = async () => {
-    if (!user) return;
-    setConfigSaving(true);
-    setConfigError(null);
-    try {
-      const configItems = config.map((c, idx) => ({
-        exerciseId: c.exercise.id,
-        isActive: localActive[c.exercise.id] ?? c.isActive,
-        displayOrder: c.displayOrder ?? idx,
-      }));
-      // include exercises not yet in config
-      exercises
-        .filter((e) => !config.find((c) => c.exercise.id === e.id))
-        .forEach((e, idx) => {
-          if (localActive[e.id]) {
-            configItems.push({ exerciseId: e.id, isActive: true, displayOrder: config.length + idx });
-          }
-        });
+  const handleSaveConfig = () => {
+    const configItems = config.map((c, idx) => ({
+      exerciseId: c.exercise.id,
+      isActive: localActive[c.exercise.id] ?? c.isActive,
+      displayOrder: c.displayOrder ?? idx,
+    }));
+    exercises
+      .filter((e) => !config.find((c) => c.exercise.id === e.id))
+      .forEach((e, idx) => {
+        if (localActive[e.id]) {
+          configItems.push({ exerciseId: e.id, isActive: true, displayOrder: config.length + idx });
+        }
+      });
 
-      const updated = await leaderboardService.updateLeaderboardConfig(user.gymId, configItems);
-      setConfig(updated);
-      setHasConfigChanges(false);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setConfigError(e?.message ?? 'Failed to save config');
-    } finally {
-      setConfigSaving(false);
-    }
+    updateConfigMutation.mutate(configItems, {
+      onSuccess: () => setHasConfigChanges(false),
+    });
   };
 
   // ── Group exercises by category ────────────────────────────────────────────
@@ -413,7 +358,7 @@ export default function StaffLeaderboardScreen() {
           ) : pendingError ? (
             <View style={styles.centered}>
               <Text style={styles.errorText}>{pendingError}</Text>
-              <TouchableOpacity onPress={loadPending} style={styles.retryBtn}>
+              <TouchableOpacity onPress={() => pendingQ.refetch()} style={styles.retryBtn}>
                 <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
               </TouchableOpacity>
             </View>
@@ -425,7 +370,7 @@ export default function StaffLeaderboardScreen() {
               refreshControl={
                 <RefreshControl
                   refreshing={pendingRefreshing}
-                  onRefresh={() => { setPendingRefreshing(true); loadPending(); }}
+                  onRefresh={() => pendingQ.refetch()}
                   tintColor={theme.primary}
                 />
               }
@@ -462,7 +407,7 @@ export default function StaffLeaderboardScreen() {
             <View style={styles.centered}>
               <Text style={styles.errorText}>{configError}</Text>
               <TouchableOpacity
-                onPress={() => { setConfigLoaded(false); loadConfig(); }}
+                onPress={() => { exercisesQ.refetch(); configQ.refetch(); }}
                 style={styles.retryBtn}
               >
                 <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>

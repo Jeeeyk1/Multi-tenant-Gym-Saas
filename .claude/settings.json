@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/jake/Documents/multi-tenant-gym diff apps/mobile/src/services/healthkit.service.ts)",
+      "Bash(git -C /Users/jake/Documents/multi-tenant-gym diff apps/mobile/metro.config.js)",
+      "Bash(pnpm --filter @gym-saas/mobile lint)"
+    ]
+  }
+}

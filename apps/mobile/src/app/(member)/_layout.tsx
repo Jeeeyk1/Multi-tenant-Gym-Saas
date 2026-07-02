@@ -1,7 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -21,7 +20,7 @@ function TabIcon({
     <Ionicons
       name={focused ? iconFocused : iconUnfocused}
       size={22}
-      color={focused ? theme.primary : COLORS.textMuted}
+      color={focused ? theme.primary : theme.colors.textMuted}
     />
   );
 }
@@ -31,6 +30,7 @@ const HIDDEN: object = { tabBarItemStyle: { display: 'none' }, tabBarButton: () 
 export default function MemberLayout() {
   const { isAuthenticated, isLoading } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
 
   if (!isLoading && !isAuthenticated) {
     return <Redirect href="/(auth)/entry" />;
@@ -41,15 +41,15 @@ export default function MemberLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.surface,
-          borderTopColor: COLORS.border,
+          backgroundColor: C.surface,
+          borderTopColor: C.border,
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 84 : 64,
           paddingBottom: Platform.OS === 'ios' ? 24 : 8,
           paddingTop: 8,
         },
         tabBarActiveTintColor: theme.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
+        tabBarInactiveTintColor: C.textMuted,
         tabBarLabelStyle: { fontSize: 10, marginBottom: 2 },
       }}
     >
@@ -106,6 +106,8 @@ export default function MemberLayout() {
       <Tabs.Screen name="ai" options={HIDDEN} />
       <Tabs.Screen name="workout" options={HIDDEN} />
       <Tabs.Screen name="workout-history" options={HIDDEN} />
+      <Tabs.Screen name="whos-here" options={HIDDEN} />
+      <Tabs.Screen name="membership" options={HIDDEN} />
     </Tabs>
   );
 }

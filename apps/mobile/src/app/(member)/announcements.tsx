@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { announcementService } from '../../services/announcement.service';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { useAnnouncements, useMarkAnnouncementRead } from '../../hooks/announcements';
+import { SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { Announcement } from '../../types';
 
 function timeAgo(dateStr: string): string {
@@ -28,34 +27,55 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function AnnouncementsScreen() {
-  const { user } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
   const router = useRouter();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const announcementsQ = useAnnouncements();
+  const markRead = useMarkAnnouncementRead();
   const [selected, setSelected] = useState<Announcement | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await announcementService.list(user.gymId);
-      setAnnouncements(data);
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { flex: 1, backgroundColor: C.background },
+        centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
+        content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+        pageTitle: { fontSize: 24, ...FONT.bold, color: C.text, marginBottom: SPACING.lg },
+        sectionLabel: { fontSize: 12, ...FONT.semibold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: SPACING.sm, marginTop: SPACING.sm },
+        chatBanner: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: SPACING.sm,
+          backgroundColor: C.card,
+          borderRadius: RADIUS.md,
+          padding: SPACING.md,
+          marginBottom: SPACING.lg,
+          borderWidth: 1,
+        },
+        chatBannerTitle: { fontSize: 14, ...FONT.semibold, color: C.text },
+        chatBannerSub: { fontSize: 12, color: C.textMuted, marginTop: 1 },
+        emptyCard: { backgroundColor: C.card, borderRadius: RADIUS.md, padding: SPACING.lg, alignItems: 'center', borderWidth: 1, borderColor: C.border },
+        emptyText: { color: C.textSecondary, fontSize: 14 },
+        modal: { flex: 1, backgroundColor: C.background, padding: SPACING.lg },
+        modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: SPACING.lg, marginBottom: SPACING.sm, gap: SPACING.md },
+        modalTitle: { flex: 1, fontSize: 22, ...FONT.bold, color: C.text },
+        closeBtn: { padding: SPACING.xs },
+        closeText: { fontSize: 18, color: C.textSecondary },
+        modalMeta: { fontSize: 12, color: C.textMuted, marginBottom: SPACING.lg },
+        modalBody: { flex: 1 },
+        modalContent: { fontSize: 15, color: C.text, lineHeight: 24, ...FONT.regular },
+      }),
+    [C],
+  );
 
-  useEffect(() => { load(); }, [load]);
+  const announcements: Announcement[] = announcementsQ.data ?? [];
+  const isLoading = announcementsQ.isLoading;
+  const refreshing = announcementsQ.isRefetching;
 
-  const openAnnouncement = async (item: Announcement) => {
+  const openAnnouncement = (item: Announcement) => {
     setSelected(item);
-    if (!item.readAt && user) {
-      announcementService.markRead(user.gymId, item.id).catch(() => {});
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === item.id ? { ...a, readAt: new Date().toISOString() } : a)),
-      );
+    if (!item.readAt) {
+      markRead.mutate(item.id);
     }
   };
 
@@ -74,7 +94,7 @@ export default function AnnouncementsScreen() {
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={theme.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => announcementsQ.refetch()} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>News</Text>
@@ -89,7 +109,7 @@ export default function AnnouncementsScreen() {
             <Text style={styles.chatBannerTitle}>Community Chat</Text>
             <Text style={styles.chatBannerSub}>Talk with your gym community</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+          <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
         </TouchableOpacity>
 
         {announcements.length === 0 && (
@@ -143,15 +163,43 @@ export default function AnnouncementsScreen() {
 
 function AnnouncementRow({ item, onPress }: { item: Announcement; onPress: (a: Announcement) => void }) {
   const { theme } = useTheme();
+  const C = theme.colors;
   const isUnread = !item.readAt;
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        row: {
+          backgroundColor: C.card,
+          borderRadius: RADIUS.md,
+          padding: SPACING.md,
+          marginBottom: SPACING.sm,
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          borderWidth: 1,
+          borderColor: C.border,
+          gap: SPACING.sm,
+        },
+        rowUnread: { borderColor: theme.primary + '66' },
+        rowLeft: { flex: 1, flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
+        unreadDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: theme.primary, marginTop: 5 },
+        rowTitle: { fontSize: 14, color: C.text, ...FONT.regular, marginBottom: 3 },
+        rowTitleBold: { ...FONT.semibold },
+        rowPreview: { fontSize: 12, color: C.textSecondary, lineHeight: 17 },
+        rowTime: { fontSize: 11, color: C.textMuted, flexShrink: 0 },
+      }),
+    [C, theme.primary],
+  );
+
   return (
     <TouchableOpacity
-      style={[styles.row, isUnread && styles.rowUnread, isUnread && { borderColor: theme.primary + '66' }]}
+      style={[styles.row, isUnread && styles.rowUnread]}
       onPress={() => onPress(item)}
       activeOpacity={0.7}
     >
       <View style={styles.rowLeft}>
-        {isUnread && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
+        {isUnread && <View style={styles.unreadDot} />}
         <View style={{ flex: 1 }}>
           <Text style={[styles.rowTitle, isUnread && styles.rowTitleBold]} numberOfLines={1}>
             {item.title}
@@ -163,53 +211,3 @@ function AnnouncementRow({ item, onPress }: { item: Announcement; onPress: (a: A
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  centered: { flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-  pageTitle: { fontSize: 24, ...FONT.bold, color: COLORS.text, marginBottom: SPACING.lg },
-  sectionLabel: { fontSize: 12, ...FONT.semibold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: SPACING.sm, marginTop: SPACING.sm },
-  chatBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.primary + '40',
-  },
-  chatBannerTitle: { fontSize: 14, ...FONT.semibold, color: COLORS.text },
-  chatBannerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-  emptyCard: { backgroundColor: COLORS.card, borderRadius: RADIUS.md, padding: SPACING.lg, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
-  emptyText: { color: COLORS.textSecondary, fontSize: 14 },
-  row: {
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.sm,
-  },
-  rowUnread: { borderColor: COLORS.primary + '66' },
-  rowLeft: { flex: 1, flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start' },
-  unreadDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.primary, marginTop: 5 },
-  rowTitle: { fontSize: 14, color: COLORS.text, ...FONT.regular, marginBottom: 3 },
-  rowTitleBold: { ...FONT.semibold },
-  rowPreview: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17 },
-  rowTime: { fontSize: 11, color: COLORS.textMuted, flexShrink: 0 },
-  modal: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg },
-  modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: SPACING.lg, marginBottom: SPACING.sm, gap: SPACING.md },
-  modalTitle: { flex: 1, fontSize: 22, ...FONT.bold, color: COLORS.text },
-  closeBtn: { padding: SPACING.xs },
-  closeText: { fontSize: 18, color: COLORS.textSecondary },
-  modalMeta: { fontSize: 12, color: COLORS.textMuted, marginBottom: SPACING.lg },
-  modalBody: { flex: 1 },
-  modalContent: { fontSize: 15, color: COLORS.text, lineHeight: 24, ...FONT.regular },
-});

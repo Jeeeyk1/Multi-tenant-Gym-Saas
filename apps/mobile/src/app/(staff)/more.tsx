@@ -33,6 +33,7 @@ export default function MoreScreen() {
   const staffRoles = user?.roles.filter((r) => r !== 'MEMBER') ?? [];
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
   const initials = user?.fullName ? getInitials(user.fullName) : '??';
+  const canQueryInsights = user?.permissions.includes('insights.query') ?? false;
 
   return (
     <ScrollView
@@ -67,7 +68,7 @@ export default function MoreScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>TOOLS</Text>
         <TouchableOpacity
-          style={styles.navRow}
+          style={[styles.navRow, canQueryInsights && styles.navRowBorder]}
           onPress={() => router.push('/(staff)/leaderboard')}
           activeOpacity={0.7}
         >
@@ -75,6 +76,17 @@ export default function MoreScreen() {
           <Text style={styles.navLabel}>Leaderboard</Text>
           <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
         </TouchableOpacity>
+        {canQueryInsights && (
+          <TouchableOpacity
+            style={styles.navRow}
+            onPress={() => router.push('/(staff)/insights')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="sparkles-outline" size={18} color={COLORS.textMuted} />
+            <Text style={styles.navLabel}>AI Assistant</Text>
+            <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Info row */}
@@ -181,6 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: 14,
   },
+  navRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
   navLabel: { flex: 1, fontSize: 14, color: COLORS.text, ...FONT.medium },
 
   infoRow: {

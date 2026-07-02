@@ -29,6 +29,8 @@ import { PublicModule } from './modules/public/public.module';
 import { EmailModule } from './common/email/email.module';
 import { WorkoutsModule } from './modules/workouts/workouts.module';
 import { BadgesModule } from './modules/badges/badges.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { AiInsightsModule } from './modules/ai-insights/ai-insights.module';
 
 @Module({
   imports: [
@@ -96,6 +98,8 @@ import { BadgesModule } from './modules/badges/badges.module';
     EmailModule,
     WorkoutsModule,
     BadgesModule,
+    ReportsModule,
+    AiInsightsModule,
   ],
 })
 export class AppModule {}

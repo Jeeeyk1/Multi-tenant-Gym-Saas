@@ -1,23 +1,23 @@
-export const COLORS = {
+export const DARK_COLORS = {
   // Core backgrounds
   background: '#09090F',
   surface: '#111119',
   card: '#111119',
   border: '#1F1F2E',
 
-  // Accents
-  primary: '#0D9488',       // teal
+  // Accents (defaults — overridden by tenant theme at runtime)
+  primary: '#0D9488',
   primaryDark: '#0F766E',
   primaryLight: '#2DD4BF',
-  secondary: '#0891B2',     // cyan (gradient partner)
+  secondary: '#0891B2',
   secondaryDark: '#0E7490',
-  alert: '#F59E0B',         // amber
+  alert: '#F59E0B',
 
   // Text
   text: '#F8F8FF',
-  textSecondary: '#6B6B80',
+  textSecondary: '#9B9BAA',
   textMuted: '#6B6B80',
-  onPrimary: '#FFFFFF',     // text/icons on indigo backgrounds
+  onPrimary: '#FFFFFF',
 
   // Status
   success: '#22c55e',
@@ -31,9 +31,48 @@ export const COLORS = {
   active: '#0D9488',
 };
 
+export const LIGHT_COLORS = {
+  // Core backgrounds
+  background: '#F2F2F7',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  border: '#E5E5EA',
+
+  // Accents (defaults — overridden by tenant theme at runtime)
+  primary: '#0D9488',
+  primaryDark: '#0F766E',
+  primaryLight: '#2DD4BF',
+  secondary: '#0891B2',
+  secondaryDark: '#0E7490',
+  alert: '#F59E0B',
+
+  // Text
+  text: '#0A0A0F',
+  textSecondary: '#6B6B80',
+  textMuted: '#9B9BAA',
+  onPrimary: '#FFFFFF',
+
+  // Status
+  success: '#16a34a',
+  successBg: '#DCFCE7',
+  error: '#dc2626',
+  errorBg: '#FEE2E2',
+  warning: '#d97706',
+  warningBg: '#FEF9C3',
+  expired: '#dc2626',
+  suspended: '#d97706',
+  active: '#16a34a',
+};
+
+export type ColorPalette = typeof DARK_COLORS;
+
+// Backwards-compat alias — existing code that imports COLORS keeps working in dark mode.
+// Screens should migrate to `theme.colors` to get light/dark support.
+export const COLORS = DARK_COLORS;
+
 // Gradient presets — pass directly to LinearGradient colors prop
 export const GRADIENTS = {
-  primary: ['#0D9488', '#0891B2'] as [string, string],  // teal → cyan
+  primary: ['#0D9488', '#0891B2'] as [string, string],
   accentCard: ['#042F2E', '#083344'] as [string, string],
 };
 

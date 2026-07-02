@@ -293,4 +293,69 @@ export class BadgesRepository {
       },
     });
   }
+
+  // ── Equip ──────────────────────────────────────────────────────────────────
+
+  findMemberBadge(badgeId: string, memberId: string, gymId: string) {
+    return this.prisma.memberBadge.findFirst({
+      where: { id: badgeId, memberId, gymId },
+      select: { id: true, isEquipped: true, expiresAt: true },
+    });
+  }
+
+  /**
+   * Set a badge as equipped. Atomically unequips all other badges for the same
+   * member first — only one badge can be equipped at a time per member.
+   */
+  async setBadgeEquipped(badgeId: string, memberId: string, gymId: string, equipped: boolean) {
+    await this.prisma.$transaction(async (tx) => {
+      if (equipped) {
+        await tx.memberBadge.updateMany({
+          where: { memberId, gymId, isEquipped: true, NOT: { id: badgeId } },
+          data: { isEquipped: false },
+        });
+      }
+      await tx.memberBadge.update({
+        where: { id: badgeId },
+        data: { isEquipped: equipped },
+      });
+    });
+  }
+
+  /**
+   * Returns the equipped badge per user across the gym, keyed by user id.
+   * Used to render badges next to authors in chat and leaderboard rows.
+   * Excludes expired badges.
+   */
+  async listEquippedBadgesByGym(gymId: string) {
+    const now = new Date();
+    const rows = await this.prisma.memberBadge.findMany({
+      where: {
+        gymId,
+        isEquipped: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: {
+        member: { select: { user: { select: { id: true } } } },
+        badgeRank: true,
+        badgeCatalog: { select: { name: true, icon: true, color: true } },
+        customBadge: { select: { name: true, icon: true, color: true } },
+        milestoneBadge: { select: { badgeName: true, icon: true, color: true } },
+      },
+    });
+
+    return rows.map((r) => ({
+      userId: r.member.user.id,
+      badge: {
+        name:
+          r.badgeCatalog?.name ??
+          r.customBadge?.name ??
+          r.milestoneBadge?.badgeName ??
+          'Badge',
+        icon: r.badgeCatalog?.icon ?? r.customBadge?.icon ?? r.milestoneBadge?.icon ?? 'ribbon',
+        color: r.badgeCatalog?.color ?? r.customBadge?.color ?? r.milestoneBadge?.color ?? '#6B7280',
+        rank: r.badgeRank,
+      },
+    }));
+  }
 }

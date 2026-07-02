@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator';
 import { CreateCustomBadgeUseCase } from '../../application/use-cases/create-custom-badge.use-case';
@@ -7,9 +7,12 @@ import { AwardCustomBadgeUseCase } from '../../application/use-cases/award-custo
 import { ListMemberBadgesUseCase } from '../../application/use-cases/list-member-badges.use-case';
 import { ListCustomBadgesUseCase } from '../../application/use-cases/list-custom-badges.use-case';
 import { ListMilestoneBadgesUseCase } from '../../application/use-cases/list-milestone-badges.use-case';
+import { EquipBadgeUseCase } from '../../application/use-cases/equip-badge.use-case';
+import { ListEquippedBadgesUseCase } from '../../application/use-cases/list-equipped-badges.use-case';
 import { CreateCustomBadgeDto } from '../dto/create-custom-badge.dto';
 import { CreateMilestoneBadgeDto } from '../dto/create-milestone-badge.dto';
 import { AwardCustomBadgeDto } from '../dto/award-custom-badge.dto';
+import { EquipBadgeDto } from '../dto/equip-badge.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId')
@@ -22,6 +25,8 @@ export class BadgesController {
     private readonly listMemberBadgesUseCase: ListMemberBadgesUseCase,
     private readonly listCustomBadgesUseCase: ListCustomBadgesUseCase,
     private readonly listMilestoneBadgesUseCase: ListMilestoneBadgesUseCase,
+    private readonly equipBadgeUseCase: EquipBadgeUseCase,
+    private readonly listEquippedBadgesUseCase: ListEquippedBadgesUseCase,
   ) {}
 
   @Get('badges/custom')
@@ -37,6 +42,35 @@ export class BadgesController {
   @Get('badges/my')
   getMyBadges(@Param('gymId') gymId: string, @CurrentUser() caller: AuthenticatedUser) {
     return this.listMemberBadgesUseCase.executeForSelf(gymId, caller);
+  }
+
+  /**
+   * GET /gyms/:gymId/badges/equipped
+   * Returns the equipped badge per user in this gym. Used to render badges
+   * next to authors in chat and leaderboard rows.
+   */
+  @Get('badges/equipped')
+  listEquippedBadges(
+    @Param('gymId') gymId: string,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.listEquippedBadgesUseCase.execute(gymId, caller);
+  }
+
+  /**
+   * PATCH /gyms/:gymId/badges/my/:badgeId
+   * Equip or unequip one of the caller's own badges. Setting `equipped: true`
+   * automatically unequips any other previously equipped badge.
+   */
+  @Patch('badges/my/:badgeId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  equipBadge(
+    @Param('gymId') gymId: string,
+    @Param('badgeId') badgeId: string,
+    @Body() dto: EquipBadgeDto,
+    @CurrentUser() caller: AuthenticatedUser,
+  ) {
+    return this.equipBadgeUseCase.execute(gymId, badgeId, dto.equipped, caller);
   }
 
   @Get('members/:memberId/badges')

@@ -114,6 +114,10 @@ export default function StaffLayout() {
         name="leaderboard"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="insights"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

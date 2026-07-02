@@ -1,5 +1,14 @@
 import { api } from './api';
-import type { GymMember, CheckIn, MemberProfile, MemberBadge } from '../types';
+import type {
+  GymMember,
+  CheckIn,
+  MemberProfile,
+  MemberBadge,
+  MembershipRenewal,
+  EquippedBadgeRow,
+  MemberPrivacy,
+  PublicActiveCheckinsResult,
+} from '../types';
 
 export const memberService = {
   getMyMember: (gymId: string) =>
@@ -22,4 +31,19 @@ export const memberService = {
 
   getMyBadges: (gymId: string) =>
     api.get<MemberBadge[]>(`/gyms/${gymId}/badges/my`),
+
+  getMyRenewals: (gymId: string) =>
+    api.get<MembershipRenewal[]>(`/gyms/${gymId}/members/me/renewals`),
+
+  getEquippedBadges: (gymId: string) =>
+    api.get<EquippedBadgeRow[]>(`/gyms/${gymId}/badges/equipped`),
+
+  equipBadge: (gymId: string, badgeId: string, equipped: boolean) =>
+    api.patch<void>(`/gyms/${gymId}/badges/my/${badgeId}`, { equipped }),
+
+  getActivePublicCheckins: (gymId: string) =>
+    api.get<PublicActiveCheckinsResult>(`/gyms/${gymId}/checkins/active-public`),
+
+  updateMyPrivacy: (gymId: string, patch: Partial<MemberPrivacy>) =>
+    api.patch<MemberPrivacy>(`/gyms/${gymId}/members/me/privacy`, patch),
 };

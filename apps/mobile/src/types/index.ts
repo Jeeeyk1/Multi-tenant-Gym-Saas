@@ -63,15 +63,38 @@ export interface GymMember {
   };
   plan: MembershipPlan;
   renewals?: MembershipRenewal[];
+  privacy?: MemberPrivacy | null;
+}
+
+export interface MemberPrivacy {
+  hideCheckinVisibility: boolean;
+  hideFromMemberList: boolean;
+}
+
+export interface PublicActiveCheckin {
+  memberId: string;
+  userId: string;
+  fullName: string;
+  checkedInAt: string;
+}
+
+export interface PublicActiveCheckinsResult {
+  totalCount: number;
+  visible: PublicActiveCheckin[];
 }
 
 export interface MembershipRenewal {
   id: string;
-  planId: string;
+  previousExpiry: string;
+  newExpiry: string;
   amountPaid: number;
-  paymentMethod: string;
-  newExpiryDate: string;
+  paymentMethod: string | null;
+  notes: string | null;
   renewedAt: string;
+  renewedByUser: {
+    id: string;
+    fullName: string;
+  };
 }
 
 // Check-in
@@ -293,6 +316,11 @@ export interface Exercise {
   gymId: string | null;
 }
 
+export interface CheckinsTrendPoint {
+  date: string;
+  count: number;
+}
+
 export interface LeaderboardConfigItem {
   id: string;
   displayOrder: number;
@@ -331,7 +359,7 @@ export interface LeaderboardEntry {
   estimated1rm: number;
   photoUrl: string;
   submittedAt: string;
-  member: { user: { fullName: string } };
+  member: { user: { id: string; fullName: string } };
 }
 
 export interface LeaderboardExerciseResult {
@@ -369,6 +397,7 @@ export interface MemberBadge {
   awardedAt: string;
   expiresAt: string | null;
   cycleId: string | null;
+  isEquipped: boolean;
   badgeCatalog: { id: string; key: string; name: string; icon: string; color: string } | null;
   customBadge: { id: string; name: string; icon: string; color: string; description: string | null } | null;
   milestoneBadge: {
@@ -381,10 +410,32 @@ export interface MemberBadge {
   } | null;
 }
 
+export interface EquippedBadgeDisplay {
+  name: string;
+  icon: string;
+  color: string;
+  rank: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+}
+
+export interface EquippedBadgeRow {
+  userId: string;
+  badge: EquippedBadgeDisplay;
+}
+
 // API errors
 export interface ApiError {
   statusCode: number;
   error: string;
   code: string;
   message: string;
+}
+
+export interface InsightsResult {
+  answer: string;
+  toolsUsed: string[];
+}
+
+export interface InsightsHistoryTurn {
+  role: 'user' | 'assistant';
+  content: string;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { staffService } from '../../services/staff.service';
+import {
+  useActiveCheckIns,
+  useCheckInManual,
+  useCheckInQrScan,
+  useCheckOut,
+  useStaffMembers,
+} from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { StaffCheckIn, MemberListItem } from '../../types';
 
@@ -126,11 +131,9 @@ function MemberRow({
 // ─── QR Scanner ──────────────────────────────────────────────────────────────
 
 function QrScannerTab({
-  gymId,
   onSuccess,
   onError,
 }: {
-  gymId: string;
   onSuccess: () => void;
   onError: (msg: string) => void;
 }) {
@@ -138,6 +141,7 @@ function QrScannerTab({
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const scannedRef = useRef(false);
+  const qrScanMutation = useCheckInQrScan();
 
   const handleBarcode = useCallback(
     async ({ data }: { data: string }) => {
@@ -145,7 +149,7 @@ function QrScannerTab({
       scannedRef.current = true;
       setScanning(true);
       try {
-        await staffService.checkInQrScan(gymId, data);
+        await qrScanMutation.mutateAsync(data);
         onSuccess();
       } catch (err: unknown) {
         const e = err as { code?: string; message?: string };
@@ -156,11 +160,10 @@ function QrScannerTab({
           e.code === 'INVALID_QR'          ? 'Invalid or expired QR code' :
           e.message ?? 'Failed to check in member';
         onError(msg);
-        // allow re-scan after error
         setTimeout(() => { scannedRef.current = false; setScanning(false); }, 2000);
       }
     },
-    [gymId, onSuccess, onError, scanning],
+    [qrScanMutation, onSuccess, onError, scanning],
   );
 
   if (!permission) return <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.xl }} />;
@@ -207,79 +210,47 @@ function QrScannerTab({
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function CheckInsScreen() {
-  const { user } = useAuth();
   const { theme } = useTheme();
 
-  // Active check-ins state
-  const [activeList, setActiveList] = useState<StaffCheckIn[]>([]);
-  const [listLoading, setListLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [listError, setListError] = useState<string | null>(null);
-  const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
+  const activeListQ = useActiveCheckIns();
+  const membersQ = useStaffMembers();
+  const checkOutMutation = useCheckOut();
+  const checkInManualMutation = useCheckInManual();
 
-  // Check-in modal state
+  const activeList: StaffCheckIn[] = activeListQ.data ?? [];
+  const listLoading = activeListQ.isLoading;
+  const refreshing = activeListQ.isRefetching;
+  const listError = (activeListQ.error as { message?: string } | null)?.message ?? null;
+  const checkingOutId = checkOutMutation.isPending
+    ? checkOutMutation.variables ?? null
+    : null;
+
+  const members: MemberListItem[] = membersQ.data?.data ?? [];
+  const membersLoading = membersQ.isFetching;
+  const checkingInId = checkInManualMutation.isPending
+    ? checkInManualMutation.variables ?? null
+    : null;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTab, setModalTab] = useState<'search' | 'scan'>('scan');
-  const [members, setMembers] = useState<MemberListItem[]>([]);
-  const [membersLoading, setMembersLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [checkingInId, setCheckingInId] = useState<string | null>(null);
   const [checkInError, setCheckInError] = useState<string | null>(null);
 
-  const loadActiveList = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await staffService.getActiveCheckIns(user.gymId);
-      setActiveList(data);
-      setListError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setListError(e?.message ?? 'Failed to load check-ins');
-    } finally {
-      setListLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    loadActiveList();
-  }, [loadActiveList]);
-
-  // ── Check-out ──────────────────────────────────────────────────────────────
-
-  const handleCheckOut = async (checkinId: string) => {
-    if (!user) return;
-    setCheckingOutId(checkinId);
-    setActiveList((prev) => prev.filter((c) => c.id !== checkinId));
-    try {
-      await staffService.checkOut(user.gymId, checkinId);
-    } catch {
-      loadActiveList(); // revert on failure
-    } finally {
-      setCheckingOutId(null);
-    }
+  const handleCheckOut = (checkinId: string) => {
+    checkOutMutation.mutate(checkinId);
   };
 
-  // ── Open modal + load members ──────────────────────────────────────────────
-
-  const openModal = async () => {
+  const openModal = () => {
     setModalVisible(true);
     setModalTab('scan');
     setCheckInError(null);
     setSearchQuery('');
   };
 
-  const loadMembersIfNeeded = async () => {
-    if (members.length > 0 || !user) return;
-    setMembersLoading(true);
-    try {
-      const res = await staffService.getMembers(user.gymId);
-      setMembers(res.data);
-    } catch {
-      setCheckInError('Failed to load member list');
-    } finally {
-      setMembersLoading(false);
-    }
+  const loadMembersIfNeeded = () => {
+    // Cached by TanStack Query — refetch only if stale or empty.
+    if (membersQ.data) return;
+    membersQ.refetch();
   };
 
   const closeModal = () => {
@@ -288,25 +259,19 @@ export default function CheckInsScreen() {
     setCheckInError(null);
   };
 
-  const handleQrSuccess = useCallback(async () => {
+  const handleQrSuccess = useCallback(() => {
     closeModal();
-    await loadActiveList();
-  }, [loadActiveList]);
+  }, []);
 
   const handleQrError = useCallback((msg: string) => {
     setCheckInError(msg);
   }, []);
 
-  // ── Check-in a member ──────────────────────────────────────────────────────
-
   const handleCheckIn = async (memberId: string) => {
-    if (!user) return;
-    setCheckingInId(memberId);
     setCheckInError(null);
     try {
-      await staffService.checkInManual(user.gymId, memberId);
+      await checkInManualMutation.mutateAsync(memberId);
       closeModal();
-      await loadActiveList();
     } catch (err: unknown) {
       const e = err as { message?: string; code?: string };
       const msg =
@@ -315,8 +280,6 @@ export default function CheckInsScreen() {
         e.code === 'MEMBERSHIP_EXPIRED'  ? 'Membership has expired' :
         e.message ?? 'Failed to check in member';
       setCheckInError(msg);
-    } finally {
-      setCheckingInId(null);
     }
   };
 
@@ -358,7 +321,7 @@ export default function CheckInsScreen() {
       ) : listError ? (
         <View style={styles.centered}>
           <Text style={styles.errorText}>{listError}</Text>
-          <TouchableOpacity onPress={loadActiveList} style={styles.retryBtn}>
+          <TouchableOpacity onPress={() => activeListQ.refetch()} style={styles.retryBtn}>
             <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -369,7 +332,7 @@ export default function CheckInsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => { setRefreshing(true); loadActiveList(); }}
+              onRefresh={() => activeListQ.refetch()}
               tintColor={theme.primary}
             />
           }
@@ -445,7 +408,7 @@ export default function CheckInsScreen() {
 
             {/* QR scanner */}
             {modalTab === 'scan' && (
-              <QrScannerTab gymId={user?.gymId ?? ''} onSuccess={handleQrSuccess} onError={handleQrError} />
+              <QrScannerTab onSuccess={handleQrSuccess} onError={handleQrError} />
             )}
 
             {/* Member search */}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { staffService } from '../../services/staff.service';
+import { useStaffMembers } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MemberListItem } from '../../types';
 
@@ -68,32 +67,14 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
 
 export default function MembersScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { theme } = useTheme();
-  const [members, setMembers] = useState<MemberListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const membersQ = useStaffMembers();
   const [search, setSearch] = useState('');
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await staffService.getMembers(user.gymId);
-      setMembers(data.data);
-      setError(null);
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e?.message ?? 'Failed to load members');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const members: MemberListItem[] = membersQ.data?.data ?? [];
+  const isLoading = membersQ.isLoading;
+  const refreshing = membersQ.isRefetching;
+  const error = (membersQ.error as { message?: string } | null)?.message ?? null;
 
   const filtered = useMemo(() => {
     if (!search.trim()) return members;
@@ -163,10 +144,7 @@ export default function MembersScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              load();
-            }}
+            onRefresh={() => membersQ.refetch()}
             tintColor={theme.primary}
           />
         }

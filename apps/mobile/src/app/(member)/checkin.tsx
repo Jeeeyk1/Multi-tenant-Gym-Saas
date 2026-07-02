@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,29 +11,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { memberService } from '../../services/member.service';
+import { useSelfCheckIn } from '../../hooks/members';
 import { AnimatedMascot } from '../../components/AnimatedMascot';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { CheckIn } from '../../types';
 
 type Status = 'idle' | 'loading' | 'checked_in' | 'already_in' | 'error';
 
+const BUTTON_SIZE = 190;
+
 export default function CheckInScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
+  const selfCheckIn = useSelfCheckIn();
   const [status, setStatus] = useState<Status>('idle');
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Button press bounce
   const buttonScale = useRef(new Animated.Value(1)).current;
-  // Pulsing ring for idle state
   const pulseScale = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0.5)).current;
-  // Success mascot fade
   const mascotOpacity = useRef(new Animated.Value(0)).current;
 
-  // Pulse animation — only when idle
   useEffect(() => {
     if (status !== 'idle') {
       pulseScale.setValue(1);
@@ -56,7 +56,6 @@ export default function CheckInScreen() {
     return () => loop.stop();
   }, [status]);
 
-  // Mascot fade on success
   useEffect(() => {
     if (status === 'checked_in') {
       Animated.timing(mascotOpacity, { toValue: 1, duration: 350, useNativeDriver: true }).start();
@@ -76,7 +75,7 @@ export default function CheckInScreen() {
     if (!user) return;
     setStatus('loading');
     try {
-      const res = await memberService.selfCheckIn(user.gymId);
+      const res = await selfCheckIn.mutateAsync();
       setCheckIn(res);
       setStatus('checked_in');
       animateButtonBounce();
@@ -115,24 +114,99 @@ export default function CheckInScreen() {
   const isWarn = status === 'already_in';
 
   const buttonColors: [string, string] = isSuccess
-    ? [COLORS.success, '#16a34a']
+    ? [C.success, '#16a34a']
     : isError
     ? isWarn
-      ? [COLORS.warning, '#d97706']
-      : [COLORS.error, '#dc2626']
+      ? [C.warning, '#d97706']
+      : [C.error, '#dc2626']
     : theme.gradient;
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Check In</Text>
-      <Text style={styles.subheading}>Tap to record your visit</Text>
+  const s = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: C.background,
+      paddingHorizontal: SPACING.lg,
+      alignItems: 'center',
+    },
+    heading: {
+      fontSize: 26,
+      ...FONT.bold,
+      color: C.text,
+      marginTop: SPACING.xl + SPACING.md,
+      marginBottom: 4,
+      alignSelf: 'flex-start',
+    },
+    subheading: {
+      fontSize: 14,
+      color: C.textSecondary,
+      alignSelf: 'flex-start',
+      marginBottom: SPACING.lg,
+    },
+    successBox: { alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
+    successTitle: { fontSize: 20, ...FONT.bold, color: C.success },
+    successTime: { fontSize: 14, color: C.textSecondary },
+    statusBox: {
+      borderWidth: 1,
+      borderRadius: RADIUS.lg,
+      padding: SPACING.md,
+      width: '100%',
+      marginBottom: SPACING.md,
+      alignItems: 'center',
+    },
+    errorBox: { backgroundColor: C.errorBg, borderColor: C.error },
+    warnBox: { backgroundColor: C.warningBg, borderColor: C.warning },
+    statusText: { fontSize: 14, ...FONT.regular, textAlign: 'center' },
+    buttonArea: {
+      marginTop: SPACING.xl,
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: BUTTON_SIZE,
+      height: BUTTON_SIZE,
+    },
+    pulseRing: {
+      position: 'absolute',
+      width: BUTTON_SIZE,
+      height: BUTTON_SIZE,
+      borderRadius: BUTTON_SIZE / 2,
+    },
+    buttonPressable: {
+      borderRadius: BUTTON_SIZE / 2,
+      overflow: 'hidden',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.55,
+      shadowRadius: 24,
+      elevation: 14,
+    },
+    bigButton: {
+      width: BUTTON_SIZE,
+      height: BUTTON_SIZE,
+      borderRadius: BUTTON_SIZE / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.xs,
+    },
+    bigButtonEmoji: { fontSize: 46 },
+    bigButtonLabel: { fontSize: 15, ...FONT.semibold, color: '#fff' },
+    hint: {
+      marginTop: SPACING.xxl,
+      color: C.textMuted,
+      fontSize: 13,
+      textAlign: 'center',
+      paddingHorizontal: SPACING.xl,
+      lineHeight: 20,
+    },
+  }), [C]);
 
-      {/* Success state */}
+  return (
+    <View style={s.container}>
+      <Text style={s.heading}>Check In</Text>
+      <Text style={s.subheading}>Tap to record your visit</Text>
+
       {isSuccess && checkIn && (
-        <Animated.View style={[styles.successBox, { opacity: mascotOpacity }]}>
+        <Animated.View style={[s.successBox, { opacity: mascotOpacity }]}>
           <AnimatedMascot size="md" />
-          <Text style={styles.successTitle}>You're in! 🎉</Text>
-          <Text style={styles.successTime}>
+          <Text style={s.successTitle}>You&apos;re in! 🎉</Text>
+          <Text style={s.successTime}>
             {new Date(checkIn.checkedInAt).toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
@@ -141,50 +215,42 @@ export default function CheckInScreen() {
         </Animated.View>
       )}
 
-      {/* Error / already-in state */}
       {isError && (
-        <View style={[styles.statusBox, isWarn ? styles.warnBox : styles.errorBox]}>
-          <Text style={[styles.statusText, { color: isWarn ? COLORS.warning : COLORS.error }]}>
+        <View style={[s.statusBox, isWarn ? s.warnBox : s.errorBox]}>
+          <Text style={[s.statusText, { color: isWarn ? C.warning : C.error }]}>
             {errorMsg}
           </Text>
         </View>
       )}
 
-      {/* Big button */}
-      <View style={styles.buttonArea}>
-        {/* Pulsing ring */}
+      <View style={s.buttonArea}>
         <Animated.View
           style={[
-            styles.pulseRing,
+            s.pulseRing,
             { transform: [{ scale: pulseScale }], opacity: pulseOpacity, backgroundColor: theme.primary },
           ]}
         />
-
         <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
           <Pressable
             onPress={isIdle ? handleCheckIn : reset}
             disabled={status === 'loading'}
-            style={[styles.buttonPressable, { shadowColor: theme.primary }]}
+            style={[s.buttonPressable, { shadowColor: theme.primary }]}
           >
             <LinearGradient
               colors={buttonColors}
               start={{ x: 0.2, y: 0 }}
               end={{ x: 0.8, y: 1 }}
-              style={styles.bigButton}
+              style={s.bigButton}
             >
               {status === 'loading' ? (
                 <ActivityIndicator color="#fff" size="large" />
               ) : (
                 <>
-                  <Text style={styles.bigButtonEmoji}>
+                  <Text style={s.bigButtonEmoji}>
                     {isSuccess ? '✓' : isError ? '↩' : '⚡'}
                   </Text>
-                  <Text style={[styles.bigButtonLabel, isIdle && { color: '#000' }]}>
-                    {isSuccess
-                      ? 'Tap to reset'
-                      : isError
-                      ? 'Try again'
-                      : 'Check In'}
+                  <Text style={[s.bigButtonLabel, isIdle && { color: '#000' }]}>
+                    {isSuccess ? 'Tap to reset' : isError ? 'Try again' : 'Check In'}
                   </Text>
                 </>
               )}
@@ -194,115 +260,10 @@ export default function CheckInScreen() {
       </View>
 
       {isIdle && (
-        <Text style={styles.hint}>
+        <Text style={s.hint}>
           Your visit will be recorded and your streak updated automatically.
         </Text>
       )}
     </View>
   );
 }
-
-const BUTTON_SIZE = 190;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: SPACING.lg,
-    alignItems: 'center',
-  },
-  heading: {
-    fontSize: 26,
-    ...FONT.bold,
-    color: COLORS.text,
-    marginTop: SPACING.xl + SPACING.md,
-    marginBottom: 4,
-    alignSelf: 'flex-start',
-  },
-  subheading: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    alignSelf: 'flex-start',
-    marginBottom: SPACING.lg,
-  },
-  successBox: {
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.sm,
-  },
-  successTitle: {
-    fontSize: 20,
-    ...FONT.bold,
-    color: COLORS.success,
-  },
-  successTime: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  statusBox: {
-    borderWidth: 1,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    width: '100%',
-    marginBottom: SPACING.md,
-    alignItems: 'center',
-  },
-  errorBox: {
-    backgroundColor: COLORS.errorBg,
-    borderColor: COLORS.error,
-  },
-  warnBox: {
-    backgroundColor: COLORS.warningBg,
-    borderColor: COLORS.warning,
-  },
-  statusText: {
-    fontSize: 14,
-    ...FONT.regular,
-    textAlign: 'center',
-  },
-  buttonArea: {
-    marginTop: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    backgroundColor: COLORS.primary,
-  },
-  buttonPressable: {
-    borderRadius: BUTTON_SIZE / 2,
-    overflow: 'hidden',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.55,
-    shadowRadius: 24,
-    elevation: 14,
-  },
-  bigButton: {
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-  },
-  bigButtonEmoji: { fontSize: 46 },
-  bigButtonLabel: {
-    fontSize: 15,
-    ...FONT.semibold,
-    color: '#fff',
-  },
-  hint: {
-    marginTop: SPACING.xxl,
-    color: COLORS.textMuted,
-    fontSize: 13,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.xl,
-    lineHeight: 20,
-  },
-});

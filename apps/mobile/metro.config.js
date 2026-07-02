@@ -21,6 +21,11 @@ config.resolver.nodeModulesPaths = [
 // when the workspace root resolves first. resolveRequest fully overrides.
 const reactDir = path.resolve(projectRoot, 'node_modules/react');
 
+// @babel/runtime lives at the workspace root but Metro can't find it when
+// resolving from inside pnpm's deeply-nested virtual store paths (e.g.
+// socket.io-parser's ESM build). Pin it to the root copy explicitly.
+const babelRuntimeDir = path.resolve(workspaceRoot, 'node_modules/@babel/runtime');
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'react') {
     return { type: 'sourceFile', filePath: path.join(reactDir, 'index.js') };
@@ -30,6 +35,10 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   }
   if (moduleName === 'react/jsx-dev-runtime') {
     return { type: 'sourceFile', filePath: path.join(reactDir, 'jsx-dev-runtime.js') };
+  }
+  if (moduleName.startsWith('@babel/runtime/')) {
+    const subPath = moduleName.slice('@babel/runtime/'.length);
+    return { type: 'sourceFile', filePath: path.join(babelRuntimeDir, subPath + '.js') };
   }
   // Fall back to Metro's default resolver for everything else.
   return context.resolveRequest(context, moduleName, platform);

@@ -4,8 +4,11 @@ import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const mockRepo = {
   findMemberForRenewal: jest.fn(),
+  findMemberByUserId: jest.fn(),
   findPlanById: jest.fn(),
   processRenewal: jest.fn(),
+  listRenewals: jest.fn(),
+  listGymRenewals: jest.fn(),
 } as unknown as jest.Mocked<RenewalsRepository>;
 
 const staffCaller: AuthenticatedUser = {

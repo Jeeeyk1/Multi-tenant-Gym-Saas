@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { memberService } from '../services/member.service';
+import { useUpdateMyProfile } from '../hooks/members';
 import { AnimatedMascot } from '../components/AnimatedMascot';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
 import {
@@ -70,9 +70,10 @@ export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const updateProfile = useUpdateMyProfile();
   const translateX = useRef(new Animated.Value(0)).current;
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const submitting = updateProfile.isPending;
 
   // Step 1–3: body stats
   const [age, setAge] = useState('');
@@ -115,9 +116,8 @@ export default function OnboardingScreen() {
 
   async function handleFinish() {
     if (!user) return;
-    setSubmitting(true);
     try {
-      await memberService.updateMyProfile(user.gymId, {
+      await updateProfile.mutateAsync({
         age: age ? parseInt(age, 10) : undefined,
         weightKg: weightKg ? parseFloat(weightKg) : undefined,
         targetWeightKg: targetWeightKg ? parseFloat(targetWeightKg) : undefined,
@@ -133,7 +133,7 @@ export default function OnboardingScreen() {
       });
       router.replace('/(member)/dashboard');
     } catch {
-      setSubmitting(false);
+      // Mutation status is reflected via updateProfile.isPending; stay on screen on error.
     }
   }
 

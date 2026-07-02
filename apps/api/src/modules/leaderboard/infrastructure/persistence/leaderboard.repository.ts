@@ -183,7 +183,7 @@ export class LeaderboardRepository {
             photoUrl: true,
             submittedAt: true,
             member: {
-              select: { user: { select: { fullName: true } } },
+              select: { user: { select: { id: true, fullName: true } } },
             },
           },
           orderBy: { submittedAt: 'desc' },

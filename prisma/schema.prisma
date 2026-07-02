@@ -478,7 +478,7 @@ model MemberProfile {
 model MemberPrivacy {
   id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   memberId              String   @unique @map("member_id") @db.Uuid
-  hideCheckinVisibility Boolean  @default(false) @map("hide_checkin_visibility")
+  hideCheckinVisibility Boolean  @default(true) @map("hide_checkin_visibility")
   hideFromMemberList    Boolean  @default(false) @map("hide_from_member_list")
   updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz
 

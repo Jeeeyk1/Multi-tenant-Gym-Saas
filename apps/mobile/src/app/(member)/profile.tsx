@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -16,8 +17,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { memberService } from '../../services/member.service';
-import type { GymMember, MemberBadge, MemberProfile } from '../../types';
+import {
+  useEquipBadge,
+  useMyBadges,
+  useMyMember,
+  useMyProfile,
+  useUpdateMyProfile,
+} from '../../hooks/members';
+import type { EquippedBadgeDisplay, GymMember, MemberBadge, MemberProfile } from '../../types';
+import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
 import {
   ActivityLevel,
   DietType,
@@ -25,7 +33,8 @@ import {
   FitnessGoal,
   PreferredStyle,
 } from '../../constants/enums';
-import { COLORS, FONT, RADIUS, SPACING } from '../../constants/theme';
+import { FONT, RADIUS, SPACING } from '../../constants/theme';
+import type { ColorPalette } from '../../constants/theme';
 
 // ─── Display label maps ───────────────────────────────────────────────────────
 
@@ -68,11 +77,7 @@ const DIET_LABELS: Record<DietType, string> = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
+  return name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 }
 
 function fmtEnum(value: string | null | undefined, labels: Record<string, string>): string {
@@ -83,114 +88,57 @@ function fmtEnum(value: string | null | undefined, labels: Record<string, string
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: GymMember['status'] }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
   const map = {
-    ACTIVE: { label: 'Active', color: COLORS.success, bg: COLORS.successBg },
-    EXPIRED: { label: 'Expired', color: COLORS.error, bg: COLORS.errorBg },
-    SUSPENDED: { label: 'Suspended', color: COLORS.warning, bg: COLORS.warningBg },
+    ACTIVE:    { label: 'Active',    color: C.success,  bg: C.successBg },
+    EXPIRED:   { label: 'Expired',   color: C.error,    bg: C.errorBg },
+    SUSPENDED: { label: 'Suspended', color: C.warning,  bg: C.warningBg },
   };
   const s = map[status];
   return (
-    <View style={[styles.badge, { backgroundColor: s.bg }]}>
-      <Text style={[styles.badgeText, { color: s.color }]}>{s.label}</Text>
+    <View style={{ backgroundColor: s.bg, paddingHorizontal: SPACING.sm, paddingVertical: 4, borderRadius: RADIUS.full }}>
+      <Text style={{ color: s.color, fontSize: 12, ...FONT.semibold }}>{s.label}</Text>
     </View>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, C }: { label: string; value: string; C: ColorPalette }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 }}>
+      <Text style={{ color: C.textSecondary, fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: C.text, fontSize: 14, ...FONT.medium, flexShrink: 1, textAlign: 'right', marginLeft: SPACING.sm }}>
+        {value}
+      </Text>
     </View>
   );
 }
 
-function FormSectionTitle({ title }: { title: string }) {
-  return <Text style={styles.formSection}>{title}</Text>;
-}
-
-function NumericInput({
-  label,
-  unit,
-  value,
-  onChange,
-}: {
-  label: string;
-  unit?: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function NavRow({ icon, label, onPress, C }: { icon: string; label: string; onPress: () => void; C: ColorPalette }) {
   return (
-    <View style={styles.formRow}>
-      <Text style={styles.formLabel}>{label}</Text>
-      <View style={styles.numericWrap}>
-        <TextInput
-          style={styles.numericInput}
-          value={value}
-          onChangeText={onChange}
-          keyboardType="numeric"
-          placeholder="—"
-          placeholderTextColor={COLORS.textMuted}
-        />
-        {unit && <Text style={styles.unitText}>{unit}</Text>}
-      </View>
-    </View>
-  );
-}
-
-function ChipPicker<T extends string>({
-  options,
-  labels,
-  value,
-  onChange,
-}: {
-  options: readonly T[];
-  labels: Record<string, string>;
-  value: T | null;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={{ marginTop: SPACING.xs }}
+    <Pressable
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: C.surface,
+          borderRadius: RADIUS.md,
+          borderWidth: 1,
+          borderColor: C.border,
+          paddingHorizontal: SPACING.md,
+          paddingVertical: 15,
+        },
+        pressed && { opacity: 0.75 },
+      ]}
+      onPress={onPress}
     >
-      <View style={{ flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.md }}>
-        {options.map((opt) => (
-          <Pressable
-            key={opt}
-            style={[styles.chip, value === opt && styles.chipSelected]}
-            onPress={() => onChange(opt)}
-          >
-            <Text style={[styles.chipText, value === opt && styles.chipTextSelected]}>
-              {labels[opt]}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm }}>
+        <Ionicons name={icon as never} size={18} color={C.textSecondary} />
+        <Text style={{ fontSize: 15, color: C.text, ...FONT.medium }}>{label}</Text>
       </View>
-    </ScrollView>
-  );
-}
-
-function DaysPicker({
-  value,
-  onChange,
-}: {
-  value: number | null;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <View style={{ flexDirection: 'row', gap: SPACING.xs, marginTop: SPACING.xs }}>
-      {[1, 2, 3, 4, 5, 6, 7].map((d) => (
-        <Pressable
-          key={d}
-          style={[styles.chip, value === d && styles.chipSelected, styles.dayChip]}
-          onPress={() => onChange(d)}
-        >
-          <Text style={[styles.chipText, value === d && styles.chipTextSelected]}>{d}</Text>
-        </Pressable>
-      ))}
-    </View>
+      <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+    </Pressable>
   );
 }
 
@@ -206,36 +154,135 @@ const BADGE_SOURCE_LABELS: Record<string, string> = {
 function badgeName(b: MemberBadge): string {
   return b.badgeCatalog?.name ?? b.customBadge?.name ?? b.milestoneBadge?.badgeName ?? 'Badge';
 }
-
 function badgeColor(b: MemberBadge): string {
   return b.badgeCatalog?.color ?? b.customBadge?.color ?? b.milestoneBadge?.color ?? '#6B7280';
 }
-
 function badgeRankIcon(rank: MemberBadge['badgeRank']): string {
   if (rank === 'GOLD') return '🥇';
   if (rank === 'SILVER') return '🥈';
   if (rank === 'BRONZE') return '🥉';
   return '◆';
 }
+function toEquippedDisplay(b: MemberBadge): EquippedBadgeDisplay {
+  return {
+    name: badgeName(b),
+    color: badgeColor(b),
+    icon: b.badgeCatalog?.icon ?? b.customBadge?.icon ?? b.milestoneBadge?.icon ?? 'ribbon',
+    rank: b.badgeRank,
+  };
+}
 
 function BadgeItem({ badge }: { badge: MemberBadge }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
   const color = badgeColor(badge);
   const isExpired = badge.expiresAt ? new Date(badge.expiresAt) < new Date() : false;
+  const equipMutation = useEquipBadge();
+
   return (
-    <View style={[styles.badgeItem, isExpired && { opacity: 0.5 }]}>
-      <View style={[styles.badgeDot, { backgroundColor: color + '33', borderColor: color }]}>
-        <Text style={styles.badgeDotIcon}>{badgeRankIcon(badge.badgeRank)}</Text>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: 6 }, isExpired && { opacity: 0.5 }]}>
+      <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: color + '33', borderColor: color }}>
+        <Text style={{ fontSize: 13 }}>{badgeRankIcon(badge.badgeRank)}</Text>
       </View>
-      <View style={styles.badgeInfo}>
-        <Text style={styles.badgeItemName}>{badgeName(badge)}</Text>
-        <Text style={styles.badgeSourceLabel}>
-          {BADGE_SOURCE_LABELS[badge.source] ?? badge.source}
-          {isExpired ? ' · Expired' : ''}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: C.text, fontSize: 14, ...FONT.medium }}>{badgeName(badge)}</Text>
+        <Text style={{ color: C.textMuted, fontSize: 12, marginTop: 1 }}>
+          {BADGE_SOURCE_LABELS[badge.source] ?? badge.source}{isExpired ? ' · Expired' : ''}
         </Text>
       </View>
-      <Text style={styles.badgeDate}>
-        {new Date(badge.awardedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-      </Text>
+      <Pressable
+        onPress={() => {
+          if (!isExpired && !equipMutation.isPending)
+            equipMutation.mutate({ badgeId: badge.id, equipped: !badge.isEquipped });
+        }}
+        disabled={isExpired || equipMutation.isPending}
+        style={({ pressed }) => [{ padding: 4, flexShrink: 0 }, pressed && { opacity: 0.6 }]}
+        hitSlop={8}
+      >
+        <Ionicons
+          name={badge.isEquipped ? 'star' : 'star-outline'}
+          size={20}
+          color={badge.isEquipped ? '#F59E0B' : C.textMuted}
+        />
+      </Pressable>
+    </View>
+  );
+}
+
+// ─── Form sub-components ──────────────────────────────────────────────────────
+
+function NumericInput({ label, unit, value, onChange, C }: {
+  label: string; unit?: string; value: string; onChange: (v: string) => void; C: ColorPalette;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Text style={{ color: C.textSecondary, fontSize: 14, ...FONT.medium, marginBottom: 2 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.xs }}>
+        <TextInput
+          style={{
+            color: C.text, fontSize: 16, ...FONT.medium, textAlign: 'right',
+            minWidth: 60, paddingVertical: 4, paddingHorizontal: SPACING.sm,
+            backgroundColor: C.background, borderRadius: RADIUS.sm,
+            borderWidth: 1, borderColor: C.border,
+          }}
+          value={value}
+          onChangeText={onChange}
+          keyboardType="numeric"
+          placeholder="—"
+          placeholderTextColor={C.textMuted}
+        />
+        {unit && <Text style={{ color: C.textMuted, fontSize: 13, minWidth: 24 }}>{unit}</Text>}
+      </View>
+    </View>
+  );
+}
+
+function ChipPicker<T extends string>({ options, labels, value, onChange, C, primary }: {
+  options: readonly T[]; labels: Record<string, string>; value: T | null; onChange: (v: T) => void;
+  C: ColorPalette; primary: string;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: SPACING.xs }}>
+      <View style={{ flexDirection: 'row', gap: SPACING.xs, paddingRight: SPACING.md }}>
+        {options.map((opt) => (
+          <Pressable
+            key={opt}
+            style={{
+              paddingHorizontal: SPACING.md, paddingVertical: 8, borderRadius: RADIUS.full,
+              backgroundColor: value === opt ? primary : C.background,
+              borderWidth: 1, borderColor: value === opt ? primary : C.border,
+            }}
+            onPress={() => onChange(opt)}
+          >
+            <Text style={{ color: value === opt ? '#fff' : C.textSecondary, fontSize: 13, ...FONT.medium }}>
+              {labels[opt]}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function DaysPicker({ value, onChange, C, primary }: {
+  value: number | null; onChange: (v: number) => void; C: ColorPalette; primary: string;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', gap: SPACING.xs, marginTop: SPACING.xs }}>
+      {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+        <Pressable
+          key={d}
+          style={{
+            paddingHorizontal: SPACING.sm, paddingVertical: 8, borderRadius: RADIUS.full,
+            minWidth: 36, alignItems: 'center',
+            backgroundColor: value === d ? primary : C.background,
+            borderWidth: 1, borderColor: value === d ? primary : C.border,
+          }}
+          onPress={() => onChange(d)}
+        >
+          <Text style={{ color: value === d ? '#fff' : C.textSecondary, fontSize: 13, ...FONT.medium }}>{d}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -243,17 +290,10 @@ function BadgeItem({ badge }: { badge: MemberBadge }) {
 // ─── Edit modal ───────────────────────────────────────────────────────────────
 
 interface ProfileForm {
-  age: string;
-  weightKg: string;
-  targetWeightKg: string;
-  heightCm: string;
-  daysPerWeek: number | null;
-  fitnessGoal: FitnessGoal | null;
-  activityLevel: ActivityLevel | null;
-  experienceLevel: ExperienceLevel | null;
-  preferredStyle: PreferredStyle | null;
-  dietType: DietType | null;
-  injuries: string;
+  age: string; weightKg: string; targetWeightKg: string; heightCm: string;
+  daysPerWeek: number | null; fitnessGoal: FitnessGoal | null;
+  activityLevel: ActivityLevel | null; experienceLevel: ExperienceLevel | null;
+  preferredStyle: PreferredStyle | null; dietType: DietType | null; injuries: string;
 }
 
 function profileToForm(p: MemberProfile | null): ProfileForm {
@@ -272,28 +312,18 @@ function profileToForm(p: MemberProfile | null): ProfileForm {
   };
 }
 
-function EditProfileModal({
-  visible,
-  initialForm,
-  gymId,
-  onClose,
-  onSaved,
-}: {
-  visible: boolean;
-  initialForm: ProfileForm;
-  gymId: string;
-  onClose: () => void;
-  onSaved: (profile: MemberProfile) => void;
+function EditProfileModal({ visible, initialForm, onClose }: {
+  visible: boolean; initialForm: ProfileForm; onClose: () => void;
 }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
   const [form, setForm] = useState<ProfileForm>(initialForm);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const updateProfile = useUpdateMyProfile();
+  const saving = updateProfile.isPending;
 
   useEffect(() => {
-    if (visible) {
-      setForm(initialForm);
-      setError(null);
-    }
+    if (visible) { setForm(initialForm); setError(null); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
@@ -301,159 +331,122 @@ function EditProfileModal({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function handleSave() {
-    setSaving(true);
+  function handleSave() {
     setError(null);
-    try {
-      const data: Partial<Omit<MemberProfile, 'id' | 'memberId'>> = {
-        ...(form.age !== '' && { age: parseInt(form.age, 10) }),
-        ...(form.weightKg !== '' && { weightKg: parseFloat(form.weightKg) }),
-        ...(form.targetWeightKg !== '' && { targetWeightKg: parseFloat(form.targetWeightKg) }),
-        ...(form.heightCm !== '' && { heightCm: parseInt(form.heightCm, 10) }),
-        ...(form.daysPerWeek != null && { daysPerWeek: form.daysPerWeek }),
-        ...(form.fitnessGoal != null && { fitnessGoal: form.fitnessGoal }),
-        ...(form.activityLevel != null && { activityLevel: form.activityLevel }),
-        ...(form.experienceLevel != null && { experienceLevel: form.experienceLevel }),
-        ...(form.preferredStyle != null && { preferredStyle: form.preferredStyle }),
-        ...(form.dietType != null && { dietType: form.dietType }),
-        ...(form.injuries !== '' && { injuries: form.injuries }),
-      };
-      const updated = await memberService.updateMyProfile(gymId, data);
-      onSaved(updated);
-    } catch {
-      setError('Failed to save. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+    const data: Partial<Omit<MemberProfile, 'id' | 'memberId'>> = {
+      ...(form.age !== '' && { age: parseInt(form.age, 10) }),
+      ...(form.weightKg !== '' && { weightKg: parseFloat(form.weightKg) }),
+      ...(form.targetWeightKg !== '' && { targetWeightKg: parseFloat(form.targetWeightKg) }),
+      ...(form.heightCm !== '' && { heightCm: parseInt(form.heightCm, 10) }),
+      ...(form.daysPerWeek != null && { daysPerWeek: form.daysPerWeek }),
+      ...(form.fitnessGoal != null && { fitnessGoal: form.fitnessGoal }),
+      ...(form.activityLevel != null && { activityLevel: form.activityLevel }),
+      ...(form.experienceLevel != null && { experienceLevel: form.experienceLevel }),
+      ...(form.preferredStyle != null && { preferredStyle: form.preferredStyle }),
+      ...(form.dietType != null && { dietType: form.dietType }),
+      ...(form.injuries !== '' && { injuries: form.injuries }),
+    };
+    updateProfile.mutate(data, {
+      onSuccess: () => onClose(),
+      onError: () => setError('Failed to save. Please try again.'),
+    });
   }
 
+  const s = useMemo(() => StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.background },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: SPACING.md,
+      paddingTop: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
+      paddingBottom: SPACING.md,
+      borderBottomWidth: 1, borderBottomColor: C.border,
+    },
+    headerBtn: { minWidth: 60, paddingVertical: 4 },
+    title: { color: C.text, fontSize: 17, ...FONT.semibold },
+    cancel: { color: C.textSecondary, fontSize: 16 },
+    divider: { height: 1, backgroundColor: C.border, marginVertical: 2 },
+    formCard: {
+      backgroundColor: C.surface, borderRadius: RADIUS.lg,
+      borderWidth: 1, borderColor: C.border, padding: SPACING.md, gap: SPACING.sm,
+    },
+    formSection: {
+      color: C.textSecondary, fontSize: 12, ...FONT.semibold,
+      textTransform: 'uppercase', letterSpacing: 0.8,
+      marginTop: SPACING.lg, marginBottom: SPACING.xs, paddingHorizontal: 2,
+    },
+    formLabel: { color: C.textSecondary, fontSize: 14, ...FONT.medium, marginBottom: 2 },
+    textArea: {
+      color: C.text, fontSize: 14, ...FONT.regular,
+      backgroundColor: C.background, borderRadius: RADIUS.sm,
+      borderWidth: 1, borderColor: C.border,
+      padding: SPACING.sm, minHeight: 72, textAlignVertical: 'top', marginTop: SPACING.xs,
+    },
+    errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.md },
+    errorText: { color: C.error, fontSize: 14 },
+  }), [C]);
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <KeyboardAvoidingView
-        style={styles.modalRoot}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={styles.modalHeader}>
-          <Pressable onPress={onClose} style={styles.modalHeaderBtn}>
-            <Text style={styles.modalCancel}>Cancel</Text>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.header}>
+          <Pressable onPress={onClose} style={s.headerBtn}>
+            <Text style={s.cancel}>Cancel</Text>
           </Pressable>
-          <Text style={styles.modalTitle}>Edit Profile</Text>
-          <Pressable
-            onPress={saving ? undefined : handleSave}
-            style={[styles.modalHeaderBtn, saving && { opacity: 0.5 }]}
-          >
-            <Text style={styles.modalSave}>{saving ? 'Saving…' : 'Save'}</Text>
+          <Text style={s.title}>Edit Profile</Text>
+          <Pressable onPress={saving ? undefined : handleSave} style={[s.headerBtn, saving && { opacity: 0.5 }]}>
+            <Text style={{ color: theme.primary, fontSize: 16, ...FONT.semibold, textAlign: 'right' }}>
+              {saving ? 'Saving…' : 'Save'}
+            </Text>
           </Pressable>
         </View>
 
-        <ScrollView
-          style={styles.modalScroll}
-          contentContainerStyle={styles.modalContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorBannerText}>{error}</Text>
-            </View>
-          )}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: SPACING.md, paddingBottom: SPACING.xxl, gap: SPACING.xs }} keyboardShouldPersistTaps="handled">
+          {error && <View style={s.errorBanner}><Text style={s.errorText}>{error}</Text></View>}
 
-          <FormSectionTitle title="Body Metrics" />
-          <View style={styles.formCard}>
-            <NumericInput
-              label="Age"
-              unit="yrs"
-              value={form.age}
-              onChange={(v) => set('age', v)}
-            />
-            <View style={styles.divider} />
-            <NumericInput
-              label="Weight"
-              unit="kg"
-              value={form.weightKg}
-              onChange={(v) => set('weightKg', v)}
-            />
-            <View style={styles.divider} />
-            <NumericInput
-              label="Target Weight"
-              unit="kg"
-              value={form.targetWeightKg}
-              onChange={(v) => set('targetWeightKg', v)}
-            />
-            <View style={styles.divider} />
-            <NumericInput
-              label="Height"
-              unit="cm"
-              value={form.heightCm}
-              onChange={(v) => set('heightCm', v)}
-            />
+          <Text style={s.formSection}>Body Metrics</Text>
+          <View style={s.formCard}>
+            <NumericInput label="Age" unit="yrs" value={form.age} onChange={(v) => set('age', v)} C={C} />
+            <View style={s.divider} />
+            <NumericInput label="Weight" unit="kg" value={form.weightKg} onChange={(v) => set('weightKg', v)} C={C} />
+            <View style={s.divider} />
+            <NumericInput label="Target Weight" unit="kg" value={form.targetWeightKg} onChange={(v) => set('targetWeightKg', v)} C={C} />
+            <View style={s.divider} />
+            <NumericInput label="Height" unit="cm" value={form.heightCm} onChange={(v) => set('heightCm', v)} C={C} />
           </View>
 
-          <FormSectionTitle title="Training" />
-          <View style={styles.formCard}>
-            <Text style={styles.formLabel}>Fitness Goal</Text>
-            <ChipPicker
-              options={Object.values(FitnessGoal)}
-              labels={GOAL_LABELS}
-              value={form.fitnessGoal}
-              onChange={(v) => set('fitnessGoal', v)}
-            />
-            <View style={styles.divider} />
-            <Text style={styles.formLabel}>Activity Level</Text>
-            <ChipPicker
-              options={Object.values(ActivityLevel)}
-              labels={ACTIVITY_LABELS}
-              value={form.activityLevel}
-              onChange={(v) => set('activityLevel', v)}
-            />
-            <View style={styles.divider} />
-            <Text style={styles.formLabel}>Experience Level</Text>
-            <ChipPicker
-              options={Object.values(ExperienceLevel)}
-              labels={EXPERIENCE_LABELS}
-              value={form.experienceLevel}
-              onChange={(v) => set('experienceLevel', v)}
-            />
-            <View style={styles.divider} />
-            <Text style={styles.formLabel}>Preferred Style</Text>
-            <ChipPicker
-              options={Object.values(PreferredStyle)}
-              labels={STYLE_LABELS}
-              value={form.preferredStyle}
-              onChange={(v) => set('preferredStyle', v)}
-            />
-            <View style={styles.divider} />
-            <Text style={styles.formLabel}>Days per Week</Text>
-            <DaysPicker
-              value={form.daysPerWeek}
-              onChange={(v) => set('daysPerWeek', v)}
-            />
+          <Text style={s.formSection}>Training</Text>
+          <View style={s.formCard}>
+            <Text style={s.formLabel}>Fitness Goal</Text>
+            <ChipPicker options={Object.values(FitnessGoal)} labels={GOAL_LABELS} value={form.fitnessGoal} onChange={(v) => set('fitnessGoal', v)} C={C} primary={theme.primary} />
+            <View style={s.divider} />
+            <Text style={s.formLabel}>Activity Level</Text>
+            <ChipPicker options={Object.values(ActivityLevel)} labels={ACTIVITY_LABELS} value={form.activityLevel} onChange={(v) => set('activityLevel', v)} C={C} primary={theme.primary} />
+            <View style={s.divider} />
+            <Text style={s.formLabel}>Experience Level</Text>
+            <ChipPicker options={Object.values(ExperienceLevel)} labels={EXPERIENCE_LABELS} value={form.experienceLevel} onChange={(v) => set('experienceLevel', v)} C={C} primary={theme.primary} />
+            <View style={s.divider} />
+            <Text style={s.formLabel}>Preferred Style</Text>
+            <ChipPicker options={Object.values(PreferredStyle)} labels={STYLE_LABELS} value={form.preferredStyle} onChange={(v) => set('preferredStyle', v)} C={C} primary={theme.primary} />
+            <View style={s.divider} />
+            <Text style={s.formLabel}>Days per Week</Text>
+            <DaysPicker value={form.daysPerWeek} onChange={(v) => set('daysPerWeek', v)} C={C} primary={theme.primary} />
           </View>
 
-          <FormSectionTitle title="Nutrition" />
-          <View style={styles.formCard}>
-            <Text style={styles.formLabel}>Diet Type</Text>
-            <ChipPicker
-              options={Object.values(DietType)}
-              labels={DIET_LABELS}
-              value={form.dietType}
-              onChange={(v) => set('dietType', v)}
-            />
+          <Text style={s.formSection}>Nutrition</Text>
+          <View style={s.formCard}>
+            <Text style={s.formLabel}>Diet Type</Text>
+            <ChipPicker options={Object.values(DietType)} labels={DIET_LABELS} value={form.dietType} onChange={(v) => set('dietType', v)} C={C} primary={theme.primary} />
           </View>
 
-          <FormSectionTitle title="Health Notes" />
-          <View style={styles.formCard}>
-            <Text style={styles.formLabel}>Injuries / Limitations</Text>
+          <Text style={s.formSection}>Health Notes</Text>
+          <View style={s.formCard}>
+            <Text style={s.formLabel}>Injuries / Limitations</Text>
             <TextInput
-              style={styles.textArea}
+              style={s.textArea}
               value={form.injuries}
               onChangeText={(v) => set('injuries', v)}
               placeholder="Any injuries or physical limitations…"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               multiline
               numberOfLines={3}
             />
@@ -469,182 +462,189 @@ function EditProfileModal({
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { theme } = useTheme();
-  const [member, setMember] = useState<GymMember | null>(null);
-  const [profile, setProfile] = useState<MemberProfile | null>(null);
-  const [badges, setBadges] = useState<MemberBadge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { theme, toggleColorScheme } = useTheme();
+  const C = theme.colors;
+
+  const memberQ = useMyMember();
+  const profileQ = useMyProfile();
+  const badgesQ = useMyBadges();
   const [signingOut, setSigningOut] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    Promise.all([
-      memberService.getMyMember(user.gymId),
-      memberService.getMyProfile(user.gymId).catch(() => null),
-      memberService.getMyBadges(user.gymId).catch(() => [] as MemberBadge[]),
-    ])
-      .then(([m, p, b]) => {
-        setMember(m);
-        setProfile(p);
-        setBadges(b);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user]);
+  const member: GymMember | null = memberQ.data ?? null;
+  const profile: MemberProfile | null = profileQ.data ?? null;
+  const badges: MemberBadge[] = badgesQ.data ?? [];
+  const equippedBadge = badges.find((b) => b.isEquipped) ?? null;
+  const loading = memberQ.isLoading || profileQ.isLoading || badgesQ.isLoading;
 
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
   }
 
+  const s = useMemo(() => StyleSheet.create({
+    root: { flex: 1, backgroundColor: C.background },
+    content: { paddingTop: 60, paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.md, gap: SPACING.md },
+    centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
+    avatarWrap: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.lg },
+    avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xs },
+    avatarInitials: { color: '#fff', fontSize: 28, ...FONT.bold },
+    fullNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    fullName: { color: C.text, fontSize: 22, ...FONT.bold },
+    email: { color: C.textSecondary, fontSize: 14 },
+    card: {
+      backgroundColor: C.surface, borderRadius: RADIUS.lg,
+      borderWidth: 1, borderColor: C.border, padding: SPACING.md, gap: SPACING.sm,
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    sectionTitle: { color: C.text, fontSize: 16, ...FONT.semibold },
+    emptyText: { color: C.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: SPACING.sm },
+    qrHint: { color: C.textMuted, fontSize: 13 },
+    qrWrap: { alignItems: 'center', padding: SPACING.md, backgroundColor: '#ffffff', borderRadius: RADIUS.md },
+    qrToken: { color: C.textMuted, fontSize: 12, textAlign: 'center', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+    appearanceRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      backgroundColor: C.surface, borderRadius: RADIUS.md,
+      borderWidth: 1, borderColor: C.border,
+      paddingHorizontal: SPACING.md, paddingVertical: 14,
+    },
+    appearanceLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+    appearanceLabel: { fontSize: 15, color: C.text, ...FONT.medium },
+    appearanceValue: { fontSize: 13, color: C.textSecondary, marginTop: 1 },
+    signOutBtn: {
+      backgroundColor: C.errorBg, borderRadius: RADIUS.md,
+      borderWidth: 1, borderColor: C.error,
+      paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm,
+    },
+    signOutText: { color: C.error, fontSize: 16, ...FONT.semibold },
+  }), [C]);
+
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} />
-      </View>
-    );
+    return <View style={s.centered}><ActivityIndicator color={theme.primary} /></View>;
   }
 
   if (!member) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Could not load profile</Text>
+      <View style={s.centered}>
+        <Text style={{ color: C.textSecondary, fontSize: 16 }}>Could not load profile</Text>
       </View>
     );
   }
 
   const expiryDate = new Date(member.expiryDate).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  const hasProfileData =
-    profile &&
-    (profile.age != null ||
-      profile.weightKg != null ||
-      profile.fitnessGoal != null);
+  const hasProfileData = profile && (profile.age != null || profile.weightKg != null || profile.fitnessGoal != null);
 
   return (
     <>
-      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <ScrollView style={s.root} contentContainerStyle={s.content}>
         {/* Avatar */}
-        <View style={styles.avatarWrap}>
-          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <Text style={styles.avatarInitials}>{getInitials(member.user.fullName)}</Text>
+        <View style={s.avatarWrap}>
+          <View style={[s.avatar, { backgroundColor: theme.primary }]}>
+            <Text style={s.avatarInitials}>{getInitials(member.user.fullName)}</Text>
           </View>
-          <Text style={styles.fullName}>{member.user.fullName}</Text>
-          <Text style={styles.email}>{member.user.email}</Text>
+          <View style={s.fullNameRow}>
+            <Text style={s.fullName}>{member.user.fullName}</Text>
+            {equippedBadge && <EquippedBadgeChip badge={toEquippedDisplay(equippedBadge)} size={20} />}
+          </View>
+          <Text style={s.email}>{member.user.email}</Text>
           <StatusBadge status={member.status} />
         </View>
 
-        {/* Membership info */}
-        <View style={styles.card}>
-          <Row label="Membership #" value={member.membershipNumber} />
-          <Row label="Plan" value={member.plan?.name ?? '—'} />
-          <Row label="Expires" value={expiryDate} />
-        </View>
+        {/* Membership */}
+        <Pressable
+          onPress={() => router.push('/(member)/membership')}
+          style={({ pressed }) => [s.card, pressed && { opacity: 0.85 }]}
+        >
+          <View style={s.cardHeader}>
+            <Text style={s.sectionTitle}>Membership</Text>
+            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+          </View>
+          <Row label="Membership #" value={member.membershipNumber} C={C} />
+          <Row label="Plan" value={member.plan?.name ?? '—'} C={C} />
+          <Row label="Expires" value={expiryDate} C={C} />
+        </Pressable>
 
         {/* Fitness Profile */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.sectionTitle}>Fitness Profile</Text>
-            <Pressable onPress={() => setEditVisible(true)} style={styles.editBtn}>
-              <Text style={[styles.editBtnText, { color: theme.primary }]}>Edit</Text>
+        <View style={s.card}>
+          <View style={s.cardHeader}>
+            <Text style={s.sectionTitle}>Fitness Profile</Text>
+            <Pressable onPress={() => setEditVisible(true)} style={{ paddingVertical: 4, paddingHorizontal: SPACING.sm }}>
+              <Text style={{ color: theme.primary, fontSize: 14, ...FONT.medium }}>Edit</Text>
             </Pressable>
           </View>
           {hasProfileData ? (
             <>
-              {profile!.fitnessGoal && (
-                <Row label="Goal" value={fmtEnum(profile!.fitnessGoal, GOAL_LABELS)} />
-              )}
-              {profile!.activityLevel && (
-                <Row label="Activity" value={fmtEnum(profile!.activityLevel, ACTIVITY_LABELS)} />
-              )}
-              {profile!.experienceLevel && (
-                <Row label="Experience" value={fmtEnum(profile!.experienceLevel, EXPERIENCE_LABELS)} />
-              )}
-              {profile!.preferredStyle && (
-                <Row label="Style" value={fmtEnum(profile!.preferredStyle, STYLE_LABELS)} />
-              )}
-              {profile!.dietType && profile!.dietType !== DietType.NONE && (
-                <Row label="Diet" value={fmtEnum(profile!.dietType, DIET_LABELS)} />
-              )}
-              {profile!.daysPerWeek != null && (
-                <Row
-                  label="Days / week"
-                  value={`${profile!.daysPerWeek} day${profile!.daysPerWeek !== 1 ? 's' : ''}`}
-                />
-              )}
-              {profile!.age != null && (
-                <Row label="Age" value={`${profile!.age} yrs`} />
-              )}
-              {profile!.weightKg != null && (
-                <Row label="Weight" value={`${profile!.weightKg} kg`} />
-              )}
-              {profile!.targetWeightKg != null && (
-                <Row label="Target" value={`${profile!.targetWeightKg} kg`} />
-              )}
-              {profile!.heightCm != null && (
-                <Row label="Height" value={`${profile!.heightCm} cm`} />
-              )}
-              {profile!.injuries && (
-                <Row label="Injuries" value={profile!.injuries} />
-              )}
+              {profile!.fitnessGoal && <Row label="Goal" value={fmtEnum(profile!.fitnessGoal, GOAL_LABELS)} C={C} />}
+              {profile!.activityLevel && <Row label="Activity" value={fmtEnum(profile!.activityLevel, ACTIVITY_LABELS)} C={C} />}
+              {profile!.experienceLevel && <Row label="Experience" value={fmtEnum(profile!.experienceLevel, EXPERIENCE_LABELS)} C={C} />}
+              {profile!.preferredStyle && <Row label="Style" value={fmtEnum(profile!.preferredStyle, STYLE_LABELS)} C={C} />}
+              {profile!.dietType && profile!.dietType !== DietType.NONE && <Row label="Diet" value={fmtEnum(profile!.dietType, DIET_LABELS)} C={C} />}
+              {profile!.daysPerWeek != null && <Row label="Days / week" value={`${profile!.daysPerWeek} day${profile!.daysPerWeek !== 1 ? 's' : ''}`} C={C} />}
+              {profile!.age != null && <Row label="Age" value={`${profile!.age} yrs`} C={C} />}
+              {profile!.weightKg != null && <Row label="Weight" value={`${profile!.weightKg} kg`} C={C} />}
+              {profile!.targetWeightKg != null && <Row label="Target" value={`${profile!.targetWeightKg} kg`} C={C} />}
+              {profile!.heightCm != null && <Row label="Height" value={`${profile!.heightCm} cm`} C={C} />}
+              {profile!.injuries && <Row label="Injuries" value={profile!.injuries} C={C} />}
             </>
           ) : (
-            <Text style={styles.emptyProfileText}>
-              Tap Edit to complete your fitness profile
-            </Text>
+            <Text style={s.emptyText}>Tap Edit to complete your fitness profile</Text>
           )}
         </View>
 
         {/* Badges */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Badges</Text>
-          {badges.length === 0 ? (
-            <Text style={styles.emptyProfileText}>No badges earned yet.</Text>
-          ) : (
-            badges.map((b) => <BadgeItem key={b.id} badge={b} />)
-          )}
+        <View style={s.card}>
+          <Text style={s.sectionTitle}>Badges</Text>
+          {badges.length === 0
+            ? <Text style={s.emptyText}>No badges earned yet.</Text>
+            : badges.map((b) => <BadgeItem key={b.id} badge={b} />)
+          }
         </View>
 
         {/* QR Code */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Check-in QR</Text>
-          <Text style={styles.qrHint}>Show this at the gym to check in</Text>
-          <View style={styles.qrWrap}>
-            <QRCode
-              value={member.qrCodeToken}
-              size={200}
-              backgroundColor="#ffffff"
-              color="#000000"
-            />
+        <View style={s.card}>
+          <Text style={s.sectionTitle}>Check-in QR</Text>
+          <Text style={s.qrHint}>Show this at the gym to check in</Text>
+          <View style={s.qrWrap}>
+            <QRCode value={member.qrCodeToken} size={200} backgroundColor="#ffffff" color="#000000" />
           </View>
-          <Text style={styles.qrToken}>{member.qrCodeToken.slice(0, 8).toUpperCase()}…</Text>
+          <Text style={s.qrToken}>{member.qrCodeToken.slice(0, 8).toUpperCase()}…</Text>
         </View>
 
-        {/* Quick links */}
-        <Pressable
-          style={styles.navRow}
-          onPress={() => router.push('/(member)/ai')}
-        >
-          <View style={styles.navRowLeft}>
-            <Ionicons name="flash-outline" size={18} color={COLORS.textSecondary} />
-            <Text style={styles.navRowText}>AI Coach</Text>
+        {/* Nav rows */}
+        <NavRow icon="flash-outline" label="AI Coach" onPress={() => router.push('/(member)/ai')} C={C} />
+
+        {/* Appearance toggle */}
+        <Pressable style={s.appearanceRow} onPress={toggleColorScheme}>
+          <View style={s.appearanceLeft}>
+            <Ionicons
+              name={theme.colorScheme === 'dark' ? 'moon-outline' : 'sunny-outline'}
+              size={18}
+              color={C.textSecondary}
+            />
+            <View>
+              <Text style={s.appearanceLabel}>Appearance</Text>
+              <Text style={s.appearanceValue}>
+                {theme.colorScheme === 'dark' ? 'Dark mode' : 'Light mode'}
+              </Text>
+            </View>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+          <Switch
+            value={theme.colorScheme === 'light'}
+            onValueChange={toggleColorScheme}
+            trackColor={{ false: C.border, true: theme.primary }}
+            thumbColor="#fff"
+          />
         </Pressable>
 
         {/* Sign out */}
         <Pressable
-          style={[styles.signOutBtn, signingOut && { opacity: 0.6 }]}
+          style={[s.signOutBtn, signingOut && { opacity: 0.6 }]}
           onPress={signingOut ? undefined : handleSignOut}
         >
-          <Text style={styles.signOutText}>
-            {signingOut ? 'Signing out…' : 'Sign Out'}
-          </Text>
+          <Text style={s.signOutText}>{signingOut ? 'Signing out…' : 'Sign Out'}</Text>
         </Pressable>
       </ScrollView>
 
@@ -652,365 +652,9 @@ export default function ProfileScreen() {
         <EditProfileModal
           visible={editVisible}
           initialForm={profileToForm(profile)}
-          gymId={user.gymId}
           onClose={() => setEditVisible(false)}
-          onSaved={(updated) => {
-            setProfile(updated);
-            setEditVisible(false);
-          }}
         />
       )}
     </>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    paddingTop: 60,
-    paddingBottom: SPACING.xxl,
-    paddingHorizontal: SPACING.md,
-    gap: SPACING.md,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-  },
-  avatarWrap: {
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xs,
-  },
-  avatarInitials: {
-    color: '#000',
-    fontSize: 28,
-    ...FONT.bold,
-  },
-  fullName: {
-    color: COLORS.text,
-    fontSize: 22,
-    ...FONT.bold,
-  },
-  email: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
-  badge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.full,
-  },
-  badgeText: {
-    fontSize: 12,
-    ...FONT.semibold,
-  },
-  card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    gap: SPACING.sm,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    ...FONT.semibold,
-  },
-  editBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: SPACING.sm,
-  },
-  editBtnText: {
-    fontSize: 14,
-    ...FONT.medium,
-  },
-  emptyProfileText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  qrHint: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-  },
-  qrWrap: {
-    alignItems: 'center',
-    padding: SPACING.md,
-    backgroundColor: '#ffffff',
-    borderRadius: RADIUS.md,
-  },
-  qrToken: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  rowLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-  },
-  rowValue: {
-    color: COLORS.text,
-    fontSize: 14,
-    ...FONT.medium,
-    flexShrink: 1,
-    textAlign: 'right',
-    marginLeft: SPACING.sm,
-  },
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 15,
-  },
-  navRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  navRowText: {
-    fontSize: 15,
-    color: COLORS.text,
-    ...FONT.medium,
-  },
-
-  signOutBtn: {
-    backgroundColor: COLORS.errorBg,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.error,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-    marginTop: SPACING.sm,
-  },
-  signOutText: {
-    color: COLORS.error,
-    fontSize: 16,
-    ...FONT.semibold,
-  },
-
-  // ── Modal ────────────────────────────────────────────────────────────────────
-  modalRoot: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingTop: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalHeaderBtn: {
-    minWidth: 60,
-    paddingVertical: 4,
-  },
-  modalTitle: {
-    color: COLORS.text,
-    fontSize: 17,
-    ...FONT.semibold,
-  },
-  modalCancel: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-  },
-  modalSave: {
-    color: COLORS.primary,
-    fontSize: 16,
-    ...FONT.semibold,
-    textAlign: 'right',
-  },
-  modalScroll: {
-    flex: 1,
-  },
-  modalContent: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.xxl,
-    gap: SPACING.xs,
-  },
-  errorBanner: {
-    backgroundColor: COLORS.errorBg,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginTop: SPACING.md,
-  },
-  errorBannerText: {
-    color: COLORS.error,
-    fontSize: 14,
-  },
-
-  // ── Form ─────────────────────────────────────────────────────────────────────
-  formSection: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    ...FONT.semibold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.xs,
-    paddingHorizontal: 2,
-  },
-  formCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    gap: SPACING.sm,
-  },
-  formRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  formLabel: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    ...FONT.medium,
-    marginBottom: 2,
-  },
-  numericWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  numericInput: {
-    color: COLORS.text,
-    fontSize: 16,
-    ...FONT.medium,
-    textAlign: 'right',
-    minWidth: 60,
-    paddingVertical: 4,
-    paddingHorizontal: SPACING.sm,
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  unitText: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    minWidth: 24,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 2,
-  },
-  chip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  chipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  chipText: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-    ...FONT.medium,
-  },
-  chipTextSelected: {
-    color: COLORS.onPrimary,
-  },
-  dayChip: {
-    minWidth: 36,
-    alignItems: 'center',
-    paddingHorizontal: SPACING.sm,
-  },
-  textArea: {
-    color: COLORS.text,
-    fontSize: 14,
-    ...FONT.regular,
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.sm,
-    minHeight: 72,
-    textAlignVertical: 'top',
-    marginTop: SPACING.xs,
-  },
-
-  // ── Badge gallery ─────────────────────────────────────────────────────────────
-  badgeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    paddingVertical: 6,
-  },
-  badgeDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  badgeDotIcon: {
-    fontSize: 13,
-  },
-  badgeInfo: {
-    flex: 1,
-  },
-  badgeItemName: {
-    color: COLORS.text,
-    fontSize: 14,
-    ...FONT.medium,
-  },
-  badgeSourceLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 1,
-  },
-  badgeDate: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    flexShrink: 0,
-  },
-});

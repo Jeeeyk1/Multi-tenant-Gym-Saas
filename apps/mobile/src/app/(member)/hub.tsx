@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { SPACING, RADIUS, FONT } from '../../constants/theme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -42,73 +42,72 @@ const HUB_ITEMS: HubItem[] = [
 export default function HubScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const C = theme.colors;
+
+  const s = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.background },
+    content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+    pageTitle: { fontSize: 28, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
+    pageSub: { fontSize: 14, color: C.textSecondary, ...FONT.regular, marginBottom: SPACING.xl },
+    list: {
+      backgroundColor: C.surface,
+      borderRadius: RADIUS.xl,
+      borderWidth: 1,
+      borderColor: C.border,
+      overflow: 'hidden',
+    },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.md,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 18,
+    },
+    cardBorder: { borderTopWidth: 1, borderTopColor: C.border },
+    iconBubble: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    cardText: { flex: 1 },
+    cardLabel: { fontSize: 15, color: C.text, ...FONT.semibold, marginBottom: 3 },
+    cardDescription: { fontSize: 13, color: C.textSecondary, ...FONT.regular },
+  }), [C]);
 
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
+      style={s.container}
+      contentContainerStyle={s.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.pageTitle}>Community</Text>
-      <Text style={styles.pageSub}>Stay connected with your gym</Text>
+      <Text style={s.pageTitle}>Community</Text>
+      <Text style={s.pageSub}>Stay connected with your gym</Text>
 
-      <View style={styles.list}>
+      <View style={s.list}>
         {HUB_ITEMS.map((item, idx) => (
           <Pressable
             key={item.label}
             style={({ pressed }) => [
-              styles.card,
-              idx > 0 && styles.cardBorder,
+              s.card,
+              idx > 0 && s.cardBorder,
               pressed && { opacity: 0.75 },
             ]}
             onPress={() => router.push(item.route as never)}
           >
-            <View style={[styles.iconBubble, { backgroundColor: item.color + '22' }]}>
+            <View style={[s.iconBubble, { backgroundColor: item.color + '22' }]}>
               <Ionicons name={item.icon} size={24} color={item.color} />
             </View>
-            <View style={styles.cardText}>
-              <Text style={styles.cardLabel}>{item.label}</Text>
-              <Text style={styles.cardDescription}>{item.description}</Text>
+            <View style={s.cardText}>
+              <Text style={s.cardLabel}>{item.label}</Text>
+              <Text style={s.cardDescription}>{item.description}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
           </Pressable>
         ))}
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-
-  pageTitle: { fontSize: 28, color: COLORS.text, ...FONT.bold, marginBottom: SPACING.xs },
-  pageSub: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular, marginBottom: SPACING.xl },
-
-  list: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 18,
-  },
-  cardBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
-  iconBubble: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  cardText: { flex: 1 },
-  cardLabel: { fontSize: 15, color: COLORS.text, ...FONT.semibold, marginBottom: 3 },
-  cardDescription: { fontSize: 13, color: COLORS.textSecondary, ...FONT.regular },
-});

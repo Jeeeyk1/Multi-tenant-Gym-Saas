@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,11 +16,18 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { leaderboardService } from '../../services/leaderboard.service';
-import type { Exercise, LeaderboardEntry, LeaderboardExerciseResult, PrSubmission } from '../../types';
-import { COLORS, FONT, RADIUS, SPACING } from '../../constants/theme';
+import {
+  useExercises,
+  useLeaderboard,
+  useMyPrs,
+  useSubmitPr,
+  useUploadLeaderboardPhoto,
+} from '../../hooks/leaderboard';
+import { useEquippedBadgesMap } from '../../hooks/members';
+import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
+import type { Exercise, LeaderboardEntry, PrSubmission } from '../../types';
+import { FONT, RADIUS, SPACING } from '../../constants/theme';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -34,18 +41,19 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 
 function SubmitPrModal({
   visible,
-  gymId,
   exercises,
   onClose,
   onSubmitted,
 }: {
   visible: boolean;
-  gymId: string;
   exercises: Exercise[];
   onClose: () => void;
   onSubmitted: () => void;
 }) {
   const { theme } = useTheme();
+  const C = theme.colors;
+  const uploadPhoto = useUploadLeaderboardPhoto();
+  const submitPr = useSubmitPr();
   const [step, setStep] = useState<'form' | 'uploading' | 'submitting'>('form');
   const [exerciseId, setExerciseId] = useState('');
   const [weightKg, setWeightKg] = useState('');
@@ -53,6 +61,81 @@ function SubmitPrModal({
   const [notes, setNotes] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        modalRoot: { flex: 1, backgroundColor: C.background },
+        modalHeader: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: SPACING.md,
+          paddingTop: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
+          paddingBottom: SPACING.md,
+          borderBottomWidth: 1,
+          borderBottomColor: C.border,
+        },
+        modalHeaderBtn: { minWidth: 64, paddingVertical: 4 },
+        modalTitle: { fontSize: 17, ...FONT.semibold, color: C.text },
+        modalCancel: { fontSize: 16, color: C.textSecondary },
+        modalSave: { fontSize: 16, ...FONT.semibold, textAlign: 'right' },
+        modalContent: { padding: SPACING.md, gap: SPACING.xs, paddingBottom: SPACING.xxl },
+
+        errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+        errorBannerText: { color: C.error, fontSize: 13 },
+
+        fieldLabel: { color: C.textSecondary, fontSize: 12, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.xs },
+        input: {
+          backgroundColor: C.surface,
+          borderRadius: RADIUS.sm,
+          borderWidth: 1,
+          borderColor: C.border,
+          paddingHorizontal: SPACING.md,
+          paddingVertical: SPACING.sm,
+          color: C.text,
+          fontSize: 15,
+          ...FONT.medium,
+        },
+
+        est1rmBadge: {
+          borderRadius: RADIUS.md,
+          borderWidth: 1,
+          paddingVertical: SPACING.sm,
+          paddingHorizontal: SPACING.md,
+          marginVertical: SPACING.xs,
+          alignItems: 'center',
+        },
+        est1rmText: { fontSize: 16, ...FONT.bold },
+
+        exerciseChip: {
+          paddingHorizontal: SPACING.md,
+          paddingVertical: 8,
+          borderRadius: RADIUS.full,
+          backgroundColor: C.surface,
+          borderWidth: 1,
+          borderColor: C.border,
+        },
+        exerciseChipText: { fontSize: 13, color: C.textSecondary, ...FONT.medium },
+
+        photoPreviewWrap: { position: 'relative', borderRadius: RADIUS.md, overflow: 'hidden', marginTop: SPACING.xs },
+        photoPreview: { width: '100%', height: 200, borderRadius: RADIUS.md },
+        photoRemove: { position: 'absolute', top: SPACING.sm, right: SPACING.sm },
+        photoBtn: {
+          flex: 1,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: SPACING.xs,
+          borderWidth: 1,
+          borderRadius: RADIUS.md,
+          paddingVertical: SPACING.md,
+          backgroundColor: C.surface,
+        },
+        photoBtnText: { fontSize: 14, ...FONT.medium },
+      }),
+    [C],
+  );
 
   useEffect(() => {
     if (visible) {
@@ -111,9 +194,9 @@ function SubmitPrModal({
     setStep('uploading');
 
     try {
-      const { url } = await leaderboardService.uploadPhoto(gymId, photoUri);
+      const { url } = await uploadPhoto.mutateAsync(photoUri);
       setStep('submitting');
-      await leaderboardService.submitPr(gymId, {
+      await submitPr.mutateAsync({
         exerciseId,
         weightKg: w,
         reps: r,
@@ -130,7 +213,6 @@ function SubmitPrModal({
   }
 
   const busy = step !== 'form';
-  const selectedExercise = exercises.find((e) => e.id === exerciseId);
 
   return (
     <Modal
@@ -140,7 +222,7 @@ function SubmitPrModal({
       onRequestClose={busy ? undefined : onClose}
     >
       <KeyboardAvoidingView
-        style={[styles.modalRoot, { backgroundColor: COLORS.background }]}
+        style={styles.modalRoot}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
@@ -198,7 +280,7 @@ function SubmitPrModal({
                 onChangeText={setWeightKg}
                 keyboardType="numeric"
                 placeholder="e.g. 100"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -209,7 +291,7 @@ function SubmitPrModal({
                 onChangeText={setReps}
                 keyboardType="numeric"
                 placeholder="e.g. 5"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
               />
             </View>
           </View>
@@ -230,7 +312,7 @@ function SubmitPrModal({
             value={notes}
             onChangeText={setNotes}
             placeholder="Any notes about this lift…"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={C.textMuted}
             multiline
           />
 
@@ -243,7 +325,7 @@ function SubmitPrModal({
                 onPress={() => setPhotoUri(null)}
                 style={styles.photoRemove}
               >
-                <Ionicons name="close-circle" size={24} color={COLORS.error} />
+                <Ionicons name="close-circle" size={24} color={C.error} />
               </Pressable>
             </View>
           ) : (
@@ -252,9 +334,9 @@ function SubmitPrModal({
                 <Ionicons name="camera-outline" size={22} color={theme.primary} />
                 <Text style={[styles.photoBtnText, { color: theme.primary }]}>Camera</Text>
               </Pressable>
-              <Pressable onPress={pickPhoto} style={[styles.photoBtn, { borderColor: COLORS.border }]}>
-                <Ionicons name="image-outline" size={22} color={COLORS.textSecondary} />
-                <Text style={[styles.photoBtnText, { color: COLORS.textSecondary }]}>Gallery</Text>
+              <Pressable onPress={pickPhoto} style={[styles.photoBtn, { borderColor: C.border }]}>
+                <Ionicons name="image-outline" size={22} color={C.textSecondary} />
+                <Text style={[styles.photoBtnText, { color: C.textSecondary }]}>Gallery</Text>
               </Pressable>
             </View>
           )}
@@ -267,43 +349,150 @@ function SubmitPrModal({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function LeaderboardScreen() {
-  const { user } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
 
-  const [leaderboard, setLeaderboard] = useState<LeaderboardExerciseResult[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [myPrs, setMyPrs] = useState<PrSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const leaderboardQ = useLeaderboard();
+  const exercisesQ = useExercises();
+  const myPrsQ = useMyPrs();
+  const equippedBadgesQ = useEquippedBadgesMap();
+
+  const leaderboard = leaderboardQ.data ?? [];
+  const exercises: Exercise[] = exercisesQ.data ?? [];
+  const myPrs: PrSubmission[] = myPrsQ.data ?? [];
+  const equippedBadges = equippedBadgesQ.data;
+  const loading = leaderboardQ.isLoading || exercisesQ.isLoading || myPrsQ.isLoading;
+  const refreshing =
+    leaderboardQ.isRefetching || exercisesQ.isRefetching || myPrsQ.isRefetching;
+
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [tab, setTab] = useState<'board' | 'mine'>('board');
   const [submitVisible, setSubmitVisible] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      const [board, exs, prs] = await Promise.all([
-        leaderboardService.getLeaderboard(user.gymId),
-        leaderboardService.listExercises(user.gymId),
-        leaderboardService.getMyPrs(user.gymId).catch(() => [] as PrSubmission[]),
-      ]);
-      setLeaderboard(board);
-      setExercises(exs);
-      setMyPrs(prs);
-      setSelectedIdx(0);
-    } catch {
-      // silent — show empty state
-    }
-  }, [user]);
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        root: { flex: 1, backgroundColor: C.background },
+        centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.background },
 
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, [load]);
+        header: {
+          paddingTop: 60,
+          paddingHorizontal: SPACING.md,
+          paddingBottom: 0,
+        },
+        pageTitle: {
+          fontSize: 24,
+          ...FONT.bold,
+          color: C.text,
+          marginBottom: SPACING.md,
+        },
+        tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.border },
+        tab: {
+          flex: 1,
+          paddingBottom: SPACING.sm,
+          alignItems: 'center',
+          borderBottomWidth: 2,
+          borderBottomColor: 'transparent',
+        },
+        tabText: { fontSize: 14, color: C.textSecondary, ...FONT.medium },
 
-  async function handleRefresh() {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+        exercisePicker: { paddingVertical: SPACING.md },
+        exerciseTab: {
+          paddingHorizontal: SPACING.md,
+          paddingVertical: 8,
+          borderRadius: RADIUS.full,
+          backgroundColor: C.surface,
+          borderWidth: 1,
+          borderColor: C.border,
+        },
+        exerciseTabText: { fontSize: 13, color: C.textSecondary, ...FONT.medium },
+
+        card: {
+          marginHorizontal: SPACING.md,
+          marginBottom: SPACING.md,
+          backgroundColor: C.surface,
+          borderRadius: RADIUS.lg,
+          borderWidth: 1,
+          borderColor: C.border,
+          padding: SPACING.md,
+          gap: SPACING.sm,
+        },
+        cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xs },
+        cardTitle: { fontSize: 16, ...FONT.semibold, color: C.text },
+        cardSubTitle: { fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
+
+        rankRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: SPACING.sm,
+          borderBottomWidth: 1,
+          borderBottomColor: C.border + '60',
+          gap: SPACING.sm,
+        },
+        rankMedal: { fontSize: 18, width: 30, textAlign: 'center' },
+        rankNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+        rankName: { flexShrink: 1, fontSize: 14, color: C.text, ...FONT.medium },
+        rankStats: { alignItems: 'flex-end' },
+        rankORM: { fontSize: 15, ...FONT.bold },
+        rankLifted: { fontSize: 11, color: C.textMuted },
+
+        myPrsSection: { padding: SPACING.md, gap: SPACING.sm },
+        prCard: {
+          backgroundColor: C.surface,
+          borderRadius: RADIUS.lg,
+          borderWidth: 1,
+          borderColor: C.border,
+          padding: SPACING.md,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        },
+        prCardLeft: { flex: 1 },
+        prExerciseName: { fontSize: 15, ...FONT.semibold, color: C.text, marginBottom: 2 },
+        prLifted: { fontSize: 13, color: C.textSecondary },
+        prDate: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+        prCardRight: { alignItems: 'flex-end', gap: 4 },
+        prORM: { fontSize: 18, ...FONT.bold },
+        prORMLabel: { fontSize: 10, color: C.textMuted, textTransform: 'uppercase' },
+        statusPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
+        statusPillText: { fontSize: 10, ...FONT.semibold },
+
+        emptyCard: {
+          margin: SPACING.md,
+          backgroundColor: C.surface,
+          borderRadius: RADIUS.lg,
+          borderWidth: 1,
+          borderColor: C.border,
+          padding: SPACING.xl,
+          alignItems: 'center',
+          gap: SPACING.xs,
+        },
+        emptyText: { fontSize: 14, color: C.textSecondary, ...FONT.medium, textAlign: 'center' },
+        emptySubText: { fontSize: 12, color: C.textMuted, textAlign: 'center' },
+
+        fab: {
+          position: 'absolute',
+          right: SPACING.lg,
+          bottom: SPACING.xl,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          alignItems: 'center',
+          justifyContent: 'center',
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+        },
+      }),
+    [C],
+  );
+
+  function handleRefresh() {
+    leaderboardQ.refetch();
+    exercisesQ.refetch();
+    myPrsQ.refetch();
   }
 
   if (loading) {
@@ -381,24 +570,30 @@ export default function LeaderboardScreen() {
                   {current.entries.length === 0 ? (
                     <Text style={styles.emptyText}>No approved PRs yet. Be the first!</Text>
                   ) : (
-                    current.entries.map((entry: LeaderboardEntry) => (
-                      <View key={entry.id} style={styles.rankRow}>
-                        <Text style={styles.rankMedal}>
-                          {entry.rank <= 3 ? MEDAL[entry.rank - 1] : `#${entry.rank}`}
-                        </Text>
-                        <Text style={styles.rankName} numberOfLines={1}>
-                          {entry.member.user.fullName}
-                        </Text>
-                        <View style={styles.rankStats}>
-                          <Text style={[styles.rankORM, { color: theme.primary }]}>
-                            {Number(entry.estimated1rm).toFixed(1)} kg
+                    current.entries.map((entry: LeaderboardEntry) => {
+                      const badge = equippedBadges?.get(entry.member.user.id);
+                      return (
+                        <View key={entry.id} style={styles.rankRow}>
+                          <Text style={styles.rankMedal}>
+                            {entry.rank <= 3 ? MEDAL[entry.rank - 1] : `#${entry.rank}`}
                           </Text>
-                          <Text style={styles.rankLifted}>
-                            {Number(entry.weightKg)} × {entry.reps}
-                          </Text>
+                          <View style={styles.rankNameWrap}>
+                            <Text style={styles.rankName} numberOfLines={1}>
+                              {entry.member.user.fullName}
+                            </Text>
+                            {badge && <EquippedBadgeChip badge={badge} />}
+                          </View>
+                          <View style={styles.rankStats}>
+                            <Text style={[styles.rankORM, { color: theme.primary }]}>
+                              {Number(entry.estimated1rm).toFixed(1)} kg
+                            </Text>
+                            <Text style={styles.rankLifted}>
+                              {Number(entry.weightKg)} × {entry.reps}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
-                    ))
+                      );
+                    })
                   )}
                 </View>
               )}
@@ -427,7 +622,7 @@ export default function LeaderboardScreen() {
                       {Number(pr.estimated1rm).toFixed(1)} kg
                     </Text>
                     <Text style={styles.prORMLabel}>Est. 1RM</Text>
-                    <StatusPill status={pr.status} />
+                    <StatusPill status={pr.status} styles={styles} />
                   </View>
                 </View>
               ))
@@ -446,7 +641,6 @@ export default function LeaderboardScreen() {
 
       <SubmitPrModal
         visible={submitVisible}
-        gymId={user?.gymId ?? ''}
         exercises={exercises}
         onClose={() => setSubmitVisible(false)}
         onSubmitted={() => {
@@ -458,11 +652,15 @@ export default function LeaderboardScreen() {
   );
 }
 
-function StatusPill({ status }: { status: PrSubmission['status'] }) {
+type LeaderboardStyles = ReturnType<typeof StyleSheet.create<Record<string, object>>>;
+
+function StatusPill({ status, styles }: { status: PrSubmission['status']; styles: LeaderboardStyles }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
   const map = {
-    PENDING:  { label: 'Pending',  bg: COLORS.warningBg,  color: COLORS.warning },
-    APPROVED: { label: 'Approved', bg: COLORS.successBg,  color: COLORS.success },
-    REJECTED: { label: 'Rejected', bg: COLORS.errorBg,    color: COLORS.error },
+    PENDING:  { label: 'Pending',  bg: C.warningBg,  color: C.warning },
+    APPROVED: { label: 'Approved', bg: C.successBg,  color: C.success },
+    REJECTED: { label: 'Rejected', bg: C.errorBg,    color: C.error },
   };
   const s = map[status];
   return (
@@ -471,190 +669,3 @@ function StatusPill({ status }: { status: PrSubmission['status'] }) {
     </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
-
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: SPACING.md,
-    paddingBottom: 0,
-  },
-  pageTitle: {
-    fontSize: 24,
-    ...FONT.bold,
-    color: COLORS.text,
-    marginBottom: SPACING.md,
-  },
-  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  tab: {
-    flex: 1,
-    paddingBottom: SPACING.sm,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium },
-
-  exercisePicker: { paddingVertical: SPACING.md },
-  exerciseTab: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  exerciseTabText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.medium },
-
-  card: {
-    marginHorizontal: SPACING.md,
-    marginBottom: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    gap: SPACING.sm,
-  },
-  cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xs },
-  cardTitle: { fontSize: 16, ...FONT.semibold, color: COLORS.text },
-  cardSubTitle: { fontSize: 11, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.6 },
-
-  rankRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border + '60',
-    gap: SPACING.sm,
-  },
-  rankMedal: { fontSize: 18, width: 30, textAlign: 'center' },
-  rankName: { flex: 1, fontSize: 14, color: COLORS.text, ...FONT.medium },
-  rankStats: { alignItems: 'flex-end' },
-  rankORM: { fontSize: 15, ...FONT.bold },
-  rankLifted: { fontSize: 11, color: COLORS.textMuted },
-
-  myPrsSection: { padding: SPACING.md, gap: SPACING.sm },
-  prCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  prCardLeft: { flex: 1 },
-  prExerciseName: { fontSize: 15, ...FONT.semibold, color: COLORS.text, marginBottom: 2 },
-  prLifted: { fontSize: 13, color: COLORS.textSecondary },
-  prDate: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  prCardRight: { alignItems: 'flex-end', gap: 4 },
-  prORM: { fontSize: 18, ...FONT.bold },
-  prORMLabel: { fontSize: 10, color: COLORS.textMuted, textTransform: 'uppercase' },
-  statusPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
-  statusPillText: { fontSize: 10, ...FONT.semibold },
-
-  emptyCard: {
-    margin: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.xl,
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  emptyText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium, textAlign: 'center' },
-  emptySubText: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
-
-  fab: {
-    position: 'absolute',
-    right: SPACING.lg,
-    bottom: SPACING.xl,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-
-  // ── Modal ──────────────────────────────────────────────────────────────────
-  modalRoot: { flex: 1 },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingTop: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalHeaderBtn: { minWidth: 64, paddingVertical: 4 },
-  modalTitle: { fontSize: 17, ...FONT.semibold, color: COLORS.text },
-  modalCancel: { fontSize: 16, color: COLORS.textSecondary },
-  modalSave: { fontSize: 16, ...FONT.semibold, textAlign: 'right' },
-  modalContent: { padding: SPACING.md, gap: SPACING.xs, paddingBottom: SPACING.xxl },
-
-  errorBanner: { backgroundColor: COLORS.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
-  errorBannerText: { color: COLORS.error, fontSize: 13 },
-
-  fieldLabel: { color: COLORS.textSecondary, fontSize: 12, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.xs },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    color: COLORS.text,
-    fontSize: 15,
-    ...FONT.medium,
-  },
-
-  est1rmBadge: {
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    marginVertical: SPACING.xs,
-    alignItems: 'center',
-  },
-  est1rmText: { fontSize: 16, ...FONT.bold },
-
-  exerciseChip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  exerciseChipText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.medium },
-
-  photoPreviewWrap: { position: 'relative', borderRadius: RADIUS.md, overflow: 'hidden', marginTop: SPACING.xs },
-  photoPreview: { width: '100%', height: 200, borderRadius: RADIUS.md },
-  photoRemove: { position: 'absolute', top: SPACING.sm, right: SPACING.sm },
-  photoBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.xs,
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.surface,
-  },
-  photoBtnText: { fontSize: 14, ...FONT.medium },
-});

@@ -44,6 +44,9 @@ INSERT INTO permissions (key, description, module) VALUES
 
   -- Badges module
   ('badges.manage',         'Create and configure badge types',          'Badges'),
-  ('badges.award',          'Manually award badges to members',          'Badges')
+  ('badges.award',          'Manually award badges to members',          'Badges'),
+
+  -- AI insights assistant
+  ('insights.query',        'Ask the AI assistant about gym data',       'Insights')
 
 ON CONFLICT (key) DO NOTHING;

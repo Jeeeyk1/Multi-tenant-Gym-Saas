@@ -15,6 +15,7 @@ import { ReactivateMemberUseCase } from './application/use-cases/reactivate-memb
 import { RemoveMemberUseCase } from './application/use-cases/remove-member.use-case';
 import { GetMemberQrUseCase } from './application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from './application/use-cases/register-device-token.use-case';
+import { UpdateMyPrivacyUseCase } from './application/use-cases/update-my-privacy.use-case';
 import { MembersController } from './presentation/controllers/members.controller';
 
 @Module({
@@ -35,6 +36,7 @@ import { MembersController } from './presentation/controllers/members.controller
     ReactivateMemberUseCase,
     GetMemberQrUseCase,
     RegisterDeviceTokenUseCase,
+    UpdateMyPrivacyUseCase,
     RemoveMemberUseCase,
   ],
   exports: [MembersRepository],

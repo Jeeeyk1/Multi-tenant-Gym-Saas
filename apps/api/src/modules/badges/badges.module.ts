@@ -9,6 +9,8 @@ import { CreateMilestoneBadgeUseCase } from './application/use-cases/create-mile
 import { AwardCustomBadgeUseCase } from './application/use-cases/award-custom-badge.use-case';
 import { ListCustomBadgesUseCase } from './application/use-cases/list-custom-badges.use-case';
 import { ListMilestoneBadgesUseCase } from './application/use-cases/list-milestone-badges.use-case';
+import { EquipBadgeUseCase } from './application/use-cases/equip-badge.use-case';
+import { ListEquippedBadgesUseCase } from './application/use-cases/list-equipped-badges.use-case';
 import { BadgesController } from './presentation/controllers/badges.controller';
 import { BadgesService } from './badges.service';
 
@@ -25,6 +27,8 @@ import { BadgesService } from './badges.service';
     CreateCustomBadgeUseCase,
     CreateMilestoneBadgeUseCase,
     AwardCustomBadgeUseCase,
+    EquipBadgeUseCase,
+    ListEquippedBadgesUseCase,
     BadgesService,
   ],
   exports: [BadgesService, CloseCycleUseCase],

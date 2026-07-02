@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Chat', href: '/dashboard/chat', icon: '◉', permission: 'chat.manage' },
   { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: '⬆', permission: 'leaderboard.view' },
   { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'badges.manage' },
+  { label: 'AI Assistant', href: '/dashboard/insights', icon: '✦', permission: 'insights.query' },
   { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙', permission: 'gym.settings' },
 ];

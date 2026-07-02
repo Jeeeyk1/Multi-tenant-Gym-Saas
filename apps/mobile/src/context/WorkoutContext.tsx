@@ -87,7 +87,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         title: 'Still working out? 💪',
         body: 'Tap to confirm or your session will auto-stop in a bit.',
       },
-      trigger: { type: Notifications.SchedulingReplicationType.TimeInterval, seconds: Math.max(1, Math.floor(idleDelay / 1000)) },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(1, Math.floor(idleDelay / 1000)) },
     }).catch(() => {});
   }
 
@@ -120,7 +120,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   // Keep endSession ref current so auto-stop timeout can call it
   useEffect(() => {
     endSessionRef.current = () => {
-      try { endSession(); } catch {}
+      try { endSession(); } catch { /* auto-stop tolerates endSession failures */ }
     };
   }, [endSession]);
 

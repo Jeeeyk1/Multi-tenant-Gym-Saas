@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -15,8 +16,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
+import { useEquippedBadgesMap } from '../../hooks/members';
+import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { ChatMessage } from '../../types';
+import type { ChatMessage, EquippedBadgeDisplay } from '../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
 const WS_BASE_URL = (() => {
@@ -24,7 +27,15 @@ const WS_BASE_URL = (() => {
   try { return new URL(apiUrl).origin; } catch { return 'http://localhost:3000'; }
 })();
 
-function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId: string }) {
+function MessageBubble({
+  msg,
+  currentUserId,
+  senderBadge,
+}: {
+  msg: ChatMessage;
+  currentUserId: string;
+  senderBadge: EquippedBadgeDisplay | undefined;
+}) {
   const { theme } = useTheme();
   const isMine = msg.sender.id === currentUserId;
   const time = new Date(msg.sentAt).toLocaleTimeString('en-US', {
@@ -42,7 +53,12 @@ function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId
 
   return (
     <View style={[styles.bubbleWrap, isMine && styles.bubbleWrapMine]}>
-      {!isMine && <Text style={styles.senderName}>{msg.sender.fullName}</Text>}
+      {!isMine && (
+        <View style={styles.senderRow}>
+          <Text style={styles.senderName}>{msg.sender.fullName}</Text>
+          {senderBadge && <EquippedBadgeChip badge={senderBadge} size={14} />}
+        </View>
+      )}
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
         {msg.replyTo && !msg.replyTo.isDeleted && (
           <View style={[styles.replyBanner, { borderLeftColor: theme.primary + '99' }]}>
@@ -63,6 +79,7 @@ function MessageBubble({ msg, currentUserId }: { msg: ChatMessage; currentUserId
 export default function ChatScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const equippedBadgesQ = useEquippedBadgesMap();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -251,7 +268,11 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={(m) => m.id}
         renderItem={({ item }) => (
-          <MessageBubble msg={item} currentUserId={user?.id ?? ''} />
+          <MessageBubble
+            msg={item}
+            currentUserId={user?.id ?? ''}
+            senderBadge={equippedBadgesQ.data?.get(item.sender.id)}
+          />
         )}
         contentContainerStyle={styles.messageList}
         showsVerticalScrollIndicator={false}
@@ -334,11 +355,16 @@ const styles = StyleSheet.create({
   },
   bubbleWrap: { alignItems: 'flex-start', marginBottom: SPACING.sm },
   bubbleWrapMine: { alignItems: 'flex-end' },
+  senderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+    marginLeft: 4,
+  },
   senderName: {
     fontSize: 11,
     color: COLORS.textMuted,
-    marginBottom: 2,
-    marginLeft: 4,
   },
   bubble: {
     maxWidth: '78%',

@@ -5,3 +5,4 @@ export { ConflictError } from './conflict.error';
 export { UnauthorizedError } from './unauthorized.error';
 export { ValidationError } from './validation.error';
 export { TooManyRequestsError } from './too-many-requests.error';
+export { PaymentRequiredError } from './payment-required.error';

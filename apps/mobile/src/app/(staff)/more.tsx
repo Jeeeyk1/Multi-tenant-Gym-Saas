@@ -13,6 +13,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
 function formatRole(role: string): string {
   return role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, ' ');
 }
@@ -33,7 +35,16 @@ export default function MoreScreen() {
   const staffRoles = user?.roles.filter((r) => r !== 'MEMBER') ?? [];
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
   const initials = user?.fullName ? getInitials(user.fullName) : '??';
-  const canQueryInsights = user?.permissions.includes('insights.query') ?? false;
+
+  const allTools: { label: string; icon: IoniconsName; route: string; permission?: string }[] = [
+    { label: 'Renewals', icon: 'refresh-outline', route: '/(staff)/renewals', permission: 'members.renew' },
+    { label: 'Chat', icon: 'chatbubbles-outline', route: '/(staff)/chat', permission: 'chat.manage' },
+    { label: 'Badges', icon: 'ribbon-outline', route: '/(staff)/badges', permission: 'badges.award' },
+    { label: 'Plans', icon: 'pricetags-outline', route: '/(staff)/plans', permission: 'plans.view' },
+    { label: 'Leaderboard', icon: 'trophy-outline', route: '/(staff)/leaderboard' },
+    { label: 'AI Assistant', icon: 'sparkles-outline', route: '/(staff)/insights', permission: 'insights.query' },
+  ];
+  const tools = allTools.filter((t) => !t.permission || (user?.permissions.includes(t.permission) ?? false));
 
   return (
     <ScrollView
@@ -67,26 +78,18 @@ export default function MoreScreen() {
       {/* Tools */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>TOOLS</Text>
-        <TouchableOpacity
-          style={[styles.navRow, canQueryInsights && styles.navRowBorder]}
-          onPress={() => router.push('/(staff)/leaderboard')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="trophy-outline" size={18} color={COLORS.textMuted} />
-          <Text style={styles.navLabel}>Leaderboard</Text>
-          <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
-        </TouchableOpacity>
-        {canQueryInsights && (
+        {tools.map((tool, index) => (
           <TouchableOpacity
-            style={styles.navRow}
-            onPress={() => router.push('/(staff)/insights')}
+            key={tool.route}
+            style={[styles.navRow, index < tools.length - 1 && styles.navRowBorder]}
+            onPress={() => router.push(tool.route as never)}
             activeOpacity={0.7}
           >
-            <Ionicons name="sparkles-outline" size={18} color={COLORS.textMuted} />
-            <Text style={styles.navLabel}>AI Assistant</Text>
+            <Ionicons name={tool.icon} size={18} color={COLORS.textMuted} />
+            <Text style={styles.navLabel}>{tool.label}</Text>
             <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
           </TouchableOpacity>
-        )}
+        ))}
       </View>
 
       {/* Info row */}

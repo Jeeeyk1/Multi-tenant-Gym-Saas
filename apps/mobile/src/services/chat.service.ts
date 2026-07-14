@@ -11,4 +11,7 @@ export const chatService = {
       : `?limit=${limit}`;
     return api.get<ChatMessage[]>(`/gyms/${gymId}/conversations/${conversationId}/messages${query}`);
   },
+
+  deleteMessage: (gymId: string, conversationId: string, msgId: string) =>
+    api.delete<void>(`/gyms/${gymId}/conversations/${conversationId}/messages/${msgId}`),
 };

@@ -1,11 +1,14 @@
 import { UpdatePlanUseCase } from './update-plan.use-case';
 import type { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
+import type { CacheService } from '../../../../common/cache/cache.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const mockRepo = {
   findById: jest.fn(),
   update: jest.fn(),
 } as unknown as jest.Mocked<MembershipPlansRepository>;
+
+const mockCache = { del: jest.fn() } as unknown as CacheService;
 
 const orgCaller: AuthenticatedUser = {
   type: 'org',
@@ -37,7 +40,7 @@ describe('UpdatePlanUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new UpdatePlanUseCase(mockRepo);
+    useCase = new UpdatePlanUseCase(mockRepo, mockCache);
     mockRepo.findById.mockResolvedValue(existingPlan as any);
     mockRepo.update.mockResolvedValue({ ...existingPlan, name: 'Updated Plan' } as any);
   });

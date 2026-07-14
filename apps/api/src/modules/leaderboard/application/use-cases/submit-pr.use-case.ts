@@ -3,6 +3,8 @@ import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { PrSubmissionStatus, PrSubmissionType } from '../../../../common/enums';
 import { calculateEstimated1rm } from '../../domain/pr-calculator';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { leaderboardCacheKey } from '../leaderboard-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface SubmitPrInput {
@@ -17,7 +19,10 @@ export interface SubmitPrInput {
 
 @Injectable()
 export class SubmitPrUseCase {
-  constructor(private readonly repo: LeaderboardRepository) {}
+  constructor(
+    private readonly repo: LeaderboardRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(gymId: string, input: SubmitPrInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -60,7 +65,7 @@ export class SubmitPrUseCase {
       ? PrSubmissionType.STAFF
       : PrSubmissionType.SELF;
 
-    return this.repo.createSubmission({
+    const submission = await this.repo.createSubmission({
       gymId,
       memberId,
       exerciseId: input.exerciseId,
@@ -73,6 +78,14 @@ export class SubmitPrUseCase {
       submittedByUserId: caller.sub,
       notes: input.notes,
     });
+
+    // A staff submission is auto-approved and lands on the board immediately —
+    // bust the cache. A self-submission is PENDING and doesn't affect the board.
+    if (status === PrSubmissionStatus.APPROVED) {
+      await this.cache.del(leaderboardCacheKey(gymId));
+    }
+
+    return submission;
   }
 }
 

@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { STALE } from '../lib/query-client';
 import { staffService } from '../services/staff.service';
 import type {
   MemberDetail,
   MembersPage,
   RenewalRecord,
+  GymRenewal,
   StaffAnnouncement,
   StaffCheckIn,
+  MembershipPlan,
 } from '../types';
 
 export const staffKeys = {
@@ -19,6 +22,10 @@ export const staffKeys = {
     [...staffKeys.all, 'member', gymId, memberId] as const,
   renewals: (gymId: string | undefined, memberId: string) =>
     [...staffKeys.all, 'renewals', gymId, memberId] as const,
+  gymRenewals: (gymId: string | undefined) =>
+    [...staffKeys.all, 'gymRenewals', gymId] as const,
+  plans: (gymId: string | undefined) =>
+    [...staffKeys.all, 'plans', gymId] as const,
   announcements: (gymId: string | undefined, status?: string) =>
     [...staffKeys.all, 'announcements', { gymId, status }] as const,
 };
@@ -32,6 +39,8 @@ export function useActiveCheckIns() {
     queryKey: staffKeys.activeCheckIns(gymId),
     queryFn: () => staffService.getActiveCheckIns(gymId!),
     enabled: Boolean(gymId),
+    staleTime: STALE.live,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -122,6 +131,27 @@ export function useStaffRenewals(memberId: string | undefined) {
     queryKey: staffKeys.renewals(gymId, memberId ?? ''),
     queryFn: () => staffService.listRenewals(gymId!, memberId!),
     enabled: Boolean(gymId && memberId),
+  });
+}
+
+export function useGymRenewals() {
+  const { user } = useAuth();
+  const gymId = user?.gymId;
+  return useQuery<GymRenewal[]>({
+    queryKey: staffKeys.gymRenewals(gymId),
+    queryFn: () => staffService.listGymRenewals(gymId!),
+    enabled: Boolean(gymId),
+  });
+}
+
+export function useGymPlans() {
+  const { user } = useAuth();
+  const gymId = user?.gymId;
+  return useQuery<MembershipPlan[]>({
+    queryKey: staffKeys.plans(gymId),
+    queryFn: () => staffService.listPlans(gymId!),
+    enabled: Boolean(gymId),
+    staleTime: STALE.static,
   });
 }
 

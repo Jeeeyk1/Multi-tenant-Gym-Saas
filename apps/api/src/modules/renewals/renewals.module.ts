@@ -17,5 +17,6 @@ import { GymRenewalsController } from './presentation/controllers/gym-renewals.c
     ListMyRenewalsUseCase,
     ListGymRenewalsUseCase,
   ],
+  exports: [RenewMembershipUseCase],
 })
 export class RenewalsModule {}

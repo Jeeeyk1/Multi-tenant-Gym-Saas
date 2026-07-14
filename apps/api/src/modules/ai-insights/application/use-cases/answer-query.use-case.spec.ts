@@ -2,6 +2,7 @@ import { AnswerQueryUseCase } from './answer-query.use-case';
 import type { LlmPort } from '../ports/llm.port';
 import type { ToolRegistry } from '../tools/tool-registry';
 import type { EntitlementsService } from '../entitlements.service';
+import type { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter.service';
 import type { InsightsRepository, Entitlement } from '../../infrastructure/persistence/insights.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
@@ -12,6 +13,7 @@ const tools = {
   execute: jest.fn(),
 } as unknown as jest.Mocked<ToolRegistry>;
 const entitlements = { check: jest.fn() } as unknown as jest.Mocked<EntitlementsService>;
+const rateLimiter = { hit: jest.fn() } as unknown as jest.Mocked<RateLimiterService>;
 const repo = { recordUsage: jest.fn() } as unknown as jest.Mocked<InsightsRepository>;
 
 const entitlement: Entitlement = {
@@ -35,7 +37,8 @@ describe('AnswerQueryUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new AnswerQueryUseCase(llm, tools, entitlements, repo);
+    useCase = new AnswerQueryUseCase(llm, tools, entitlements, rateLimiter, repo);
+    rateLimiter.hit.mockResolvedValue(true);
     entitlements.check.mockResolvedValue(entitlement);
     tools.execute.mockResolvedValue({ type: 'tool_result', toolUseId: 't1', content: '{"value":5}' });
     repo.recordUsage.mockResolvedValue(undefined);
@@ -56,7 +59,10 @@ describe('AnswerQueryUseCase', () => {
 
     const result = await useCase.execute('gym-1', { message: 'how many check-ins today?' }, manager);
 
-    expect(tools.execute).toHaveBeenCalledWith(expect.objectContaining({ id: 't1' }), 'gym-1');
+    expect(tools.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 't1' }),
+      { gymId: 'gym-1', caller: manager },
+    );
     expect(result).toEqual({ answer: 'There were 5 check-ins today.', toolsUsed: ['query_metric'] });
     expect(repo.recordUsage).toHaveBeenCalledWith(entitlement, 'gym-1', 'staff-1', 18);
   });
@@ -65,6 +71,15 @@ describe('AnswerQueryUseCase', () => {
     const frontDesk: AuthenticatedUser = { ...manager, permissions: ['checkins.manage'] };
     await expect(useCase.execute('gym-1', { message: 'hi' }, frontDesk)).rejects.toMatchObject({
       code: 'PERMISSION_DENIED',
+    });
+    expect(entitlements.check).not.toHaveBeenCalled();
+    expect(llm.complete).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the per-user rate limit is exceeded, before any DB or model call', async () => {
+    rateLimiter.hit.mockResolvedValue(false);
+    await expect(useCase.execute('gym-1', { message: 'hi' }, manager)).rejects.toMatchObject({
+      code: 'RATE_LIMITED',
     });
     expect(entitlements.check).not.toHaveBeenCalled();
     expect(llm.complete).not.toHaveBeenCalled();

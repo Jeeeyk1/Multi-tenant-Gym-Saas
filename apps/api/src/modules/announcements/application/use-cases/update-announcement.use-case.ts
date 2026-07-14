@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface UpdateAnnouncementInput {
@@ -15,7 +17,10 @@ const IMMUTABLE_STATUSES = ['EXPIRED', 'ARCHIVED'];
 
 @Injectable()
 export class UpdateAnnouncementUseCase {
-  constructor(private readonly repo: AnnouncementsRepository) {}
+  constructor(
+    private readonly repo: AnnouncementsRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(
     gymId: string,
@@ -42,7 +47,7 @@ export class UpdateAnnouncementUseCase {
     const status =
       'publishAt' in input ? resolveStatus(input.publishAt ?? undefined) : undefined;
 
-    return this.repo.update(announcementId, {
+    const updated = await this.repo.update(announcementId, {
       title: input.title,
       content: input.content,
       isPinned: input.isPinned,
@@ -50,6 +55,8 @@ export class UpdateAnnouncementUseCase {
       expiresAt: input.expiresAt,
       ...(status ? { status } : {}),
     });
+    await this.cache.del(publishedAnnouncementsCacheKey(gymId));
+    return updated;
   }
 }
 

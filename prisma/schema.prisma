@@ -178,6 +178,7 @@ model Gym {
   milestoneBadges      ExerciseMilestoneBadge[]
   leaderboardCycles    LeaderboardCycle[]
   memberBadges         MemberBadge[]
+  convertedSignups     SignupRequest[]
 
   @@map("gyms")
 }
@@ -307,7 +308,7 @@ model GymStaffRole {
 
 model Plan {
   id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                 String
+  name                 String    @unique
   tier                 String
   description          String?
   maxGyms              Int       @default(1) @map("max_gyms")
@@ -366,6 +367,10 @@ model Invoice {
   amount         Decimal   @db.Decimal(10, 2)
   currency       String    @default("PHP")
   paymentMethod  String?   @map("payment_method")
+  paymentReference   String?   @map("payment_reference")
+  paymentSubmittedAt DateTime? @map("payment_submitted_at") @db.Timestamptz
+  verifiedBy         String?   @map("verified_by") @db.Uuid
+  rejectionReason    String?   @map("rejection_reason")
   lineItems      Json      @default("[]") @map("line_items")
   paidAt         DateTime? @map("paid_at") @db.Timestamptz
   dueAt          DateTime? @map("due_at") @db.Timestamptz
@@ -375,6 +380,26 @@ model Invoice {
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   @@map("invoices")
+}
+
+// Landing-page lead capture ("Subscribe" form). Admin reviews the queue and, on Convert, runs
+// the normal admin-provisioning flow and links the resulting gym here.
+model SignupRequest {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymName        String    @map("gym_name")
+  ownerName      String    @map("owner_name")
+  email          String
+  phone          String?
+  planInterest   String?   @map("plan_interest")
+  status         String    @default("NEW")
+  notes          String?
+  convertedGymId String?   @map("converted_gym_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+
+  convertedGym  Gym?  @relation(fields: [convertedGymId], references: [id], onDelete: SetNull)
+
+  @@map("signup_requests")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

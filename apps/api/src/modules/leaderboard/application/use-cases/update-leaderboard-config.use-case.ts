@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import { BadgesService } from '../../../badges/badges.service';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { leaderboardCacheKey } from '../leaderboard-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 interface ConfigItem {
@@ -15,6 +17,7 @@ export class UpdateLeaderboardConfigUseCase {
   constructor(
     private readonly repo: LeaderboardRepository,
     private readonly badges: BadgesService,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(gymId: string, items: ConfigItem[], caller: AuthenticatedUser) {
@@ -43,6 +46,9 @@ export class UpdateLeaderboardConfigUseCase {
         caller.sub,
       );
     }
+
+    // Enabled exercises / ordering changed — bust the cached board for this gym.
+    await this.cache.del(leaderboardCacheKey(gymId));
 
     const hasActiveItem = items.some((i) => i.isActive);
     if (hasActiveItem) {

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface CreateAnnouncementInput {
@@ -13,7 +15,10 @@ export interface CreateAnnouncementInput {
 
 @Injectable()
 export class CreateAnnouncementUseCase {
-  constructor(private readonly repo: AnnouncementsRepository) {}
+  constructor(
+    private readonly repo: AnnouncementsRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(gymId: string, input: CreateAnnouncementInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -21,7 +26,7 @@ export class CreateAnnouncementUseCase {
 
     const status = resolveStatus(input.publishAt);
 
-    return this.repo.create({
+    const created = await this.repo.create({
       gymId,
       createdBy: caller.sub,
       title: input.title,
@@ -31,6 +36,8 @@ export class CreateAnnouncementUseCase {
       publishAt: input.publishAt,
       expiresAt: input.expiresAt,
     });
+    await this.cache.del(publishedAnnouncementsCacheKey(gymId));
+    return created;
   }
 }
 

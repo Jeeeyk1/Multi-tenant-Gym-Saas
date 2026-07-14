@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EmailService } from '../../../../common/email/email.service';
-import { ConflictError } from '../../../../common/errors';
+import { ConflictError, NotFoundError } from '../../../../common/errors';
+import { BillingCycle } from '../../../../common/enums';
 import { AdminRepository } from '../../infrastructure/persistence/admin.repository';
 
 export interface CreateGymClientInput {
@@ -8,6 +9,8 @@ export interface CreateGymClientInput {
   gymCode: string;
   ownerEmail: string;
   ownerFullName: string;
+  planId: string;
+  billingCycle?: BillingCycle;
 }
 
 @Injectable()
@@ -24,6 +27,9 @@ export class CreateGymClientUseCase {
     const emailTaken = await this.repo.findUserByEmail(input.ownerEmail);
     if (emailTaken) throw new ConflictError('An account with this email already exists', 'EMAIL_TAKEN');
 
+    const plan = await this.repo.findPlanById(input.planId);
+    if (!plan) throw new NotFoundError('Plan not found', 'PLAN_NOT_FOUND');
+
     const orgSlug = input.gymName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     let slug = orgSlug;
     let attempt = 0;
@@ -39,6 +45,8 @@ export class CreateGymClientUseCase {
       gymCode: input.gymCode,
       ownerEmail: input.ownerEmail,
       ownerFullName: input.ownerFullName,
+      planId: input.planId,
+      billingCycle: input.billingCycle ?? BillingCycle.MONTHLY,
     });
 
     await this.email.sendOwnerInvite({

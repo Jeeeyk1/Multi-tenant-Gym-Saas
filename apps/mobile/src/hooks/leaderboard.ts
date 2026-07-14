@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { STALE } from '../lib/query-client';
 import { leaderboardService } from '../services/leaderboard.service';
 import type {
   Exercise,
@@ -45,6 +46,7 @@ export function useExercises() {
     queryKey: leaderboardKeys.exercises(gymId),
     queryFn: () => leaderboardService.listExercises(gymId!),
     enabled: Boolean(gymId),
+    staleTime: STALE.static,
   });
 }
 
@@ -109,6 +111,8 @@ export function usePendingSubmissions() {
     queryKey: leaderboardKeys.pending(gymId),
     queryFn: () => leaderboardService.getPendingSubmissions(gymId!),
     enabled: Boolean(gymId),
+    staleTime: STALE.short,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -119,6 +123,7 @@ export function useLeaderboardConfig(enabled = true) {
     queryKey: leaderboardKeys.config(gymId),
     queryFn: () => leaderboardService.getLeaderboardConfig(gymId!),
     enabled: enabled && Boolean(gymId),
+    staleTime: STALE.static,
   });
 }
 

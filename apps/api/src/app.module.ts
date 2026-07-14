@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -9,6 +10,7 @@ import { jwtConfig } from './config/jwt.config';
 import { redisConfig } from './config/redis.config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { CacheModule } from './common/cache/cache.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { OrganizationModule } from './modules/organization/organization.module';
@@ -31,6 +33,8 @@ import { WorkoutsModule } from './modules/workouts/workouts.module';
 import { BadgesModule } from './modules/badges/badges.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AiInsightsModule } from './modules/ai-insights/ai-insights.module';
+import { BillingModule } from './modules/billing/billing.module';
+import { SubscriptionStatusGuard } from './modules/billing/application/subscription-status.guard';
 
 @Module({
   imports: [
@@ -78,6 +82,7 @@ import { AiInsightsModule } from './modules/ai-insights/ai-insights.module';
     ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
+    CacheModule,
     HealthModule,
     IdentityModule,
     OrganizationModule,
@@ -100,6 +105,11 @@ import { AiInsightsModule } from './modules/ai-insights/ai-insights.module';
     BadgesModule,
     ReportsModule,
     AiInsightsModule,
+    BillingModule,
+  ],
+  providers: [
+    // Global — locks gym-scoped requests when the subscription isn't active (402).
+    { provide: APP_GUARD, useClass: SubscriptionStatusGuard },
   ],
 })
 export class AppModule {}

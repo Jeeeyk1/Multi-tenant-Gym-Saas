@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -21,13 +21,15 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useMyMember } from '../../hooks/members';
 import { aiService } from '../../services/ai.service';
-import { COLORS, SPACING, FONT, RADIUS } from '../../constants/theme';
+import { SPACING, FONT, RADIUS, type ColorPalette } from '../../constants/theme';
 import type { FoodLog, MealAnalysis, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions } from '../../types';
 
 type Tab = 'workout' | 'nutrition' | 'diary';
 
 export default function AIScreen() {
   const { theme } = useTheme();
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('workout');
   const memberQ = useMyMember();
@@ -77,6 +79,8 @@ export default function AIScreen() {
 const TODAY_NAME = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
 function WorkoutTab({ gymId, memberId, theme }: TabProps) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [weekPlan, setWeekPlan] = useState<WorkoutWeekPlan | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
@@ -182,12 +186,12 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                 </View>
                 <View style={styles.planMeta}>
                   <View style={styles.planMetaItem}>
-                    <Ionicons name="time-outline" size={13} color={COLORS.textSecondary} />
+                    <Ionicons name="time-outline" size={13} color={C.textSecondary} />
                     <Text style={styles.planMetaText}>{activeDay.totalDurationMin} min</Text>
                   </View>
                   {planDate && (
                     <View style={styles.planMetaItem}>
-                      <Ionicons name="calendar-outline" size={13} color={COLORS.textSecondary} />
+                      <Ionicons name="calendar-outline" size={13} color={C.textSecondary} />
                       <Text style={styles.planMetaText}>Generated {planDate}</Text>
                     </View>
                   )}
@@ -221,20 +225,20 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                           )}
                           {ex.restSec != null && (
                             <View style={styles.statPill}>
-                              <Ionicons name="timer-outline" size={11} color={COLORS.textMuted} />
-                              <Text style={[styles.statValue, { color: COLORS.textSecondary }]}>{ex.restSec}s</Text>
+                              <Ionicons name="timer-outline" size={11} color={C.textMuted} />
+                              <Text style={[styles.statValue, { color: C.textSecondary }]}>{ex.restSec}s</Text>
                               <Text style={styles.statLabel}>rest</Text>
                             </View>
                           )}
                         </View>
                         {ex.tip && (
                           <View style={styles.tipRow}>
-                            <Ionicons name="information-circle-outline" size={13} color={COLORS.textMuted} />
+                            <Ionicons name="information-circle-outline" size={13} color={C.textMuted} />
                             <Text style={styles.tipText}>{ex.tip}</Text>
                           </View>
                         )}
                         <View style={styles.cardTapHint}>
-                          <Ionicons name="chevron-forward" size={12} color={COLORS.textMuted} />
+                          <Ionicons name="chevron-forward" size={12} color={C.textMuted} />
                           <Text style={styles.cardTapHintText}>How to do it</Text>
                         </View>
                       </Pressable>
@@ -295,6 +299,8 @@ function ExerciseDetailModal({
   gifCache: React.RefObject<Map<string, string | null>>;
   onClose: () => void;
 }) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [instructions, setInstructions] = useState<ExerciseInstructions | null>(
     cache.current.get(exercise.name) ?? null,
   );
@@ -347,7 +353,7 @@ function ExerciseDetailModal({
             </View>
           </View>
           <Pressable onPress={onClose} style={styles.exModalClose}>
-            <Ionicons name="close" size={22} color={COLORS.textMuted} />
+            <Ionicons name="close" size={22} color={C.textMuted} />
           </Pressable>
         </View>
 
@@ -358,7 +364,7 @@ function ExerciseDetailModal({
           </View>
         ) : !instructions ? (
           <View style={styles.exModalLoading}>
-            <Ionicons name="alert-circle-outline" size={36} color={COLORS.textMuted} />
+            <Ionicons name="alert-circle-outline" size={36} color={C.textMuted} />
             <Text style={styles.exModalLoadingText}>Could not load instructions</Text>
           </View>
         ) : (
@@ -403,7 +409,7 @@ function ExerciseDetailModal({
               <Text style={styles.exSectionLabel}>Common Mistakes</Text>
               {instructions.commonMistakes.map((m, i) => (
                 <View key={i} style={styles.mistakeRow}>
-                  <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
+                  <Ionicons name="close-circle-outline" size={16} color={C.error} />
                   <Text style={styles.mistakeText}>{m}</Text>
                 </View>
               ))}
@@ -414,7 +420,7 @@ function ExerciseDetailModal({
               <Text style={styles.exSectionLabel}>Modifications</Text>
               <View style={styles.modCard}>
                 <View style={styles.modRow}>
-                  <Ionicons name="arrow-down-circle-outline" size={16} color={COLORS.textMuted} />
+                  <Ionicons name="arrow-down-circle-outline" size={16} color={C.textMuted} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.modLabel}>Easier</Text>
                     <Text style={styles.modText}>{instructions.easier}</Text>
@@ -447,6 +453,8 @@ function ExerciseDetailModal({
 // ─── Nutrition Tab ────────────────────────────────────────────────────────────
 
 function NutritionTab({ gymId, memberId, theme }: TabProps) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -497,6 +505,8 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
 // ─── Food Diary Tab ───────────────────────────────────────────────────────────
 
 function DiaryTab({ gymId, memberId, theme }: TabProps) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [logs, setLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -541,7 +551,7 @@ function DiaryTab({ gymId, memberId, theme }: TabProps) {
         <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.xl }} />
       ) : logs.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="fast-food-outline" size={48} color={COLORS.textMuted} />
+          <Ionicons name="fast-food-outline" size={48} color={C.textMuted} />
           <Text style={styles.emptyText}>No meals logged yet</Text>
           <Text style={styles.emptySub}>Tap "Log Meal" to track what you eat</Text>
         </View>
@@ -584,6 +594,8 @@ function LogMealModal({
   onClose: () => void;
   onLogged: (log: FoodLog) => void;
 }) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [step, setStep] = useState<ModalStep>('photo');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<MealAnalysis | null>(null);
@@ -694,7 +706,7 @@ function LogMealModal({
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Log a Meal</Text>
           <Pressable onPress={handleClose} disabled={isLoading}>
-            <Ionicons name="close" size={24} color={COLORS.text} />
+            <Ionicons name="close" size={24} color={C.text} />
           </Pressable>
         </View>
 
@@ -704,13 +716,13 @@ function LogMealModal({
           {step === 'photo' && (
             <>
               <View style={[styles.photoPlaceholder, { borderColor: theme.primary + '60' }]}>
-                <Ionicons name="camera-outline" size={48} color={COLORS.textMuted} />
+                <Ionicons name="camera-outline" size={48} color={C.textMuted} />
                 <Text style={styles.photoPlaceholderText}>Take or choose a photo of your meal</Text>
               </View>
 
               {error && (
                 <View style={styles.errorBox}>
-                  <Ionicons name="warning-outline" size={15} color={COLORS.error} />
+                  <Ionicons name="warning-outline" size={15} color={C.error} />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               )}
@@ -729,8 +741,8 @@ function LogMealModal({
                 onPress={() => pickPhoto('gallery')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="images-outline" size={18} color={COLORS.text} />
-                <Text style={[styles.photoBtnText, { color: COLORS.text }]}>Choose from Gallery</Text>
+                <Ionicons name="images-outline" size={18} color={C.text} />
+                <Text style={[styles.photoBtnText, { color: C.text }]}>Choose from Gallery</Text>
               </TouchableOpacity>
             </>
           )}
@@ -777,7 +789,7 @@ function LogMealModal({
                 <TextInput
                   style={styles.textArea}
                   placeholder="e.g. Large portion, homemade…"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={C.textMuted}
                   value={note}
                   onChangeText={setNote}
                   multiline
@@ -798,7 +810,7 @@ function LogMealModal({
               </Pressable>
 
               <Pressable style={styles.retakeBtn} onPress={reset}>
-                <Ionicons name="camera-outline" size={15} color={COLORS.textMuted} />
+                <Ionicons name="camera-outline" size={15} color={C.textMuted} />
                 <Text style={styles.retakeBtnText}>Retake Photo</Text>
               </Pressable>
             </>
@@ -820,6 +832,8 @@ function SuggestionCard({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   theme: ReturnType<typeof useTheme>['theme'];
 }) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={styles.suggestionCard}>
       <View style={styles.suggestionCardHeader}>
@@ -832,6 +846,8 @@ function SuggestionCard({
 }
 
 function FoodLogRow({ log, theme }: { log: FoodLog; theme: ReturnType<typeof useTheme>['theme'] }) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const time = new Date(log.loggedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   return (
     <View style={styles.logRow}>
@@ -859,6 +875,8 @@ function MacroChip({
   unit?: string;
   theme: ReturnType<typeof useTheme>['theme'];
 }) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   return (
     <View style={[styles.macroChip, { backgroundColor: theme.primary + '12' }]}>
       <Text style={[styles.macroValue, { color: theme.primary }]}>
@@ -879,10 +897,10 @@ interface TabProps {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const makeStyles = (C: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.background,
   },
   header: {
     flexDirection: 'row',
@@ -899,9 +917,9 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: C.border,
   },
   tab: {
     flex: 1,
@@ -914,7 +932,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 13,
     ...FONT.medium,
-    color: COLORS.textMuted,
+    color: C.textMuted,
   },
   tabTextActive: {
     ...FONT.semibold,
@@ -927,13 +945,13 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   heroCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
     gap: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
   },
   iconCircle: {
     width: 64,
@@ -946,11 +964,11 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 18,
     ...FONT.bold,
-    color: COLORS.text,
+    color: C.text,
   },
   heroSub: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -972,11 +990,11 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   suggestionCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
   },
   suggestionCardHeader: {
     flexDirection: 'row',
@@ -992,7 +1010,7 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 14,
-    color: COLORS.text,
+    color: C.text,
     lineHeight: 22,
   },
   // Diary tab
@@ -1002,12 +1020,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: C.border,
   },
   diaryTitle: {
     fontSize: 16,
     ...FONT.semibold,
-    color: COLORS.text,
+    color: C.text,
   },
   logBtn: {
     flexDirection: 'row',
@@ -1032,22 +1050,22 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     ...FONT.semibold,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
   },
   emptySub: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: C.textMuted,
   },
   logRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: SPACING.sm,
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
   },
   logIcon: {
     width: 36,
@@ -1059,17 +1077,17 @@ const styles = StyleSheet.create({
   logDesc: {
     fontSize: 14,
     ...FONT.medium,
-    color: COLORS.text,
+    color: C.text,
     marginBottom: 3,
   },
   logMeta: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: C.textMuted,
   },
   // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1077,12 +1095,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: C.border,
   },
   modalTitle: {
     fontSize: 18,
     ...FONT.bold,
-    color: COLORS.text,
+    color: C.text,
   },
   modalBody: {
     flex: 1,
@@ -1091,17 +1109,17 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     ...FONT.semibold,
-    color: COLORS.text,
+    color: C.text,
     marginBottom: SPACING.sm,
   },
   textArea: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     padding: SPACING.md,
     fontSize: 14,
-    color: COLORS.text,
+    color: C.text,
     minHeight: 80,
     textAlignVertical: 'top',
     marginBottom: SPACING.md,
@@ -1155,12 +1173,12 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: 11,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     marginTop: 2,
   },
   analysisNotes: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     fontStyle: 'italic',
   },
   saveBtn: {
@@ -1191,7 +1209,7 @@ const styles = StyleSheet.create({
   },
   photoPlaceholderText: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     textAlign: 'center',
     ...FONT.regular,
   },
@@ -1199,16 +1217,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    backgroundColor: COLORS.errorBg,
+    backgroundColor: C.errorBg,
     borderWidth: 1,
-    borderColor: COLORS.error,
+    borderColor: C.error,
     borderRadius: RADIUS.sm,
     padding: SPACING.sm,
   },
   errorText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.error,
+    color: C.error,
     ...FONT.regular,
   },
   photoBtn: {
@@ -1220,9 +1238,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.button,
   },
   photoBtnSecondary: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
   },
   photoBtnText: {
     fontSize: 15,
@@ -1233,7 +1251,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 220,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.border,
+    backgroundColor: C.border,
   },
   loadingState: {
     alignItems: 'center',
@@ -1242,7 +1260,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
     marginTop: SPACING.sm,
   },
@@ -1254,13 +1272,13 @@ const styles = StyleSheet.create({
   },
   analysisDesc: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
     marginBottom: SPACING.sm,
   },
   macroUnit: {
     fontSize: 10,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
   },
   retakeBtn: {
@@ -1272,7 +1290,7 @@ const styles = StyleSheet.create({
   },
   retakeBtnText: {
     fontSize: 13,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
   },
   // Exercise card tap hint
@@ -1284,26 +1302,26 @@ const styles = StyleSheet.create({
   },
   cardTapHintText: {
     fontSize: 10,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
   },
   // Exercise detail modal
   exModalContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.background,
   },
   exModalHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: C.border,
     gap: SPACING.sm,
   },
   exModalTitle: {
     fontSize: 20,
     ...FONT.bold,
-    color: COLORS.text,
+    color: C.text,
   },
   exModalStats: {
     flexDirection: 'row',
@@ -1314,7 +1332,7 @@ const styles = StyleSheet.create({
   exModalStat: {
     fontSize: 13,
     ...FONT.medium,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
   },
   exModalClose: {
     padding: 4,
@@ -1328,7 +1346,7 @@ const styles = StyleSheet.create({
   },
   exModalLoadingText: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
   },
   exModalBody: {
@@ -1340,7 +1358,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 12,
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
   },
   exSection: {
     gap: SPACING.sm,
@@ -1348,7 +1366,7 @@ const styles = StyleSheet.create({
   exSectionLabel: {
     fontSize: 11,
     ...FONT.semibold,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -1388,7 +1406,7 @@ const styles = StyleSheet.create({
   stepText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.text,
+    color: C.text,
     ...FONT.regular,
     lineHeight: 22,
   },
@@ -1400,15 +1418,15 @@ const styles = StyleSheet.create({
   mistakeText: {
     flex: 1,
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
     lineHeight: 20,
   },
   modCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     padding: SPACING.md,
   },
   modRow: {
@@ -1419,37 +1437,37 @@ const styles = StyleSheet.create({
   modLabel: {
     fontSize: 11,
     ...FONT.semibold,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   modText: {
     fontSize: 13,
-    color: COLORS.text,
+    color: C.text,
     ...FONT.regular,
     lineHeight: 19,
   },
   tipCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     padding: SPACING.md,
     gap: SPACING.sm,
   },
   tipCardText: {
     flex: 1,
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
     lineHeight: 19,
   },
   planDate: {
     fontSize: 12,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
     textAlign: 'center',
     marginTop: -SPACING.xs,
@@ -1464,15 +1482,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderColor: C.border,
+    backgroundColor: C.surface,
     alignItems: 'center',
     gap: 3,
   },
   dayPillText: {
     fontSize: 13,
     ...FONT.semibold,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
   },
   dayPillTextActive: {
     color: '#000',
@@ -1484,13 +1502,13 @@ const styles = StyleSheet.create({
   },
   // Workout plan cards
   workoutEmpty: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
     alignItems: 'center',
     gap: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
   },
   planHeader: {
     borderRadius: RADIUS.lg,
@@ -1519,7 +1537,7 @@ const styles = StyleSheet.create({
   },
   planMetaText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
   },
   sectionBlock: {
@@ -1528,7 +1546,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     ...FONT.semibold,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     paddingHorizontal: 2,
@@ -1539,7 +1557,7 @@ const styles = StyleSheet.create({
   },
   exerciseCard: {
     width: 200,
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     padding: SPACING.md,
@@ -1548,7 +1566,7 @@ const styles = StyleSheet.create({
   exerciseName: {
     fontSize: 14,
     ...FONT.bold,
-    color: COLORS.text,
+    color: C.text,
     lineHeight: 20,
   },
   exerciseStats: {
@@ -1560,7 +1578,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: COLORS.border,
+    backgroundColor: C.border,
     borderRadius: RADIUS.full,
     paddingVertical: 3,
     paddingHorizontal: 8,
@@ -1571,7 +1589,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
   },
   tipRow: {
@@ -1583,7 +1601,7 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 11,
-    color: COLORS.textMuted,
+    color: C.textMuted,
     ...FONT.regular,
     lineHeight: 16,
   },

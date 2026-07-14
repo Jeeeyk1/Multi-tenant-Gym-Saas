@@ -148,6 +148,58 @@ export class EmailService {
     });
   }
 
+  async sendRenewalReminder(opts: {
+    to: string;
+    fullName: string;
+    gymName: string;
+    amount: string;
+    dueAt: string;
+  }) {
+    await this.send({
+      to: opts.to,
+      subject: `Upcoming renewal for ${opts.gymName}`,
+      html: template({
+        title: `Your subscription renews soon`,
+        preheader: `${opts.amount} due ${opts.dueAt} for ${opts.gymName}.`,
+        body: `
+          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">
+            Your <strong>${opts.gymName}</strong> subscription renews on <strong>${opts.dueAt}</strong>
+            for <strong>${opts.amount}</strong>. Pay before then to keep your gym running without
+            interruption.
+          </p>
+        `,
+        ctaLabel: 'Go to Billing',
+        ctaUrl: `${this.webUrl}/dashboard/billing`,
+        footer: `Already paid? Submit your reference number from the Billing page and we'll verify it shortly.`,
+      }),
+    });
+  }
+
+  async sendSubscriptionSuspended(opts: { to: string; fullName: string; gymName: string }) {
+    await this.send({
+      to: opts.to,
+      subject: `${opts.gymName} has been suspended — action needed`,
+      html: template({
+        title: `${opts.gymName} is suspended`,
+        preheader: `Your subscription payment is overdue — the gym is now locked.`,
+        body: `
+          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">
+            We didn't receive payment for <strong>${opts.gymName}</strong>'s renewal within the
+            grace period, so the gym has been suspended. Staff and members won't be able to use
+            the app until this is resolved.
+          </p>
+          <p style="margin:0 0 24px">
+            Submit your payment reference on the Billing page to reactivate immediately.
+          </p>
+        `,
+        ctaLabel: 'Go to Billing',
+        ctaUrl: `${this.webUrl}/dashboard/billing`,
+      }),
+    });
+  }
+
   private async send(opts: { to: string; subject: string; html: string }) {
     try {
       await this.resend.emails.send({

@@ -3,6 +3,8 @@ import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { PrSubmissionStatus } from '../../../../common/enums';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import { BadgesService } from '../../../badges/badges.service';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { leaderboardCacheKey } from '../leaderboard-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
@@ -10,6 +12,7 @@ export class ApproveSubmissionUseCase {
   constructor(
     private readonly repo: LeaderboardRepository,
     private readonly badges: BadgesService,
+    private readonly cache: CacheService,
   ) {}
 
   async execute(submissionId: string, gymId: string, caller: AuthenticatedUser) {
@@ -25,6 +28,9 @@ export class ApproveSubmissionUseCase {
     }
 
     const approved = await this.repo.approveSubmission(submissionId, caller.sub);
+
+    // An approval changes the best-1RM ranking — bust the cached board for this gym.
+    await this.cache.del(leaderboardCacheKey(gymId));
 
     // Fire-and-forget: check if this PR unlocks any exercise milestone badge
     void this.badges.checkMilestone(

@@ -118,6 +118,22 @@ export default function StaffLayout() {
         name="insights"
         options={{ href: null }}
       />
+      <Tabs.Screen
+        name="renewals"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="plans"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="badges"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }

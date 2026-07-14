@@ -47,6 +47,9 @@ INSERT INTO permissions (key, description, module) VALUES
   ('badges.award',          'Manually award badges to members',          'Badges'),
 
   -- AI insights assistant
-  ('insights.query',        'Ask the AI assistant about gym data',       'Insights')
+  ('insights.query',        'Ask the AI assistant about gym data',       'Insights'),
+
+  -- Billing / subscription (owner-only)
+  ('billing.manage',        'View and pay the gym subscription',         'Billing')
 
 ON CONFLICT (key) DO NOTHING;

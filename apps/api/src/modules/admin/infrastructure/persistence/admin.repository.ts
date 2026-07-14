@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
+import { BillingCycle, InvoiceStatus, SubscriptionStatus } from '../../../../common/enums';
+import {
+  addBillingPeriod,
+  generateInvoiceNumber,
+  FIRST_INVOICE_DUE_DAYS,
+} from '../../../billing/domain/billing.constants';
 
 function timeStringToDate(time: string): Date {
   const [h, m, s] = time.split(':').map(Number);
@@ -23,6 +29,8 @@ export interface CreateGymClientInput {
   gymCode: string;
   ownerEmail: string;
   ownerFullName: string;
+  planId: string;
+  billingCycle: BillingCycle;
 }
 
 @Injectable()
@@ -250,6 +258,41 @@ export class AdminRepository {
         data: { userId: user.id, token: inviteToken, type: 'INVITE', expiresAt },
       });
 
+      // Subscription starts PENDING_PAYMENT — the gym stays locked until the first
+      // invoice is verified as paid (pay-first model).
+      const plan = await tx.plan.findFirstOrThrow({
+        where: { id: input.planId },
+        select: { priceMonthly: true, priceYearly: true },
+      });
+      const now = new Date();
+      const periodEnd = addBillingPeriod(now, input.billingCycle);
+      const amount =
+        input.billingCycle === BillingCycle.YEARLY
+          ? (plan.priceYearly ?? plan.priceMonthly)
+          : plan.priceMonthly;
+
+      const subscription = await tx.subscription.create({
+        data: {
+          organizationId: org.id,
+          planId: input.planId,
+          status: SubscriptionStatus.PENDING_PAYMENT,
+          billingCycle: input.billingCycle,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+        },
+      });
+
+      await tx.invoice.create({
+        data: {
+          organizationId: org.id,
+          subscriptionId: subscription.id,
+          invoiceNumber: generateInvoiceNumber(),
+          status: InvoiceStatus.OPEN,
+          amount,
+          dueAt: new Date(now.getTime() + FIRST_INVOICE_DUE_DAYS * 24 * 60 * 60 * 1000),
+        },
+      });
+
       return { inviteToken, gymId: gym.id, orgId: org.id };
     });
 
@@ -266,6 +309,19 @@ export class AdminRepository {
 
   findUserByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  }
+
+  findPlanById(planId: string) {
+    return this.prisma.plan.findUnique({ where: { id: planId }, select: { id: true, isActive: true } });
+  }
+
+  /** Billing plans a gym's subscription can be provisioned onto (not the landing-page SaasPlan). */
+  listBillingPlans() {
+    return this.prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { priceMonthly: 'asc' },
+      select: { id: true, name: true, tier: true, priceMonthly: true, priceYearly: true },
+    });
   }
 
   listPlans() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SubscribeModal } from './SubscribeModal';
 
 interface SaasPlan {
   id: string;
@@ -58,6 +59,7 @@ function formatPhp(amount: number) {
 
 export function PricingSection({ plans }: { plans: SaasPlan[] }) {
   const [yearly, setYearly] = useState(false);
+  const [subscribingPlan, setSubscribingPlan] = useState<string | null>(null);
 
   const displayPlans = plans.length > 0 ? plans : FALLBACK_PLANS;
 
@@ -162,8 +164,8 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
                   ))}
                 </ul>
 
-                <a
-                  href="mailto:hello@lifthub.app"
+                <button
+                  onClick={() => setSubscribingPlan(plan.name)}
                   className={`w-full text-center py-3.5 rounded-xl text-sm font-semibold transition ${
                     plan.isPopular
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -171,7 +173,7 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
                   }`}
                 >
                   Get started — 14 days free
-                </a>
+                </button>
               </div>
             );
           })}
@@ -195,6 +197,10 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
           </a>
         </p>
       </div>
+
+      {subscribingPlan && (
+        <SubscribeModal plan={subscribingPlan} onClose={() => setSubscribingPlan(null)} />
+      )}
     </section>
   );
 }

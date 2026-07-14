@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const ARCHIVABLE_STATUSES = ['DRAFT', 'SCHEDULED', 'PUBLISHED'];
 
 @Injectable()
 export class ArchiveAnnouncementUseCase {
-  constructor(private readonly repo: AnnouncementsRepository) {}
+  constructor(
+    private readonly repo: AnnouncementsRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(gymId: string, announcementId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
@@ -25,7 +30,9 @@ export class ArchiveAnnouncementUseCase {
       );
     }
 
-    return this.repo.update(announcementId, { status: 'ARCHIVED' });
+    const archived = await this.repo.update(announcementId, { status: 'ARCHIVED' });
+    await this.cache.del(publishedAnnouncementsCacheKey(gymId));
+    return archived;
   }
 }
 

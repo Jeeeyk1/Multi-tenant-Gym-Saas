@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { authService, decodeJwt } from '../services/auth.service';
-import { getAccessToken, clearTokens, setUnauthorizedHandler } from '../services/api';
+import { getAccessToken, clearTokens, setUnauthorizedHandler, setSubscriptionInactiveHandler } from '../services/api';
 import { registerPushToken } from '../services/push.service';
 import type { AuthUser } from '../types';
 
@@ -16,6 +16,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isStaff: boolean;
+  subscriptionLocked: boolean;
   setGymInfo: (info: GymInfo) => void;
   signIn: (gymCode: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [gymInfo, setGymInfo] = useState<GymInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [subscriptionLocked, setSubscriptionLocked] = useState(false);
 
   function applyPayload(payload: Record<string, unknown>) {
     setUser({
@@ -49,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authService.logout();
     setUser(null);
     setGymInfo(null);
+    setSubscriptionLocked(false);
   }, []);
 
   // Keep a stable ref so the api module can call signOut without capturing a stale closure.
@@ -58,6 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setUnauthorizedHandler(() => {
       signOutRef.current();
+    });
+    setSubscriptionInactiveHandler(() => {
+      setSubscriptionLocked(true);
     });
   }, []);
 
@@ -103,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...payload,
       fullName: res.user.fullName,
     });
+    setSubscriptionLocked(false);
     // Register push token in the background — never block login
     const gymId = payload.gymId as string;
     registerPushToken(gymId).catch(() => {});
@@ -118,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: user !== null,
         isStaff,
+        subscriptionLocked,
         setGymInfo,
         signIn,
         signOut,

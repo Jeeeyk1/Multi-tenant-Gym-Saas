@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'badges.manage' },
   { label: 'AI Assistant', href: '/dashboard/insights', icon: '✦', permission: 'insights.query' },
   { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
+  { label: 'Billing', href: '/dashboard/billing', icon: '₱', permission: 'billing.manage' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙', permission: 'gym.settings' },
 ];
 

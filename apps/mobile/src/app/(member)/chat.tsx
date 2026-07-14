@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { useEquippedBadgesMap } from '../../hooks/members';
 import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
 import type { ChatMessage, EquippedBadgeDisplay } from '../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
@@ -37,6 +37,8 @@ function MessageBubble({
   senderBadge: EquippedBadgeDisplay | undefined;
 }) {
   const { theme } = useTheme();
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const isMine = msg.sender.id === currentUserId;
   const time = new Date(msg.sentAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -79,6 +81,8 @@ function MessageBubble({
 export default function ChatScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const equippedBadgesQ = useEquippedBadgesMap();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -299,7 +303,7 @@ export default function ChatScreen() {
         <TextInput
           style={styles.inputField}
           placeholder="Message the community…"
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={C.textMuted}
           value={input}
           onChangeText={setInput}
           multiline
@@ -319,28 +323,28 @@ export default function ChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (C: ColorPalette) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.background },
   centered: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: SPACING.lg,
   },
-  errorText: { color: COLORS.error, fontSize: 14, textAlign: 'center' },
+  errorText: { color: C.error, fontSize: 14, textAlign: 'center' },
   header: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xl,
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderBottomColor: C.border,
+    backgroundColor: C.surface,
   },
-  headerTitle: { fontSize: 18, ...FONT.semibold, color: COLORS.text },
+  headerTitle: { fontSize: 18, ...FONT.semibold, color: C.text },
   headerStatus: { fontSize: 11, marginTop: 2, ...FONT.regular },
-  online: { color: COLORS.success },
-  offline: { color: COLORS.textMuted },
+  online: { color: C.success },
+  offline: { color: C.textMuted },
   messageList: { padding: SPACING.md, gap: SPACING.sm, flexGrow: 1 },
   emptyChat: {
     flex: 1,
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xxl,
   },
   emptyChatText: {
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -364,47 +368,47 @@ const styles = StyleSheet.create({
   },
   senderName: {
     fontSize: 11,
-    color: COLORS.textMuted,
+    color: C.textMuted,
   },
   bubble: {
     maxWidth: '78%',
     borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: COLORS.card,
+    backgroundColor: C.card,
   },
-  bubbleMine: { backgroundColor: COLORS.primary },
-  bubbleTheirs: { backgroundColor: COLORS.card },
-  messageText: { fontSize: 14, color: COLORS.text, lineHeight: 20 },
+  bubbleMine: { backgroundColor: C.primary },
+  bubbleTheirs: { backgroundColor: C.card },
+  messageText: { fontSize: 14, color: C.text, lineHeight: 20 },
   messageTextMine: { color: '#000' },
-  timeText: { fontSize: 10, color: COLORS.textMuted, marginTop: 4, textAlign: 'right' },
+  timeText: { fontSize: 10, color: C.textMuted, marginTop: 4, textAlign: 'right' },
   timeTextMine: { color: 'rgba(255,255,255,0.6)' },
-  deletedText: { fontSize: 13, color: COLORS.textMuted, fontStyle: 'italic' },
+  deletedText: { fontSize: 13, color: C.textMuted, fontStyle: 'italic' },
   replyBanner: {
     borderLeftWidth: 2,
-    borderLeftColor: COLORS.primaryLight,
+    borderLeftColor: C.primaryLight,
     paddingLeft: SPACING.sm,
     marginBottom: SPACING.xs,
   },
-  replyText: { fontSize: 11, color: COLORS.textSecondary },
+  replyText: { fontSize: 11, color: C.textSecondary },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: SPACING.sm,
     gap: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    backgroundColor: COLORS.surface,
+    borderTopColor: C.border,
+    backgroundColor: C.surface,
   },
   inputField: {
     flex: 1,
-    backgroundColor: COLORS.card,
+    backgroundColor: C.card,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: Platform.OS === 'ios' ? 10 : 8,
-    color: COLORS.text,
+    color: C.text,
     fontSize: 14,
     maxHeight: 100,
   },
@@ -412,18 +416,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
   sendIcon: { fontSize: 18, color: '#000', ...FONT.bold },
   inlineError: {
-    backgroundColor: COLORS.errorBg,
+    backgroundColor: C.errorBg,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderTopWidth: 1,
-    borderTopColor: COLORS.error,
+    borderTopColor: C.error,
   },
-  inlineErrorText: { color: COLORS.error, fontSize: 12, textAlign: 'center' },
+  inlineErrorText: { color: C.error, fontSize: 12, textAlign: 'center' },
 });

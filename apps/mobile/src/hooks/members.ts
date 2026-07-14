@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { STALE } from '../lib/query-client';
 import { memberService } from '../services/member.service';
 import type {
   CheckIn,
@@ -57,6 +58,7 @@ export function useMyProfile() {
       }
     },
     enabled: Boolean(gymId),
+    staleTime: STALE.static,
   });
 }
 
@@ -159,7 +161,8 @@ export function useActivePublicCheckins() {
     queryKey: memberKeys.activePublicCheckins(gymId),
     queryFn: () => memberService.getActivePublicCheckins(gymId!),
     enabled: Boolean(gymId),
-    staleTime: 30_000,
+    staleTime: STALE.live,
+    refetchOnWindowFocus: true,
   });
 }
 

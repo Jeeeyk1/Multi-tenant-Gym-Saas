@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { BillingCycle } from '../../../../common/enums';
 
 export class CreateGymClientDto {
   @IsString()
@@ -18,4 +19,11 @@ export class CreateGymClientDto {
   @MinLength(2)
   @MaxLength(100)
   declare ownerFullName: string;
+
+  @IsUUID()
+  declare planId: string;
+
+  @IsOptional()
+  @IsEnum(BillingCycle)
+  billingCycle?: BillingCycle;
 }

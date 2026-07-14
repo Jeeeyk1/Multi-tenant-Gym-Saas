@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError } from '../../../../common/errors';
 import { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { plansCacheKey } from '../plans-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface CreatePlanInput {
@@ -13,12 +15,17 @@ export interface CreatePlanInput {
 
 @Injectable()
 export class CreatePlanUseCase {
-  constructor(private readonly repo: MembershipPlansRepository) {}
+  constructor(
+    private readonly repo: MembershipPlansRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(gymId: string, input: CreatePlanInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
     assertPermission(caller, 'gym.settings');
-    return this.repo.create({ gymId, ...input });
+    const plan = await this.repo.create({ gymId, ...input });
+    await this.cache.del(plansCacheKey(gymId));
+    return plan;
   }
 }
 

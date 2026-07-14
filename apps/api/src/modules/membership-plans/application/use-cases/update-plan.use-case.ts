@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { plansCacheKey } from '../plans-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface UpdatePlanInput {
@@ -14,7 +16,10 @@ export interface UpdatePlanInput {
 
 @Injectable()
 export class UpdatePlanUseCase {
-  constructor(private readonly repo: MembershipPlansRepository) {}
+  constructor(
+    private readonly repo: MembershipPlansRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(
     gymId: string,
@@ -30,7 +35,9 @@ export class UpdatePlanUseCase {
       throw new NotFoundError('Membership plan not found', 'PLAN_NOT_FOUND');
     }
 
-    return this.repo.update(planId, input);
+    const updated = await this.repo.update(planId, input);
+    await this.cache.del(plansCacheKey(gymId));
+    return updated;
   }
 }
 

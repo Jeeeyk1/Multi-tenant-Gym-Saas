@@ -1,18 +1,22 @@
 import { ResolveCodeUseCase } from './resolve-code.use-case';
 import { NotFoundError } from '../../../../common/errors';
 import type { IdentityRepository } from '../../infrastructure/persistence/identity.repository';
+import type { CacheService } from '../../../../common/cache/cache.service';
 
 const mockRepo = {
   findOrgBySlug: jest.fn(),
   findGymByCode: jest.fn(),
 } as unknown as IdentityRepository;
 
+// Pass-through cache: wrap always computes (behaves like a permanent miss).
+const mockCache = { wrap: jest.fn((_k, _t, fn) => fn()) } as unknown as CacheService;
+
 describe('ResolveCodeUseCase', () => {
   let useCase: ResolveCodeUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new ResolveCodeUseCase(mockRepo);
+    useCase = new ResolveCodeUseCase(mockRepo, mockCache);
   });
 
   it('returns ORGANIZATION when org slug matches', async () => {

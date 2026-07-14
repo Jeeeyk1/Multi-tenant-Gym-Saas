@@ -39,6 +39,6 @@ import { MembersController } from './presentation/controllers/members.controller
     UpdateMyPrivacyUseCase,
     RemoveMemberUseCase,
   ],
-  exports: [MembersRepository],
+  exports: [MembersRepository, RegisterMemberUseCase, SuspendMemberUseCase, ReactivateMemberUseCase],
 })
 export class MembersModule {}

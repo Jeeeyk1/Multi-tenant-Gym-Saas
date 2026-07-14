@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLogWorkoutSession } from '../../hooks/workouts';
 import { healthKitService } from '../../services/healthkit.service';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
 import type { WorkoutType } from '../../types';
 
 const WORKOUT_TYPES: { type: WorkoutType; icon: string; color: string }[] = [
@@ -51,6 +51,8 @@ export default function WorkoutScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { activeSession, showIdlePrompt, startSession, endSession, confirmStillWorking } = useWorkout();
 
   const [stage, setStage] = useState<Stage>(activeSession ? 'active' : 'select');
@@ -129,7 +131,7 @@ export default function WorkoutScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+            <Ionicons name="chevron-back" size={24} color={C.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Start Workout</Text>
           <View style={styles.headerSpacer} />
@@ -150,7 +152,7 @@ export default function WorkoutScreen() {
                   <Text style={styles.typeEmoji}>{icon}</Text>
                 </View>
                 <Text style={styles.typeLabel}>{type}</Text>
-                <Ionicons name="chevron-forward" size={14} color={COLORS.textMuted} />
+                <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
               </Pressable>
             ))}
           </View>
@@ -224,7 +226,7 @@ export default function WorkoutScreen() {
             style={({ pressed }) => [styles.stopBtn, pressed && { opacity: 0.8 }]}
             onPress={handleStop}
           >
-            <Ionicons name="stop-circle" size={22} color={COLORS.error} />
+            <Ionicons name="stop-circle" size={22} color={C.error} />
             <Text style={styles.stopBtnText}>End Workout</Text>
           </Pressable>
         </View>
@@ -346,7 +348,7 @@ export default function WorkoutScreen() {
             style={({ pressed }) => [styles.ghostBtn, { opacity: pressed ? 0.7 : 1 }]}
             onPress={() => router.back()}
           >
-            <Text style={[styles.ghostBtnText, { color: COLORS.textMuted }]}>Back to Dashboard</Text>
+            <Text style={[styles.ghostBtnText, { color: C.textMuted }]}>Back to Dashboard</Text>
           </Pressable>
         </ScrollView>
       </View>
@@ -356,8 +358,8 @@ export default function WorkoutScreen() {
   return null;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (C: ColorPalette) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.background },
 
   header: {
     flexDirection: 'row',
@@ -367,21 +369,21 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: SPACING.md,
   },
-  headerTitle: { fontSize: 17, color: COLORS.text, ...FONT.semibold },
+  headerTitle: { fontSize: 17, color: C.text, ...FONT.semibold },
   headerSpacer: { width: 40 },
   backBtn: { width: 40, alignItems: 'flex-start' },
 
   // SELECT
   selectContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: SPACING.sm },
-  selectHeading: { fontSize: 24, color: COLORS.text, ...FONT.bold, marginBottom: SPACING.xs },
-  selectSub: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular, marginBottom: SPACING.xl },
+  selectHeading: { fontSize: 24, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
+  selectSub: { fontSize: 14, color: C.textSecondary, ...FONT.regular, marginBottom: SPACING.xl },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   typeCard: {
     width: '47.5%',
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     padding: SPACING.md,
     gap: SPACING.sm,
   },
@@ -394,7 +396,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   typeEmoji: { fontSize: 26 },
-  typeLabel: { fontSize: 15, color: COLORS.text, ...FONT.semibold },
+  typeLabel: { fontSize: 15, color: C.text, ...FONT.semibold },
 
   // ACTIVE
   activeWrapper: { flex: 1, alignItems: 'center' },
@@ -402,16 +404,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.xs,
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     paddingHorizontal: SPACING.md,
     paddingVertical: 8,
     marginBottom: SPACING.xxl,
   },
   typeBadgeEmoji: { fontSize: 18 },
-  typeBadgeLabel: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium },
+  typeBadgeLabel: { fontSize: 14, color: C.textSecondary, ...FONT.medium },
   timerRing: {
     width: 220,
     height: 220,
@@ -424,24 +426,24 @@ const styles = StyleSheet.create({
     width: 196,
     height: 196,
     borderRadius: 98,
-    backgroundColor: COLORS.background,
+    backgroundColor: C.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timerText: { fontSize: 44, color: COLORS.text, ...FONT.display, letterSpacing: -1 },
-  timerLabel: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginTop: 4 },
-  startedAt: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginBottom: SPACING.xxl },
+  timerText: { fontSize: 44, color: C.text, ...FONT.display, letterSpacing: -1 },
+  timerLabel: { fontSize: 13, color: C.textMuted, ...FONT.regular, marginTop: 4 },
+  startedAt: { fontSize: 13, color: C.textMuted, ...FONT.regular, marginBottom: SPACING.xxl },
   stopBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
     borderWidth: 1.5,
-    borderColor: COLORS.error + '60',
+    borderColor: C.error + '60',
     borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: SPACING.xl,
   },
-  stopBtnText: { fontSize: 15, color: COLORS.error, ...FONT.semibold },
+  stopBtnText: { fontSize: 15, color: C.error, ...FONT.semibold },
 
   // MODAL
   modalOverlay: {
@@ -452,19 +454,19 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   modalCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     padding: SPACING.xl,
     width: '100%',
     alignItems: 'center',
   },
   modalEmoji: { fontSize: 40, marginBottom: SPACING.sm },
-  modalTitle: { fontSize: 20, color: COLORS.text, ...FONT.bold, marginBottom: SPACING.xs },
+  modalTitle: { fontSize: 20, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
   modalBody: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: C.textSecondary,
     ...FONT.regular,
     textAlign: 'center',
     marginBottom: SPACING.xl,
@@ -479,7 +481,7 @@ const styles = StyleSheet.create({
   },
   modalPrimaryBtnText: { fontSize: 15, color: '#000', ...FONT.bold },
   modalGhostBtn: { paddingVertical: 12 },
-  modalGhostBtnText: { fontSize: 14, color: COLORS.textMuted, ...FONT.medium },
+  modalGhostBtnText: { fontSize: 14, color: C.textMuted, ...FONT.medium },
 
   // SUMMARY
   summaryContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: 60 },
@@ -492,13 +494,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  doneTitle: { fontSize: 26, color: COLORS.text, ...FONT.bold, marginBottom: SPACING.xs },
-  doneSub: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular },
+  doneTitle: { fontSize: 26, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
+  doneSub: { fontSize: 14, color: C.textSecondary, ...FONT.regular },
   summaryCard: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: C.surface,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: C.border,
     marginBottom: SPACING.xl,
     overflow: 'hidden',
   },
@@ -509,17 +511,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: 16,
   },
-  summaryRowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  summaryRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
   summaryRowLast: { borderBottomWidth: 0 },
   summaryLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  summaryLabel: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular },
-  summaryValue: { fontSize: 14, color: COLORS.text, ...FONT.semibold },
+  summaryLabel: { fontSize: 14, color: C.textSecondary, ...FONT.regular },
+  summaryValue: { fontSize: 14, color: C.text, ...FONT.semibold },
   summaryEmoji: { fontSize: 16 },
   hkBadge: {
     fontSize: 10,
-    color: COLORS.error,
+    color: C.error,
     ...FONT.semibold,
-    backgroundColor: COLORS.error + '18',
+    backgroundColor: C.error + '18',
     borderRadius: 4,
     paddingHorizontal: 4,
     paddingVertical: 1,
@@ -532,5 +534,5 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { fontSize: 15, color: '#000', ...FONT.bold },
   ghostBtn: { paddingVertical: 12, alignItems: 'center' },
-  ghostBtnText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium },
+  ghostBtnText: { fontSize: 14, color: C.textSecondary, ...FONT.medium },
 });

@@ -1,16 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError } from '../../../../common/errors';
 import { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
+import { CacheService } from '../../../../common/cache/cache.service';
+import { PLANS_TTL_SECONDS, plansCacheKey } from '../plans-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
 export class ListPlansUseCase {
-  constructor(private readonly repo: MembershipPlansRepository) {}
+  constructor(
+    private readonly repo: MembershipPlansRepository,
+    private readonly cache: CacheService,
+  ) {}
 
   async execute(gymId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
     assertPermission(caller, 'members.view');
-    return this.repo.listByGym(gymId);
+    return this.cache.wrap(plansCacheKey(gymId), PLANS_TTL_SECONDS, () => this.repo.listByGym(gymId));
   }
 }
 

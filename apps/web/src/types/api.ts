@@ -295,3 +295,30 @@ export interface InsightsResult {
   answer: string;
   toolsUsed: string[];
 }
+
+export interface GymSubscription {
+  id: string;
+  status: 'PENDING_PAYMENT' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED';
+  billingCycle: 'MONTHLY' | 'YEARLY';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  plan: { id: string; name: string; tier: string; priceMonthly: number; priceYearly: number | null };
+}
+
+export interface GymInvoice {
+  id: string;
+  invoiceNumber: string;
+  status: 'OPEN' | 'AWAITING_VERIFICATION' | 'PAID' | 'REJECTED' | 'VOID';
+  amount: number;
+  currency: string;
+  dueAt: string | null;
+  paymentReference: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+export interface MySubscriptionResponse {
+  subscription: GymSubscription;
+  invoice: GymInvoice | null;
+  paymentInstructions: { gcash: string | null; bank: string | null; note: string };
+}

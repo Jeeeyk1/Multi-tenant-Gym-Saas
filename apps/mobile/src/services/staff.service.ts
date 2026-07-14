@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { StaffCheckIn, MembersPage, MemberDetail, RenewalRecord, StaffAnnouncement } from '../types';
+import type { StaffCheckIn, MembersPage, MemberDetail, RenewalRecord, GymRenewal, StaffAnnouncement, MembershipPlan } from '../types';
 
 export const staffService = {
   getActiveCheckIns: (gymId: string) =>
@@ -40,6 +40,12 @@ export const staffService = {
 
   listRenewals: (gymId: string, memberId: string) =>
     api.get<RenewalRecord[]>(`/gyms/${gymId}/members/${memberId}/renewals`),
+
+  listGymRenewals: (gymId: string) =>
+    api.get<GymRenewal[]>(`/gyms/${gymId}/renewals?limit=100`),
+
+  listPlans: (gymId: string) =>
+    api.get<MembershipPlan[]>(`/gyms/${gymId}/plans`),
 
   listAnnouncements: (gymId: string, status?: string) =>
     api.get<StaffAnnouncement[]>(

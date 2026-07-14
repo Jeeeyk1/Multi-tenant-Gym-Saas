@@ -1,13 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
+import { ForbiddenError, TooManyRequestsError } from '../../../../common/errors';
 import { LLM_PORT, type LlmPort } from '../ports/llm.port';
 import { ToolRegistry } from '../tools/tool-registry';
 import { EntitlementsService } from '../entitlements.service';
+import { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter.service';
 import { InsightsRepository } from '../../infrastructure/persistence/insights.repository';
 import type { LlmContent, LlmMessage } from '../../domain/llm.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const MAX_STEPS = 5;
+const RATE_LIMIT = 15;
+const RATE_WINDOW_SECONDS = 60;
 
 export interface InsightsQueryInput {
   message: string;
@@ -25,6 +28,7 @@ export class AnswerQueryUseCase {
     @Inject(LLM_PORT) private readonly llm: LlmPort,
     private readonly tools: ToolRegistry,
     private readonly entitlements: EntitlementsService,
+    private readonly rateLimiter: RateLimiterService,
     private readonly repo: InsightsRepository,
   ) {}
 
@@ -35,6 +39,11 @@ export class AnswerQueryUseCase {
   ): Promise<InsightsQueryResult> {
     assertGymAccess(caller, gymId);
     assertPermission(caller, 'insights.query');
+
+    const allowed = await this.rateLimiter.hit(`insights:rate:${caller.sub}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
+    if (!allowed) {
+      throw new TooManyRequestsError('Too many requests. Please wait a moment and try again.', 'RATE_LIMITED');
+    }
 
     const entitlement = await this.entitlements.check(gymId);
 
@@ -67,7 +76,7 @@ export class AnswerQueryUseCase {
       }
 
       toolsUsed.push(...calls.map((call) => call.name));
-      const results = await Promise.all(calls.map((call) => this.tools.execute(call, gymId)));
+      const results = await Promise.all(calls.map((call) => this.tools.execute(call, { gymId, caller })));
       messages.push({ role: 'user', content: results });
     }
 

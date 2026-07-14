@@ -9,12 +9,16 @@ import { CreateGymClientUseCase } from './application/use-cases/create-gym-clien
 import { UpdateGymStatusUseCase } from './application/use-cases/update-gym-status.use-case';
 import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
 import { ListPlansUseCase } from './application/use-cases/list-plans.use-case';
+import { ListBillingPlansUseCase } from './application/use-cases/list-billing-plans.use-case';
 import { CreatePlanUseCase } from './application/use-cases/create-plan.use-case';
 import { UpdatePlanUseCase } from './application/use-cases/update-plan.use-case';
 import { DeletePlanUseCase } from './application/use-cases/delete-plan.use-case';
 import { ResendInviteUseCase } from './application/use-cases/resend-invite.use-case';
+import { BillingModule } from '../billing/billing.module';
+import { LeadsModule } from '../leads/leads.module';
 
 @Module({
+  imports: [BillingModule, LeadsModule],
   controllers: [AdminController],
   providers: [
     AdminRepository,
@@ -26,6 +30,7 @@ import { ResendInviteUseCase } from './application/use-cases/resend-invite.use-c
     UpdateGymStatusUseCase,
     ListUsersUseCase,
     ListPlansUseCase,
+    ListBillingPlansUseCase,
     CreatePlanUseCase,
     UpdatePlanUseCase,
     DeletePlanUseCase,

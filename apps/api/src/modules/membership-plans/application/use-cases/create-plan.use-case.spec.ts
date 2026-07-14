@@ -1,10 +1,13 @@
 import { CreatePlanUseCase } from './create-plan.use-case';
 import type { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
+import type { CacheService } from '../../../../common/cache/cache.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 const mockRepo = {
   create: jest.fn(),
 } as unknown as jest.Mocked<MembershipPlansRepository>;
+
+const mockCache = { del: jest.fn() } as unknown as CacheService;
 
 const orgCaller: AuthenticatedUser = {
   type: 'org',
@@ -33,7 +36,7 @@ describe('CreatePlanUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new CreatePlanUseCase(mockRepo);
+    useCase = new CreatePlanUseCase(mockRepo, mockCache);
     mockRepo.create.mockResolvedValue({ id: 'plan-1', ...input, isActive: true } as any);
   });
 

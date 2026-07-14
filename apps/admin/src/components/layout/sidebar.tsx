@@ -27,6 +27,34 @@ const NAV = [
     ),
   },
   {
+    href: '/dashboard/leads',
+    label: 'Leads',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7z" />
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/payments',
+    label: 'Payments',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/invoices',
+    label: 'Invoices',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <path d="M14 2v6h6" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="15" y2="17" />
+      </svg>
+    ),
+  },
+  {
     href: '/dashboard/users',
     label: 'Users',
     icon: (

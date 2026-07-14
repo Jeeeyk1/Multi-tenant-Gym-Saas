@@ -223,7 +223,7 @@ export class InsightsRepository {
       orderBy: { currentPeriodEnd: 'desc' },
       select: {
         id: true,
-        aiTokensUsed: true,
+        currentPeriodStart: true,
         plan: {
           select: {
             aiTokenQuotaMonthly: true,
@@ -234,20 +234,23 @@ export class InsightsRepository {
     });
     if (!subscription) return null;
 
+    // Usage is derived from the immutable usage log for the current billing period,
+    // so it resets automatically each period without a reset job.
+    const usage = await this.prisma.aiUsageLog.aggregate({
+      _sum: { tokensUsed: true },
+      where: { organizationId: gym.organizationId, usedAt: { gte: subscription.currentPeriodStart } },
+    });
+
     return {
       subscriptionId: subscription.id,
       organizationId: gym.organizationId,
       aiIncluded: subscription.plan.features[0]?.isIncluded ?? false,
       quota: subscription.plan.aiTokenQuotaMonthly,
-      used: subscription.aiTokensUsed,
+      used: usage._sum.tokensUsed ?? 0,
     };
   }
 
   async recordUsage(entitlement: Entitlement, gymId: string, userId: string, tokens: number): Promise<void> {
-    await this.prisma.subscription.update({
-      where: { id: entitlement.subscriptionId },
-      data: { aiTokensUsed: { increment: tokens } },
-    });
     await this.prisma.aiUsageLog.create({
       data: { organizationId: entitlement.organizationId, gymId, userId, featureKey: USAGE_FEATURE_KEY, tokensUsed: tokens },
     });

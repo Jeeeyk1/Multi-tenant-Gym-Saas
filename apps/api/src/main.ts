@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -20,6 +21,9 @@ async function bootstrap(): Promise<void> {
   await redisAdapter.connectToRedis();
   app.useWebSocketAdapter(redisAdapter);
 
+  // gzip responses — trades a little CPU for much less bandwidth + faster mobile parse.
+  app.use(compression());
+
   app.setGlobalPrefix(prefix);
 
   app.useGlobalPipes(
@@ -34,6 +38,10 @@ async function bootstrap(): Promise<void> {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.enableCors();
+
+  // Drain in-flight requests and disconnect Prisma/Redis cleanly on SIGTERM/SIGINT
+  // (deploys, restarts) instead of dropping connections.
+  app.enableShutdownHooks();
 
   await app.listen(port, '0.0.0.0');
   logger.log(`API listening on http://0.0.0.0:${port}/${prefix}`);

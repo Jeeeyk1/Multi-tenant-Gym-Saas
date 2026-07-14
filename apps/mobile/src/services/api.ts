@@ -33,6 +33,12 @@ export function setUnauthorizedHandler(handler: () => void) {
   unauthorizedHandler = handler;
 }
 
+// Registered by AuthContext so a locked gym (402 SUBSCRIPTION_INACTIVE) blocks the app.
+let subscriptionInactiveHandler: (() => void) | null = null;
+export function setSubscriptionInactiveHandler(handler: () => void) {
+  subscriptionInactiveHandler = handler;
+}
+
 // Inline refresh to avoid circular dependency with auth.service.ts.
 // Returns true if new tokens were stored, false otherwise.
 let isRefreshing = false;
@@ -98,6 +104,10 @@ async function request<T>(
     const err = new Error('Session expired. Please log in again.') as Error & { statusCode?: number };
     err.statusCode = 401;
     throw err;
+  }
+
+  if (response.status === 402) {
+    subscriptionInactiveHandler?.();
   }
 
   if (!response.ok) {

@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InsightsRepository } from '../../infrastructure/persistence/insights.repository';
+import { MembershipPlansRepository } from '../../../membership-plans/infrastructure/persistence/membership-plans.repository';
+import { RegisterMemberUseCase } from '../../../members/application/use-cases/register-member.use-case';
+import { SuspendMemberUseCase } from '../../../members/application/use-cases/suspend-member.use-case';
+import { ReactivateMemberUseCase } from '../../../members/application/use-cases/reactivate-member.use-case';
+import { RenewMembershipUseCase } from '../../../renewals/application/use-cases/renew-membership.use-case';
 import type { LlmContent, LlmToolSchema } from '../../domain/llm.types';
+import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { METRIC_ENTITIES, validateMetricQuery } from './metric.whitelist';
 import { validateTrendQuery } from './trend.whitelist';
 
@@ -10,11 +16,145 @@ interface ToolCall {
   input: Record<string, unknown>;
 }
 
+export interface ToolContext {
+  gymId: string;
+  caller: AuthenticatedUser;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 @Injectable()
 export class ToolRegistry {
-  constructor(private readonly repo: InsightsRepository) {}
+  constructor(
+    private readonly repo: InsightsRepository,
+    private readonly plansRepo: MembershipPlansRepository,
+    private readonly registerMember: RegisterMemberUseCase,
+    private readonly renewMembership: RenewMembershipUseCase,
+    private readonly suspendMember: SuspendMemberUseCase,
+    private readonly reactivateMember: ReactivateMemberUseCase,
+  ) {}
 
   schemas(): LlmToolSchema[] {
+    return [...this.readTools(), ...this.actionTools()];
+  }
+
+  systemPrompt(): string {
+    const lines = Object.entries(METRIC_ENTITIES).map(([entity, config]) => {
+      const numeric = Object.keys(config.numericFields);
+      const dimensions = Object.keys(config.dimensions);
+      const parts = [`group/filter by: ${dimensions.length ? dimensions.join(', ') : 'none'}`];
+      if (numeric.length) parts.push(`sum/avg fields: ${numeric.join(', ')}`);
+      return `- ${entity} (${config.label}): ${parts.join('; ')}`;
+    });
+
+    return [
+      'You are an assistant for a gym manager. Answer questions and perform actions using the provided tools.',
+      'Only report data returned by the tools. Never invent numbers. If a question is outside the available data, say so.',
+      'Keep answers short and direct. Format currency and dates for a human reader.',
+      '',
+      'query_metric covers these entities:',
+      ...lines,
+      '',
+      'Date ranges accept: { "preset": "today" | "this_week" | "this_month" }, { "last_n_days": N }, or { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }.',
+      'get_trend returns one row per period (zero-filled). Check-in methods: MANUAL_STAFF, QR_STAFF_SCAN, QR_SELF_SCAN, APP_SELF_CHECKIN.',
+      '',
+      'Actions you can take: register_member (invite by email), renew_membership, suspend_member, reactivate_member.',
+      'Resolve a member with find_member first (to get member_id). Use list_membership_plans to get a plan_id.',
+      '',
+      'CONFIRMATION RULE — this is mandatory for any action that changes data or sends an email',
+      '(register_member, renew_membership, suspend_member, reactivate_member):',
+      '1. Gather every required detail.',
+      '2. Summarize exactly what you are about to do and ask the user to confirm.',
+      '3. Call the tool ONLY after the user explicitly confirms (e.g. "yes", "go ahead").',
+      'Never call an action tool in the same turn you first propose it. If unconfirmed, ask — do not act.',
+    ].join('\n');
+  }
+
+  async execute(call: ToolCall, ctx: ToolContext): Promise<LlmContent> {
+    try {
+      const result = await this.dispatch(call, ctx);
+      return { type: 'tool_result', toolUseId: call.id, content: JSON.stringify(result) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Tool execution failed';
+      return { type: 'tool_result', toolUseId: call.id, content: message, isError: true };
+    }
+  }
+
+  private async dispatch(call: ToolCall, ctx: ToolContext): Promise<unknown> {
+    const { gymId, caller } = ctx;
+    const input = call.input;
+
+    switch (call.name) {
+      case 'find_member':
+        return this.repo.findMembers(gymId, requireString(input.name, 'name'));
+      case 'get_member_checkin_status':
+        return this.repo.getMemberCheckinStatus(
+          gymId,
+          requireString(input.member_id, 'member_id'),
+          optionalString(input.date),
+        );
+      case 'query_metric':
+        return this.repo.runMetric(gymId, validateMetricQuery(input));
+      case 'get_trend':
+        return this.repo.runTrend(gymId, validateTrendQuery(input));
+
+      case 'list_membership_plans': {
+        const plans = await this.plansRepo.listByGym(gymId);
+        return plans
+          .filter((plan) => plan.isActive)
+          .map((plan) => ({ id: plan.id, name: plan.name, price: Number(plan.price), durationDays: plan.durationDays }));
+      }
+
+      case 'register_member': {
+        const email = requireString(input.email, 'email');
+        if (!EMAIL_RE.test(email)) throw new Error('A valid email address is required');
+        const fullName = requireString(input.full_name, 'full_name');
+        const planId = optionalString(input.plan_id);
+        const expiryDate = optionalString(input.expiry_date);
+        if (!planId && !expiryDate) throw new Error('Either plan_id or expiry_date is required');
+        await this.registerMember.execute(
+          gymId,
+          { email, fullName, phone: optionalString(input.phone), planId, expiryDate },
+          caller,
+        );
+        return { ok: true, invitedEmail: email, fullName };
+      }
+
+      case 'renew_membership': {
+        const memberId = requireString(input.member_id, 'member_id');
+        const amountPaid = requireNumber(input.amount_paid, 'amount_paid');
+        await this.renewMembership.execute(
+          gymId,
+          memberId,
+          {
+            planId: optionalString(input.plan_id),
+            amountPaid,
+            paymentMethod: optionalString(input.payment_method),
+            notes: optionalString(input.notes),
+          },
+          caller,
+        );
+        return { ok: true, memberId };
+      }
+
+      case 'suspend_member': {
+        const memberId = requireString(input.member_id, 'member_id');
+        await this.suspendMember.execute(gymId, memberId, caller);
+        return { ok: true, memberId, status: 'SUSPENDED' };
+      }
+
+      case 'reactivate_member': {
+        const memberId = requireString(input.member_id, 'member_id');
+        await this.reactivateMember.execute(gymId, memberId, caller);
+        return { ok: true, memberId, status: 'ACTIVE' };
+      }
+
+      default:
+        throw new Error(`Unknown tool "${call.name}"`);
+    }
+  }
+
+  private readTools(): LlmToolSchema[] {
     return [
       {
         name: 'find_member',
@@ -56,59 +196,65 @@ export class ToolRegistry {
           required: ['entity', 'granularity'],
         },
       },
+      {
+        name: 'list_membership_plans',
+        description: 'List the gym\'s active membership plans with their id, price and duration. Use to pick a plan_id before inviting or renewing a member.',
+        inputSchema: { type: 'object', properties: {} },
+      },
     ];
   }
 
-  systemPrompt(): string {
-    const lines = Object.entries(METRIC_ENTITIES).map(([entity, config]) => {
-      const numeric = Object.keys(config.numericFields);
-      const dimensions = Object.keys(config.dimensions);
-      const parts = [`group/filter by: ${dimensions.length ? dimensions.join(', ') : 'none'}`];
-      if (numeric.length) parts.push(`sum/avg fields: ${numeric.join(', ')}`);
-      return `- ${entity} (${config.label}): ${parts.join('; ')}`;
-    });
-
+  private actionTools(): LlmToolSchema[] {
     return [
-      'You are an analytics assistant for a gym manager. Answer questions about this gym using the provided tools.',
-      'Only report data returned by the tools. Never invent numbers. If a question is outside the available data, say so.',
-      'Keep answers short and direct. Format currency and dates for a human reader.',
-      '',
-      'query_metric covers these entities:',
-      ...lines,
-      '',
-      'Date ranges accept: { "preset": "today" | "this_week" | "this_month" }, { "last_n_days": N }, or { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }.',
-      '',
-      'get_trend returns one row per period (zero-filled). Check-in methods: MANUAL_STAFF, QR_STAFF_SCAN, QR_SELF_SCAN, APP_SELF_CHECKIN.',
-    ].join('\n');
-  }
-
-  async execute(call: ToolCall, gymId: string): Promise<LlmContent> {
-    try {
-      const result = await this.dispatch(call, gymId);
-      return { type: 'tool_result', toolUseId: call.id, content: JSON.stringify(result) };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Tool execution failed';
-      return { type: 'tool_result', toolUseId: call.id, content: message, isError: true };
-    }
-  }
-
-  private dispatch(call: ToolCall, gymId: string): Promise<unknown> {
-    switch (call.name) {
-      case 'find_member':
-        return this.repo.findMembers(gymId, requireString(call.input.name, 'name'));
-      case 'get_member_checkin_status':
-        return this.repo.getMemberCheckinStatus(
-          gymId,
-          requireString(call.input.member_id, 'member_id'),
-          typeof call.input.date === 'string' ? call.input.date : undefined,
-        );
-      case 'query_metric':
-        return this.repo.runMetric(gymId, validateMetricQuery(call.input));
-      case 'get_trend':
-        return this.repo.runTrend(gymId, validateTrendQuery(call.input));
-      default:
-        throw new Error(`Unknown tool "${call.name}"`);
-    }
+      {
+        name: 'register_member',
+        description: 'Invite a new member by email (sends an invite email). Needs plan_id (from list_membership_plans) OR expiry_date. Confirm all details with the user before calling.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            email: { type: 'string' },
+            full_name: { type: 'string' },
+            phone: { type: 'string' },
+            plan_id: { type: 'string', description: 'From list_membership_plans' },
+            expiry_date: { type: 'string', description: 'YYYY-MM-DD, only if no plan_id' },
+          },
+          required: ['email', 'full_name'],
+        },
+      },
+      {
+        name: 'renew_membership',
+        description: 'Renew a member\'s membership. Resolve member_id with find_member first. Confirm with the user before calling.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            member_id: { type: 'string' },
+            plan_id: { type: 'string', description: 'From list_membership_plans' },
+            amount_paid: { type: 'number' },
+            payment_method: { type: 'string' },
+            notes: { type: 'string' },
+          },
+          required: ['member_id', 'amount_paid'],
+        },
+      },
+      {
+        name: 'suspend_member',
+        description: 'Suspend a member. Resolve member_id with find_member first. Confirm with the user before calling.',
+        inputSchema: {
+          type: 'object',
+          properties: { member_id: { type: 'string' } },
+          required: ['member_id'],
+        },
+      },
+      {
+        name: 'reactivate_member',
+        description: 'Reactivate a suspended member. Resolve member_id with find_member first. Confirm with the user before calling.',
+        inputSchema: {
+          type: 'object',
+          properties: { member_id: { type: 'string' } },
+          required: ['member_id'],
+        },
+      },
+    ];
   }
 
   private metricSchema(): Record<string, unknown> {
@@ -142,4 +288,16 @@ function requireString(value: unknown, field: string): string {
     throw new Error(`"${field}" is required`);
   }
   return value;
+}
+
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+}
+
+function requireNumber(value: unknown, field: string): number {
+  const num = typeof value === 'string' ? Number(value) : value;
+  if (typeof num !== 'number' || Number.isNaN(num)) {
+    throw new Error(`"${field}" must be a number`);
+  }
+  return num;
 }

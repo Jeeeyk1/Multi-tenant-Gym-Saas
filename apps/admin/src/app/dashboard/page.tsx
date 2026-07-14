@@ -7,6 +7,12 @@ interface Stats {
   checkInsToday: number;
   activeGyms: number;
   totalUsers: number;
+  mrr: number;
+  revenueThisMonth: number;
+}
+
+function formatPhp(amount: number): string {
+  return `₱${Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -31,6 +37,8 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground text-sm">Could not load stats.</p>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <StatCard label="MRR" value={formatPhp(stats.mrr)} />
+          <StatCard label="Revenue this month" value={formatPhp(stats.revenueThisMonth)} />
           <StatCard label="Total Gyms" value={stats.totalGyms} sub={`${stats.activeGyms} active`} />
           <StatCard label="Active Gyms" value={stats.activeGyms} />
           <StatCard label="Total Members" value={stats.totalMembers} />

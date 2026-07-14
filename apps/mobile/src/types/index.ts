@@ -48,6 +48,8 @@ export interface MembershipPlan {
   type: string;
   price: number;
   durationDays: number;
+  description?: string | null;
+  isActive?: boolean;
 }
 
 export interface GymMember {
@@ -248,6 +250,15 @@ export interface RenewalRecord {
   renewedByUser: { id: string; fullName: string };
 }
 
+export interface GymRenewal extends RenewalRecord {
+  member: {
+    id: string;
+    membershipNumber: string;
+    user: { id: string; fullName: string };
+    membershipPlan: { id: string; name: string; type: string } | null;
+  };
+}
+
 // AI features
 export interface WorkoutExercise {
   name: string;
@@ -389,6 +400,15 @@ export interface WorkoutSessionsPage {
 }
 
 // Badges
+export interface CustomBadge {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  isActive: boolean;
+}
+
 export interface MemberBadge {
   id: string;
   source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';

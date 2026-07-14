@@ -1,10 +1,13 @@
 import { ArchiveAnnouncementUseCase } from './archive-announcement.use-case';
 import type { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
+import type { CacheService } from '../../../../common/cache/cache.service';
 
 const mockRepo = {
   findById: jest.fn(),
   update: jest.fn(),
 } as unknown as jest.Mocked<AnnouncementsRepository>;
+
+const mockCache = { del: jest.fn() } as unknown as CacheService;
 
 function makeStaff(permissions: string[] = ['announcements.manage']) {
   return { type: 'gym' as const, sub: 'user-1', gymId: 'gym-1', permissions, roles: [] };
@@ -21,7 +24,7 @@ describe('ArchiveAnnouncementUseCase', () => {
     mockRepo.findById.mockResolvedValue(makeAnnouncement('PUBLISHED'));
     mockRepo.update.mockResolvedValue({ id: 'ann-1', status: 'ARCHIVED' } as any);
 
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await uc.execute('gym-1', 'ann-1', makeStaff());
 
     expect(mockRepo.update).toHaveBeenCalledWith('ann-1', { status: 'ARCHIVED' });
@@ -31,7 +34,7 @@ describe('ArchiveAnnouncementUseCase', () => {
     mockRepo.findById.mockResolvedValue(makeAnnouncement('DRAFT'));
     mockRepo.update.mockResolvedValue({ id: 'ann-1', status: 'ARCHIVED' } as any);
 
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await uc.execute('gym-1', 'ann-1', makeStaff());
 
     expect(mockRepo.update).toHaveBeenCalledWith('ann-1', { status: 'ARCHIVED' });
@@ -40,7 +43,7 @@ describe('ArchiveAnnouncementUseCase', () => {
   it('throws ANNOUNCEMENT_NOT_ARCHIVABLE when already ARCHIVED', async () => {
     mockRepo.findById.mockResolvedValue(makeAnnouncement('ARCHIVED'));
 
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await expect(
       uc.execute('gym-1', 'ann-1', makeStaff()),
     ).rejects.toMatchObject({ code: 'ANNOUNCEMENT_NOT_ARCHIVABLE' });
@@ -49,7 +52,7 @@ describe('ArchiveAnnouncementUseCase', () => {
   it('throws ANNOUNCEMENT_NOT_ARCHIVABLE when EXPIRED', async () => {
     mockRepo.findById.mockResolvedValue(makeAnnouncement('EXPIRED'));
 
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await expect(
       uc.execute('gym-1', 'ann-1', makeStaff()),
     ).rejects.toMatchObject({ code: 'ANNOUNCEMENT_NOT_ARCHIVABLE' });
@@ -58,14 +61,14 @@ describe('ArchiveAnnouncementUseCase', () => {
   it('throws ANNOUNCEMENT_NOT_FOUND when not found', async () => {
     mockRepo.findById.mockResolvedValue(null);
 
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await expect(
       uc.execute('gym-1', 'ann-1', makeStaff()),
     ).rejects.toMatchObject({ code: 'ANNOUNCEMENT_NOT_FOUND' });
   });
 
   it('throws PERMISSION_DENIED when caller lacks announcements.manage', async () => {
-    const uc = new ArchiveAnnouncementUseCase(mockRepo);
+    const uc = new ArchiveAnnouncementUseCase(mockRepo, mockCache);
     await expect(
       uc.execute('gym-1', 'ann-1', makeStaff([])),
     ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });

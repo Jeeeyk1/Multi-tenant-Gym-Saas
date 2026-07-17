@@ -80,7 +80,8 @@ interface ReadPayload {
  *   success → { ok: true, ...data }
  *   failure → { error: '<ERROR_CODE>', message: '<human text>' }
  */
-@WebSocketGateway({ namespace: '/chat', cors: { origin: '*' } })
+// CORS for the socket is set centrally in RedisIoAdapter.createIOServer (from app.corsOrigins).
+@WebSocketGateway({ namespace: '/chat' })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;

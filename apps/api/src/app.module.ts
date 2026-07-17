@@ -35,6 +35,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AiInsightsModule } from './modules/ai-insights/ai-insights.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { SubscriptionStatusGuard } from './modules/billing/application/subscription-status.guard';
+import { GymAccessGuard } from './common/guards/gym-access.guard';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { SubscriptionStatusGuard } from './modules/billing/application/subscript
           .valid('development', 'production', 'test')
           .default('development'),
         PORT: Joi.number().default(3001),
+        CORS_ORIGINS: Joi.string().optional(),
         DATABASE_URL: Joi.string().required(),
         REDIS_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
@@ -60,7 +62,10 @@ import { SubscriptionStatusGuard } from './modules/billing/application/subscript
         AI_API_KEY: Joi.string().optional(),
         AI_MODEL: Joi.string().optional(),
         AI_BASE_URL: Joi.string().uri().optional(),
-        // Vision AI — Gemini Flash (separate key from text AI)
+        // Vision AI — "Log a Meal" photo analysis runs on Claude (Anthropic).
+        // Reuses ANTHROPIC_API_KEY; model overridable without a code change.
+        ANTHROPIC_VISION_MODEL: Joi.string().default('claude-opus-4-8'),
+        // Legacy Gemini vision config (no longer wired; kept for easy rollback)
         GEMINI_API_KEY: Joi.string().optional(),
         GEMINI_MODEL: Joi.string().default('gemini-2.0-flash'),
         // Email (Resend)
@@ -108,6 +113,10 @@ import { SubscriptionStatusGuard } from './modules/billing/application/subscript
     BillingModule,
   ],
   providers: [
+    // Global — enforces tenant isolation on every `:gymId` route (403 on cross-tenant
+    // access). Runs before the subscription guard so a foreign gym can't even learn
+    // another org's billing state.
+    { provide: APP_GUARD, useClass: GymAccessGuard },
     // Global — locks gym-scoped requests when the subscription isn't active (402).
     { provide: APP_GUARD, useClass: SubscriptionStatusGuard },
   ],

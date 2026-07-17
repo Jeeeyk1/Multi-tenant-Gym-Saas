@@ -10,11 +10,15 @@ import { AdminLoginUseCase } from './application/use-cases/admin-login.use-case'
 import { RequestPasswordResetUseCase } from './application/use-cases/request-password-reset.use-case';
 import { ResetPasswordUseCase } from './application/use-cases/reset-password.use-case';
 import { IdentityRepository } from './infrastructure/persistence/identity.repository';
+import { RateLimiterService } from '../../common/rate-limiter/rate-limiter.service';
+import { AuthThrottleGuard } from './presentation/guards/auth-throttle.guard';
 
 @Module({
   controllers: [AuthController],
   providers: [
     IdentityRepository,
+    RateLimiterService,
+    AuthThrottleGuard,
     ResolveCodeUseCase,
     OrgLoginUseCase,
     GymLoginUseCase,

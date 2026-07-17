@@ -4,7 +4,9 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthThrottleGuard } from '../guards/auth-throttle.guard';
 import { ResolveCodeUseCase } from '../../application/use-cases/resolve-code.use-case';
 import { OrgLoginUseCase } from '../../application/use-cases/org-login.use-case';
 import { GymLoginUseCase } from '../../application/use-cases/gym-login.use-case';
@@ -52,6 +54,7 @@ export class AuthController {
    * Issues an org-level JWT for org owners and admins.
    */
   @Post('org/login')
+  @UseGuards(AuthThrottleGuard)
   @HttpCode(HttpStatus.OK)
   async orgLogin(@Body() dto: OrgLoginDto) {
     return this.orgLoginUseCase.execute(dto.orgSlug, dto.email, dto.password);
@@ -62,6 +65,7 @@ export class AuthController {
    * Issues a gym-level JWT for gym staff and members.
    */
   @Post('gym/login')
+  @UseGuards(AuthThrottleGuard)
   @HttpCode(HttpStatus.OK)
   async gymLogin(@Body() dto: GymLoginDto) {
     return this.gymLoginUseCase.execute(dto.gymCode, dto.email, dto.password);
@@ -103,6 +107,7 @@ export class AuthController {
    * Issues a system-admin JWT. Only valid for system_admins table entries.
    */
   @Post('admin/login')
+  @UseGuards(AuthThrottleGuard)
   @HttpCode(HttpStatus.OK)
   async adminLoginEndpoint(@Body() dto: AdminLoginDto) {
     return this.adminLogin.execute(dto.email, dto.password);
@@ -114,6 +119,7 @@ export class AuthController {
    * In production the token would be emailed — for MVP it is returned in the response.
    */
   @Post('forgot-password')
+  @UseGuards(AuthThrottleGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async forgotPassword(@Body() dto: RequestPasswordResetDto) {
     await this.requestPasswordReset.execute(dto.email);

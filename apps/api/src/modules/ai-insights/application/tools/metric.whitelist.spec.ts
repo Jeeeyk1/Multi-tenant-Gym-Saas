@@ -44,4 +44,15 @@ describe('validateMetricQuery', () => {
     expect(query.aggregate).toBe('count');
     expect(query.where).toEqual({ status: 'ACTIVE' });
   });
+
+  it('normalizes a case-insensitive status value to the stored upper-case value', () => {
+    const query = validateMetricQuery({ entity: 'members', metric: 'count', filters: [{ field: 'status', value: 'active' }] });
+    expect(query.where).toEqual({ status: 'ACTIVE' });
+  });
+
+  it('rejects a status value outside the allowed set', () => {
+    expect(() =>
+      validateMetricQuery({ entity: 'members', metric: 'count', filters: [{ field: 'status', value: 'frozen' }] }),
+    ).toThrow(/Invalid value "frozen" for "status"/);
+  });
 });

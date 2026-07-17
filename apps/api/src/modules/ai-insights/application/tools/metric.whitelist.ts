@@ -5,6 +5,9 @@ export const METRIC_ENTITIES = {
     numericFields: {},
     dimensions: { status: 'status' },
     filters: { status: 'status' },
+    // Stored values are upper-case (see gym_members_status_check). Filter values are
+    // normalized to these case-insensitively so a natural-language "active" still matches.
+    filterValues: { status: ['ACTIVE', 'EXPIRED', 'SUSPENDED'] },
   },
   checkins: {
     label: 'member check-ins',
@@ -12,6 +15,7 @@ export const METRIC_ENTITIES = {
     numericFields: {},
     dimensions: { method: 'method' },
     filters: { method: 'method' },
+    filterValues: { method: ['MANUAL_STAFF', 'QR_STAFF_SCAN', 'QR_SELF_SCAN', 'APP_SELF_CHECKIN'] },
   },
   renewals: {
     label: 'membership renewals (revenue)',
@@ -72,7 +76,7 @@ export function validateMetricQuery(raw: Record<string, unknown>): MetricQuery {
       if (!column) {
         throw new Error(`Cannot filter ${entity} by "${String(entry.field)}". Allowed: ${keys(config.filters)}.`);
       }
-      query.where[column] = entry.value as string | number | boolean;
+      query.where[column] = normalizeFilterValue(entity, String(entry.field), entry.value);
     }
   }
 
@@ -106,6 +110,35 @@ export function resolveDateRange(range?: Record<string, unknown>): MetricQuery['
   if (typeof range.from === 'string') out.gte = new Date(range.from);
   if (typeof range.to === 'string') out.lte = new Date(range.to);
   return out.gte || out.lte ? out : undefined;
+}
+
+function allowedFilterValues(entity: MetricEntity, alias: string): readonly string[] | undefined {
+  const config = METRIC_ENTITIES[entity] as { filterValues?: Record<string, readonly string[]> };
+  return config.filterValues?.[alias];
+}
+
+/**
+ * Constrains an enum-like filter value to its whitelisted set and normalizes case, so a
+ * model-supplied "active" resolves to the stored "ACTIVE" instead of silently matching nothing.
+ * Non-enum filters pass through unchanged.
+ */
+function normalizeFilterValue(entity: MetricEntity, alias: string, value: unknown): string | number | boolean {
+  const allowed = allowedFilterValues(entity, alias);
+  if (allowed && typeof value === 'string') {
+    const match = allowed.find((v) => v.toLowerCase() === value.toLowerCase());
+    if (!match) {
+      throw new Error(`Invalid value "${value}" for "${alias}". Allowed: ${allowed.join(', ')}.`);
+    }
+    return match;
+  }
+  return value as string | number | boolean;
+}
+
+/** Human-readable allowed filter values per entity, for the model's system prompt. */
+export function describeFilterValues(entity: MetricEntity): string[] {
+  const config = METRIC_ENTITIES[entity] as { filterValues?: Record<string, readonly string[]> };
+  if (!config.filterValues) return [];
+  return Object.entries(config.filterValues).map(([field, values]) => `${field} is one of ${values.join(', ')}`);
 }
 
 function isEntity(value: string): value is MetricEntity {

@@ -7,7 +7,7 @@ import { ReactivateMemberUseCase } from '../../../members/application/use-cases/
 import { RenewMembershipUseCase } from '../../../renewals/application/use-cases/renew-membership.use-case';
 import type { LlmContent, LlmToolSchema } from '../../domain/llm.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
-import { METRIC_ENTITIES, validateMetricQuery } from './metric.whitelist';
+import { METRIC_ENTITIES, validateMetricQuery, describeFilterValues, type MetricEntity } from './metric.whitelist';
 import { validateTrendQuery } from './trend.whitelist';
 
 interface ToolCall {
@@ -44,6 +44,8 @@ export class ToolRegistry {
       const dimensions = Object.keys(config.dimensions);
       const parts = [`group/filter by: ${dimensions.length ? dimensions.join(', ') : 'none'}`];
       if (numeric.length) parts.push(`sum/avg fields: ${numeric.join(', ')}`);
+      const values = describeFilterValues(entity as MetricEntity);
+      if (values.length) parts.push(`filter values — ${values.join('; ')}`);
       return `- ${entity} (${config.label}): ${parts.join('; ')}`;
     });
 
@@ -51,6 +53,7 @@ export class ToolRegistry {
       'You are an assistant for a gym manager. Answer questions and perform actions using the provided tools.',
       'Only report data returned by the tools. Never invent numbers. If a question is outside the available data, say so.',
       'Keep answers short and direct. Format currency and dates for a human reader.',
+      'Reply in plain text only. Do not use Markdown formatting — no **bold**, no bullet symbols, no headings.',
       '',
       'query_metric covers these entities:',
       ...lines,

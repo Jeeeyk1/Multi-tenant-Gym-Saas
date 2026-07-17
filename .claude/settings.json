@@ -3,7 +3,42 @@
     "allow": [
       "Bash(git -C /Users/jake/Documents/multi-tenant-gym diff apps/mobile/src/services/healthkit.service.ts)",
       "Bash(git -C /Users/jake/Documents/multi-tenant-gym diff apps/mobile/metro.config.js)",
-      "Bash(pnpm --filter @gym-saas/mobile lint)"
+      "Bash(pnpm --filter @gym-saas/mobile lint)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Bash(cp \"/private/tmp/claude-501/-Users-jake-Documents-multi-tenant-gym/637f70e7-da84-4865-ab76-26c2b9bfc51d/scratchpad/production-infra-plan.pdf\" ~/Documents/multi-tenant-gym-production-infra-plan.pdf && ls -la ~/Documents/multi-tenant-gym-production-infra-plan.pdf)",
+      "Bash(awk '/model GymMember /,/^}/' prisma/schema.prisma)",
+      "Bash(pnpm --filter @gym-saas/api test -- --passWithNoTests ai-insights)",
+      "Bash(awk '/model ExerciseMedia|exercise_media/,/^}/' prisma/schema.prisma)",
+      "Bash(awk '/model MemberWorkoutPlan/,/^}/' prisma/schema.prisma)",
+      "Bash(sed -n '/saveWorkoutPlan/,/^  }/p' apps/api/src/modules/ai/infrastructure/persistence/ai.repository.ts)",
+      "Bash(sed -n '/getLatestWorkoutPlan/,/^  }/p' apps/api/src/modules/ai/infrastructure/persistence/ai.repository.ts)",
+      "Bash(pnpm --filter @gym-saas/mobile typecheck)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(node -e \"console.log\\('sdk version', require\\('./node_modules/@anthropic-ai/sdk/package.json'\\).version\\)\")",
+      "Bash(pnpm --filter @gym-saas/api test -- gym-access.guard)",
+      "Bash(cd /Users/jake/Documents/multi-tenant-gym; echo \"=== helmet / throttler installed? ===\"; grep -hE \"helmet|@nestjs/throttler|@nestjs/terminus\" apps/api/package.json; echo; echo \"=== redis-io.adapter ===\"; cat apps/api/src/common/adapters/redis-io.adapter.ts; echo \"=== chat.gateway cors line ===\"; sed -n '80,90p' apps/api/src/modules/chat/presentation/controllers/../../chat.gateway.ts 2>/dev/null || grep -rn \"WebSocketGateway\" apps/api/src/modules/chat --include=\"*.ts\")",
+      "Read(//Users/jake/Documents/multi-tenant-gym/apps/api/src/modules/chat/**)",
+      "Bash(pnpm --filter @gym-saas/api add helmet)",
+      "Bash(curl -s -m 6 \"http://localhost:3000/api/v1/health\")",
+      "Bash(curl -s -D - -o /dev/null -m 6 \"http://localhost:3000/api/v1/health\")",
+      "Bash(curl -s -D - -o /dev/null -m 6 -H \"Origin: http://localhost:3000\" \"http://localhost:3000/api/v1/health\")",
+      "Bash(curl -s -D - -o /dev/null -m 6 -H \"Origin: https://evil.com\" \"http://localhost:3000/api/v1/health\")",
+      "Bash(pnpm --filter @gym-saas/web typecheck)",
+      "Bash(curl -s -m 6 -X POST \"http://localhost:3000/api/v1/gyms/2113a0b8-1388-4566-bf88-843c543341e7/members\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer bogus\" -d '{}')",
+      "Bash(curl -s -m 6 -X POST \"http://localhost:3000/api/v1/auth/gym/login\" -H \"Content-Type: application/json\" -d '{\"gymCode\":\"XXX\",\"email\":\"a@b.com\",\"password\":\"wrong\"}')",
+      "Bash(curl -s -m 6 \"http://localhost:3001/api/v1/health\")",
+      "Bash(lsof -nP -iTCP -sTCP:LISTEN)",
+      "Bash(ps -p 89870 -o pid,ppid,command)",
+      "Bash(ps -p 25213 -o pid,ppid,command)",
+      "Bash(kill 89870)",
+      "Bash(ps -p 25213 -o pid,etime,command)",
+      "Bash(ps -p 25191 -o pid,etime,command)",
+      "Bash(curl -s -m 4 \"http://localhost:3000/api/v1/health\")"
+    ],
+    "additionalDirectories": [
+      "/Users/jake/Documents"
     ]
   }
 }

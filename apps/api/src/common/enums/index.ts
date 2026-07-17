@@ -13,3 +13,4 @@ export { LeaderboardCycleStatus } from './leaderboard-cycle-status.enum';
 export { SubscriptionStatus } from './subscription-status.enum';
 export { InvoiceStatus, BillingCycle } from './invoice-status.enum';
 export { SignupRequestStatus } from './signup-request-status.enum';
+export { MealPlanMode } from './meal-plan-mode.enum';

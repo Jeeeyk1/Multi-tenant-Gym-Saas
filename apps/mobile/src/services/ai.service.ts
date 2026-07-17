@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { WorkoutSuggestion, MealSuggestion, MealAnalysis, FoodLog, ExerciseInstructions } from '../types';
+import type { WorkoutSuggestion, MealSuggestion, MealPlanRequest, MealAnalysis, FoodLog, ExerciseInstructions } from '../types';
 
 export const aiService = {
   getLatestWorkoutPlan: (gymId: string, memberId: string) =>
@@ -10,8 +10,13 @@ export const aiService = {
   getWorkoutSuggestion: (gymId: string, memberId: string) =>
     api.post<WorkoutSuggestion>(`/gyms/${gymId}/members/${memberId}/ai/workout-suggestion`, {}),
 
-  getMealSuggestion: (gymId: string, memberId: string) =>
-    api.post<MealSuggestion>(`/gyms/${gymId}/members/${memberId}/ai/meal-suggestion`, {}),
+  getLatestMealPlan: (gymId: string, memberId: string) =>
+    api.get<{ suggestion: string; generatedAt: string } | null>(
+      `/gyms/${gymId}/members/${memberId}/ai/meal-plan`,
+    ),
+
+  getMealSuggestion: (gymId: string, memberId: string, params: MealPlanRequest) =>
+    api.post<MealSuggestion>(`/gyms/${gymId}/members/${memberId}/ai/meal-suggestion`, params),
 
   analyseMeal: (gymId: string, memberId: string, options: { description?: string; photoUrl?: string }) =>
     api.post<MealAnalysis>(`/gyms/${gymId}/members/${memberId}/ai/analyse-meal`, options),

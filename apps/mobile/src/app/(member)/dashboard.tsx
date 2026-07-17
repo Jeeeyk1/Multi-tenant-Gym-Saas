@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -102,6 +103,25 @@ export default function DashboardScreen() {
     },
     whosHereTitle: { fontSize: 14, color: C.text, ...FONT.semibold },
     whosHereSub: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
+    // AI Coach card
+    aiCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.md,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.md,
+    },
+    aiIconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.12)',
+    },
+    aiTitle: { fontSize: 16, color: '#000', ...FONT.bold },
+    aiSub: { fontSize: 12, color: 'rgba(0,0,0,0.72)', marginTop: 2, ...FONT.medium },
     // Resume banner
     resumeCard: {
       flexDirection: 'row',
@@ -200,6 +220,28 @@ export default function DashboardScreen() {
       )}
 
       {member && <MembershipCard member={member} />}
+
+      {/* AI Coach — headline feature, kept prominent so members discover it */}
+      <Pressable
+        onPress={() => router.push('/(member)/ai')}
+        style={({ pressed }) => [{ marginBottom: SPACING.md }, pressed && { opacity: 0.9 }]}
+      >
+        <LinearGradient
+          colors={theme.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={s.aiCard}
+        >
+          <View style={s.aiIconWrap}>
+            <Ionicons name="sparkles" size={22} color="#000" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.aiTitle}>AI Coach</Text>
+            <Text style={s.aiSub}>Personalised workouts, meal plans &amp; form tips</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#000" />
+        </LinearGradient>
+      </Pressable>
 
       {/* Who's here */}
       {whosHereQ.data && (

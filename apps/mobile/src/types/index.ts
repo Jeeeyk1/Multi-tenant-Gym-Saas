@@ -300,6 +300,34 @@ export interface MealSuggestion {
   suggestion: string;
 }
 
+export type MealPlanMode = 'FULL_DAY' | 'SINGLE_MEAL';
+
+export interface MealPlanRequest {
+  mode: MealPlanMode;
+  targetCalories?: number;
+  mealCount?: number;
+  targetProteinG?: number;
+}
+
+export interface PlannedMeal {
+  name: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  items: string[];
+}
+
+export interface MealPlan {
+  mode: MealPlanMode;
+  title: string;
+  targetCalories: number;
+  totalCalories: number;
+  totalProteinG: number;
+  meals: PlannedMeal[];
+  tips: string[];
+}
+
 export interface MealAnalysis {
   description: string;
   calories: number;

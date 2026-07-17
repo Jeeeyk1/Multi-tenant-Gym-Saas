@@ -172,6 +172,7 @@ model Gym {
   leaderboardExercises GymLeaderboardExercise[]
   prSubmissions        MemberPrSubmission[]
   workoutPlans         MemberWorkoutPlan[]
+  mealPlans            MemberMealPlan[]
   workoutSessions      WorkoutSession[]
   badgeSettings        GymBadgeSetting[]
   customBadges         GymCustomBadge[]
@@ -470,6 +471,7 @@ model GymMember {
   foodLogs       MemberFoodLog[]
   prSubmissions  MemberPrSubmission[]
   workoutPlan     MemberWorkoutPlan?
+  mealPlan        MemberMealPlan?
   workoutSessions WorkoutSession[]
   memberBadges    MemberBadge[]
 
@@ -551,6 +553,19 @@ model MemberWorkoutPlan {
   gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
 
   @@map("member_workout_plans")
+}
+
+model MemberMealPlan {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId    String   @unique @map("member_id") @db.Uuid
+  gymId       String   @map("gym_id") @db.Uuid
+  suggestion  String
+  generatedAt DateTime @default(now()) @map("generated_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@map("member_meal_plans")
 }
 
 model ExerciseMedia {

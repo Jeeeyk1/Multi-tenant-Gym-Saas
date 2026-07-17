@@ -21,11 +21,13 @@ import { LogFoodUseCase } from '../../application/use-cases/log-food.use-case';
 import { ListFoodLogsUseCase } from '../../application/use-cases/list-food-logs.use-case';
 import { UploadFoodPhotoUseCase } from '../../application/use-cases/upload-food-photo.use-case';
 import { GetLatestWorkoutPlanUseCase } from '../../application/use-cases/get-latest-workout-plan.use-case';
+import { GetLatestMealPlanUseCase } from '../../application/use-cases/get-latest-meal-plan.use-case';
 import { GetExerciseInstructionsUseCase } from '../../application/use-cases/get-exercise-instructions.use-case';
 import { GetExerciseMediaUseCase } from '../../application/use-cases/get-exercise-media.use-case';
 import { LogFoodDto } from '../dto/log-food.dto';
 import { ExerciseInstructionsDto } from '../dto/exercise-instructions.dto';
 import { AnalyseMealDto } from '../dto/analyse-meal.dto';
+import { GenerateMealPlanDto } from '../dto/generate-meal-plan.dto';
 
 @Controller('gyms/:gymId/members/:memberId')
 @UseGuards(JwtAuthGuard)
@@ -38,6 +40,7 @@ export class AiController {
     private readonly listFoodLogsUseCase: ListFoodLogsUseCase,
     private readonly uploadFoodPhotoUseCase: UploadFoodPhotoUseCase,
     private readonly getLatestWorkoutPlanUseCase: GetLatestWorkoutPlanUseCase,
+    private readonly getLatestMealPlanUseCase: GetLatestMealPlanUseCase,
     private readonly getExerciseInstructionsUseCase: GetExerciseInstructionsUseCase,
     private readonly getExerciseMediaUseCase: GetExerciseMediaUseCase,
   ) {}
@@ -45,6 +48,11 @@ export class AiController {
   @Get('ai/workout-plan')
   getWorkoutPlan(@Param('memberId') memberId: string) {
     return this.getLatestWorkoutPlanUseCase.execute(memberId);
+  }
+
+  @Get('ai/meal-plan')
+  getMealPlan(@Param('memberId') memberId: string) {
+    return this.getLatestMealPlanUseCase.execute(memberId);
   }
 
   @Get('ai/exercise-media')
@@ -71,8 +79,17 @@ export class AiController {
 
   @Post('ai/meal-suggestion')
   @HttpCode(HttpStatus.OK)
-  mealSuggestion(@Param('gymId') gymId: string, @Param('memberId') memberId: string) {
-    return this.mealSuggestionUseCase.execute(memberId, gymId);
+  mealSuggestion(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: GenerateMealPlanDto,
+  ) {
+    return this.mealSuggestionUseCase.execute(memberId, gymId, {
+      mode: dto.mode,
+      targetCalories: dto.targetCalories,
+      mealCount: dto.mealCount,
+      targetProteinG: dto.targetProteinG,
+    });
   }
 
   /** Upload a food photo and get back its Cloudinary URL. */

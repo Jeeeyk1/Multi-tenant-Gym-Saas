@@ -169,6 +169,21 @@ export class AiRepository {
     });
   }
 
+  async saveMealPlan(memberId: string, gymId: string, suggestion: string): Promise<void> {
+    await this.prisma.memberMealPlan.upsert({
+      where: { memberId },
+      create: { memberId, gymId, suggestion, generatedAt: new Date() },
+      update: { suggestion, generatedAt: new Date() },
+    });
+  }
+
+  getLatestMealPlan(memberId: string) {
+    return this.prisma.memberMealPlan.findUnique({
+      where: { memberId },
+      select: { suggestion: true, generatedAt: true },
+    });
+  }
+
   getExerciseMedia(normalizedName: string) {
     return this.prisma.exerciseMedia.findUnique({
       where: { normalizedName },

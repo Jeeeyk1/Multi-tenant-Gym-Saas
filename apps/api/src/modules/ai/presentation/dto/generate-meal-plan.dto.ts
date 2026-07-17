@@ -1,0 +1,31 @@
+import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { MealPlanMode } from '../../../../common/enums';
+
+/**
+ * Parameters for the guided meal-plan generation flow.
+ * All numeric inputs are optional — when omitted the AI estimates from the
+ * member's profile. `mealCount` applies to FULL_DAY; `targetProteinG` is the
+ * key macro asked for in SINGLE_MEAL.
+ */
+export class GenerateMealPlanDto {
+  @IsEnum(MealPlanMode)
+  mode!: MealPlanMode;
+
+  @IsOptional()
+  @IsInt()
+  @Min(800)
+  @Max(6000)
+  targetCalories?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(8)
+  mealCount?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(400)
+  targetProteinG?: number;
+}

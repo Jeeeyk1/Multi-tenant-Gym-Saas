@@ -10,6 +10,7 @@ import { LogFoodUseCase } from './application/use-cases/log-food.use-case';
 import { ListFoodLogsUseCase } from './application/use-cases/list-food-logs.use-case';
 import { UploadFoodPhotoUseCase } from './application/use-cases/upload-food-photo.use-case';
 import { GetLatestWorkoutPlanUseCase } from './application/use-cases/get-latest-workout-plan.use-case';
+import { GetLatestMealPlanUseCase } from './application/use-cases/get-latest-meal-plan.use-case';
 import { GetExerciseInstructionsUseCase } from './application/use-cases/get-exercise-instructions.use-case';
 import { GetExerciseMediaUseCase } from './application/use-cases/get-exercise-media.use-case';
 import { AiController } from './presentation/controllers/ai.controller';
@@ -26,6 +27,7 @@ import { AiController } from './presentation/controllers/ai.controller';
     ListFoodLogsUseCase,
     UploadFoodPhotoUseCase,
     GetLatestWorkoutPlanUseCase,
+    GetLatestMealPlanUseCase,
     GetExerciseInstructionsUseCase,
     GetExerciseMediaUseCase,
   ],

@@ -22,7 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useMyMember } from '../../hooks/members';
 import { aiService } from '../../services/ai.service';
 import { SPACING, FONT, RADIUS, type ColorPalette } from '../../constants/theme';
-import type { FoodLog, MealAnalysis, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions } from '../../types';
+import type { FoodLog, MealAnalysis, MealPlan, MealPlanMode, MealPlanRequest, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions } from '../../types';
 
 type Tab = 'workout' | 'nutrition' | 'diary';
 
@@ -55,7 +55,7 @@ export default function AIScreen() {
             onPress={() => setActiveTab(t)}
           >
             <Text style={[styles.tabText, activeTab === t && styles.tabTextActive, activeTab === t && { color: theme.primary }]}>
-              {t === 'workout' ? 'Workout' : t === 'nutrition' ? 'Nutrition' : 'Food Diary'}
+              {t === 'workout' ? 'Workout' : t === 'nutrition' ? 'Meal Plan' : 'Food Diary'}
             </Text>
           </Pressable>
         ))}
@@ -452,24 +452,62 @@ function ExerciseDetailModal({
 
 // ─── Nutrition Tab ────────────────────────────────────────────────────────────
 
+/** Parse a persisted/generated meal-plan JSON string; null if it isn't structured. */
+function parseMealPlan(raw: string | null): MealPlan | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw);
+    if (p && Array.isArray(p.meals) && p.meals.length > 0) return p as MealPlan;
+  } catch {
+    // Legacy plain-text plan (pre-structured) — caller falls back to text.
+  }
+  return null;
+}
+
 function NutritionTab({ gymId, memberId, theme }: TabProps) {
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C), [C]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialising, setInitialising] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
-  const generate = useCallback(async () => {
+  // Load the saved plan on mount so it survives navigating away and back
+  // (mirrors the workout tab — the plan is persisted server-side per member).
+  useEffect(() => {
     if (!gymId || !memberId) return;
-    setLoading(true);
-    try {
-      const res = await aiService.getMealSuggestion(gymId, memberId);
-      setSuggestion(res.suggestion);
-    } catch {
-      Alert.alert('Error', 'Could not generate meal plan. Try again.');
-    } finally {
-      setLoading(false);
-    }
+    aiService
+      .getLatestMealPlan(gymId, memberId)
+      .then((saved) => {
+        if (saved) {
+          setSuggestion(saved.suggestion);
+          setGeneratedAt(saved.generatedAt);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setInitialising(false));
   }, [gymId, memberId]);
+
+  const generate = useCallback(
+    async (params: MealPlanRequest) => {
+      if (!gymId || !memberId) return;
+      setShowModal(false);
+      setLoading(true);
+      try {
+        const res = await aiService.getMealSuggestion(gymId, memberId, params);
+        setSuggestion(res.suggestion);
+        setGeneratedAt(new Date().toISOString());
+      } catch {
+        Alert.alert('Error', 'Could not generate meal plan. Try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [gymId, memberId],
+  );
+
+  const plan = useMemo(() => parseMealPlan(suggestion), [suggestion]);
 
   return (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentInner}>
@@ -477,28 +515,296 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
         <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18' }]}>
           <Ionicons name="nutrition-outline" size={32} color={theme.primary} />
         </View>
-        <Text style={styles.heroTitle}>Nutrition Guidance</Text>
+        <Text style={styles.heroTitle}>Meal Plan</Text>
         <Text style={styles.heroSub}>
-          Get a personalised meal plan and nutrition tips tailored to your fitness goal.
+          Tell the coach what you need and get a meal plan tailored to your goal and macros.
         </Text>
         <Pressable
-          style={[styles.generateBtn, { backgroundColor: theme.primary }, loading && styles.generateBtnDisabled]}
-          onPress={generate}
-          disabled={loading || !memberId}
+          style={[styles.generateBtn, { backgroundColor: theme.primary }, (loading || initialising) && styles.generateBtnDisabled]}
+          onPress={() => setShowModal(true)}
+          disabled={loading || initialising || !memberId}
         >
           {loading ? (
             <ActivityIndicator color="#000" size="small" />
           ) : (
             <>
               <Ionicons name="flash-outline" size={16} color="#000" />
-              <Text style={styles.generateBtnText}>Get Meal Plan</Text>
+              <Text style={styles.generateBtnText}>{suggestion ? 'New Meal Plan' : 'Create Meal Plan'}</Text>
             </>
           )}
         </Pressable>
       </View>
 
-      {suggestion && <SuggestionCard text={suggestion} icon="nutrition-outline" theme={theme} />}
+      {(initialising || loading) && (
+        <View style={styles.mealLoading}>
+          <ActivityIndicator color={theme.primary} size="large" />
+          {loading && <Text style={styles.mealLoadingText}>Building your meal plan…</Text>}
+        </View>
+      )}
+
+      {!loading && !initialising && plan && (
+        <MealPlanView plan={plan} generatedAt={generatedAt} theme={theme} />
+      )}
+
+      {/* Legacy plain-text plan fallback (pre-structured) */}
+      {!loading && !initialising && !plan && suggestion && (
+        <SuggestionCard text={suggestion} icon="nutrition-outline" theme={theme} generatedAt={generatedAt} />
+      )}
+
+      <MealPlanModal
+        visible={showModal}
+        theme={theme}
+        onClose={() => setShowModal(false)}
+        onGenerate={generate}
+      />
     </ScrollView>
+  );
+}
+
+// ─── Meal Plan: guided request modal ──────────────────────────────────────────
+
+function MealPlanModal({
+  visible,
+  theme,
+  onClose,
+  onGenerate,
+}: {
+  visible: boolean;
+  theme: ReturnType<typeof useTheme>['theme'];
+  onClose: () => void;
+  onGenerate: (params: MealPlanRequest) => void;
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const [mode, setMode] = useState<MealPlanMode | null>(null);
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
+  const [mealCount, setMealCount] = useState(3);
+
+  const reset = () => {
+    setMode(null);
+    setCalories('');
+    setProtein('');
+    setMealCount(3);
+  };
+  const close = () => { reset(); onClose(); };
+
+  const submit = () => {
+    if (!mode) return;
+    const cal = parseInt(calories, 10);
+    const prot = parseInt(protein, 10);
+    onGenerate({
+      mode,
+      targetCalories: Number.isFinite(cal) && cal > 0 ? cal : undefined,
+      mealCount: mode === 'FULL_DAY' ? mealCount : undefined,
+      targetProteinG: mode === 'SINGLE_MEAL' && Number.isFinite(prot) && prot > 0 ? prot : undefined,
+    });
+    reset();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={close}>
+      <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>{mode ? 'Plan details' : 'What do you need?'}</Text>
+          <Pressable onPress={close}>
+            <Ionicons name="close" size={24} color={C.text} />
+          </Pressable>
+        </View>
+
+        <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: SPACING.md }}>
+          {!mode ? (
+            <>
+              <ModeCard
+                theme={theme}
+                icon="today-outline"
+                title="Full day plan"
+                sub="Meals for the whole day, split how you like"
+                onPress={() => setMode('FULL_DAY')}
+              />
+              <ModeCard
+                theme={theme}
+                icon="restaurant-outline"
+                title="Just this meal"
+                sub="One meal for right now, hit a protein target"
+                onPress={() => setMode('SINGLE_MEAL')}
+              />
+            </>
+          ) : (
+            <>
+              <View>
+                <Text style={styles.inputLabel}>Target calories (optional)</Text>
+                <TextInput
+                  style={styles.mealInput}
+                  placeholder={mode === 'FULL_DAY' ? 'e.g. 2000 for the day' : 'e.g. 600 for this meal'}
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="number-pad"
+                  value={calories}
+                  onChangeText={setCalories}
+                />
+                <Text style={styles.inputHint}>Leave blank and the coach estimates from your profile.</Text>
+              </View>
+
+              {mode === 'FULL_DAY' ? (
+                <View>
+                  <Text style={styles.inputLabel}>Split into how many meals?</Text>
+                  <View style={styles.segmentRow}>
+                    {[3, 4, 5, 6].map((n) => (
+                      <Pressable
+                        key={n}
+                        style={[
+                          styles.segment,
+                          mealCount === n && { backgroundColor: theme.primary, borderColor: theme.primary },
+                        ]}
+                        onPress={() => setMealCount(n)}
+                      >
+                        <Text style={[styles.segmentText, mealCount === n && { color: '#000' }]}>{n}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View>
+                  <Text style={styles.inputLabel}>Target protein (optional)</Text>
+                  <TextInput
+                    style={styles.mealInput}
+                    placeholder="e.g. 40 g"
+                    placeholderTextColor={C.textMuted}
+                    keyboardType="number-pad"
+                    value={protein}
+                    onChangeText={setProtein}
+                  />
+                </View>
+              )}
+
+              <Pressable style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]} onPress={submit}>
+                <Ionicons name="flash-outline" size={16} color="#000" />
+                <Text style={styles.generateBtnText}>Generate Plan</Text>
+              </Pressable>
+
+              <Pressable style={styles.retakeBtn} onPress={() => setMode(null)}>
+                <Ionicons name="arrow-back" size={15} color={C.textMuted} />
+                <Text style={styles.retakeBtnText}>Back</Text>
+              </Pressable>
+            </>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function ModeCard({
+  theme,
+  icon,
+  title,
+  sub,
+  onPress,
+}: {
+  theme: ReturnType<typeof useTheme>['theme'];
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  sub: string;
+  onPress: () => void;
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+  return (
+    <Pressable style={[styles.modeCard, { borderColor: theme.primary + '30' }]} onPress={onPress}>
+      <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18', width: 48, height: 48, borderRadius: 24, marginBottom: 0 }]}>
+        <Ionicons name={icon} size={24} color={theme.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.modeCardTitle}>{title}</Text>
+        <Text style={styles.modeCardSub}>{sub}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={C.textMuted} />
+    </Pressable>
+  );
+}
+
+// ─── Meal Plan: structured renderer ───────────────────────────────────────────
+
+function MealPlanView({
+  plan,
+  generatedAt,
+  theme,
+}: {
+  plan: MealPlan;
+  generatedAt: string | null;
+  theme: ReturnType<typeof useTheme>['theme'];
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const dateLabel = generatedAt
+    ? new Date(generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null;
+
+  return (
+    <>
+      {/* Summary header */}
+      <View style={[styles.planHeader, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '30' }]}>
+        <View style={styles.planHeaderRow}>
+          <Ionicons name="nutrition-outline" size={20} color={theme.primary} />
+          <Text style={[styles.planFocus, { color: theme.primary }]}>{plan.title}</Text>
+        </View>
+        <View style={styles.planMeta}>
+          <View style={styles.planMetaItem}>
+            <Ionicons name="flame-outline" size={13} color={C.textSecondary} />
+            <Text style={styles.planMetaText}>{plan.totalCalories} kcal</Text>
+          </View>
+          <View style={styles.planMetaItem}>
+            <Ionicons name="barbell-outline" size={13} color={C.textSecondary} />
+            <Text style={styles.planMetaText}>{plan.totalProteinG}g protein</Text>
+          </View>
+          {dateLabel && (
+            <View style={styles.planMetaItem}>
+              <Ionicons name="calendar-outline" size={13} color={C.textSecondary} />
+              <Text style={styles.planMetaText}>{dateLabel}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Meal cards */}
+      {plan.meals.map((meal, i) => (
+        <View key={i} style={styles.mealCard}>
+          <View style={styles.mealCardHeader}>
+            <Text style={styles.mealCardName}>{meal.name}</Text>
+            <Text style={[styles.mealCardCals, { color: theme.primary }]}>{meal.calories} kcal</Text>
+          </View>
+          <View style={styles.macroRow}>
+            <MacroChip label="Protein" value={`${meal.proteinG}`} unit="g" theme={theme} />
+            <MacroChip label="Carbs" value={`${meal.carbsG}`} unit="g" theme={theme} />
+            <MacroChip label="Fat" value={`${meal.fatG}`} unit="g" theme={theme} />
+          </View>
+          <View style={styles.mealItems}>
+            {meal.items.map((item, j) => (
+              <View key={j} style={styles.mealItemRow}>
+                <View style={[styles.mealItemDot, { backgroundColor: theme.primary }]} />
+                <Text style={styles.mealItemText}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+
+      {/* Tips */}
+      {plan.tips.length > 0 && (
+        <View style={styles.suggestionCard}>
+          <View style={styles.suggestionCardHeader}>
+            <Ionicons name="bulb-outline" size={16} color={theme.primary} />
+            <Text style={[styles.suggestionCardLabel, { color: theme.primary }]}>Tips</Text>
+          </View>
+          {plan.tips.map((tip, i) => (
+            <View key={i} style={styles.mistakeRow}>
+              <Ionicons name="checkmark-circle-outline" size={16} color={theme.primary} />
+              <Text style={styles.mistakeText}>{tip}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </>
   );
 }
 
@@ -827,18 +1133,24 @@ function SuggestionCard({
   text,
   icon,
   theme,
+  generatedAt,
 }: {
   text: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   theme: ReturnType<typeof useTheme>['theme'];
+  generatedAt?: string | null;
 }) {
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C), [C]);
+  const dateLabel = generatedAt
+    ? new Date(generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null;
   return (
     <View style={styles.suggestionCard}>
       <View style={styles.suggestionCardHeader}>
         <Ionicons name={icon} size={16} color={theme.primary} />
         <Text style={[styles.suggestionCardLabel, { color: theme.primary }]}>AI Response</Text>
+        {dateLabel && <Text style={styles.suggestionCardDate}>Generated {dateLabel}</Text>}
       </View>
       <Text style={styles.suggestionText}>{text}</Text>
     </View>
@@ -1007,6 +1319,12 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     ...FONT.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  suggestionCardDate: {
+    marginLeft: 'auto',
+    fontSize: 11,
+    color: C.textMuted,
+    ...FONT.regular,
   },
   suggestionText: {
     fontSize: 14,
@@ -1604,5 +1922,119 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     color: C.textMuted,
     ...FONT.regular,
     lineHeight: 16,
+  },
+  // Meal plan (Phase 2)
+  mealLoading: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xl,
+  },
+  mealLoadingText: {
+    fontSize: 14,
+    color: C.textSecondary,
+    ...FONT.regular,
+  },
+  modeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    backgroundColor: C.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    padding: SPACING.md,
+  },
+  modeCardTitle: {
+    fontSize: 15,
+    ...FONT.bold,
+    color: C.text,
+  },
+  modeCardSub: {
+    fontSize: 12,
+    color: C.textSecondary,
+    ...FONT.regular,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  mealInput: {
+    backgroundColor: C.surface,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: SPACING.md,
+    fontSize: 15,
+    color: C.text,
+  },
+  inputHint: {
+    fontSize: 11,
+    color: C.textMuted,
+    ...FONT.regular,
+    marginTop: SPACING.xs,
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+  },
+  segmentText: {
+    fontSize: 15,
+    ...FONT.semibold,
+    color: C.textSecondary,
+  },
+  mealGenerateBtn: {
+    justifyContent: 'center',
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.sm,
+  },
+  mealCard: {
+    backgroundColor: C.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: SPACING.md,
+    gap: SPACING.sm,
+  },
+  mealCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  mealCardName: {
+    fontSize: 15,
+    ...FONT.bold,
+    color: C.text,
+  },
+  mealCardCals: {
+    fontSize: 13,
+    ...FONT.semibold,
+  },
+  mealItems: {
+    gap: SPACING.xs,
+    marginTop: 2,
+  },
+  mealItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+  },
+  mealItemDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 7,
+  },
+  mealItemText: {
+    flex: 1,
+    fontSize: 13,
+    color: C.text,
+    ...FONT.regular,
+    lineHeight: 19,
   },
 });

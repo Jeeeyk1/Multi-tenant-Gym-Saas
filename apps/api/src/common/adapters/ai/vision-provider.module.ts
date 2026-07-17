@@ -1,17 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { VISION_PROVIDER_PORT } from './vision-provider.port';
-import { GeminiProvider } from './gemini.provider';
+import { AnthropicVisionProvider } from './anthropic-vision.provider';
 
 @Module({
   providers: [
     {
       provide: VISION_PROVIDER_PORT,
       inject: [ConfigService],
-      useFactory: (config: ConfigService): GeminiProvider => {
-        const apiKey = config.get<string>('GEMINI_API_KEY', '');
-        const model = config.get<string>('GEMINI_MODEL', 'gemini-2.0-flash');
-        return new GeminiProvider(apiKey, model);
+      useFactory: (config: ConfigService): AnthropicVisionProvider => {
+        // "Log a Meal" photo analysis runs on the Claude (Anthropic) vision API.
+        // Reuses ANTHROPIC_API_KEY (same key as AI Insights); model is overridable
+        // via ANTHROPIC_VISION_MODEL without a code change.
+        const apiKey = config.get<string>('ANTHROPIC_API_KEY', '');
+        const model = config.get<string>('ANTHROPIC_VISION_MODEL', 'claude-haiku-4-5');
+        return new AnthropicVisionProvider(apiKey, model);
       },
     },
   ],

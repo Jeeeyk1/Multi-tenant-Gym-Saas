@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api';
+import { formatApiError } from '@/lib/format-error';
 import type { MemberDetail, RenewalRecord } from '@/types/api';
 
 export async function registerMember(
@@ -32,7 +33,7 @@ export async function registerMember(
     const e = err as { code?: string; message?: string };
     if (e.code === 'CONFLICT' || e.message?.toLowerCase().includes('already'))
       return { error: 'A member with this email already exists.' };
-    return { error: e.message ?? 'Registration failed. Please try again.' };
+    return { error: formatApiError(err, 'Registration failed. Please try again.') };
   }
 
   revalidatePath('/dashboard/members');
@@ -45,8 +46,7 @@ export async function suspendMember(gymId: string, memberId: string): Promise<{ 
     revalidatePath(`/dashboard/members/${memberId}`);
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Could not suspend member.' };
+    return { error: formatApiError(err, 'Could not suspend member.') };
   }
 }
 
@@ -56,8 +56,7 @@ export async function reactivateMember(gymId: string, memberId: string): Promise
     revalidatePath(`/dashboard/members/${memberId}`);
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Could not reactivate member.' };
+    return { error: formatApiError(err, 'Could not reactivate member.') };
   }
 }
 
@@ -84,8 +83,7 @@ export async function renewMember(
     revalidatePath(`/dashboard/members/${memberId}`);
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Renewal failed. Please try again.' };
+    return { error: formatApiError(err, 'Renewal failed. Please try again.') };
   }
 }
 
@@ -93,8 +91,7 @@ export async function removeMember(gymId: string, memberId: string): Promise<{ e
   try {
     await api.delete(`/gyms/${gymId}/members/${memberId}`);
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Could not remove member.' };
+    return { error: formatApiError(err, 'Could not remove member.') };
   }
   revalidatePath('/dashboard/members');
   redirect('/dashboard/members');

@@ -4,17 +4,22 @@ export interface ApiError {
   message: string;
   code?: string;
   statusCode?: number;
+  /** Correlation id from the API response body — surface it in error UI so a user
+   * can quote it, and it can be grepped server-side (see docs/03-engineering/logging-and-observability.md). */
+  requestId?: string;
 }
 
 function normalizeError(err: unknown): never {
   if (axios.isAxiosError(err)) {
-    const e = err as AxiosError<{ message?: string; code?: string }>;
+    const e = err as AxiosError<{ message?: string; code?: string; requestId?: string }>;
     const message = e.response?.data?.message ?? e.message ?? 'Request failed';
     const code = e.response?.data?.code;
     const statusCode = e.response?.status;
+    const requestId = e.response?.data?.requestId;
     const apiErr = new Error(message) as Error & ApiError;
     apiErr.code = code;
     apiErr.statusCode = statusCode;
+    apiErr.requestId = requestId;
     throw apiErr;
   }
   throw err;

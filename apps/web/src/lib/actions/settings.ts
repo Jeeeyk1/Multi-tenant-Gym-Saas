@@ -19,8 +19,10 @@ export async function uploadGymLogo(gymId: string, formData: FormData): Promise<
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { message?: string };
-    throw new Error(err.message ?? 'Logo upload failed');
+    const body = await res.json().catch(() => ({})) as { message?: string; requestId?: string };
+    const err = new Error(body.message ?? 'Logo upload failed') as Error & { requestId?: string };
+    err.requestId = body.requestId;
+    throw err;
   }
 
   const json = await res.json() as { url: string };

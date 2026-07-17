@@ -23,6 +23,7 @@ import {
   useSuspendMember,
 } from '../../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { formatApiError } from '../../../lib/format-error';
 import type { RenewalRecord } from '../../../types';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -272,8 +273,7 @@ export default function MemberDetailScreen() {
       await renewMutation.mutateAsync(dto);
       setRenewModalOpen(false);
     } catch (err) {
-      const e = err as { message?: string };
-      Alert.alert('Renewal Failed', e?.message ?? 'Could not process renewal');
+      Alert.alert('Renewal Failed', formatApiError(err, 'Could not process renewal'));
       throw err;
     }
   };

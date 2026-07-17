@@ -22,6 +22,7 @@ import {
   useStaffAnnouncements,
 } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { formatApiError } from '../../lib/format-error';
 import type { StaffAnnouncement } from '../../types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -400,8 +401,7 @@ export default function AnnouncementsScreen() {
       await createMutation.mutateAsync(dto);
       setCreateOpen(false);
     } catch (err) {
-      const e = err as { message?: string };
-      Alert.alert('Error', e?.message ?? 'Failed to create announcement');
+      Alert.alert('Error', formatApiError(err, 'Failed to create announcement'));
       throw err;
     }
   };

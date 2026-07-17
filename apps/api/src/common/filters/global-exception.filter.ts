@@ -8,6 +8,14 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { DomainError } from '../errors/domain.error';
+import { requestContext } from '../context/request-context';
+
+interface RequestUser {
+  sub?: string;
+  type?: string;
+  gymId?: string;
+  organizationId?: string;
+}
 
 /**
  * Catches all exceptions and maps them to a consistent JSON response shape.
@@ -59,17 +67,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'Internal server error';
     }
 
+    // Log every failed request with the caller's identity/tenant so a user-reported
+    // issue can be traced from the request id alone. 5xx include the stack; 4xx are
+    // business/validation failures logged at warn. The request id is auto-prefixed by
+    // RequestContextLogger, so it is not repeated here.
+    const requestId = requestContext.getRequestId();
+    const user = request.user as RequestUser | undefined;
+    const who = user
+      ? `user=${user.sub ?? '-'} type=${user.type ?? '-'} gym=${user.gymId ?? '-'} org=${user.organizationId ?? '-'}`
+      : 'anon';
+    const summary = `${request.method} ${request.url} → ${statusCode}${code ? ` ${code}` : ''} | ${who}`;
+
     if (statusCode >= 500) {
-      this.logger.error(
-        `${request.method} ${request.url} → ${statusCode}`,
-        exception instanceof Error ? exception.stack : String(exception),
-      );
+      this.logger.error(summary, exception instanceof Error ? exception.stack : String(exception));
+    } else {
+      this.logger.warn(summary);
     }
 
     response.status(statusCode).json({
       statusCode,
       code,
       message,
+      requestId,
       path: request.url,
       timestamp: new Date().toISOString(),
     });

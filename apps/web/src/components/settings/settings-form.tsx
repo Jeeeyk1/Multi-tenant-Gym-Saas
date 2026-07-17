@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { updateGymProfile, uploadGymLogo } from '@/lib/actions/settings';
+import { formatApiError } from '@/lib/format-error';
 import type { GymDetail } from '@/types/api';
 
 const THEME_PRESETS = [
@@ -125,8 +126,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (e: unknown) {
-      const err = e as { message?: string };
-      setError(err.message ?? 'Failed to save settings');
+      setError(formatApiError(e, 'Failed to save settings'));
     } finally {
       setSaving(false);
       setUploadingLogo(false);

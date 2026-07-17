@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { updateGymSchedules } from '@/lib/actions/settings';
+import { formatApiError } from '@/lib/format-error';
 import type { GymSchedule } from '@/types/api';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -48,8 +49,7 @@ export function SchedulesForm({ gymId, schedules: initial }: Props) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (e: unknown) {
-      const err = e as { message?: string };
-      setError(err.message ?? 'Failed to save schedules');
+      setError(formatApiError(e, 'Failed to save schedules'));
     } finally {
       setSaving(false);
     }

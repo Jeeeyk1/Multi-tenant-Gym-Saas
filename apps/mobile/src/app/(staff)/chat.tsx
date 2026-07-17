@@ -19,6 +19,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { formatApiError } from '../../lib/format-error';
 import type { ChatMessage } from '../../types';
 
 const WS_BASE_URL = (() => {
@@ -160,7 +161,7 @@ export default function StaffChatScreen() {
           try {
             await chatService.deleteMessage(user.gymId, convId, msg.id);
           } catch (err: unknown) {
-            Alert.alert('Error', (err as { message?: string })?.message ?? 'Failed to delete message');
+            Alert.alert('Error', formatApiError(err, 'Failed to delete message'));
           }
         },
       },

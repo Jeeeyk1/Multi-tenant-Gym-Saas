@@ -2,6 +2,15 @@ import * as SecureStore from 'expo-secure-store';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
 
+/** Extra fields attached to a thrown Error from a failed API call. */
+export interface ApiErrorFields {
+  code?: string;
+  statusCode?: number;
+  /** Correlation id from the API response body — surface it in error UI so a user
+   * can quote it, and it can be grepped server-side (see docs/03-engineering/logging-and-observability.md). */
+  requestId?: string;
+}
+
 const KEYS = {
   accessToken: 'access_token',
   refreshToken: 'refresh_token',
@@ -112,9 +121,10 @@ async function request<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    const err = new Error(body.message ?? 'Request failed') as Error & { code?: string; statusCode?: number };
+    const err = new Error(body.message ?? 'Request failed') as Error & ApiErrorFields;
     err.code = body.code;
     err.statusCode = response.status;
+    err.requestId = body.requestId;
     throw err;
   }
 
@@ -152,9 +162,10 @@ export const api = {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      const err = new Error(body.message ?? 'Upload failed') as Error & { code?: string; statusCode?: number };
+      const err = new Error(body.message ?? 'Upload failed') as Error & ApiErrorFields;
       err.code = body.code;
       err.statusCode = response.status;
+      err.requestId = body.requestId;
       throw err;
     }
 

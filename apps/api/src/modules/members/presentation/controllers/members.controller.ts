@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,8 +10,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator';
 import { RegisterMemberUseCase } from '../../application/use-cases/register-member.use-case';
@@ -29,7 +33,10 @@ import { RemoveMemberUseCase } from '../../application/use-cases/remove-member.u
 import { GetMemberQrUseCase } from '../../application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from '../../application/use-cases/register-device-token.use-case';
 import { UpdateMyPrivacyUseCase } from '../../application/use-cases/update-my-privacy.use-case';
+import { ValidateBulkInviteUseCase } from '../../application/use-cases/validate-bulk-invite.use-case';
+import { BulkInviteMembersUseCase } from '../../application/use-cases/bulk-invite-members.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
+import { BulkInviteDto } from '../dto/bulk-invite.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
 import { UpsertMyProfileDto } from '../dto/upsert-my-profile.dto';
 import { LogWeightDto } from '../dto/log-weight.dto';
@@ -42,6 +49,8 @@ import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 export class MembersController {
   constructor(
     private readonly registerMemberUseCase: RegisterMemberUseCase,
+    private readonly validateBulkInviteUseCase: ValidateBulkInviteUseCase,
+    private readonly bulkInviteMembersUseCase: BulkInviteMembersUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly getMemberUseCase: GetMemberUseCase,
     private readonly getMyMemberUseCase: GetMyMemberUseCase,
@@ -81,6 +90,46 @@ export class MembersController {
       },
       user,
     );
+  }
+
+  /**
+   * POST /gyms/:gymId/members/bulk-invite/validate
+   * Parse an uploaded .xlsx/.csv and return a preview (ready/skip/invalid). No writes.
+   * Requires members.create permission.
+   */
+  @Post('bulk-invite/validate')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const ok = /\.(xlsx|xls|csv)$/i.test(file.originalname);
+        cb(ok ? null : new BadRequestException('Upload an .xlsx or .csv file'), ok);
+      },
+    }),
+  )
+  validateBulkInvite(
+    @Param('gymId') gymId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (!file) throw new BadRequestException('A spreadsheet file is required');
+    return this.validateBulkInviteUseCase.execute(gymId, file.buffer, user);
+  }
+
+  /**
+   * POST /gyms/:gymId/members/bulk-invite
+   * Bulk-create the given members and queue their invite emails (sent asynchronously).
+   * Requires members.create permission.
+   */
+  @Post('bulk-invite')
+  @HttpCode(HttpStatus.OK)
+  bulkInvite(
+    @Param('gymId') gymId: string,
+    @Body() dto: BulkInviteDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.bulkInviteMembersUseCase.execute(gymId, dto.members, user);
   }
 
   /**

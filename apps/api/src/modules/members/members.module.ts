@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MembersRepository } from './infrastructure/persistence/members.repository';
 import { RegisterMemberUseCase } from './application/use-cases/register-member.use-case';
+import { ValidateBulkInviteUseCase } from './application/use-cases/validate-bulk-invite.use-case';
+import { BulkInviteMembersUseCase } from './application/use-cases/bulk-invite-members.use-case';
 import { ListMembersUseCase } from './application/use-cases/list-members.use-case';
 import { GetMemberUseCase } from './application/use-cases/get-member.use-case';
 import { GetMyMemberUseCase } from './application/use-cases/get-my-member.use-case';
@@ -23,6 +25,8 @@ import { MembersController } from './presentation/controllers/members.controller
   providers: [
     MembersRepository,
     RegisterMemberUseCase,
+    ValidateBulkInviteUseCase,
+    BulkInviteMembersUseCase,
     ListMembersUseCase,
     GetMemberUseCase,
     GetMyMemberUseCase,

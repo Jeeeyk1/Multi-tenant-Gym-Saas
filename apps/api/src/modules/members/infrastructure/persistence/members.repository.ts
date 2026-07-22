@@ -310,6 +310,97 @@ export class MembersRepository {
     });
   }
 
+  // ── Bulk invite ──────────────────────────────────────────────────────────────
+
+  /** Which of the given emails already belong to a user. */
+  async findExistingEmails(emails: string[]): Promise<Set<string>> {
+    const found = await this.prisma.user.findMany({
+      where: { email: { in: emails } },
+      select: { email: true },
+    });
+    return new Set(found.map((u) => u.email));
+  }
+
+  /**
+   * Creates one member (no email sent) and enqueues its invite for the async sender,
+   * in a single transaction so a created member always has a queued invite. Throws on
+   * a per-row failure (e.g. an email taken since validation) so the caller can skip it.
+   */
+  async bulkCreateMemberWithOutbox(input: {
+    gymId: string;
+    email: string;
+    fullName: string;
+    expiryDate: Date;
+  }): Promise<void> {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRY_DAYS);
+    const membershipNumber = generateMembershipNumber();
+    const qrCodeToken = generateQrToken();
+    const rawToken = randomBytes(32).toString('hex');
+
+    await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { email: input.email, fullName: input.fullName },
+        select: { id: true },
+      });
+
+      const member = await tx.gymMember.create({
+        data: {
+          gymId: input.gymId,
+          userId: user.id,
+          membershipNumber,
+          qrCodeToken,
+          expiryDate: input.expiryDate,
+        },
+        select: { id: true },
+      });
+
+      await tx.memberPrivacy.create({ data: { memberId: member.id } });
+
+      const defaultConversation = await tx.conversation.findFirst({
+        where: { gymId: input.gymId, isDefault: true },
+        select: { id: true },
+      });
+      if (defaultConversation) {
+        await tx.conversationMember.create({
+          data: { conversationId: defaultConversation.id, userId: user.id },
+        });
+      }
+
+      await tx.userToken.create({
+        data: { userId: user.id, token: rawToken, type: 'MEMBER_INVITE', expiresAt },
+      });
+
+      await tx.memberInviteOutbox.create({
+        data: { gymId: input.gymId, email: input.email, fullName: input.fullName, token: rawToken },
+      });
+    });
+  }
+
+  /** Unsent invites that haven't exhausted their retries, oldest first. */
+  listPendingInvites(limit: number, maxAttempts: number) {
+    return this.prisma.memberInviteOutbox.findMany({
+      where: { sentAt: null, attempts: { lt: maxAttempts } },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        token: true,
+        gym: { select: { name: true, code: true } },
+      },
+    });
+  }
+
+  markInviteSent(id: string) {
+    return this.prisma.memberInviteOutbox.update({ where: { id }, data: { sentAt: new Date() } });
+  }
+
+  markInviteFailed(id: string) {
+    return this.prisma.memberInviteOutbox.update({ where: { id }, data: { attempts: { increment: 1 } } });
+  }
+
   async upsertDeviceToken(userId: string, token: string, platform: string): Promise<void> {
     await this.prisma.deviceToken.upsert({
       where: { token },

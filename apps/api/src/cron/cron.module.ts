@@ -9,11 +9,13 @@ import { GenerateRenewalInvoicesJob } from './jobs/generate-renewal-invoices.job
 import { MarkSubscriptionsPastDueJob } from './jobs/mark-subscriptions-past-due.job';
 import { SuspendOverdueSubscriptionsJob } from './jobs/suspend-overdue-subscriptions.job';
 import { ConvertExpiredTrialsJob } from './jobs/convert-expired-trials.job';
+import { SendMemberInvitesJob } from './jobs/send-member-invites.job';
 import { BadgesModule } from '../modules/badges/badges.module';
 import { BillingModule } from '../modules/billing/billing.module';
+import { MembersModule } from '../modules/members/members.module';
 
 @Module({
-  imports: [BadgesModule, BillingModule],
+  imports: [BadgesModule, BillingModule, MembersModule],
   providers: [
     CronLockService,
     MembershipExpiryJob,
@@ -25,6 +27,7 @@ import { BillingModule } from '../modules/billing/billing.module';
     MarkSubscriptionsPastDueJob,
     SuspendOverdueSubscriptionsJob,
     ConvertExpiredTrialsJob,
+    SendMemberInvitesJob,
   ],
 })
 export class CronModule {}

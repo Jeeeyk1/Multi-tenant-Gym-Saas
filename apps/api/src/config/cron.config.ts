@@ -12,6 +12,7 @@ export const CRON_SCHEDULE = {
   SUBSCRIPTION_PAST_DUE: '0 5 * * *',    // Daily at 05:00 UTC — ACTIVE → PAST_DUE past period end
   SUBSCRIPTION_SUSPEND: '0 6 * * *',     // Daily at 06:00 UTC — PAST_DUE → SUSPENDED past grace
   TRIAL_CONVERSION: '0 7 * * *',         // Daily at 07:00 UTC — lapsed TRIALING → invoice + PENDING_PAYMENT
+  MEMBER_INVITE_SEND: '* * * * *',       // Every minute — drain the bulk-invite email outbox in batches
 } as const;
 
 export const CRON_LOCK_TTL = {
@@ -24,6 +25,7 @@ export const CRON_LOCK_TTL = {
   SUBSCRIPTION_PAST_DUE: 300,   // 5 minutes
   SUBSCRIPTION_SUSPEND: 300,    // 5 minutes
   TRIAL_CONVERSION: 300,        // 5 minutes
+  MEMBER_INVITE_SEND: 55,       // just under the 1-minute cadence
 } as const;
 
 export const BATCH_SIZE = 100;

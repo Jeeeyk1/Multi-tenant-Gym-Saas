@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { MembersTable } from '@/components/members/members-table';
+import { BulkInviteButton } from '@/components/members/bulk-invite-button';
 import type { MembersPage } from '@/types/api';
 
 const PAGE_SIZE = 50;
@@ -33,13 +34,16 @@ export default async function MembersPage({ searchParams }: Props) {
             {meta.total} member{meta.total !== 1 ? 's' : ''} enrolled
           </p>
         </div>
-        <Link
-          href="/dashboard/members/new"
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
-        >
-          <span className="text-base leading-none">+</span>
-          Register Member
-        </Link>
+        <div className="flex items-center gap-2">
+          <BulkInviteButton />
+          <Link
+            href="/dashboard/members/new"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+          >
+            <span className="text-base leading-none">+</span>
+            Register Member
+          </Link>
+        </div>
       </div>
 
       <MembersTable members={members} />

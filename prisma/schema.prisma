@@ -180,6 +180,7 @@ model Gym {
   leaderboardCycles    LeaderboardCycle[]
   memberBadges         MemberBadge[]
   convertedSignups     SignupRequest[]
+  memberInviteOutbox   MemberInviteOutbox[]
 
   @@map("gyms")
 }
@@ -566,6 +567,21 @@ model MemberMealPlan {
   gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
 
   @@map("member_meal_plans")
+}
+
+model MemberInviteOutbox {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId     String    @map("gym_id") @db.Uuid
+  email     String
+  fullName  String    @map("full_name")
+  token     String
+  attempts  Int       @default(0)
+  sentAt    DateTime? @map("sent_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@map("member_invite_outbox")
 }
 
 model ExerciseMedia {

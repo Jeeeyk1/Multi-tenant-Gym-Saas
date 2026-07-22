@@ -27,8 +27,10 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ inviteToken: string; gymId: string } | null>(null);
+  const [result, setResult] = useState<{ inviteToken: string; gymId: string; isTrial: boolean; trialDays: number } | null>(null);
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
+  const [isTrial, setIsTrial] = useState(false);
+  const [trialDays, setTrialDays] = useState(14);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,6 +50,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
           ownerFullName: fd.get('ownerFullName'),
           planId,
           billingCycle,
+          ...(isTrial ? { trialDays } : {}),
         }),
       });
       const json = await res.json() as { error?: string; inviteToken?: string; gymId?: string };
@@ -62,7 +65,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
         }).catch(() => {});
       }
 
-      setResult({ inviteToken: json.inviteToken!, gymId: json.gymId! });
+      setResult({ inviteToken: json.inviteToken!, gymId: json.gymId!, isTrial, trialDays });
     } catch {
       setError('Could not reach server');
     } finally {
@@ -77,8 +80,10 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
         <div className="bg-success/10 border border-success/30 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-foreground mb-2">Gym created!</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Share this activation link with the gym owner so they can set their password. Their
-            first invoice is already waiting for them — the gym stays locked until they pay.
+            Share this activation link with the gym owner so they can set their password.{' '}
+            {result.isTrial
+              ? `The gym is on a ${result.trialDays}-day free trial — fully usable right away, no payment yet. When the trial ends it will ask for payment (you can also extend it anytime from the gym's page).`
+              : 'Their first invoice is already waiting for them — the gym stays locked until they pay.'}
           </p>
           <code className="block text-xs bg-background border border-border rounded-lg p-3 break-all text-primary">
             {activationUrl}
@@ -184,6 +189,35 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="flex items-center justify-between gap-3 border border-border rounded-lg px-3 py-2.5 cursor-pointer">
+            <span className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isTrial}
+                onChange={(e) => setIsTrial(e.target.checked)}
+                disabled={isPending}
+              />
+              <span className="text-sm font-medium text-foreground">Start as free trial</span>
+            </span>
+            <span className="text-xs text-muted-foreground">usable now · no invoice yet</span>
+          </label>
+          {isTrial && (
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={trialDays}
+                onChange={(e) => setTrialDays(Math.max(1, Math.min(365, Number(e.target.value) || 1)))}
+                disabled={isPending}
+                className="w-24 bg-background border border-border rounded-lg px-3 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+              />
+              <span className="text-sm text-muted-foreground">trial days (converts to the plan above when it ends)</span>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}

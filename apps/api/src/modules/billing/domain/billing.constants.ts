@@ -17,6 +17,16 @@ export function addBillingPeriod(start: Date, cycle: BillingCycle): Date {
   return end;
 }
 
+export function addDays(start: Date, days: number): Date {
+  const end = new Date(start);
+  end.setDate(end.getDate() + days);
+  return end;
+}
+
+/** Bounds for an admin-granted trial length, in days. */
+export const MIN_TRIAL_DAYS = 1;
+export const MAX_TRIAL_DAYS = 365;
+
 export function generateInvoiceNumber(): string {
   const now = new Date();
   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;

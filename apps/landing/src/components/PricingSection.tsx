@@ -180,7 +180,7 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground">
-          {['14-day free trial', 'No credit card required', 'Cancel anytime', 'Free setup assistance'].map((item) => (
+          {['Free trial', 'No credit card required', 'Cancel anytime', 'Free setup assistance'].map((item) => (
             <div key={item} className="flex items-center gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <polyline points="20 6 9 17 4 12" />

@@ -4,6 +4,7 @@ import { PrismaService } from '../../../../common/prisma/prisma.service';
 import { BillingCycle, InvoiceStatus, SubscriptionStatus } from '../../../../common/enums';
 import {
   addBillingPeriod,
+  addDays,
   generateInvoiceNumber,
   FIRST_INVOICE_DUE_DAYS,
 } from '../../../billing/domain/billing.constants';
@@ -31,6 +32,7 @@ export interface CreateGymClientInput {
   ownerFullName: string;
   planId: string;
   billingCycle: BillingCycle;
+  trialDays?: number;
 }
 
 @Injectable()
@@ -95,6 +97,11 @@ export class AdminRepository {
               where: { role: 'OWNER' },
               take: 1,
               select: { user: { select: { emailVerifiedAt: true } } },
+            },
+            subscriptions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: { status: true, currentPeriodEnd: true },
             },
           },
         },
@@ -258,13 +265,32 @@ export class AdminRepository {
         data: { userId: user.id, token: inviteToken, type: 'INVITE', expiresAt },
       });
 
-      // Subscription starts PENDING_PAYMENT — the gym stays locked until the first
-      // invoice is verified as paid (pay-first model).
+      const now = new Date();
+
+      if (input.trialDays && input.trialDays > 0) {
+        // Trial: usable immediately (TRIALING isn't locked by the guard), no invoice.
+        // currentPeriodEnd doubles as the trial-end marker; the trial-conversion cron
+        // issues the first invoice and locks the gym when it lapses.
+        await tx.subscription.create({
+          data: {
+            organizationId: org.id,
+            planId: input.planId,
+            status: SubscriptionStatus.TRIALING,
+            billingCycle: input.billingCycle,
+            currentPeriodStart: now,
+            currentPeriodEnd: addDays(now, input.trialDays),
+          },
+        });
+
+        return { inviteToken, gymId: gym.id, orgId: org.id };
+      }
+
+      // Pay-first: subscription starts PENDING_PAYMENT — the gym stays locked until the
+      // first invoice is verified as paid.
       const plan = await tx.plan.findFirstOrThrow({
         where: { id: input.planId },
         select: { priceMonthly: true, priceYearly: true },
       });
-      const now = new Date();
       const periodEnd = addBillingPeriod(now, input.billingCycle);
       const amount =
         input.billingCycle === BillingCycle.YEARLY

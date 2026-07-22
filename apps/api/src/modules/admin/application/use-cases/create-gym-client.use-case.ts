@@ -11,6 +11,8 @@ export interface CreateGymClientInput {
   ownerFullName: string;
   planId: string;
   billingCycle?: BillingCycle;
+  /** When set, provision as a free trial for this many days instead of pay-first. */
+  trialDays?: number;
 }
 
 @Injectable()
@@ -47,6 +49,7 @@ export class CreateGymClientUseCase {
       ownerFullName: input.ownerFullName,
       planId: input.planId,
       billingCycle: input.billingCycle ?? BillingCycle.MONTHLY,
+      trialDays: input.trialDays,
     });
 
     await this.email.sendOwnerInvite({

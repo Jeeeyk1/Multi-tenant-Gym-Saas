@@ -8,6 +8,7 @@ import { LeaderboardCycleJob } from './jobs/leaderboard-cycle.job';
 import { GenerateRenewalInvoicesJob } from './jobs/generate-renewal-invoices.job';
 import { MarkSubscriptionsPastDueJob } from './jobs/mark-subscriptions-past-due.job';
 import { SuspendOverdueSubscriptionsJob } from './jobs/suspend-overdue-subscriptions.job';
+import { ConvertExpiredTrialsJob } from './jobs/convert-expired-trials.job';
 import { BadgesModule } from '../modules/badges/badges.module';
 import { BillingModule } from '../modules/billing/billing.module';
 
@@ -23,6 +24,7 @@ import { BillingModule } from '../modules/billing/billing.module';
     GenerateRenewalInvoicesJob,
     MarkSubscriptionsPastDueJob,
     SuspendOverdueSubscriptionsJob,
+    ConvertExpiredTrialsJob,
   ],
 })
 export class CronModule {}

@@ -231,6 +231,82 @@ export class BillingRepository {
     return gyms.map((g) => g.id);
   }
 
+  // ── Trials ───────────────────────────────────────────────────────────────────
+
+  async getLatestSubscriptionByGym(gymId: string) {
+    const gym = await this.prisma.gym.findUnique({ where: { id: gymId }, select: { organizationId: true } });
+    if (!gym) return null;
+    return this.prisma.subscription.findFirst({
+      where: { organizationId: gym.organizationId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true, currentPeriodEnd: true, organizationId: true },
+    });
+  }
+
+  /** Extend (or reopen) a trial: set TRIALING + new end, and void any unpaid invoice
+   *  from a lapsed trial so the owner is no longer being asked to pay. Returns the org's gym ids. */
+  async extendTrial(subscriptionId: string, organizationId: string, newPeriodEnd: Date): Promise<string[]> {
+    await this.prisma.$transaction([
+      this.prisma.invoice.updateMany({
+        where: { subscriptionId, status: { in: [InvoiceStatus.OPEN, InvoiceStatus.AWAITING_VERIFICATION] } },
+        data: { status: InvoiceStatus.VOID },
+      }),
+      this.prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: { status: SubscriptionStatus.TRIALING, currentPeriodEnd: newPeriodEnd },
+      }),
+    ]);
+    const gyms = await this.prisma.gym.findMany({ where: { organizationId }, select: { id: true } });
+    return gyms.map((g) => g.id);
+  }
+
+  /** TRIALING subscriptions whose trial window has elapsed. */
+  listExpiredTrials() {
+    return this.prisma.subscription.findMany({
+      where: { status: SubscriptionStatus.TRIALING, currentPeriodEnd: { lte: new Date() } },
+      select: {
+        id: true,
+        organizationId: true,
+        billingCycle: true,
+        plan: { select: { priceMonthly: true, priceYearly: true } },
+        organization: {
+          select: {
+            name: true,
+            members: { where: { role: 'OWNER' }, select: { user: { select: { email: true, fullName: true } } } },
+          },
+        },
+      },
+    });
+  }
+
+  /** Convert a lapsed trial to pay-first: issue the first invoice + lock (PENDING_PAYMENT),
+   *  atomically. Returns the org's gym ids for cache invalidation. */
+  async convertExpiredTrial(
+    subscriptionId: string,
+    organizationId: string,
+    amount: unknown,
+    dueAt: Date,
+  ): Promise<string[]> {
+    await this.prisma.$transaction([
+      this.prisma.invoice.create({
+        data: {
+          organizationId,
+          subscriptionId,
+          invoiceNumber: generateInvoiceNumber(),
+          status: InvoiceStatus.OPEN,
+          amount: amount as never,
+          dueAt,
+        },
+      }),
+      this.prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: { status: SubscriptionStatus.PENDING_PAYMENT },
+      }),
+    ]);
+    const gyms = await this.prisma.gym.findMany({ where: { organizationId }, select: { id: true } });
+    return gyms.map((g) => g.id);
+  }
+
   // ── Admin ledger ─────────────────────────────────────────────────────────────
 
   listAllInvoices(page: number, limit: number) {

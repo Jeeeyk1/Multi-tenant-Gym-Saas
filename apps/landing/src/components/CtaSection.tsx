@@ -44,7 +44,7 @@ export function CtaSection() {
             </div>
 
             <div className="flex items-center justify-center gap-6 mt-10 flex-wrap">
-              {['14-day free trial', 'No credit card needed', 'Cancel anytime', 'Free migration help'].map((item) => (
+              {['Free trial', 'No credit card needed', 'Cancel anytime', 'Free migration help'].map((item) => (
                 <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                     <polyline points="20 6 9 17 4 12" />

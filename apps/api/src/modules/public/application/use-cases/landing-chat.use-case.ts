@@ -33,7 +33,7 @@ LiftHub is a multi-tenant gym management SaaS platform built for gym owners. It 
   - Advanced analytics & insights
   - Priority support
 
-Both plans include a 14-day free trial. No credit card required. Yearly billing saves 2 months (pay 10, get 12).
+Both plans come with a free trial — no credit card required to start. Just request a trial and we'll set you up. Yearly billing saves 2 months (pay 10, get 12).
 
 ## Key Features
 

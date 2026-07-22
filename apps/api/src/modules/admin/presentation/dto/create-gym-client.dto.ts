@@ -1,5 +1,6 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { BillingCycle } from '../../../../common/enums';
+import { MAX_TRIAL_DAYS, MIN_TRIAL_DAYS } from '../../../billing/domain/billing.constants';
 
 export class CreateGymClientDto {
   @IsString()
@@ -26,4 +27,15 @@ export class CreateGymClientDto {
   @IsOptional()
   @IsEnum(BillingCycle)
   billingCycle?: BillingCycle;
+
+  /**
+   * When set, the gym is provisioned as a free trial for this many days (usable
+   * immediately, no invoice) instead of the pay-first flow. It converts to a
+   * payable subscription when the trial lapses.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(MIN_TRIAL_DAYS)
+  @Max(MAX_TRIAL_DAYS)
+  trialDays?: number;
 }

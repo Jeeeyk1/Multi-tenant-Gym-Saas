@@ -11,6 +11,7 @@ export const CRON_SCHEDULE = {
   RENEWAL_INVOICES: '0 4 * * *',         // Daily at 04:00 UTC — generate upcoming renewal invoices
   SUBSCRIPTION_PAST_DUE: '0 5 * * *',    // Daily at 05:00 UTC — ACTIVE → PAST_DUE past period end
   SUBSCRIPTION_SUSPEND: '0 6 * * *',     // Daily at 06:00 UTC — PAST_DUE → SUSPENDED past grace
+  TRIAL_CONVERSION: '0 7 * * *',         // Daily at 07:00 UTC — lapsed TRIALING → invoice + PENDING_PAYMENT
 } as const;
 
 export const CRON_LOCK_TTL = {
@@ -22,6 +23,7 @@ export const CRON_LOCK_TTL = {
   RENEWAL_INVOICES: 300,        // 5 minutes
   SUBSCRIPTION_PAST_DUE: 300,   // 5 minutes
   SUBSCRIPTION_SUSPEND: 300,    // 5 minutes
+  TRIAL_CONVERSION: 300,        // 5 minutes
 } as const;
 
 export const BATCH_SIZE = 100;

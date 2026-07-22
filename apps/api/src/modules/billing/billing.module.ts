@@ -4,6 +4,7 @@ import { GetMySubscriptionUseCase } from './application/use-cases/get-my-subscri
 import { SubmitPaymentUseCase } from './application/use-cases/submit-payment.use-case';
 import { MarkInvoicePaidUseCase } from './application/use-cases/mark-invoice-paid.use-case';
 import { RejectPaymentUseCase } from './application/use-cases/reject-payment.use-case';
+import { ExtendTrialUseCase } from './application/use-cases/extend-trial.use-case';
 import { BillingController } from './presentation/controllers/billing.controller';
 
 @Module({
@@ -14,8 +15,9 @@ import { BillingController } from './presentation/controllers/billing.controller
     SubmitPaymentUseCase,
     MarkInvoicePaidUseCase,
     RejectPaymentUseCase,
+    ExtendTrialUseCase,
   ],
-  // Exported so the admin module can verify/reject payments and list pending ones.
-  exports: [MarkInvoicePaidUseCase, RejectPaymentUseCase, BillingRepository],
+  // Exported so the admin module can verify/reject payments, extend trials, and list pending ones.
+  exports: [MarkInvoicePaidUseCase, RejectPaymentUseCase, ExtendTrialUseCase, BillingRepository],
 })
 export class BillingModule {}

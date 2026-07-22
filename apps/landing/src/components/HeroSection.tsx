@@ -54,7 +54,7 @@ export function HeroSection() {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {['No credit card required', '14-day free trial', 'Cancel anytime'].map((item) => (
+              {['No credit card required', 'Free trial', 'Cancel anytime'].map((item) => (
                 <div key={item} className="flex items-center gap-1.5">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary flex-shrink-0">
                     <polyline points="20 6 9 17 4 12" />

@@ -4,7 +4,10 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { GymStatusToggle } from './status-toggle';
 import { ResendInviteButton } from './resend-invite-button';
+import { ExtendTrialButton } from './extend-trial-button';
 import { GymStatus } from '@gym-saas/contracts';
+
+type SubscriptionStatus = 'PENDING_PAYMENT' | 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED';
 
 interface GymDetail {
   id: string;
@@ -20,7 +23,26 @@ interface GymDetail {
   organization: { id: string; name: string; slug: string };
   profile: { logoUrl: string | null; primaryColor: string | null; secondaryColor: string | null; description: string | null } | null;
   _count: { members: number; staff: number; checkIns: number };
+  subscription: { status: SubscriptionStatus; currentPeriodEnd: string } | null;
 }
+
+const SUBSCRIPTION_LABEL: Record<SubscriptionStatus, string> = {
+  PENDING_PAYMENT: 'Pending Payment',
+  TRIALING: 'Trialing',
+  ACTIVE: 'Active',
+  PAST_DUE: 'Past Due',
+  SUSPENDED: 'Suspended',
+  CANCELLED: 'Cancelled',
+};
+
+const SUBSCRIPTION_STYLE: Record<SubscriptionStatus, string> = {
+  PENDING_PAYMENT: 'bg-yellow-500/10 text-yellow-400',
+  TRIALING: 'bg-primary/10 text-primary',
+  ACTIVE: 'bg-success/10 text-success',
+  PAST_DUE: 'bg-yellow-500/10 text-yellow-400',
+  SUSPENDED: 'bg-destructive/10 text-destructive',
+  CANCELLED: 'bg-foreground/10 text-muted-foreground',
+};
 
 export default async function GymDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -74,6 +96,29 @@ export default async function GymDetailPage({ params }: { params: Promise<{ id: 
         <Row label="Created" value={formatDate(gym.createdAt)} />
         {gym.profile?.description && <Row label="Description" value={gym.profile.description} />}
       </div>
+
+      {gym.subscription && (
+        <div className="bg-surface border border-border rounded-xl p-5 space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Subscription</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {gym.subscription.status === 'TRIALING'
+                  ? `Trial ends ${formatDate(gym.subscription.currentPeriodEnd)}`
+                  : gym.subscription.status === 'PENDING_PAYMENT'
+                    ? 'Locked — awaiting payment'
+                    : `Renews ${formatDate(gym.subscription.currentPeriodEnd)}`}
+              </p>
+            </div>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${SUBSCRIPTION_STYLE[gym.subscription.status]}`}>
+              {SUBSCRIPTION_LABEL[gym.subscription.status]}
+            </span>
+          </div>
+          {(gym.subscription.status === 'TRIALING' || gym.subscription.status === 'PENDING_PAYMENT') && (
+            <ExtendTrialButton gymId={gym.id} lapsed={gym.subscription.status === 'PENDING_PAYMENT'} />
+          )}
+        </div>
+      )}
 
       <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">

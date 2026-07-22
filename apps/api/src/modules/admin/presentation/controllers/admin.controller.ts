@@ -26,6 +26,7 @@ import { DeletePlanUseCase } from '../../application/use-cases/delete-plan.use-c
 import { ResendInviteUseCase } from '../../application/use-cases/resend-invite.use-case';
 import { MarkInvoicePaidUseCase } from '../../../billing/application/use-cases/mark-invoice-paid.use-case';
 import { RejectPaymentUseCase } from '../../../billing/application/use-cases/reject-payment.use-case';
+import { ExtendTrialUseCase } from '../../../billing/application/use-cases/extend-trial.use-case';
 import { BillingRepository } from '../../../billing/infrastructure/persistence/billing.repository';
 import { ListSignupRequestsUseCase } from '../../../leads/application/use-cases/list-signup-requests.use-case';
 import { GetSignupRequestUseCase } from '../../../leads/application/use-cases/get-signup-request.use-case';
@@ -38,6 +39,7 @@ import { UpdateGymStatusDto } from '../dto/update-gym-status.dto';
 import { CreatePlanDto } from '../dto/create-plan.dto';
 import { UpdatePlanDto } from '../dto/update-plan.dto';
 import { RejectPaymentDto } from '../dto/reject-payment.dto';
+import { ExtendTrialDto } from '../dto/extend-trial.dto';
 
 @Controller('admin')
 @UseGuards(SystemAdminGuard)
@@ -57,6 +59,7 @@ export class AdminController {
     private readonly resendInvite: ResendInviteUseCase,
     private readonly markInvoicePaid: MarkInvoicePaidUseCase,
     private readonly rejectPayment: RejectPaymentUseCase,
+    private readonly extendTrial: ExtendTrialUseCase,
     private readonly billing: BillingRepository,
     private readonly listSignupRequests: ListSignupRequestsUseCase,
     private readonly getSignupRequest: GetSignupRequestUseCase,
@@ -157,7 +160,15 @@ export class AdminController {
       ownerFullName: dto.ownerFullName,
       planId: dto.planId,
       billingCycle: dto.billingCycle,
+      trialDays: dto.trialDays,
     });
+  }
+
+  /** POST /admin/gyms/:id/extend-trial — grant a gym more trial days (or reopen a lapsed trial). */
+  @Post('gyms/:id/extend-trial')
+  @HttpCode(HttpStatus.OK)
+  extendGymTrial(@Param('id') gymId: string, @Body() dto: ExtendTrialDto) {
+    return this.extendTrial.execute(gymId, dto.days);
   }
 
   @Patch('gyms/:id/status')

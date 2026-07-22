@@ -12,11 +12,13 @@ export class GetGymDetailUseCase {
 
     const { organization, ...rest } = gym;
     const ownerActivated = !!organization.members[0]?.user.emailVerifiedAt;
+    const sub = organization.subscriptions[0] ?? null;
 
     return {
       ...rest,
       organization: { id: organization.id, name: organization.name, slug: organization.slug },
       ownerActivated,
+      subscription: sub ? { status: sub.status, currentPeriodEnd: sub.currentPeriodEnd } : null,
     };
   }
 }

@@ -184,11 +184,11 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
 
             <div>
               <p className="text-2xl font-bold text-foreground">
-                ${Number(plan.priceMonthly).toFixed(0)}
+                ₱{Number(plan.priceMonthly).toLocaleString('en-PH', { maximumFractionDigits: 0 })}
                 <span className="text-sm font-normal text-muted-foreground">/mo</span>
               </p>
               {plan.priceYearly && (
-                <p className="text-xs text-muted-foreground">${Number(plan.priceYearly).toFixed(0)}/yr</p>
+                <p className="text-xs text-muted-foreground">₱{Number(plan.priceYearly).toLocaleString('en-PH', { maximumFractionDigits: 0 })}/yr</p>
               )}
             </div>
 
@@ -277,27 +277,27 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Monthly price ($) *</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Monthly price (₱) *</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={form.priceMonthly}
                     onChange={(e) => setForm((f) => ({ ...f, priceMonthly: e.target.value }))}
-                    placeholder="49"
+                    placeholder="2499"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Yearly price ($)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Yearly price (₱)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={form.priceYearly}
                     onChange={(e) => setForm((f) => ({ ...f, priceYearly: e.target.value }))}
-                    placeholder="490"
+                    placeholder="24990"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>

@@ -4,6 +4,7 @@ import { VisionProviderModule } from '../../common/adapters/ai/vision-provider.m
 import { StorageModule } from '../../common/adapters/storage/storage.module';
 import { AiRepository } from './infrastructure/persistence/ai.repository';
 import { WorkoutSuggestionUseCase } from './application/use-cases/workout-suggestion.use-case';
+import { SwapWorkoutExerciseUseCase } from './application/use-cases/swap-workout-exercise.use-case';
 import { MealSuggestionUseCase } from './application/use-cases/meal-suggestion.use-case';
 import { AnalyseMealUseCase } from './application/use-cases/analyse-meal.use-case';
 import { LogFoodUseCase } from './application/use-cases/log-food.use-case';
@@ -21,6 +22,7 @@ import { AiController } from './presentation/controllers/ai.controller';
   providers: [
     AiRepository,
     WorkoutSuggestionUseCase,
+    SwapWorkoutExerciseUseCase,
     MealSuggestionUseCase,
     AnalyseMealUseCase,
     LogFoodUseCase,

@@ -296,6 +296,16 @@ export interface WorkoutSuggestion {
   suggestion: string;
 }
 
+export type WorkoutFocus = 'AUTO' | 'FULL_BODY' | 'UPPER_BODY' | 'LOWER_BODY' | 'CORE';
+export type WorkoutEmphasis = 'BALANCED' | 'BUILD_MUSCLE' | 'BURN_FAT' | 'STRENGTH' | 'ENDURANCE';
+
+export interface WorkoutPlanRequest {
+  focus?: WorkoutFocus;
+  emphasis?: WorkoutEmphasis;
+  daysPerWeek?: number;
+  sessionMinutes?: number;
+}
+
 export interface MealSuggestion {
   suggestion: string;
 }

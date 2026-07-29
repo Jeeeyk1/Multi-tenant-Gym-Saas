@@ -17,14 +17,32 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { Animated } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useAuth } from '../../context/AuthContext';
-import { useMyMember } from '../../hooks/members';
+import { useMyMember, useMyProfile } from '../../hooks/members';
+import { AiGeneratingLoader } from '../../components/AiGeneratingLoader';
 import { aiService } from '../../services/ai.service';
 import { SPACING, FONT, RADIUS, type ColorPalette } from '../../constants/theme';
-import type { FoodLog, MealAnalysis, MealPlan, MealPlanMode, MealPlanRequest, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions } from '../../types';
+import type { FoodLog, MealAnalysis, MealPlan, MealPlanMode, MealPlanRequest, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions, WorkoutPlanRequest, WorkoutFocus, WorkoutEmphasis } from '../../types';
 
 type Tab = 'workout' | 'nutrition' | 'diary';
+
+const WORKOUT_LOADING_MESSAGES = [
+  'Warming up…',
+  'Choosing your exercises…',
+  'Balancing your week…',
+  'Adding form tips…',
+  'Almost ready…',
+];
+
+const MEAL_LOADING_MESSAGES = [
+  'Checking your goals…',
+  'Balancing your macros…',
+  'Plating your meals…',
+  'Almost ready…',
+];
 
 export default function AIScreen() {
   const { theme } = useTheme();
@@ -81,12 +99,16 @@ const TODAY_NAME = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 function WorkoutTab({ gymId, memberId, theme }: TabProps) {
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C), [C]);
+  const profileQ = useMyProfile();
   const [weekPlan, setWeekPlan] = useState<WorkoutWeekPlan | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [initialising, setInitialising] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<WorkoutExercise | null>(null);
+  const [swapTarget, setSwapTarget] = useState<{ day: string; sectionTitle: string; ex: WorkoutExercise } | null>(null);
+  const [swappingKey, setSwappingKey] = useState<string | null>(null);
   const instructionsCache = useRef<Map<string, ExerciseInstructions>>(new Map());
   const gifCache = useRef<Map<string, string | null>>(new Map());
 
@@ -111,18 +133,48 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
       .finally(() => setInitialising(false));
   }, [gymId, memberId]);
 
-  const generate = useCallback(async () => {
-    if (!gymId || !memberId) return;
-    setLoading(true);
-    try {
-      const res = await aiService.getWorkoutSuggestion(gymId, memberId);
-      applyPlan(JSON.parse(res.suggestion), new Date().toISOString());
-    } catch {
-      Alert.alert('Error', 'Could not generate workout plan. Try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [gymId, memberId]);
+  const generate = useCallback(
+    async (params: WorkoutPlanRequest) => {
+      if (!gymId || !memberId) return;
+      setShowModal(false);
+      setLoading(true);
+      try {
+        const res = await aiService.getWorkoutSuggestion(gymId, memberId, params);
+        applyPlan(JSON.parse(res.suggestion), new Date().toISOString());
+      } catch {
+        Alert.alert('Error', 'Could not generate workout plan. Try again.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [gymId, memberId],
+  );
+
+  const swapExercise = useCallback(
+    async (dayName: string, sectionTitle: string, ex: WorkoutExercise, reason?: string) => {
+      if (!gymId || !memberId) return;
+      const key = `${dayName}|${sectionTitle}|${ex.name}`;
+      setSwappingKey(key);
+      try {
+        const res = await aiService.swapWorkoutExercise(gymId, memberId, {
+          day: dayName,
+          sectionTitle,
+          exerciseName: ex.name,
+          reason: reason?.trim() || undefined,
+        });
+        setWeekPlan((prev) => replaceExercise(prev, dayName, sectionTitle, ex.name, res.exercise));
+      } catch {
+        Alert.alert('Swap failed', 'Could not find an alternative right now. Please try again.');
+      } finally {
+        setSwappingKey(null);
+      }
+    },
+    [gymId, memberId],
+  );
+
+  const profile = profileQ.data;
+  const defaultDays = profile?.daysPerWeek ?? 3;
+  const defaultEmphasis = fitnessGoalToEmphasis(profile?.fitnessGoal);
 
   const activeDay: WorkoutDay | null =
     weekPlan?.weekPlan?.find((d) => d.day === selectedDay) ?? null;
@@ -136,7 +188,7 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
       {/* Generate button */}
       <Pressable
         style={[styles.generateBtn, { backgroundColor: theme.primary }, (loading || initialising) && styles.generateBtnDisabled]}
-        onPress={generate}
+        onPress={() => setShowModal(true)}
         disabled={loading || initialising || !memberId}
       >
         {loading ? (
@@ -149,9 +201,21 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
         )}
       </Pressable>
 
-      {initialising && <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.md }} />}
+      {initialising && (
+        <View style={{ marginTop: SPACING.md, alignItems: 'center' }}>
+          <AppLoader />
+        </View>
+      )}
 
-      {weekPlan && !initialising && (
+      {loading && (
+        <AiGeneratingLoader
+          icon="barbell"
+          title="Building your plan"
+          messages={WORKOUT_LOADING_MESSAGES}
+        />
+      )}
+
+      {weekPlan && !initialising && !loading && (
         <>
           {/* Day selector pills */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayPillRow}>
@@ -237,9 +301,26 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                             <Text style={styles.tipText}>{ex.tip}</Text>
                           </View>
                         )}
-                        <View style={styles.cardTapHint}>
-                          <Ionicons name="chevron-forward" size={12} color={C.textMuted} />
-                          <Text style={styles.cardTapHintText}>How to do it</Text>
+                        <View style={styles.cardFooter}>
+                          <View style={styles.cardTapHint}>
+                            <Ionicons name="chevron-forward" size={12} color={C.textMuted} />
+                            <Text style={styles.cardTapHintText}>How to do it</Text>
+                          </View>
+                          <Pressable
+                            onPress={() => setSwapTarget({ day: activeDay.day, sectionTitle: section.title, ex })}
+                            disabled={swappingKey !== null}
+                            hitSlop={8}
+                            style={[styles.swapBtn, { backgroundColor: theme.primary + '15' }]}
+                          >
+                            {swappingKey === `${activeDay.day}|${section.title}|${ex.name}` ? (
+                              <ActivityIndicator size="small" color={theme.primary} />
+                            ) : (
+                              <>
+                                <Ionicons name="swap-horizontal" size={13} color={theme.primary} />
+                                <Text style={[styles.swapBtnText, { color: theme.primary }]}>Swap</Text>
+                              </>
+                            )}
+                          </Pressable>
                         </View>
                       </Pressable>
                     ))}
@@ -276,7 +357,448 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
           onClose={() => setSelectedExercise(null)}
         />
       )}
+
+      {/* Guided plan-request wizard */}
+      <WorkoutPlanModal
+        visible={showModal}
+        theme={theme}
+        defaultDays={defaultDays}
+        defaultEmphasis={defaultEmphasis}
+        onClose={() => setShowModal(false)}
+        onGenerate={generate}
+      />
+
+      {/* Swap-exercise reason sheet */}
+      <SwapExerciseModal
+        target={swapTarget}
+        theme={theme}
+        onClose={() => setSwapTarget(null)}
+        onConfirm={(reason) => {
+          const t = swapTarget;
+          setSwapTarget(null);
+          if (t) swapExercise(t.day, t.sectionTitle, t.ex, reason);
+        }}
+      />
     </ScrollView>
+  );
+}
+
+const SWAP_REASONS = ['No equipment for this', 'Too hard', 'Too easy', "Don't like it"];
+
+function SwapExerciseModal({
+  target,
+  theme,
+  onClose,
+  onConfirm,
+}: {
+  target: { day: string; sectionTitle: string; ex: WorkoutExercise } | null;
+  theme: ReturnType<typeof useTheme>['theme'];
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const [reason, setReason] = useState('');
+
+  useEffect(() => {
+    if (target) setReason('');
+  }, [target]);
+
+  return (
+    <Modal visible={target !== null} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Swap exercise</Text>
+          <Pressable onPress={onClose}>
+            <Ionicons name="close" size={24} color={C.text} />
+          </Pressable>
+        </View>
+
+        <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: SPACING.md }}>
+          {target && (
+            <View style={[styles.swapCurrentCard, { borderColor: theme.primary + '30' }]}>
+              <Ionicons name="barbell-outline" size={18} color={theme.primary} />
+              <Text style={styles.swapCurrentName}>{target.ex.name}</Text>
+            </View>
+          )}
+
+          <View>
+            <Text style={styles.inputLabel}>Why swap it? (optional)</Text>
+            <Text style={styles.inputHint}>
+              Tell the coach and it&apos;ll avoid similar ones — e.g. no barbell, no cable machine.
+            </Text>
+          </View>
+
+          <View style={styles.swapChips}>
+            {SWAP_REASONS.map((r) => {
+              const active = reason === r;
+              return (
+                <Pressable
+                  key={r}
+                  onPress={() => setReason(active ? '' : r)}
+                  style={[
+                    styles.swapChip,
+                    { borderColor: active ? theme.primary : C.border, backgroundColor: active ? theme.primary + '18' : 'transparent' },
+                  ]}
+                >
+                  <Text style={[styles.swapChipText, { color: active ? theme.primary : C.textSecondary }]}>{r}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <TextInput
+            style={styles.mealInput}
+            placeholder="Or type a reason…"
+            placeholderTextColor={C.textMuted}
+            value={reason}
+            onChangeText={setReason}
+            maxLength={200}
+          />
+
+          <Pressable
+            style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]}
+            onPress={() => onConfirm(reason)}
+          >
+            <Ionicons name="swap-horizontal" size={16} color="#000" />
+            <Text style={styles.generateBtnText}>Find alternative</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+/** Immutably swap a single exercise (matched by day + section + name) in the week plan. */
+function replaceExercise(
+  plan: WorkoutWeekPlan | null,
+  dayName: string,
+  sectionTitle: string,
+  oldName: string,
+  next: WorkoutExercise,
+): WorkoutWeekPlan | null {
+  if (!plan) return plan;
+  return {
+    ...plan,
+    weekPlan: plan.weekPlan.map((d) =>
+      d.day !== dayName
+        ? d
+        : {
+            ...d,
+            sections: d.sections.map((s) =>
+              s.title !== sectionTitle
+                ? s
+                : { ...s, exercises: s.exercises.map((e) => (e.name === oldName ? next : e)) },
+            ),
+          },
+    ),
+  };
+}
+
+function fitnessGoalToEmphasis(goal: string | null | undefined): WorkoutEmphasis {
+  switch (goal) {
+    case 'LOSE_WEIGHT':
+      return 'BURN_FAT';
+    case 'BUILD_MUSCLE':
+      return 'BUILD_MUSCLE';
+    default:
+      return 'BALANCED';
+  }
+}
+
+// ─── Workout Plan: guided animated question flow ──────────────────────────────
+
+type WizardIcon = React.ComponentProps<typeof Ionicons>['name'];
+type WorkoutStepKey = 'focus' | 'emphasis' | 'days' | 'length' | 'review';
+const WORKOUT_STEPS: WorkoutStepKey[] = ['focus', 'emphasis', 'days', 'length', 'review'];
+
+const FOCUS_OPTIONS: { value: WorkoutFocus; icon: WizardIcon; title: string; sub: string }[] = [
+  { value: 'AUTO', icon: 'sparkles-outline', title: 'Let the coach decide', sub: 'Balanced split from your profile' },
+  { value: 'FULL_BODY', icon: 'body-outline', title: 'Full body', sub: 'Everything, every session' },
+  { value: 'UPPER_BODY', icon: 'barbell-outline', title: 'Upper body', sub: 'Chest, back, shoulders, arms' },
+  { value: 'LOWER_BODY', icon: 'walk-outline', title: 'Lower body', sub: 'Legs and glutes' },
+  { value: 'CORE', icon: 'fitness-outline', title: 'Core & abs', sub: 'Midsection and stability' },
+];
+
+const EMPHASIS_OPTIONS: { value: WorkoutEmphasis; icon: WizardIcon; title: string; sub: string }[] = [
+  { value: 'BALANCED', icon: 'options-outline', title: 'Balanced', sub: 'A bit of everything' },
+  { value: 'BUILD_MUSCLE', icon: 'barbell-outline', title: 'Build muscle', sub: 'Hypertrophy, moderate-heavy' },
+  { value: 'BURN_FAT', icon: 'flame-outline', title: 'Burn fat', sub: 'Higher reps, short rest' },
+  { value: 'STRENGTH', icon: 'trending-up-outline', title: 'Get stronger', sub: 'Heavy, low reps' },
+  { value: 'ENDURANCE', icon: 'pulse-outline', title: 'Endurance', sub: 'High reps, conditioning' },
+];
+
+const DAY_OPTIONS = [2, 3, 4, 5, 6];
+const LENGTH_OPTIONS = [30, 45, 60, 75];
+
+function focusLabel(v: WorkoutFocus): string {
+  return FOCUS_OPTIONS.find((o) => o.value === v)?.title ?? 'Balanced';
+}
+function emphasisLabel(v: WorkoutEmphasis): string {
+  return EMPHASIS_OPTIONS.find((o) => o.value === v)?.title ?? 'Balanced';
+}
+
+function WorkoutPlanModal({
+  visible,
+  theme,
+  defaultDays,
+  defaultEmphasis,
+  onClose,
+  onGenerate,
+}: {
+  visible: boolean;
+  theme: ReturnType<typeof useTheme>['theme'];
+  defaultDays: number;
+  defaultEmphasis: WorkoutEmphasis;
+  onClose: () => void;
+  onGenerate: (params: WorkoutPlanRequest) => void;
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+
+  const [stepIndex, setStepIndex] = useState(0);
+  const [focus, setFocus] = useState<WorkoutFocus>('AUTO');
+  const [emphasis, setEmphasis] = useState<WorkoutEmphasis>(defaultEmphasis);
+  const [days, setDays] = useState(defaultDays);
+  const [length, setLength] = useState(45);
+
+  const anim = useRef(new Animated.Value(1)).current;
+  const dirRef = useRef(1);
+
+  // Reset to profile defaults each time the wizard opens.
+  useEffect(() => {
+    if (visible) {
+      setStepIndex(0);
+      setFocus('AUTO');
+      setEmphasis(defaultEmphasis);
+      setDays(defaultDays);
+      setLength(45);
+    }
+  }, [visible, defaultDays, defaultEmphasis]);
+
+  // Slide + fade the question in whenever the step changes.
+  useEffect(() => {
+    anim.setValue(0);
+    Animated.timing(anim, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+  }, [stepIndex, anim]);
+
+  const step = WORKOUT_STEPS[stepIndex];
+  const goNext = () => { dirRef.current = 1; setStepIndex((i) => Math.min(i + 1, WORKOUT_STEPS.length - 1)); };
+  const goBack = () => { dirRef.current = -1; setStepIndex((i) => Math.max(i - 1, 0)); };
+
+  // Register the choice visually, then glide to the next question.
+  const pick = (apply: () => void) => {
+    apply();
+    setTimeout(goNext, 220);
+  };
+
+  const submit = () => {
+    onGenerate({
+      focus: focus === 'AUTO' ? undefined : focus, // AUTO defers to the member's profile/goal
+      emphasis,
+      daysPerWeek: days,
+      sessionMinutes: length,
+    });
+  };
+
+  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [dirRef.current * 36, 0] });
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Build my plan</Text>
+          <Pressable onPress={onClose}>
+            <Ionicons name="close" size={24} color={C.text} />
+          </Pressable>
+        </View>
+
+        {/* Progress dots */}
+        <View style={styles.wizardProgress}>
+          {WORKOUT_STEPS.map((key, i) => (
+            <View
+              key={key}
+              style={[
+                styles.wizardDot,
+                i <= stepIndex && { backgroundColor: theme.primary },
+                i === stepIndex && styles.wizardDotActive,
+              ]}
+            />
+          ))}
+        </View>
+
+        <Animated.View style={[styles.wizardBody, { opacity: anim, transform: [{ translateX }] }]}>
+          {step === 'focus' && (
+            <WizardQuestion styles={styles} title="What do you want to focus on?" sub="Pick a target area for this week.">
+              {FOCUS_OPTIONS.map((o) => (
+                <OptionCard
+                  key={o.value}
+                  theme={theme}
+                  icon={o.icon}
+                  title={o.title}
+                  sub={o.sub}
+                  selected={focus === o.value}
+                  onPress={() => pick(() => setFocus(o.value))}
+                />
+              ))}
+            </WizardQuestion>
+          )}
+
+          {step === 'emphasis' && (
+            <WizardQuestion styles={styles} title="What's the goal for this plan?" sub="This shapes reps, rest and intensity.">
+              {EMPHASIS_OPTIONS.map((o) => (
+                <OptionCard
+                  key={o.value}
+                  theme={theme}
+                  icon={o.icon}
+                  title={o.title}
+                  sub={o.sub}
+                  selected={emphasis === o.value}
+                  onPress={() => pick(() => setEmphasis(o.value))}
+                />
+              ))}
+            </WizardQuestion>
+          )}
+
+          {step === 'days' && (
+            <WizardQuestion styles={styles} title="How many days a week?" sub="We'll spread the sessions out.">
+              <View style={styles.segmentRow}>
+                {DAY_OPTIONS.map((n) => (
+                  <Pressable
+                    key={n}
+                    style={[styles.segment, days === n && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+                    onPress={() => pick(() => setDays(n))}
+                  >
+                    <Text style={[styles.segmentText, days === n && { color: '#000' }]}>{n}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </WizardQuestion>
+          )}
+
+          {step === 'length' && (
+            <WizardQuestion styles={styles} title="How long per session?" sub="Roughly how much time you have.">
+              <View style={styles.segmentRow}>
+                {LENGTH_OPTIONS.map((n) => (
+                  <Pressable
+                    key={n}
+                    style={[styles.segment, length === n && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+                    onPress={() => pick(() => setLength(n))}
+                  >
+                    <Text style={[styles.segmentText, length === n && { color: '#000' }]}>{n}m</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </WizardQuestion>
+          )}
+
+          {step === 'review' && (
+            <WizardQuestion styles={styles} title="Ready to go" sub="Here's what your coach will build.">
+              <View style={styles.reviewCard}>
+                <ReviewRow styles={styles} C={C} icon="locate-outline" label="Focus" value={focusLabel(focus)} />
+                <ReviewRow styles={styles} C={C} icon="trophy-outline" label="Goal" value={emphasisLabel(emphasis)} />
+                <ReviewRow styles={styles} C={C} icon="calendar-outline" label="Days / week" value={String(days)} />
+                <ReviewRow styles={styles} C={C} icon="time-outline" label="Session" value={`${length} min`} />
+              </View>
+              <Pressable style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]} onPress={submit}>
+                <Ionicons name="flash-outline" size={16} color="#000" />
+                <Text style={styles.generateBtnText}>Generate My Plan</Text>
+              </Pressable>
+            </WizardQuestion>
+          )}
+        </Animated.View>
+
+        {stepIndex > 0 && (
+          <Pressable style={styles.retakeBtn} onPress={goBack}>
+            <Ionicons name="arrow-back" size={15} color={C.textMuted} />
+            <Text style={styles.retakeBtnText}>Back</Text>
+          </Pressable>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+function WizardQuestion({
+  styles,
+  title,
+  sub,
+  children,
+}: {
+  styles: ReturnType<typeof makeStyles>;
+  title: string;
+  sub: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.wizardQuestion} keyboardShouldPersistTaps="handled">
+      <Text style={styles.wizardQTitle}>{title}</Text>
+      <Text style={styles.wizardQSub}>{sub}</Text>
+      <View style={{ gap: SPACING.sm }}>{children}</View>
+    </ScrollView>
+  );
+}
+
+function OptionCard({
+  theme,
+  icon,
+  title,
+  sub,
+  selected,
+  onPress,
+}: {
+  theme: ReturnType<typeof useTheme>['theme'];
+  icon: WizardIcon;
+  title: string;
+  sub: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const C = theme.colors;
+  const styles = useMemo(() => makeStyles(C), [C]);
+  return (
+    <Pressable
+      style={[
+        styles.optionCard,
+        { borderColor: selected ? theme.primary : C.border, backgroundColor: selected ? theme.primary + '14' : 'transparent' },
+      ]}
+      onPress={onPress}
+    >
+      <View style={[styles.optionIcon, { backgroundColor: theme.primary + '18' }]}>
+        <Ionicons name={icon} size={20} color={theme.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.optionTitle}>{title}</Text>
+        <Text style={styles.optionSub}>{sub}</Text>
+      </View>
+      <Ionicons
+        name={selected ? 'checkmark-circle' : 'chevron-forward'}
+        size={selected ? 22 : 18}
+        color={selected ? theme.primary : C.textMuted}
+      />
+    </Pressable>
+  );
+}
+
+function ReviewRow({
+  styles,
+  C,
+  icon,
+  label,
+  value,
+}: {
+  styles: ReturnType<typeof makeStyles>;
+  C: ColorPalette;
+  icon: WizardIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.reviewRow}>
+      <Ionicons name={icon} size={16} color={C.textSecondary} />
+      <Text style={styles.reviewLabel}>{label}</Text>
+      <Text style={styles.reviewValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -359,7 +881,7 @@ function ExerciseDetailModal({
 
         {loading ? (
           <View style={styles.exModalLoading}>
-            <ActivityIndicator color={theme.primary} size="large" />
+            <AppLoader />
             <Text style={styles.exModalLoadingText}>Loading instructions…</Text>
           </View>
         ) : !instructions ? (
@@ -535,10 +1057,17 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
         </Pressable>
       </View>
 
-      {(initialising || loading) && (
+      {loading && (
+        <AiGeneratingLoader
+          icon="nutrition"
+          title="Building your meal plan"
+          messages={MEAL_LOADING_MESSAGES}
+        />
+      )}
+
+      {initialising && !loading && (
         <View style={styles.mealLoading}>
-          <ActivityIndicator color={theme.primary} size="large" />
-          {loading && <Text style={styles.mealLoadingText}>Building your meal plan…</Text>}
+          <AppLoader />
         </View>
       )}
 
@@ -854,7 +1383,9 @@ function DiaryTab({ gymId, memberId, theme }: TabProps) {
       </View>
 
       {loading ? (
-        <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.xl }} />
+        <View style={{ marginTop: SPACING.xl, alignItems: 'center' }}>
+          <AppLoader />
+        </View>
       ) : logs.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="fast-food-outline" size={48} color={C.textMuted} />
@@ -1059,7 +1590,7 @@ function LogMealModal({
               {photoUri && (
                 <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
               )}
-              <ActivityIndicator color={theme.primary} size="large" style={{ marginTop: SPACING.lg }} />
+              <View style={{ marginTop: SPACING.lg }}><AppLoader /></View>
               <Text style={styles.loadingText}>
                 {step === 'uploading' ? 'Uploading photo…' : 'Analysing your meal…'}
               </Text>
@@ -1612,16 +2143,65 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     ...FONT.regular,
   },
   // Exercise card tap hint
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
   cardTapHint: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    marginTop: SPACING.xs,
   },
   cardTapHintText: {
     fontSize: 10,
     color: C.textMuted,
     ...FONT.regular,
+  },
+  swapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minWidth: 62,
+    height: 26,
+    paddingHorizontal: 8,
+    borderRadius: RADIUS.full,
+  },
+  swapBtnText: {
+    fontSize: 11,
+    ...FONT.semibold,
+  },
+  swapCurrentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+  },
+  swapCurrentName: {
+    flex: 1,
+    fontSize: 15,
+    ...FONT.semibold,
+    color: C.text,
+  },
+  swapChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  swapChip: {
+    borderWidth: 1,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+  },
+  swapChipText: {
+    fontSize: 13,
+    ...FONT.medium,
   },
   // Exercise detail modal
   exModalContainer: {
@@ -1929,11 +2509,6 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: SPACING.xl,
   },
-  mealLoadingText: {
-    fontSize: 14,
-    color: C.textSecondary,
-    ...FONT.regular,
-  },
   modeCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2036,5 +2611,96 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     color: C.text,
     ...FONT.regular,
     lineHeight: 19,
+  },
+
+  // ── Workout plan wizard ──
+  wizardProgress: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
+  },
+  wizardDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: C.border,
+  },
+  wizardDotActive: {
+    width: 22,
+  },
+  wizardBody: {
+    flex: 1,
+  },
+  wizardQuestion: {
+    padding: SPACING.lg,
+    paddingTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  wizardQTitle: {
+    fontSize: 22,
+    ...FONT.bold,
+    color: C.text,
+  },
+  wizardQSub: {
+    fontSize: 14,
+    color: C.textSecondary,
+    ...FONT.regular,
+    marginBottom: SPACING.sm,
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    borderWidth: 1,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+  },
+  optionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionTitle: {
+    fontSize: 15,
+    ...FONT.semibold,
+    color: C.text,
+  },
+  optionSub: {
+    fontSize: 12,
+    color: C.textMuted,
+    ...FONT.regular,
+    marginTop: 1,
+  },
+  reviewCard: {
+    backgroundColor: C.surface,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: SPACING.md,
+    gap: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  reviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    paddingVertical: 4,
+  },
+  reviewLabel: {
+    fontSize: 13,
+    color: C.textSecondary,
+    ...FONT.regular,
+  },
+  reviewValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 14,
+    ...FONT.semibold,
+    color: C.text,
   },
 });

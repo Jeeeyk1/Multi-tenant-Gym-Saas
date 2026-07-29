@@ -15,3 +15,5 @@ export { InvoiceStatus, BillingCycle } from './invoice-status.enum';
 export { SignupRequestStatus } from './signup-request-status.enum';
 export { MealPlanMode } from './meal-plan-mode.enum';
 export { MemberStatus } from './member-status.enum';
+export { WorkoutFocus } from './workout-focus.enum';
+export { WorkoutEmphasis } from './workout-emphasis.enum';

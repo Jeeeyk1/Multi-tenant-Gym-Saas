@@ -15,6 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { WorkoutSuggestionUseCase } from '../../application/use-cases/workout-suggestion.use-case';
+import { SwapWorkoutExerciseUseCase } from '../../application/use-cases/swap-workout-exercise.use-case';
 import { MealSuggestionUseCase } from '../../application/use-cases/meal-suggestion.use-case';
 import { AnalyseMealUseCase } from '../../application/use-cases/analyse-meal.use-case';
 import { LogFoodUseCase } from '../../application/use-cases/log-food.use-case';
@@ -28,12 +29,15 @@ import { LogFoodDto } from '../dto/log-food.dto';
 import { ExerciseInstructionsDto } from '../dto/exercise-instructions.dto';
 import { AnalyseMealDto } from '../dto/analyse-meal.dto';
 import { GenerateMealPlanDto } from '../dto/generate-meal-plan.dto';
+import { GenerateWorkoutPlanDto } from '../dto/generate-workout-plan.dto';
+import { SwapWorkoutExerciseDto } from '../dto/swap-workout-exercise.dto';
 
 @Controller('gyms/:gymId/members/:memberId')
 @UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(
     private readonly workoutSuggestionUseCase: WorkoutSuggestionUseCase,
+    private readonly swapWorkoutExerciseUseCase: SwapWorkoutExerciseUseCase,
     private readonly mealSuggestionUseCase: MealSuggestionUseCase,
     private readonly analyseMealUseCase: AnalyseMealUseCase,
     private readonly logFoodUseCase: LogFoodUseCase,
@@ -73,8 +77,22 @@ export class AiController {
 
   @Post('ai/workout-suggestion')
   @HttpCode(HttpStatus.OK)
-  workoutSuggestion(@Param('gymId') gymId: string, @Param('memberId') memberId: string) {
-    return this.workoutSuggestionUseCase.execute(memberId, gymId);
+  workoutSuggestion(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: GenerateWorkoutPlanDto,
+  ) {
+    return this.workoutSuggestionUseCase.execute(memberId, gymId, dto);
+  }
+
+  @Post('ai/workout-exercise-swap')
+  @HttpCode(HttpStatus.OK)
+  swapWorkoutExercise(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: SwapWorkoutExerciseDto,
+  ) {
+    return this.swapWorkoutExerciseUseCase.execute(memberId, gymId, dto);
   }
 
   @Post('ai/meal-suggestion')

@@ -2,9 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { AiRepository, type MemberContext } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError } from '../../../../common/errors';
+import { WorkoutEmphasis, WorkoutFocus } from '../../../../common/enums';
 
 const MAX_TOKENS = 4000;
 const FEATURE_KEY = 'workout_suggestion';
+
+export interface WorkoutPlanRequest {
+  focus?: WorkoutFocus;
+  emphasis?: WorkoutEmphasis;
+  daysPerWeek?: number;
+  sessionMinutes?: number;
+}
 
 @Injectable()
 export class WorkoutSuggestionUseCase {
@@ -13,15 +21,22 @@ export class WorkoutSuggestionUseCase {
     private readonly aiRepository: AiRepository,
   ) {}
 
-  async execute(memberId: string, gymId: string): Promise<{ suggestion: string }> {
+  async execute(memberId: string, gymId: string, request: WorkoutPlanRequest = {}): Promise<{ suggestion: string }> {
     const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
     if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
     const exerciseGroups = await this.aiRepository.listExercisesGrouped();
-    const prompt = buildWeeklyPlanPrompt(ctx, exerciseGroups);
+    const prompt = buildWeeklyPlanPrompt(ctx, exerciseGroups, request);
     const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
 
-    const suggestion = extractJson(text);
+    // Persist the goal/focus alongside the plan so a later single-exercise swap can honour the
+    // "same target and goal" the plan was built with, even after the app reloads.
+    const plan = JSON.parse(extractJson(text)) as Record<string, unknown>;
+    plan.meta = {
+      emphasis: request.emphasis ?? emphasisFromGoal(ctx.fitnessGoal),
+      focus: request.focus ?? WorkoutFocus.AUTO,
+    };
+    const suggestion = JSON.stringify(plan);
 
     await Promise.all([
       this.aiRepository.logUsage(ctx.organizationId, ctx.gymId, ctx.userId, FEATURE_KEY, tokensUsed),
@@ -41,13 +56,49 @@ function extractJson(raw: string): string {
   return json;
 }
 
-function buildWeeklyPlanPrompt(ctx: MemberContext, exerciseGroups: Record<string, string[]>): string {
+/** Maps a member's onboarding fitness goal to a per-plan training emphasis. */
+export function emphasisFromGoal(goal: string | null): WorkoutEmphasis {
+  switch (goal) {
+    case 'LOSE_WEIGHT':
+      return WorkoutEmphasis.BURN_FAT;
+    case 'BUILD_MUSCLE':
+      return WorkoutEmphasis.BUILD_MUSCLE;
+    default:
+      return WorkoutEmphasis.BALANCED;
+  }
+}
+
+const FOCUS_INSTRUCTION: Record<WorkoutFocus, string | null> = {
+  [WorkoutFocus.AUTO]: null,
+  [WorkoutFocus.FULL_BODY]: 'Make every training day a full-body session hitting all major muscle groups.',
+  [WorkoutFocus.UPPER_BODY]: 'Prioritise upper body (chest, back, shoulders, arms); include only light lower-body or core accessory work.',
+  [WorkoutFocus.LOWER_BODY]: 'Prioritise lower body (quads, hamstrings, glutes, calves); include only light upper-body or core accessory work.',
+  [WorkoutFocus.CORE]: 'Centre the plan on core and abdominal strength, with supporting compound movements.',
+};
+
+export const EMPHASIS_INSTRUCTION: Record<WorkoutEmphasis, string | null> = {
+  [WorkoutEmphasis.BALANCED]: null,
+  [WorkoutEmphasis.BUILD_MUSCLE]: 'Emphasise hypertrophy: moderate-heavy loads, 8-12 reps, 3-4 sets, controlled tempo.',
+  [WorkoutEmphasis.BURN_FAT]: 'Emphasise fat loss: higher reps (12-20), shorter rest (30-45s), circuit-style pacing and conditioning.',
+  [WorkoutEmphasis.STRENGTH]: 'Emphasise strength: compound lifts, lower reps (3-6), heavier loads, longer rest (90-180s).',
+  [WorkoutEmphasis.ENDURANCE]: 'Emphasise muscular endurance and cardio: high reps (15-25), minimal rest, sustained effort.',
+};
+
+function buildWeeklyPlanPrompt(
+  ctx: MemberContext,
+  exerciseGroups: Record<string, string[]>,
+  request: WorkoutPlanRequest,
+): string {
   const name = ctx.fullName.split(' ')[0];
   const goal = ctx.fitnessGoal ?? 'IMPROVE_FITNESS';
   const level = ctx.activityLevel ?? 'MODERATE';
   const experience = ctx.experienceLevel ?? 'BEGINNER';
   const style = ctx.preferredStyle ?? null;
-  const daysPerWeek = ctx.daysPerWeek ?? 3;
+  // Requested overrides win; otherwise fall back to the member's profile.
+  const daysPerWeek = request.daysPerWeek ?? ctx.daysPerWeek ?? 3;
+  const sessionMinutes = request.sessionMinutes ?? null;
+  const focus = request.focus ?? WorkoutFocus.AUTO;
+  const emphasis = request.emphasis ?? WorkoutEmphasis.BALANCED;
   const injuries = ctx.injuries ?? null;
 
   const profileLines = [
@@ -66,6 +117,21 @@ function buildWeeklyPlanPrompt(ctx: MemberContext, exerciseGroups: Record<string
     .filter(Boolean)
     .join('\n');
 
+  const focusInstruction = FOCUS_INSTRUCTION[focus];
+  const emphasisInstruction = EMPHASIS_INSTRUCTION[emphasis];
+  const requestLines = [
+    focusInstruction ? `- Focus: ${focusInstruction}` : null,
+    emphasisInstruction ? `- Training emphasis: ${emphasisInstruction}` : null,
+    sessionMinutes ? `- Target session length: about ${sessionMinutes} minutes per day (set totalDurationMin near this).` : null,
+  ].filter(Boolean);
+  const requestSection = requestLines.length
+    ? `\nMember's request for this plan (honour these):\n${requestLines.join('\n')}\n`
+    : '';
+
+  const durationTarget = sessionMinutes
+    ? `<about ${sessionMinutes}>`
+    : '<45-60>';
+
   const hasExercises = Object.keys(exerciseGroups).length > 0;
   const exerciseListSection = hasExercises
     ? `\nAvailable exercises — use ONLY these exact names (match case exactly as shown):\n${
@@ -79,7 +145,7 @@ function buildWeeklyPlanPrompt(ctx: MemberContext, exerciseGroups: Record<string
 
 Member profile:
 ${profileLines}
-${exerciseListSection}
+${requestSection}${exerciseListSection}
 Return ONLY a valid JSON object — no markdown, no extra text, just the JSON.
 
 Schema:
@@ -88,7 +154,7 @@ Schema:
     {
       "day": "<day name e.g. Monday>",
       "focus": "<muscle group focus>",
-      "totalDurationMin": <45-60>,
+      "totalDurationMin": ${durationTarget},
       "sections": [
         {
           "title": "Warm-Up",
@@ -105,7 +171,7 @@ Schema:
 
 Rules:
 - Include exactly ${daysPerWeek} training days spread across the week (e.g. Mon/Wed/Fri for 3 days)
-- Distribute muscle groups so no two consecutive days train the same muscles
+- Distribute muscle groups so no two consecutive days train the same muscles${focus === WorkoutFocus.AUTO ? '' : ' (within the requested focus)'}
 - Warm-Up: 2-3 exercises (5-8 min)
 - Main Workout: 4-6 exercises per day
 - Cool-Down: 2-3 stretches (5 min)

@@ -11,6 +11,7 @@ const tools = {
   systemPrompt: jest.fn(() => 'system'),
   schemas: jest.fn(() => []),
   execute: jest.fn(),
+  stepLabel: jest.fn(() => 'Calculating metric'),
 } as unknown as jest.Mocked<ToolRegistry>;
 const entitlements = { check: jest.fn() } as unknown as jest.Mocked<EntitlementsService>;
 const rateLimiter = { hit: jest.fn() } as unknown as jest.Mocked<RateLimiterService>;
@@ -40,7 +41,11 @@ describe('AnswerQueryUseCase', () => {
     useCase = new AnswerQueryUseCase(llm, tools, entitlements, rateLimiter, repo);
     rateLimiter.hit.mockResolvedValue(true);
     entitlements.check.mockResolvedValue(entitlement);
-    tools.execute.mockResolvedValue({ type: 'tool_result', toolUseId: 't1', content: '{"value":5}' });
+    tools.execute.mockResolvedValue({
+      content: { type: 'tool_result', toolUseId: 't1', content: '{"value":5}' },
+      data: { value: 5 },
+      isError: false,
+    });
     repo.recordUsage.mockResolvedValue(undefined);
   });
 
@@ -63,8 +68,36 @@ describe('AnswerQueryUseCase', () => {
       expect.objectContaining({ id: 't1' }),
       { gymId: 'gym-1', caller: manager },
     );
-    expect(result).toEqual({ answer: 'There were 5 check-ins today.', toolsUsed: ['query_metric'] });
+    expect(result).toEqual({
+      answer: 'There were 5 check-ins today.',
+      toolsUsed: ['query_metric'],
+      steps: [{ tool: 'query_metric', label: 'Calculating metric', data: { value: 5 } }],
+    });
     expect(repo.recordUsage).toHaveBeenCalledWith(entitlement, 'gym-1', 'staff-1', 18);
+  });
+
+  it('omits a step for a tool call that errored, but keeps looping', async () => {
+    llm.complete
+      .mockResolvedValueOnce({
+        message: { role: 'assistant', content: [{ type: 'tool_use', id: 't1', name: 'find_member', input: {} }] },
+        stopReason: 'tool_use',
+        tokensUsed: 5,
+      })
+      .mockResolvedValueOnce({
+        message: { role: 'assistant', content: [{ type: 'text', text: 'I could not find that member.' }] },
+        stopReason: 'end_turn',
+        tokensUsed: 4,
+      });
+    tools.execute.mockResolvedValueOnce({
+      content: { type: 'tool_result', toolUseId: 't1', content: 'not found', isError: true },
+      data: null,
+      isError: true,
+    });
+
+    const result = await useCase.execute('gym-1', { message: 'find Bob' }, manager);
+
+    expect(result.toolsUsed).toEqual(['find_member']);
+    expect(result.steps).toEqual([]);
   });
 
   it('blocks callers without insights.query before touching the model', async () => {

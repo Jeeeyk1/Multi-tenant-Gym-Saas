@@ -17,9 +17,16 @@ export interface InsightsQueryInput {
   history?: { role: 'user' | 'assistant'; content: string }[];
 }
 
+export interface InsightsStep {
+  tool: string;
+  label: string;
+  data: unknown;
+}
+
 export interface InsightsQueryResult {
   answer: string;
   toolsUsed: string[];
+  steps: InsightsStep[];
 }
 
 @Injectable()
@@ -58,6 +65,7 @@ export class AnswerQueryUseCase {
     const system = this.tools.systemPrompt();
     const schemas = this.tools.schemas();
     const toolsUsed: string[] = [];
+    const steps: InsightsStep[] = [];
     let tokensUsed = 0;
     let answer = 'I could not find an answer to that.';
 
@@ -76,12 +84,19 @@ export class AnswerQueryUseCase {
       }
 
       toolsUsed.push(...calls.map((call) => call.name));
-      const results = await Promise.all(calls.map((call) => this.tools.execute(call, { gymId, caller })));
-      messages.push({ role: 'user', content: results });
+      const executions = await Promise.all(calls.map((call) => this.tools.execute(call, { gymId, caller })));
+      messages.push({ role: 'user', content: executions.map((execution) => execution.content) });
+
+      calls.forEach((call, i) => {
+        const execution = executions[i];
+        if (!execution.isError) {
+          steps.push({ tool: call.name, label: this.tools.stepLabel(call.name), data: execution.data });
+        }
+      });
     }
 
     await this.repo.recordUsage(entitlement, gymId, caller.sub, tokensUsed);
-    return { answer, toolsUsed };
+    return { answer, toolsUsed, steps };
   }
 }
 

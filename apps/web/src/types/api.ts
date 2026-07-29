@@ -291,9 +291,16 @@ export interface StaffAnnouncement {
   createdByUser: { id: string; fullName: string };
 }
 
+export interface InsightsStep {
+  tool: string;
+  label: string;
+  data: unknown;
+}
+
 export interface InsightsResult {
   answer: string;
   toolsUsed: string[];
+  steps: InsightsStep[];
 }
 
 export interface GymSubscription {

@@ -49,8 +49,8 @@ describe('ToolRegistry action tools', () => {
       { email: 'jane@example.com', fullName: 'Jane Doe', phone: undefined, planId: 'plan-1', expiryDate: undefined },
       caller,
     );
-    expect(result.type === 'tool_result' && result.isError).toBeFalsy();
-    expect(JSON.parse(result.type === 'tool_result' ? result.content : '{}')).toEqual({
+    expect(result.isError).toBe(false);
+    expect(result.data).toEqual({
       ok: true,
       invitedEmail: 'jane@example.com',
       fullName: 'Jane Doe',
@@ -63,7 +63,7 @@ describe('ToolRegistry action tools', () => {
       ctx,
     );
     expect(registerMember.execute).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ type: 'tool_result', isError: true });
+    expect(result).toMatchObject({ isError: true });
   });
 
   it('requires plan_id or expiry_date for register_member', async () => {
@@ -83,8 +83,8 @@ describe('ToolRegistry action tools', () => {
       ctx,
     );
 
-    expect(result).toMatchObject({ type: 'tool_result', isError: true });
-    expect(result.type === 'tool_result' && result.content).toContain('members.create');
+    expect(result).toMatchObject({ isError: true });
+    expect(result.content.type === 'tool_result' && result.content.content).toContain('members.create');
   });
 
   it('routes suspend_member with member_id and caller', async () => {
@@ -100,7 +100,6 @@ describe('ToolRegistry action tools', () => {
     ] as never);
 
     const result = await registry.execute({ id: 'c1', name: 'list_membership_plans', input: {} }, ctx);
-    const plans = JSON.parse(result.type === 'tool_result' ? result.content : '[]');
-    expect(plans).toEqual([{ id: 'p1', name: 'Monthly', price: 500, durationDays: 30 }]);
+    expect(result.data).toEqual([{ id: 'p1', name: 'Monthly', price: 500, durationDays: 30 }]);
   });
 });

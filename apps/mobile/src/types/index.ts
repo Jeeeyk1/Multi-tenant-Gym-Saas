@@ -478,9 +478,16 @@ export interface ApiError {
   message: string;
 }
 
+export interface InsightsStep {
+  tool: string;
+  label: string;
+  data: unknown;
+}
+
 export interface InsightsResult {
   answer: string;
   toolsUsed: string[];
+  steps: InsightsStep[];
 }
 
 export interface InsightsHistoryTurn {

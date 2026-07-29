@@ -21,7 +21,27 @@ export interface ToolContext {
   caller: AuthenticatedUser;
 }
 
+export interface ToolExecutionResult {
+  /** Fed back into the model's conversation (already JSON-stringified). */
+  content: LlmContent;
+  /** Raw structured result, for surfacing to the UI as data instead of prose. Null on error. */
+  data: unknown;
+  isError: boolean;
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const STEP_LABELS: Record<string, string> = {
+  find_member: 'Looking up member',
+  get_member_checkin_status: 'Checking check-in status',
+  query_metric: 'Calculating metric',
+  get_trend: 'Building trend',
+  list_membership_plans: 'Loading membership plans',
+  register_member: 'Inviting member',
+  renew_membership: 'Renewing membership',
+  suspend_member: 'Suspending member',
+  reactivate_member: 'Reactivating member',
+};
 
 @Injectable()
 export class ToolRegistry {
@@ -52,7 +72,8 @@ export class ToolRegistry {
     return [
       'You are an assistant for a gym manager. Answer questions and perform actions using the provided tools.',
       'Only report data returned by the tools. Never invent numbers. If a question is outside the available data, say so.',
-      'Keep answers short and direct. Format currency and dates for a human reader.',
+      'Keep answers short and direct. Format dates for a human reader.',
+      'All monetary amounts are in Philippine Pesos. Always format currency with the ₱ symbol (e.g. ₱1,234.00) — never $ or USD.',
       'Reply in plain text only. Do not use Markdown formatting — no **bold**, no bullet symbols, no headings.',
       '',
       'query_metric covers these entities:',
@@ -73,14 +94,27 @@ export class ToolRegistry {
     ].join('\n');
   }
 
-  async execute(call: ToolCall, ctx: ToolContext): Promise<LlmContent> {
+  async execute(call: ToolCall, ctx: ToolContext): Promise<ToolExecutionResult> {
     try {
-      const result = await this.dispatch(call, ctx);
-      return { type: 'tool_result', toolUseId: call.id, content: JSON.stringify(result) };
+      const data = await this.dispatch(call, ctx);
+      return {
+        content: { type: 'tool_result', toolUseId: call.id, content: JSON.stringify(data) },
+        data,
+        isError: false,
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Tool execution failed';
-      return { type: 'tool_result', toolUseId: call.id, content: message, isError: true };
+      return {
+        content: { type: 'tool_result', toolUseId: call.id, content: message, isError: true },
+        data: null,
+        isError: true,
+      };
     }
+  }
+
+  /** Human-readable label for the step-by-step UI while a tool call is in flight. */
+  stepLabel(toolName: string): string {
+    return STEP_LABELS[toolName] ?? 'Working';
   }
 
   private async dispatch(call: ToolCall, ctx: ToolContext): Promise<unknown> {

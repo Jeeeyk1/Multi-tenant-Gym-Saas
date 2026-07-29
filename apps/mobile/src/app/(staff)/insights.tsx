@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -14,14 +14,24 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { useInsightsQuery } from '../../hooks/insights';
+import { InsightsToolResultView } from '../../components/InsightsToolResultView';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { InsightsHistoryTurn } from '../../types';
+import type { InsightsHistoryTurn, InsightsStep } from '../../types';
+
+const STEP_REVEAL_MS = 450;
+const REVEAL_SETTLE_MS = 350;
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  toolsUsed?: string[];
+  steps?: InsightsStep[];
   error?: boolean;
+}
+
+interface RevealState {
+  answer: string;
+  steps: InsightsStep[];
+  revealedCount: number;
 }
 
 const SUGGESTIONS = [
@@ -31,13 +41,6 @@ const SUGGESTIONS = [
   'Check-ins per day this week',
 ];
 
-const TOOL_LABELS: Record<string, string> = {
-  find_member: 'members',
-  get_member_checkin_status: 'check-in status',
-  query_metric: 'metrics',
-  get_trend: 'trend data',
-};
-
 export default function StaffInsightsScreen() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -45,7 +48,28 @@ export default function StaffInsightsScreen() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [reveal, setReveal] = useState<RevealState | null>(null);
   const listRef = useRef<FlatList>(null);
+
+  // Steps are known all at once (the API isn't streaming yet), but we reveal them in sequence
+  // — checkmark by checkmark — so the UI honestly shows what actually ran instead of a fake
+  // generic spinner, then settles into the final answer once the trace finishes.
+  useEffect(() => {
+    if (!reveal) return;
+
+    if (reveal.revealedCount < reveal.steps.length) {
+      const t = setTimeout(() => {
+        setReveal((r) => (r ? { ...r, revealedCount: r.revealedCount + 1 } : r));
+      }, STEP_REVEAL_MS);
+      return () => clearTimeout(t);
+    }
+
+    const t = setTimeout(() => {
+      setMessages((prev) => [...prev, { role: 'assistant', content: reveal.answer, steps: reveal.steps }]);
+      setReveal(null);
+    }, REVEAL_SETTLE_MS);
+    return () => clearTimeout(t);
+  }, [reveal]);
 
   const send = (text: string) => {
     const trimmed = text.trim();
@@ -62,10 +86,12 @@ export default function StaffInsightsScreen() {
       { message: trimmed, history },
       {
         onSuccess: (data) => {
-          setMessages((prev) => [
-            ...prev,
-            { role: 'assistant', content: data.answer, toolsUsed: data.toolsUsed },
-          ]);
+          if (data.steps.length === 0) {
+            // Pure conversational turn — nothing was looked up, so there's nothing to trace.
+            setMessages((prev) => [...prev, { role: 'assistant', content: data.answer, steps: data.steps }]);
+          } else {
+            setReveal({ answer: data.answer, steps: data.steps, revealedCount: 0 });
+          }
         },
         onError: (err) => {
           const message = (err as { message?: string })?.message ?? 'Something went wrong. Please try again.';
@@ -75,7 +101,7 @@ export default function StaffInsightsScreen() {
     );
   };
 
-  const isEmpty = messages.length === 0 && !mutation.isPending;
+  const isEmpty = messages.length === 0 && !mutation.isPending && !reveal;
 
   return (
     <KeyboardAvoidingView
@@ -100,7 +126,17 @@ export default function StaffInsightsScreen() {
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => <Bubble message={item} primary={theme.primary} />}
-          ListFooterComponent={mutation.isPending ? <ThinkingBubble /> : null}
+          ListFooterComponent={
+            mutation.isPending && !reveal ? (
+              <TraceBubble completed={[]} active="Thinking" primary={theme.primary} />
+            ) : reveal ? (
+              <TraceBubble
+                completed={['Thinking', ...reveal.steps.slice(0, reveal.revealedCount).map((s) => s.label)]}
+                active={reveal.revealedCount < reveal.steps.length ? reveal.steps[reveal.revealedCount].label : null}
+                primary={theme.primary}
+              />
+            ) : null
+          }
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           keyboardShouldPersistTaps="handled"
         />
@@ -134,9 +170,7 @@ export default function StaffInsightsScreen() {
 
 function Bubble({ message, primary }: { message: Message; primary: string }) {
   const isUser = message.role === 'user';
-  const tools = message.toolsUsed
-    ? [...new Set(message.toolsUsed.map((t) => TOOL_LABELS[t] ?? t))]
-    : [];
+  const dataSteps = (message.steps ?? []).filter((s) => s.data != null);
 
   return (
     <View style={[styles.bubbleWrap, isUser ? styles.bubbleWrapUser : styles.bubbleWrapAssistant]}>
@@ -152,19 +186,32 @@ function Bubble({ message, primary }: { message: Message; primary: string }) {
       >
         <Text style={[styles.bubbleText, message.error && { color: COLORS.error }]}>{message.content}</Text>
       </View>
-      {!isUser && tools.length > 0 && (
-        <Text style={styles.toolsText}>✦ Queried {tools.join(', ')}</Text>
-      )}
+      {!isUser && dataSteps.map((step, i) => (
+        <InsightsToolResultView key={i} tool={step.tool} data={step.data} />
+      ))}
     </View>
   );
 }
 
-function ThinkingBubble() {
+// One trace bubble that grows: every completed line stays (with a check), and the currently
+// running line shows a spinner beneath them. "Thinking" is the first line while we wait on the
+// model, then stays checked as the real tool steps reveal one by one.
+function TraceBubble({ completed, active, primary }: { completed: string[]; active: string | null; primary: string }) {
   return (
     <View style={[styles.bubbleWrap, styles.bubbleWrapAssistant]}>
-      <View style={[styles.bubble, styles.bubbleAssistant, styles.thinking]}>
-        <ActivityIndicator size="small" color={COLORS.textMuted} />
-        <Text style={styles.thinkingText}>Thinking…</Text>
+      <View style={[styles.bubble, styles.bubbleAssistant, styles.trace]}>
+        {completed.map((label, i) => (
+          <View key={`done-${i}`} style={styles.traceRow}>
+            <Ionicons name="checkmark-circle" size={15} color={COLORS.success} />
+            <Text style={[styles.traceText, { color: COLORS.textMuted }]}>{label}</Text>
+          </View>
+        ))}
+        {active !== null && (
+          <View style={styles.traceRow}>
+            <ActivityIndicator size="small" color={primary} />
+            <Text style={[styles.traceText, { color: COLORS.text }, FONT.semibold]}>{active}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -218,10 +265,10 @@ const styles = StyleSheet.create({
   bubbleAssistant: { backgroundColor: COLORS.surface, borderColor: COLORS.border },
   bubbleError: { backgroundColor: COLORS.errorBg, borderColor: COLORS.error },
   bubbleText: { fontSize: 14, color: COLORS.text, lineHeight: 20, ...FONT.regular },
-  toolsText: { fontSize: 11, color: COLORS.textMuted, paddingHorizontal: 4 },
 
-  thinking: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  thinkingText: { fontSize: 14, color: COLORS.textMuted, ...FONT.regular },
+  trace: { gap: SPACING.sm, minWidth: 200 },
+  traceRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  traceText: { fontSize: 13, ...FONT.regular },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xl, gap: SPACING.sm },
   emptyTitle: { fontSize: 20, color: COLORS.text, ...FONT.semibold, marginTop: SPACING.sm },

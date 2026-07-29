@@ -7,11 +7,11 @@ import {
   StyleSheet,
   RefreshControl,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useAnnouncements, useMarkAnnouncementRead } from '../../hooks/announcements';
 import { SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { Announcement } from '../../types';
@@ -42,6 +42,7 @@ export default function AnnouncementsScreen() {
         content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
         pageTitle: { fontSize: 24, ...FONT.bold, color: C.text, marginBottom: SPACING.lg },
         sectionLabel: { fontSize: 12, ...FONT.semibold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: SPACING.sm, marginTop: SPACING.sm },
+        sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: SPACING.sm, marginTop: SPACING.sm },
         chatBanner: {
           flexDirection: 'row',
           alignItems: 'center',
@@ -82,7 +83,7 @@ export default function AnnouncementsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }
@@ -120,7 +121,10 @@ export default function AnnouncementsScreen() {
 
         {pinned.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>📌 Pinned</Text>
+            <View style={styles.sectionLabelRow}>
+              <Ionicons name="pin" size={12} color={C.textMuted} />
+              <Text style={[styles.sectionLabel, { marginTop: 0, marginBottom: 0 }]}>Pinned</Text>
+            </View>
             {pinned.map((a) => <AnnouncementRow key={a.id} item={a} onPress={openAnnouncement} />)}
           </>
         )}

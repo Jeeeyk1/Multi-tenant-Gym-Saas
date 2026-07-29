@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import {
   useActiveCheckIns,
   useCheckInManual,
@@ -316,7 +317,7 @@ export default function CheckInsScreen() {
       {/* Active list */}
       {listLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <AppLoader />
         </View>
       ) : listError ? (
         <View style={styles.centered}>

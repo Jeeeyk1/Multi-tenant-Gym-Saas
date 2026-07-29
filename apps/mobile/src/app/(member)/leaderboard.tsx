@@ -35,7 +35,8 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const MEDAL = ['🥇', '🥈', '🥉'];
+// Gold / silver / bronze for the top-three medal icons.
+const MEDAL_COLORS = ['#FBBF24', '#CBD5E1', '#CD7F32'];
 
 // ─── Submit PR Modal ──────────────────────────────────────────────────────────
 
@@ -429,7 +430,8 @@ export default function LeaderboardScreen() {
           borderBottomColor: C.border + '60',
           gap: SPACING.sm,
         },
-        rankMedal: { fontSize: 18, width: 30, textAlign: 'center' },
+        rankMedal: { width: 30, alignItems: 'center', justifyContent: 'center' },
+        rankNumber: { fontSize: 14, color: C.textSecondary, ...FONT.semibold },
         rankNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
         rankName: { flexShrink: 1, fontSize: 14, color: C.text, ...FONT.medium },
         rankStats: { alignItems: 'flex-end' },
@@ -574,9 +576,13 @@ export default function LeaderboardScreen() {
                       const badge = equippedBadges?.get(entry.member.user.id);
                       return (
                         <View key={entry.id} style={styles.rankRow}>
-                          <Text style={styles.rankMedal}>
-                            {entry.rank <= 3 ? MEDAL[entry.rank - 1] : `#${entry.rank}`}
-                          </Text>
+                          <View style={styles.rankMedal}>
+                            {entry.rank <= 3 ? (
+                              <Ionicons name="medal" size={20} color={MEDAL_COLORS[entry.rank - 1]} />
+                            ) : (
+                              <Text style={styles.rankNumber}>#{entry.rank}</Text>
+                            )}
+                          </View>
                           <View style={styles.rankNameWrap}>
                             <Text style={styles.rankName} numberOfLines={1}>
                               {entry.member.user.fullName}

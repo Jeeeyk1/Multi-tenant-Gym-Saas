@@ -9,11 +9,11 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { useEquippedBadgesMap } from '../../hooks/members';
@@ -241,7 +241,7 @@ export default function ChatScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }

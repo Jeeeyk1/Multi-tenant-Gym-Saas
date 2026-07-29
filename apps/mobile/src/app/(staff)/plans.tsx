@@ -5,13 +5,13 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useGymPlans } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MembershipPlan } from '../../types';
@@ -66,7 +66,7 @@ export default function StaffPlansScreen() {
 
       {plansQ.isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <AppLoader />
         </View>
       ) : (
         <FlatList

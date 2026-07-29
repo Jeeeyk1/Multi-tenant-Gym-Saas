@@ -17,16 +17,8 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useLogWorkoutSession } from '../../hooks/workouts';
 import { healthKitService } from '../../services/healthkit.service';
 import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
+import { WORKOUT_TYPES, DEFAULT_WORKOUT_ICON } from '../../constants/workout-types';
 import type { WorkoutType } from '../../types';
-
-const WORKOUT_TYPES: { type: WorkoutType; icon: string; color: string }[] = [
-  { type: 'Strength', icon: '💪', color: '#8B5CF6' },
-  { type: 'Cardio', icon: '🏃', color: '#F97316' },
-  { type: 'HIIT', icon: '⚡', color: '#EF4444' },
-  { type: 'CrossFit', icon: '🔥', color: '#F59E0B' },
-  { type: 'Yoga', icon: '🧘', color: '#10B981' },
-  { type: 'Other', icon: '🏋️', color: '#6B7280' },
-];
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -149,7 +141,7 @@ export default function WorkoutScreen() {
                 onPress={() => handleStart(type)}
               >
                 <View style={[styles.typeIconBubble, { backgroundColor: color + '28' }]}>
-                  <Text style={styles.typeEmoji}>{icon}</Text>
+                  <Ionicons name={icon} size={22} color={color} />
                 </View>
                 <Text style={styles.typeLabel}>{type}</Text>
                 <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
@@ -170,7 +162,7 @@ export default function WorkoutScreen() {
         <Modal visible={showIdlePrompt} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
-              <Text style={styles.modalEmoji}>⏰</Text>
+              <Ionicons name="alarm-outline" size={40} color={theme.primary} style={styles.modalIcon} />
               <Text style={styles.modalTitle}>Still working out?</Text>
               <Text style={styles.modalBody}>
                 You've been active a while. Are you still training?
@@ -197,7 +189,7 @@ export default function WorkoutScreen() {
 
           {/* Type badge */}
           <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeEmoji}>{typeInfo?.icon ?? '🏋️'}</Text>
+            <Ionicons name={typeInfo?.icon ?? DEFAULT_WORKOUT_ICON} size={18} color={typeInfo?.color ?? C.textMuted} />
             <Text style={styles.typeBadgeLabel}>{activeSession.workoutType}</Text>
           </View>
 
@@ -269,7 +261,7 @@ export default function WorkoutScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Type</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.summaryEmoji}>{typeInfo?.icon ?? '🏋️'}</Text>
+                <Ionicons name={typeInfo?.icon ?? DEFAULT_WORKOUT_ICON} size={16} color={typeInfo?.color ?? C.textMuted} />
                 <Text style={styles.summaryValue}>{summary.workoutType}</Text>
               </View>
             </View>
@@ -395,7 +387,6 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeEmoji: { fontSize: 26 },
   typeLabel: { fontSize: 15, color: C.text, ...FONT.semibold },
 
   // ACTIVE
@@ -412,7 +403,6 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     paddingVertical: 8,
     marginBottom: SPACING.xxl,
   },
-  typeBadgeEmoji: { fontSize: 18 },
   typeBadgeLabel: { fontSize: 14, color: C.textSecondary, ...FONT.medium },
   timerRing: {
     width: 220,
@@ -462,7 +452,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  modalEmoji: { fontSize: 40, marginBottom: SPACING.sm },
+  modalIcon: { marginBottom: SPACING.sm },
   modalTitle: { fontSize: 20, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
   modalBody: {
     fontSize: 14,
@@ -516,7 +506,6 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   summaryLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   summaryLabel: { fontSize: 14, color: C.textSecondary, ...FONT.regular },
   summaryValue: { fontSize: 14, color: C.text, ...FONT.semibold },
-  summaryEmoji: { fontSize: 16 },
   hkBadge: {
     fontSize: 10,
     color: C.error,

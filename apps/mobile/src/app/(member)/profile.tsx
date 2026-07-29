@@ -157,11 +157,9 @@ function badgeName(b: MemberBadge): string {
 function badgeColor(b: MemberBadge): string {
   return b.badgeCatalog?.color ?? b.customBadge?.color ?? b.milestoneBadge?.color ?? '#6B7280';
 }
-function badgeRankIcon(rank: MemberBadge['badgeRank']): string {
-  if (rank === 'GOLD') return '🥇';
-  if (rank === 'SILVER') return '🥈';
-  if (rank === 'BRONZE') return '🥉';
-  return '◆';
+function badgeRankIcon(rank: MemberBadge['badgeRank']): keyof typeof Ionicons.glyphMap {
+  if (rank === 'GOLD' || rank === 'SILVER' || rank === 'BRONZE') return 'medal';
+  return 'diamond';
 }
 function toEquippedDisplay(b: MemberBadge): EquippedBadgeDisplay {
   return {
@@ -182,7 +180,7 @@ function BadgeItem({ badge }: { badge: MemberBadge }) {
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: 6 }, isExpired && { opacity: 0.5 }]}>
       <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: color + '33', borderColor: color }}>
-        <Text style={{ fontSize: 13 }}>{badgeRankIcon(badge.badgeRank)}</Text>
+        <Ionicons name={badgeRankIcon(badge.badgeRank)} size={15} color={color} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ color: C.text, fontSize: 14, ...FONT.medium }}>{badgeName(badge)}</Text>

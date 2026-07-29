@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy, useEquippedBadgesMap } from '../../hooks/members';
 import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
 import type { PublicActiveCheckin } from '../../types';
 
@@ -187,7 +187,7 @@ export default function WhosHereScreen() {
         {/* Visible list */}
         {activeQ.isLoading ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={theme.primary} size="large" />
+            <AppLoader />
           </View>
         ) : sortedVisible.length === 0 ? (
           <View style={styles.emptyCard}>

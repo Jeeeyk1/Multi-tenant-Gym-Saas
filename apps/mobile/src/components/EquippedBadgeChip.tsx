@@ -1,10 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { EquippedBadgeDisplay } from '../types';
 
 /**
  * Small badge chip rendered next to author names in chat and leaderboard rows.
- * Visual: a colored ring with a rank icon (🥇/🥈/🥉/◆), optionally followed
+ * Visual: a colored ring with a rank icon (medal / diamond), optionally followed
  * by the badge name when `showName` is true.
  */
 export function EquippedBadgeChip({
@@ -16,14 +17,8 @@ export function EquippedBadgeChip({
   showName?: boolean;
   size?: number;
 }) {
-  const icon =
-    badge.rank === 'GOLD'
-      ? '🥇'
-      : badge.rank === 'SILVER'
-        ? '🥈'
-        : badge.rank === 'BRONZE'
-          ? '🥉'
-          : '◆';
+  const iconName =
+    badge.rank === 'GOLD' || badge.rank === 'SILVER' || badge.rank === 'BRONZE' ? 'medal' : 'diamond';
   return (
     <View style={styles.row}>
       <View
@@ -38,7 +33,7 @@ export function EquippedBadgeChip({
           },
         ]}
       >
-        <Text style={{ fontSize: size * 0.6 }}>{icon}</Text>
+        <Ionicons name={iconName} size={size * 0.6} color={badge.color} />
       </View>
       {showName && (
         <Text style={[styles.name, { color: badge.color }]} numberOfLines={1}>

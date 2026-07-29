@@ -12,26 +12,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useWorkoutSessions } from '../../hooks/workouts';
 import { SPACING, RADIUS, FONT } from '../../constants/theme';
+import { workoutTypeIcon, workoutTypeColor } from '../../constants/workout-types';
 import type { WorkoutSession } from '../../types';
-
-const TYPE_META: Record<string, { icon: string; color: string }> = {
-  Strength: { icon: '💪', color: '#8B5CF6' },
-  Cardio:   { icon: '🏃', color: '#F97316' },
-  HIIT:     { icon: '⚡', color: '#EF4444' },
-  CrossFit: { icon: '🔥', color: '#F59E0B' },
-  Yoga:     { icon: '🧘', color: '#10B981' },
-  Other:    { icon: '🏋️', color: '#6B7280' },
-};
-
-function typeIcon(workoutType: string) {
-  return TYPE_META[workoutType]?.icon ?? '🏋️';
-}
-
-function typeColor(workoutType: string) {
-  return TYPE_META[workoutType]?.color ?? '#6B7280';
-}
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -133,7 +118,6 @@ export default function WorkoutHistoryScreen() {
           justifyContent: 'center',
           flexShrink: 0,
         },
-        typeEmoji: { fontSize: 20 },
         sessionMeta: { flex: 1 },
         sessionType: { fontSize: 14, color: C.text, ...FONT.semibold },
         sessionTime: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
@@ -158,7 +142,7 @@ export default function WorkoutHistoryScreen() {
           paddingTop: SPACING.xxl * 2,
           gap: SPACING.sm,
         },
-        emptyEmoji: { fontSize: 52, marginBottom: SPACING.sm },
+        emptyIcon: { marginBottom: SPACING.sm },
         emptyTitle: { fontSize: 20, color: C.text, ...FONT.bold },
         emptySub: { fontSize: 14, color: C.textSecondary, textAlign: 'center', marginBottom: SPACING.md },
         emptyBtn: {
@@ -173,7 +157,11 @@ export default function WorkoutHistoryScreen() {
 
   const sessionsQ = useWorkoutSessions();
 
-  useFocusEffect(useCallback(() => { sessionsQ.refetch(); }, [sessionsQ]));
+  // Depend on the stable `refetch` — not the whole query object, whose identity changes every
+  // render. Depending on `sessionsQ` made the callback new each render, so useFocusEffect re-ran
+  // it on every render while focused, and each refetch re-rendered → an unbounded request loop.
+  const { refetch: refetchSessions } = sessionsQ;
+  useFocusEffect(useCallback(() => { refetchSessions(); }, [refetchSessions]));
 
   const sessions: WorkoutSession[] =
     sessionsQ.data?.pages.flatMap((p) => p.data) ?? [];
@@ -188,7 +176,7 @@ export default function WorkoutHistoryScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }
@@ -212,7 +200,7 @@ export default function WorkoutHistoryScreen() {
       >
         {sessions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🏋️</Text>
+            <Ionicons name="barbell-outline" size={48} color={C.textMuted} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>No sessions yet</Text>
             <Text style={styles.emptySub}>Start a workout to see your history here</Text>
             <Pressable
@@ -258,10 +246,14 @@ export default function WorkoutHistoryScreen() {
                       <View
                         style={[
                           styles.typeIconBubble,
-                          { backgroundColor: typeColor(session.workoutType) + '22' },
+                          { backgroundColor: workoutTypeColor(session.workoutType) + '22' },
                         ]}
                       >
-                        <Text style={styles.typeEmoji}>{typeIcon(session.workoutType)}</Text>
+                        <Ionicons
+                          name={workoutTypeIcon(session.workoutType)}
+                          size={18}
+                          color={workoutTypeColor(session.workoutType)}
+                        />
                       </View>
 
                       <View style={styles.sessionMeta}>

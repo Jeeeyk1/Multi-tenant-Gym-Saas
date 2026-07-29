@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import {
   useArchiveStaffAnnouncement,
   useCreateStaffAnnouncement,
@@ -431,7 +432,7 @@ export default function AnnouncementsScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }

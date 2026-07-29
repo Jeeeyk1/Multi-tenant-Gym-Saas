@@ -8,7 +8,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
@@ -182,7 +182,7 @@ export default function StaffChatScreen() {
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <AppLoader />
         </View>
       ) : error && messages.length === 0 ? (
         <View style={styles.centered}>

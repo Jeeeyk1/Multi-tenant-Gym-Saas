@@ -8,6 +8,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -185,7 +186,6 @@ export default function CheckInScreen() {
       justifyContent: 'center',
       gap: SPACING.xs,
     },
-    bigButtonEmoji: { fontSize: 46 },
     bigButtonLabel: { fontSize: 15, ...FONT.semibold, color: '#fff' },
     hint: {
       marginTop: SPACING.xxl,
@@ -246,9 +246,11 @@ export default function CheckInScreen() {
                 <ActivityIndicator color="#fff" size="large" />
               ) : (
                 <>
-                  <Text style={s.bigButtonEmoji}>
-                    {isSuccess ? '✓' : isError ? '↩' : '⚡'}
-                  </Text>
+                  <Ionicons
+                    name={isSuccess ? 'checkmark' : isError ? 'refresh' : 'flash'}
+                    size={44}
+                    color={isIdle ? '#000' : '#fff'}
+                  />
                   <Text style={[s.bigButtonLabel, isIdle && { color: '#000' }]}>
                     {isSuccess ? 'Tap to reset' : isError ? 'Try again' : 'Check In'}
                   </Text>

@@ -5,13 +5,13 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useGymRenewals } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { GymRenewal } from '../../types';
@@ -71,7 +71,7 @@ export default function StaffRenewalsScreen() {
 
       {renewalsQ.isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <AppLoader />
         </View>
       ) : (
         <FlatList

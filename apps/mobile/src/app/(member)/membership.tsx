@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyMember, useMyRenewals } from '../../hooks/members';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
 import type { ColorPalette } from '../../constants/theme';
 import type { GymMember, MembershipRenewal } from '../../types';
@@ -24,7 +24,7 @@ function formatDate(iso: string): string {
 }
 
 function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+  return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function daysUntil(iso: string): number {
@@ -165,7 +165,7 @@ export default function MembershipScreen() {
       <ScrollView style={styles.root} contentContainerStyle={styles.content}>
         {isLoading ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={theme.primary} size="large" />
+            <AppLoader />
           </View>
         ) : memberQ.data ? (
           <>

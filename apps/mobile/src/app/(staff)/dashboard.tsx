@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useActiveCheckIns, useCheckOut } from '../../hooks/staff';
 import { usePendingSubmissions } from '../../hooks/leaderboard';
 import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
@@ -113,7 +114,7 @@ export default function StaffDashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }

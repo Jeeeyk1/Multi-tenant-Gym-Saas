@@ -17,6 +17,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import {
   useApproveSubmission,
   useExercises,
@@ -353,7 +354,7 @@ export default function StaffLeaderboardScreen() {
         <>
           {pendingLoading ? (
             <View style={styles.centered}>
-              <ActivityIndicator color={theme.primary} size="large" />
+              <AppLoader />
             </View>
           ) : pendingError ? (
             <View style={styles.centered}>
@@ -401,7 +402,7 @@ export default function StaffLeaderboardScreen() {
         <View style={styles.configContainer}>
           {configLoading ? (
             <View style={styles.centered}>
-              <ActivityIndicator color={theme.primary} size="large" />
+              <AppLoader />
             </View>
           ) : configError ? (
             <View style={styles.centered}>

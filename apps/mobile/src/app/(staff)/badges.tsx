@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useCustomBadges, useAwardBadge } from '../../hooks/badges';
 import { useStaffMembers } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
@@ -172,7 +173,7 @@ export default function StaffBadgesScreen() {
 
       {badgesQ.isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} size="large" />
+          <AppLoader />
         </View>
       ) : (
         <FlatList

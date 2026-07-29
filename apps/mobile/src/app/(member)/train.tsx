@@ -6,25 +6,17 @@ import {
   Pressable,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useWorkoutSessions } from '../../hooks/workouts';
 import { SPACING, RADIUS, FONT } from '../../constants/theme';
+import { workoutTypeMeta, DEFAULT_WORKOUT_ICON, DEFAULT_WORKOUT_COLOR } from '../../constants/workout-types';
 import type { WorkoutSession } from '../../types';
-
-const TYPE_META: Record<string, { icon: string; color: string }> = {
-  Strength: { icon: '💪', color: '#8B5CF6' },
-  Cardio:   { icon: '🏃', color: '#F97316' },
-  HIIT:     { icon: '⚡', color: '#EF4444' },
-  CrossFit: { icon: '🔥', color: '#F59E0B' },
-  Yoga:     { icon: '🧘', color: '#10B981' },
-  Other:    { icon: '🏋️', color: '#6B7280' },
-};
 
 function startOfWeek(): Date {
   const d = new Date();
@@ -85,7 +77,11 @@ export default function TrainScreen() {
   const isLoading = sessionsQ.isLoading;
   const refreshing = sessionsQ.isRefetching;
 
-  useFocusEffect(useCallback(() => { sessionsQ.refetch(); }, [sessionsQ]));
+  // Depend on the stable `refetch` — not the whole query object, whose identity changes every
+  // render. Depending on `sessionsQ` made the callback new each render, so useFocusEffect re-ran
+  // it on every render while focused, and each refetch re-rendered → an unbounded request loop.
+  const { refetch: refetchSessions } = sessionsQ;
+  useFocusEffect(useCallback(() => { refetchSessions(); }, [refetchSessions]));
 
   const weekStart = startOfWeek();
   const weekSessions = sessions.filter((s) => new Date(s.startedAt) >= weekStart);
@@ -182,7 +178,6 @@ export default function TrainScreen() {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    sessionEmoji: { fontSize: 18 },
     sessionMeta: { flex: 1 },
     sessionType: { fontSize: 14, color: C.text, ...FONT.semibold },
     sessionTime: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
@@ -197,7 +192,7 @@ export default function TrainScreen() {
       gap: SPACING.xs,
       marginBottom: SPACING.sm,
     },
-    emptyEmoji: { fontSize: 36, marginBottom: 4 },
+    emptyIcon: { marginBottom: 4 },
     emptyTitle: { fontSize: 16, color: C.text, ...FONT.semibold },
     emptySub: { fontSize: 13, color: C.textSecondary, textAlign: 'center' },
     allTimeCard: {
@@ -221,7 +216,7 @@ export default function TrainScreen() {
   if (isLoading) {
     return (
       <View style={s.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }
@@ -301,21 +296,22 @@ export default function TrainScreen() {
 
       {recentSessions.length === 0 ? (
         <View style={s.emptyCard}>
-          <Text style={s.emptyEmoji}>🏋️</Text>
+          <Ionicons name="barbell-outline" size={36} color={C.textMuted} style={s.emptyIcon} />
           <Text style={s.emptyTitle}>No sessions yet</Text>
           <Text style={s.emptySub}>Complete your first workout to see it here</Text>
         </View>
       ) : (
         <View style={s.sessionList}>
           {recentSessions.map((session, idx) => {
-            const meta = TYPE_META[session.workoutType] ?? TYPE_META.Other;
+            const meta = workoutTypeMeta(session.workoutType);
+            const iconColor = meta?.color ?? DEFAULT_WORKOUT_COLOR;
             return (
               <View
                 key={session.id}
                 style={[s.sessionRow, idx > 0 && s.sessionRowBorder]}
               >
-                <View style={[s.sessionIconBubble, { backgroundColor: meta.color + '22' }]}>
-                  <Text style={s.sessionEmoji}>{meta.icon}</Text>
+                <View style={[s.sessionIconBubble, { backgroundColor: iconColor + '22' }]}>
+                  <Ionicons name={meta?.icon ?? DEFAULT_WORKOUT_ICON} size={18} color={iconColor} />
                 </View>
                 <View style={s.sessionMeta}>
                   <Text style={s.sessionType}>{session.workoutType}</Text>

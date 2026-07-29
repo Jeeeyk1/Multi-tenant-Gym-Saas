@@ -6,13 +6,13 @@ import {
   Pressable,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { AppLoader } from '../../components/AppLoader';
 import { useActivePublicCheckins, useMyMember, useMyCheckIns } from '../../hooks/members';
 import { GreetingBanner } from '../../components/GreetingBanner';
 import { MembershipCard } from '../../components/MembershipCard';
@@ -188,7 +188,7 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <View style={s.centered}>
-        <ActivityIndicator color={theme.primary} size="large" />
+        <AppLoader />
       </View>
     );
   }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { FONT, SPACING, RADIUS } from '../constants/theme';
 
@@ -57,6 +58,9 @@ export function GreetingBanner({
     greeting: { fontSize: 24, ...FONT.bold, color: C.text, lineHeight: 32 },
     subtitle: { fontSize: 13, color: C.textSecondary, ...FONT.regular, lineHeight: 18 },
     streakChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
       alignSelf: 'flex-start',
       backgroundColor: theme.colorScheme === 'dark' ? '#2A1200' : '#FFF7ED',
       borderWidth: 1,
@@ -88,7 +92,8 @@ export function GreetingBanner({
         <Text style={s.subtitle}>{getSubtitle(streak, lastCheckInToday)}</Text>
         {streak >= 2 && (
           <View style={s.streakChip}>
-            <Text style={s.streakText}>🔥 {streak}-day streak</Text>
+            <Ionicons name="flame" size={13} color="#F97316" />
+            <Text style={s.streakText}>{streak}-day streak</Text>
           </View>
         )}
       </Animated.View>

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { BillingCycle, InvoiceStatus, SubscriptionStatus } from '../../../../common/enums';
+import { BillingCycle, InvoiceStatus, MemberStatus, SubscriptionStatus } from '../../../../common/enums';
 import {
   addBillingPeriod,
   addDays,
@@ -101,7 +101,11 @@ export class AdminRepository {
             subscriptions: {
               orderBy: { createdAt: 'desc' },
               take: 1,
-              select: { status: true, currentPeriodEnd: true },
+              select: {
+                status: true,
+                currentPeriodEnd: true,
+                plan: { select: { maxMembersPerGym: true } },
+              },
             },
           },
         },
@@ -109,6 +113,10 @@ export class AdminRepository {
         _count: { select: { members: true, staff: true, checkIns: true } },
       },
     });
+  }
+
+  countActiveMembers(gymId: string) {
+    return this.prisma.gymMember.count({ where: { gymId, status: MemberStatus.ACTIVE } });
   }
 
   async findGymOwnerByGymId(gymId: string) {

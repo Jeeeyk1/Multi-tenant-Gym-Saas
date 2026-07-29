@@ -14,3 +14,4 @@ export { SubscriptionStatus } from './subscription-status.enum';
 export { InvoiceStatus, BillingCycle } from './invoice-status.enum';
 export { SignupRequestStatus } from './signup-request-status.enum';
 export { MealPlanMode } from './meal-plan-mode.enum';
+export { MemberStatus } from './member-status.enum';

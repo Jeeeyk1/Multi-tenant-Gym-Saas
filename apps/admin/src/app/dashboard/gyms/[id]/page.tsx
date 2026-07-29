@@ -24,6 +24,8 @@ interface GymDetail {
   profile: { logoUrl: string | null; primaryColor: string | null; secondaryColor: string | null; description: string | null } | null;
   _count: { members: number; staff: number; checkIns: number };
   subscription: { status: SubscriptionStatus; currentPeriodEnd: string } | null;
+  activeMemberCount: number;
+  memberCap: number | null;
 }
 
 const SUBSCRIPTION_LABEL: Record<SubscriptionStatus, string> = {
@@ -117,6 +119,8 @@ export default async function GymDetailPage({ params }: { params: Promise<{ id: 
           {(gym.subscription.status === 'TRIALING' || gym.subscription.status === 'PENDING_PAYMENT') && (
             <ExtendTrialButton gymId={gym.id} lapsed={gym.subscription.status === 'PENDING_PAYMENT'} />
           )}
+
+          <MemberCapUsage activeCount={gym.activeMemberCount} cap={gym.memberCap} />
         </div>
       )}
 
@@ -149,6 +153,39 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between items-center py-1 border-b border-border last:border-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="text-foreground font-medium">{value}</span>
+    </div>
+  );
+}
+
+function MemberCapUsage({ activeCount, cap }: { activeCount: number; cap: number | null }) {
+  if (cap === null) {
+    return (
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <span className="text-xs text-muted-foreground">Active members</span>
+        <span className="text-xs font-semibold text-foreground">{activeCount} · Unlimited</span>
+      </div>
+    );
+  }
+
+  const ratio = activeCount / cap;
+  const barColor = ratio >= 1 ? 'bg-destructive' : ratio >= 0.8 ? 'bg-yellow-500' : 'bg-success';
+  const textColor = ratio >= 1 ? 'text-destructive' : ratio >= 0.8 ? 'text-yellow-500' : 'text-foreground';
+
+  return (
+    <div className="pt-3 border-t border-border space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">Active members</span>
+        <span className={`text-xs font-semibold ${textColor}`}>
+          {activeCount} / {cap}
+          {ratio >= 1 && ' · Over plan cap'}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-border overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${barColor}`}
+          style={{ width: `${Math.min(ratio, 1) * 100}%` }}
+        />
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ interface Props {
 }
 
 const initial: ActivateMemberState = { error: null, success: false };
+const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:3030';
 
 export function MemberActivateForm({ token, gymCode }: Props) {
   const [password, setPassword] = useState('');
@@ -111,6 +112,18 @@ export function MemberActivateForm({ token, gymCode }: Props) {
       >
         {pending ? 'Activating…' : 'Activate Membership'}
       </button>
+
+      <p className="text-xs text-muted-foreground text-center leading-relaxed">
+        By activating, you agree to our{' '}
+        <a href={`${LANDING_URL}/terms`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Terms
+        </a>{' '}
+        and{' '}
+        <a href={`${LANDING_URL}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </form>
   );
 }

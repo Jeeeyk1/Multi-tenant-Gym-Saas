@@ -19,8 +19,8 @@ export function Footer() {
 
         <div className="flex items-center gap-5 text-sm text-muted-foreground">
           <a href="mailto:hello@lifthub.app" className="hover:text-foreground transition">Contact</a>
-          <a href="#" className="hover:text-foreground transition">Privacy</a>
-          <a href="#" className="hover:text-foreground transition">Terms</a>
+          <a href="/privacy" className="hover:text-foreground transition">Privacy</a>
+          <a href="/terms" className="hover:text-foreground transition">Terms</a>
         </div>
       </div>
     </footer>

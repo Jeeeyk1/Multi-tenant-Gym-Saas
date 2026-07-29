@@ -8,6 +8,7 @@ interface Props {
 }
 
 const initial = { error: null as string | null };
+const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:3030';
 
 export function ActivateForm({ token }: Props) {
   const [password, setPassword] = useState('');
@@ -79,6 +80,18 @@ export function ActivateForm({ token }: Props) {
       >
         {pending ? 'Activating…' : 'Activate Account'}
       </button>
+
+      <p className="text-xs text-muted-foreground text-center leading-relaxed">
+        By activating, you agree to our{' '}
+        <a href={`${LANDING_URL}/terms`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Terms
+        </a>{' '}
+        and{' '}
+        <a href={`${LANDING_URL}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </form>
   );
 }

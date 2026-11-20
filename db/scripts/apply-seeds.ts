@@ -26,6 +26,8 @@ if (!DATABASE_URL) {
 }
 
 const SEEDS_DIR = path.resolve(process.cwd(), 'db/seeds');
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const DEV_ONLY_SEED = /dev_fixtures/;
 
 async function run(): Promise<void> {
   const client = new Client({ connectionString: DATABASE_URL });
@@ -37,6 +39,12 @@ async function run(): Promise<void> {
     const files = fs
       .readdirSync(SEEDS_DIR)
       .filter((f) => f.endsWith('.sql'))
+      // Dev fixtures create accounts with a known password — never load them in production.
+      .filter((f) => {
+        if (!IS_PRODUCTION || !DEV_ONLY_SEED.test(f)) return true;
+        console.log(`  skipped ${f} (dev-only, NODE_ENV=production)`);
+        return false;
+      })
       .sort(); // lexical order: 0001_, 0002_, …
 
     if (files.length === 0) {

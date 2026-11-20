@@ -70,4 +70,24 @@ describe('AutoSuspendJob', () => {
 
     expect(mockPrisma.gymMember.updateMany).not.toHaveBeenCalled();
   });
+
+  it('pages past a full batch of members still inside the suspend window', async () => {
+    const recent = Array.from({ length: 100 }, (_, i) => ({ ...expiredMember(1), id: `m-${i}` }));
+    mockPrisma.gymMember.findMany
+      .mockResolvedValueOnce(recent as any)
+      .mockResolvedValueOnce([{ ...expiredMember(4), id: 'm-old' }] as any);
+    mockPrisma.gymMember.updateMany.mockResolvedValue({ count: 1 } as any);
+
+    const job = new AutoSuspendJob(mockPrisma, makeLock());
+    await job.run();
+
+    expect(mockPrisma.gymMember.findMany).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.gymMember.findMany.mock.calls[1][0].where).toEqual({
+      status: 'EXPIRED',
+      id: { gt: 'm-99' },
+    });
+    expect(mockPrisma.gymMember.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ['m-old'] } } }),
+    );
+  });
 });

@@ -68,4 +68,26 @@ describe('AutoCheckoutJob', () => {
 
     expect(mockPrisma.checkIn.updateMany).not.toHaveBeenCalled();
   });
+
+  it('pages past a full batch of check-ins that are not stale yet', async () => {
+    // 100 fresh check-ins: none qualify, so nothing is updated and they stay open.
+    const fresh = Array.from({ length: 100 }, (_, i) => ({ ...openCheckin(1), id: `ci-${i}` }));
+    mockPrisma.checkIn.findMany
+      .mockResolvedValueOnce(fresh as any)
+      .mockResolvedValueOnce([{ ...openCheckin(6), id: 'ci-stale' }] as any);
+    mockPrisma.checkIn.updateMany.mockResolvedValue({ count: 1 } as any);
+
+    const job = new AutoCheckoutJob(mockPrisma, makeLock());
+    await job.run();
+
+    expect(mockPrisma.checkIn.findMany).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.checkIn.findMany.mock.calls[0][0].where).toEqual({ checkedOutAt: null });
+    expect(mockPrisma.checkIn.findMany.mock.calls[1][0].where).toEqual({
+      checkedOutAt: null,
+      id: { gt: 'ci-99' },
+    });
+    expect(mockPrisma.checkIn.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ['ci-stale'] } } }),
+    );
+  });
 });

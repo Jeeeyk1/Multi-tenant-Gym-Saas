@@ -1,16 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { StaffHeader } from '../../components/StaffHeader';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -47,16 +42,9 @@ export default function MoreScreen() {
   const tools = allTools.filter((t) => !t.permission || (user?.permissions.includes(t.permission) ?? false));
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.screenTitle}>More</Text>
-      </View>
-
+    <View style={styles.container}>
+      <StaffHeader title="More" />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Profile card */}
       <View style={styles.profileCard}>
         <View style={[styles.avatar, { borderColor: theme.primary }]}>
@@ -112,23 +100,14 @@ export default function MoreScreen() {
         <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 48 : SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  screenTitle: {
-    fontSize: 28,
-    color: COLORS.text,
-    ...FONT.bold,
-  },
+  content: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
 
   profileCard: {
     flexDirection: 'row',

@@ -1,15 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
@@ -23,8 +14,8 @@ import { formatApiError } from '../../lib/format-error';
 import type { ChatMessage } from '../../types';
 
 const WS_BASE_URL = (() => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
-  try { return new URL(apiUrl).origin; } catch { return 'http://localhost:3000'; }
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:9001/api/v1';
+  try { return new URL(apiUrl).origin; } catch { return 'http://localhost:9001'; }
 })();
 
 function MessageBubble({

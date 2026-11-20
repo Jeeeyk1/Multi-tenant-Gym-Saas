@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import { Text } from './Text';
 import { BarChart } from 'react-native-chart-kit';
 import { useTheme } from '../context/ThemeContext';
 import { useCheckinsTrend } from '../hooks/reports';

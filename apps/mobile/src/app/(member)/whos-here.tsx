@@ -1,13 +1,6 @@
 import { useMemo } from 'react';
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Text } from '../../components/Text';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy, useEquippedBadgesMap } from '../../hooks/members';

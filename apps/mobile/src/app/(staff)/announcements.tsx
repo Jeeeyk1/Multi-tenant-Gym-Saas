@@ -1,22 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-  Alert,
-} from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
+import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
+import { StaffHeader } from '../../components/StaffHeader';
 import {
   useArchiveStaffAnnouncement,
   useCreateStaffAnnouncement,
@@ -441,20 +429,20 @@ export default function AnnouncementsScreen() {
     <>
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.screenTitle}>Announcements</Text>
-            <Text style={styles.subCount}>{announcements.length} total</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.newBtn, { backgroundColor: theme.primary }]}
-            onPress={() => setCreateOpen(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add" size={18} color={COLORS.onPrimary} />
-            <Text style={styles.newBtnText}>New</Text>
-          </TouchableOpacity>
-        </View>
+        <StaffHeader
+          title="Announcements"
+          subtitle={`${announcements.length} total`}
+          right={
+            <TouchableOpacity
+              style={[styles.newBtn, { backgroundColor: theme.primary }]}
+              onPress={() => setCreateOpen(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={18} color={COLORS.onPrimary} />
+              <Text style={styles.newBtnText}>New</Text>
+            </TouchableOpacity>
+          }
+        />
 
         {/* Status filter tabs */}
         <ScrollView
@@ -546,17 +534,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 48 : SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  screenTitle: { fontSize: 28, color: COLORS.text, ...FONT.bold },
-  subCount: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginTop: 2 },
 
   newBtn: {
     flexDirection: 'row',

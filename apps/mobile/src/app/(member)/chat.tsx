@@ -1,15 +1,7 @@
 /* eslint-disable no-console */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text } from '../../components/Text';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -23,8 +15,8 @@ import type { ChatMessage, EquippedBadgeDisplay } from '../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
 const WS_BASE_URL = (() => {
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
-  try { return new URL(apiUrl).origin; } catch { return 'http://localhost:3000'; }
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:9001/api/v1';
+  try { return new URL(apiUrl).origin; } catch { return 'http://localhost:9001'; }
 })();
 
 function MessageBubble({

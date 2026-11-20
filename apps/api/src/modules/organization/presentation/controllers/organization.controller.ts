@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { SystemAdminGuard } from '../../../admin/presentation/guards/system-admin.guard';
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator';
 import { CreateOrganizationUseCase } from '../../application/use-cases/create-organization.use-case';
 import { GetOrganizationUseCase } from '../../application/use-cases/get-organization.use-case';
@@ -24,10 +25,11 @@ export class OrganizationController {
 
   /**
    * POST /organizations
-   * Public. Registers a new organization and owner account.
-   * Returns the invite token so the owner can set their password.
+   * System admin only. Registers a new organization and owner account.
+   * Returns the invite token so the admin can relay it to the owner.
    */
   @Post()
+  @UseGuards(SystemAdminGuard)
   @HttpCode(HttpStatus.CREATED)
   create(@Body() dto: CreateOrganizationDto) {
     return this.createOrganization.execute(dto);

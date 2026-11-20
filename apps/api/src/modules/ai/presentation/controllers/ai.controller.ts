@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
+import { MemberAccessGuard } from '../../../../common/guards/member-access.guard';
 import { WorkoutSuggestionUseCase } from '../../application/use-cases/workout-suggestion.use-case';
 import { SwapWorkoutExerciseUseCase } from '../../application/use-cases/swap-workout-exercise.use-case';
 import { MealSuggestionUseCase } from '../../application/use-cases/meal-suggestion.use-case';
@@ -33,7 +34,7 @@ import { GenerateWorkoutPlanDto } from '../dto/generate-workout-plan.dto';
 import { SwapWorkoutExerciseDto } from '../dto/swap-workout-exercise.dto';
 
 @Controller('gyms/:gymId/members/:memberId')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, MemberAccessGuard)
 export class AiController {
   constructor(
     private readonly workoutSuggestionUseCase: WorkoutSuggestionUseCase,

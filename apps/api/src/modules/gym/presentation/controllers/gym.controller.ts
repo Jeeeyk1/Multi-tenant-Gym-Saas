@@ -61,23 +61,23 @@ export class GymController {
   }
 
   /**
-   * GET /gyms/:id/detail
+   * GET /gyms/:gymId/detail
    * Authenticated. Returns full gym details including profile and schedules.
    */
-  @Get(':id/detail')
+  @Get(':gymId/detail')
   @UseGuards(JwtAuthGuard)
-  getDetail(@Param('id') gymId: string, @CurrentUser() user: AuthenticatedUser) {
+  getDetail(@Param('gymId') gymId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.getGymUseCase.execute(gymId, user);
   }
 
   /**
-   * PATCH /gyms/:id/profile
+   * PATCH /gyms/:gymId/profile
    * Requires JwtAuthGuard. Org-level or gym-level with gym.settings permission.
    */
-  @Patch(':id/profile')
+  @Patch(':gymId/profile')
   @UseGuards(JwtAuthGuard)
   updateProfile(
-    @Param('id') gymId: string,
+    @Param('gymId') gymId: string,
     @Body() dto: UpdateGymProfileDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -85,16 +85,16 @@ export class GymController {
   }
 
   /**
-   * POST /gyms/:id/profile/logo
+   * POST /gyms/:gymId/profile/logo
    * Accepts a multipart/form-data file field named "file".
    * Uploads to cloud storage and returns { url }.
    */
-  @Post(':id/profile/logo')
+  @Post(':gymId/profile/logo')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
   async uploadLogo(
-    @Param('id') gymId: string,
+    @Param('gymId') gymId: string,
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -115,13 +115,13 @@ export class GymController {
   }
 
   /**
-   * PATCH /gyms/:id/schedules
+   * PATCH /gyms/:gymId/schedules
    * Requires JwtAuthGuard. Org-level or gym-level with gym.settings permission.
    */
-  @Patch(':id/schedules')
+  @Patch(':gymId/schedules')
   @UseGuards(JwtAuthGuard)
   updateSchedules(
-    @Param('id') gymId: string,
+    @Param('gymId') gymId: string,
     @Body() dto: UpdateGymSchedulesDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

@@ -21,6 +21,32 @@ Multi-tenant gym management platform.
 
 ## First-time setup
 
+One command does everything below (prerequisite checks, env files, Postgres + Redis, Prisma client, migrations):
+
+```bash
+./scripts/setup-local.sh           # add --seed for dev fixtures, --start to run API + web,
+                                   # --start-all to also run admin + landing
+```
+
+It is safe to re-run: existing `.env` files are never overwritten and Docker volumes are kept.
+
+### Local ports
+
+Everything runs in the 9000 range so this project does not collide with others on the same machine.
+`9000` itself is skipped because Zscaler and similar tools commonly hold it.
+
+| Service | Port |
+|---|---|
+| API | 9001 |
+| Web | 9002 |
+| Admin | 9003 |
+| Landing | 9004 |
+| Expo / Metro | 9005 |
+| PostgreSQL (Docker) | 9006 |
+| Redis (Docker) | 9007 |
+
+### Manual steps
+
 ```bash
 # 1. Clone and install dependencies
 pnpm install
@@ -45,9 +71,9 @@ pnpm prisma:generate
 pnpm dev
 ```
 
-The API will be available at `http://localhost:3001/api`.
-The web app will be available at `http://localhost:3000`.
-Health check: `http://localhost:3001/api/health`.
+The API will be available at `http://localhost:9001/api/v1`.
+The web app will be available at `http://localhost:9002`.
+Health check: `http://localhost:9001/api/v1/health`.
 
 ## Development
 
@@ -68,8 +94,8 @@ pnpm docker:down   # Stop all services
 pnpm docker:logs   # Tail service logs
 ```
 
-PostgreSQL is exposed on `localhost:5432`.
-Redis is exposed on `localhost:6379`.
+PostgreSQL is exposed on `localhost:9006`.
+Redis is exposed on `localhost:9007`.
 
 ## Database workflow
 

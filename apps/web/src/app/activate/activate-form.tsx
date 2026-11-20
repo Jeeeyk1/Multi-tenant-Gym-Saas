@@ -8,7 +8,7 @@ interface Props {
 }
 
 const initial = { error: null as string | null };
-const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:3030';
+const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:9004';
 
 export function ActivateForm({ token }: Props) {
   const [password, setPassword] = useState('');

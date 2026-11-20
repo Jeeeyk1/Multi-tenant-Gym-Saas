@@ -49,7 +49,7 @@ import { GymAccessGuard } from './common/guards/gym-access.guard';
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
           .default('development'),
-        PORT: Joi.number().default(3001),
+        PORT: Joi.number().default(9001),
         CORS_ORIGINS: Joi.string().optional(),
         DATABASE_URL: Joi.string().required(),
         REDIS_URL: Joi.string().required(),
@@ -71,7 +71,7 @@ import { GymAccessGuard } from './common/guards/gym-access.guard';
         // Email (Resend)
         RESEND_API_KEY: Joi.string().required(),
         EMAIL_FROM: Joi.string().default('noreply@gym.noetecha.com'),
-        WEB_URL: Joi.string().uri().default('http://localhost:3000'),
+        WEB_URL: Joi.string().uri().default('http://localhost:9002'),
       }),
     }),
     JwtModule.registerAsync({

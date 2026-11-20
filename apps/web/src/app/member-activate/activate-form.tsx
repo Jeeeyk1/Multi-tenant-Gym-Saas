@@ -9,7 +9,7 @@ interface Props {
 }
 
 const initial: ActivateMemberState = { error: null, success: false };
-const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:3030';
+const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:9004';
 
 export function MemberActivateForm({ token, gymCode }: Props) {
   const [password, setPassword] = useState('');

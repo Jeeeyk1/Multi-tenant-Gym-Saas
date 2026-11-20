@@ -52,7 +52,7 @@ async function tryRefresh(
   refreshToken: string,
 ): Promise<{ accessToken: string; refreshToken: string } | null> {
   try {
-    const apiUrl = process.env.API_URL ?? 'http://localhost:3000';
+    const apiUrl = process.env.API_URL ?? 'http://localhost:9001';
     const res = await fetch(`${apiUrl}/api/v1/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

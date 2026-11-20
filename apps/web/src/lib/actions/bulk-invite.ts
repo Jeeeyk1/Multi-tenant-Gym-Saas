@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getSessionUser } from '@/lib/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001/api';
 
 export type BulkInviteRowStatus = 'ready' | 'duplicate_in_file' | 'already_registered' | 'invalid';
 

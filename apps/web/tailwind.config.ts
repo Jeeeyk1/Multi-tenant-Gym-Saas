@@ -39,8 +39,17 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        display: ['32px', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '800' }],
+        h1: ['28px', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '800' }],
+        h2: ['24px', { lineHeight: '1.25', letterSpacing: '-0.015em', fontWeight: '700' }],
+        h3: ['18px', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '700' }],
+        body: ['15px', { lineHeight: '1.65' }],
+        sm: ['13px', { lineHeight: '1.5' }],
+        xs: ['12px', { lineHeight: '1.4' }],
       },
       borderRadius: {
         sm: '0.5rem',

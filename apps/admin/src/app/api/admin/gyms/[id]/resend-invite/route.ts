@@ -2,7 +2,7 @@ import axios from 'axios';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = `${process.env.API_URL ?? 'http://localhost:3000'}/api`;
+const API_BASE = `${process.env.API_URL ?? 'http://localhost:9001'}/api`;
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -1,13 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  Modal,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Modal } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';

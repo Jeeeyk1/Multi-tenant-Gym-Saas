@@ -1,12 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-  Animated,
-} from 'react-native';
+import { View, Pressable, StyleSheet, ActivityIndicator, Animated } from 'react-native';
+import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';

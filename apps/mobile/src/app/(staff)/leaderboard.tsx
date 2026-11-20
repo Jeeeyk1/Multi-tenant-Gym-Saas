@@ -1,19 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Switch,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, Image, TextInput, Switch, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';

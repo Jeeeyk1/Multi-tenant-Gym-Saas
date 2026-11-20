@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Modal,
-  ActivityIndicator,
-} from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';

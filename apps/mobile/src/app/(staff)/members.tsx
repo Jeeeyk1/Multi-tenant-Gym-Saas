@@ -1,18 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  StyleSheet,
-  RefreshControl,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, FlatList, TextInput, StyleSheet, RefreshControl, TouchableOpacity, ScrollView } from 'react-native';
+import { Text } from '../../components/Text';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
+import { StaffHeader } from '../../components/StaffHeader';
 import { useStaffMembers } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MemberListItem } from '../../types';
@@ -23,6 +16,15 @@ const STATUS_COLOR: Record<string, string> = {
   SUSPENDED: COLORS.suspended,
 };
 
+type MemberFilter = 'all' | 'active' | 'expiring' | 'expired';
+
+const FILTERS: { key: MemberFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'active', label: 'Active' },
+  { key: 'expiring', label: 'Expiring' },
+  { key: 'expired', label: 'Expired' },
+];
+
 function getInitials(name: string): string {
   const parts = name.trim().split(' ');
   if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
@@ -30,11 +32,15 @@ function getInitials(name: string): string {
 }
 
 function formatExpiry(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function daysUntil(iso: string): number {
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+}
+
+function isExpiring(m: MemberListItem): boolean {
+  return m.status === 'ACTIVE' && daysUntil(m.expiryDate) >= 0 && daysUntil(m.expiryDate) <= 7;
 }
 
 function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => void }) {
@@ -42,7 +48,7 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
   const { theme } = useTheme();
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
-      <View style={styles.avatar}>
+      <View style={[styles.avatar, { backgroundColor: theme.primary + '18' }]}>
         <Text style={[styles.avatarText, { color: theme.primary }]}>{getInitials(item.user.fullName)}</Text>
       </View>
       <View style={styles.rowInfo}>
@@ -55,7 +61,7 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
         </Text>
       </View>
       <View style={styles.rowRight}>
-        <View style={[styles.statusBadge, { borderColor: statusColor }]}>
+        <View style={[styles.statusBadge, { backgroundColor: statusColor + '1F' }]}>
           <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
         </View>
         <Text style={styles.expiryText}>Exp {formatExpiry(item.expiryDate)}</Text>
@@ -68,24 +74,53 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
 export default function MembersScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const params = useLocalSearchParams<{ filter?: string }>();
   const membersQ = useStaffMembers();
   const [search, setSearch] = useState('');
+  const initialFilter = (FILTERS.some((f) => f.key === params.filter) ? params.filter : 'all') as MemberFilter;
+  const [filter, setFilter] = useState<MemberFilter>(initialFilter);
+
+  // Tabs stay mounted, so a fresh `filter` param from the dashboard tiles must be
+  // applied on navigation — not only on first mount.
+  useEffect(() => {
+    if (FILTERS.some((f) => f.key === params.filter)) {
+      setFilter(params.filter as MemberFilter);
+    }
+  }, [params.filter]);
 
   const members: MemberListItem[] = membersQ.data?.data ?? [];
+  const total = membersQ.data?.meta.total ?? members.length;
   const isLoading = membersQ.isLoading;
   const refreshing = membersQ.isRefetching;
   const error = (membersQ.error as { message?: string } | null)?.message ?? null;
 
+  const counts = useMemo(
+    () => ({
+      all: total,
+      active: members.filter((m) => m.status === 'ACTIVE').length,
+      expiring: members.filter(isExpiring).length,
+      expired: members.filter((m) => m.status === 'EXPIRED').length,
+    }),
+    [members, total],
+  );
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return members;
-    const q = search.toLowerCase();
-    return members.filter(
-      (m) =>
-        m.user.fullName.toLowerCase().includes(q) ||
-        m.membershipNumber.toLowerCase().includes(q) ||
-        m.user.email.toLowerCase().includes(q),
-    );
-  }, [members, search]);
+    let list = members;
+    if (filter === 'active') list = list.filter((m) => m.status === 'ACTIVE');
+    else if (filter === 'expiring') list = list.filter(isExpiring);
+    else if (filter === 'expired') list = list.filter((m) => m.status === 'EXPIRED');
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (m) =>
+          m.user.fullName.toLowerCase().includes(q) ||
+          m.membershipNumber.toLowerCase().includes(q) ||
+          m.user.email.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [members, filter, search]);
 
   if (isLoading) {
     return (
@@ -97,13 +132,7 @@ export default function MembersScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.screenTitle}>Members</Text>
-          <Text style={styles.memberCount}>{members.length} total</Text>
-        </View>
-      </View>
+      <StaffHeader title="Members" subtitle={`${total} total`} />
 
       {/* Search bar */}
       <View style={styles.searchWrapper}>
@@ -121,6 +150,43 @@ export default function MembersScreen() {
         />
       </View>
 
+      {/* Filter chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsRow}
+        style={styles.chipsScroll}
+      >
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          const statusTint =
+            f.key === 'expiring' ? COLORS.suspended : f.key === 'expired' ? COLORS.expired : undefined;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              onPress={() => setFilter(f.key)}
+              activeOpacity={0.8}
+              style={[
+                styles.chip,
+                active
+                  ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                  : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  active ? styles.chipTextActive : statusTint ? { color: statusTint } : null,
+                ]}
+              >
+                {f.label}
+                <Text style={active ? styles.chipCountActive : styles.chipCount}> {counts[f.key]}</Text>
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       {error && (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
@@ -135,24 +201,18 @@ export default function MembersScreen() {
           <View style={index < filtered.length - 1 ? styles.rowBorder : undefined}>
             <MemberRow
               item={item}
-              onPress={() =>
-                router.push({ pathname: '/(staff)/member/[id]', params: { id: item.id } })
-              }
+              onPress={() => router.push({ pathname: '/(staff)/member/[id]', params: { id: item.id } })}
             />
           </View>
         )}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => membersQ.refetch()}
-            tintColor={theme.primary}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={() => membersQ.refetch()} tintColor={theme.primary} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="people-outline" size={36} color={COLORS.border} />
             <Text style={styles.emptyText}>
-              {search.trim() ? 'No members match your search' : 'No members yet'}
+              {search.trim() || filter !== 'all' ? 'No members match this view' : 'No members yet'}
             </Text>
           </View>
         }
@@ -174,14 +234,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 48 : SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  screenTitle: { fontSize: 28, color: COLORS.text, ...FONT.bold },
-  memberCount: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginTop: 2 },
-
   searchWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,17 +242,29 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: RADIUS.lg,
     marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
     paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
     height: 44,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.text,
-    ...FONT.regular,
+  searchInput: { flex: 1, fontSize: 14, color: COLORS.text, ...FONT.regular },
+
+  // Filter chips
+  chipsScroll: { flexGrow: 0, marginBottom: SPACING.md },
+  chipsRow: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
+  chipText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.semibold },
+  chipTextActive: { color: '#000' },
+  chipCount: { color: COLORS.textMuted, ...FONT.medium },
+  chipCountActive: { color: 'rgba(0,0,0,0.55)', ...FONT.medium },
 
   errorBox: {
     backgroundColor: COLORS.errorBg,
@@ -214,29 +278,15 @@ const styles = StyleSheet.create({
   errorText: { color: COLORS.error, fontSize: 13 },
 
   list: { flex: 1 },
-  listContent: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xxl,
-  },
+  listContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
 
   // Row
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: SPACING.sm,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: SPACING.sm },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -246,20 +296,11 @@ const styles = StyleSheet.create({
   memberName: { fontSize: 14, color: COLORS.text, ...FONT.medium },
   memberSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   rowRight: { alignItems: 'flex-end', gap: 4 },
-  statusBadge: {
-    borderWidth: 1,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
+  statusBadge: { borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 10, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.4 },
   expiryText: { fontSize: 11, color: COLORS.textMuted, ...FONT.regular },
 
   // Empty
-  empty: {
-    alignItems: 'center',
-    paddingTop: SPACING.xxl,
-    gap: SPACING.sm,
-  },
+  empty: { alignItems: 'center', paddingTop: SPACING.xxl, gap: SPACING.sm },
   emptyText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular, marginTop: 4 },
 });

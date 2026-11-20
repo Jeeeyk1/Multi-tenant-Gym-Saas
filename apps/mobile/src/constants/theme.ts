@@ -112,10 +112,12 @@ export const RADIUS = {
   full: 9999,
 };
 
+// Two-font system: Plus Jakarta Sans for headings only (bold/display), Inter for
+// everything else (body, UI, labels, numbers). Spread into styles as `...FONT.xxx`.
 export const FONT = {
-  regular: { fontFamily: 'PlusJakartaSans_400Regular', fontWeight: '400' as const },
-  medium: { fontFamily: 'PlusJakartaSans_500Medium', fontWeight: '500' as const },
-  semibold: { fontFamily: 'PlusJakartaSans_600SemiBold', fontWeight: '600' as const },
+  regular: { fontFamily: 'Inter_400Regular', fontWeight: '400' as const },
+  medium: { fontFamily: 'Inter_500Medium', fontWeight: '500' as const },
+  semibold: { fontFamily: 'Inter_600SemiBold', fontWeight: '600' as const },
   bold: { fontFamily: 'PlusJakartaSans_700Bold', fontWeight: '700' as const },
   display: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontWeight: '800' as const },
 };

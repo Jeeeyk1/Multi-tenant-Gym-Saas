@@ -1,19 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  TextInput,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Image, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';

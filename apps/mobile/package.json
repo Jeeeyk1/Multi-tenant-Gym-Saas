@@ -4,15 +4,16 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "expo start --port 3099",
-    "start": "expo start --port 3099",
-    "android": "expo start --android --port 3099",
-    "ios": "expo start --ios --port 3099",
+    "dev": "expo start --port 9005",
+    "start": "expo start --port 9005",
+    "android": "expo start --android --port 9005",
+    "ios": "expo start --ios --port 9005",
     "build": "echo 'Use EAS Build for production builds — see https://docs.expo.dev/build/introduction/'",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@gym-saas/contracts": "workspace:*",
     "@kingstinct/react-native-healthkit": "^14.0.2",

@@ -1,12 +1,6 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  RefreshControl,
-} from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';

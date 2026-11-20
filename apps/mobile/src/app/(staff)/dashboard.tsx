@@ -1,25 +1,19 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
-import { useActiveCheckIns, useCheckOut } from '../../hooks/staff';
+import { StaffHeader } from '../../components/StaffHeader';
+import { useActiveCheckIns, useCheckOut, useStaffMembers } from '../../hooks/staff';
 import { usePendingSubmissions } from '../../hooks/leaderboard';
 import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
-import { COLORS, SPACING, RADIUS, FONT, GRADIENTS } from '../../constants/theme';
-import type { StaffCheckIn } from '../../types';
+import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import type { StaffCheckIn, MemberListItem } from '../../types';
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -32,11 +26,16 @@ function formatRole(role: string): string {
   return role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, ' ');
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatElapsed(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function daysUntil(iso: string): number {
+  return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
 }
 
 function getInitials(name: string): string {
@@ -44,6 +43,54 @@ function getInitials(name: string): string {
   if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   return parts[0].slice(0, 2).toUpperCase();
 }
+
+// ─── Pulse-grid metric tile ──────────────────────────────────────────────────
+
+function MetricTile({
+  icon,
+  value,
+  label,
+  accent,
+  primary,
+  badge,
+  onPress,
+}: {
+  icon: IoniconsName;
+  value: number;
+  label: string;
+  /** Color for the value + icon chip. Falls back to neutral text when omitted. */
+  accent?: string;
+  /** Themed highlight tile (the live metric). */
+  primary?: boolean;
+  badge?: string;
+  onPress?: () => void;
+}) {
+  const chipColor = accent ?? COLORS.textSecondary;
+  return (
+    <TouchableOpacity
+      style={[
+        styles.metric,
+        primary && accent ? { backgroundColor: accent + '14', borderColor: accent + '40' } : null,
+      ]}
+      activeOpacity={onPress ? 0.75 : 1}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      {badge ? (
+        <View style={[styles.metricBadge, { backgroundColor: chipColor + '22' }]}>
+          <Text style={[styles.metricBadgeText, { color: chipColor }]}>{badge}</Text>
+        </View>
+      ) : null}
+      <View style={[styles.metricChip, { backgroundColor: chipColor + '1F' }]}>
+        <Ionicons name={icon} size={16} color={chipColor} />
+      </View>
+      <Text style={[styles.metricValue, accent ? { color: accent } : null]}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Currently-active row ─────────────────────────────────────────────────────
 
 function ActiveRow({
   item,
@@ -57,7 +104,7 @@ function ActiveRow({
   const { theme } = useTheme();
   return (
     <View style={styles.activeRow}>
-      <View style={styles.activeAvatar}>
+      <View style={[styles.activeAvatar, { backgroundColor: theme.primary + '18' }]}>
         <Text style={[styles.activeAvatarText, { color: theme.primary }]}>
           {getInitials(item.member.user.fullName)}
         </Text>
@@ -66,7 +113,9 @@ function ActiveRow({
         <Text style={styles.activeName} numberOfLines={1}>
           {item.member.user.fullName}
         </Text>
-        <Text style={styles.activeSince}>Since {formatTime(item.checkedInAt)}</Text>
+        <Text style={styles.activeSince}>
+          {item.member.membershipNumber} · {formatElapsed(item.checkedInAt)}
+        </Text>
       </View>
       <TouchableOpacity
         style={styles.checkOutBtn}
@@ -89,19 +138,26 @@ export default function StaffDashboardScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const activeCheckInsQ = useActiveCheckIns();
+  const membersQ = useStaffMembers();
   const checkOutMutation = useCheckOut();
   const pendingSubmissionsQ = usePendingSubmissions();
   const canViewReports = user?.permissions.includes('reports.view') ?? false;
 
   const activeCheckIns: StaffCheckIn[] = activeCheckInsQ.data ?? [];
+  const members: MemberListItem[] = membersQ.data?.data ?? [];
+  const totalMembers = membersQ.data?.meta.total ?? members.length;
+  // Roster is capped at 150 on the Standard plan, well under the 200-member fetch
+  // limit, so deriving these counts client-side covers the whole gym.
+  const expiringSoon = members.filter(
+    (m) => m.status === 'ACTIVE' && daysUntil(m.expiryDate) >= 0 && daysUntil(m.expiryDate) <= 7,
+  ).length;
+  const expiredCount = members.filter((m) => m.status === 'EXPIRED').length;
   const pendingCount = pendingSubmissionsQ.data?.length ?? 0;
+
   const isLoading = activeCheckInsQ.isLoading;
-  const refreshing = activeCheckInsQ.isRefetching;
-  const error =
-    (activeCheckInsQ.error as { message?: string } | null)?.message ?? null;
-  const checkingOutId = checkOutMutation.isPending
-    ? checkOutMutation.variables ?? null
-    : null;
+  const refreshing = activeCheckInsQ.isRefetching || membersQ.isRefetching;
+  const error = (activeCheckInsQ.error as { message?: string } | null)?.message ?? null;
+  const checkingOutId = checkOutMutation.isPending ? checkOutMutation.variables ?? null : null;
 
   const handleCheckOut = (checkinId: string) => {
     checkOutMutation.mutate(checkinId);
@@ -110,6 +166,9 @@ export default function StaffDashboardScreen() {
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
   const staffRole = user?.roles.find((r) => r !== 'MEMBER') ?? 'STAFF';
   const previewList = activeCheckIns.slice(0, 5);
+
+  const goToMembers = (filter?: 'active' | 'expiring' | 'expired') =>
+    router.navigate({ pathname: '/(staff)/members', params: filter ? { filter } : {} });
 
   if (isLoading) {
     return (
@@ -120,122 +179,142 @@ export default function StaffDashboardScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => activeCheckInsQ.refetch()} tintColor={theme.primary} />
-      }
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: theme.primary }]}>{getGreeting()}, {firstName}</Text>
-          <Text style={styles.pageTitle}>Staff Dashboard</Text>
-        </View>
-        <View style={styles.rolePill}>
-          <Text style={styles.rolePillText}>{formatRole(staffRole)}</Text>
-        </View>
-      </View>
-
-      {error && (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      {/* Active stat card */}
-      <LinearGradient
-        colors={GRADIENTS.accentCard}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.statCard}
-      >
-        <Text style={styles.statLabel}>ACTIVE RIGHT NOW</Text>
-        <Text style={[styles.statCount, { color: theme.primary }]}>{activeCheckIns.length}</Text>
-        <Text style={styles.statSub}>
-          {activeCheckIns.length === 1 ? 'member in gym' : 'members in gym'}
-        </Text>
-      </LinearGradient>
-
-      {/* Quick action */}
-      <TouchableOpacity
-        style={styles.quickAction}
-        onPress={() => router.navigate('/(staff)/checkins')}
-        activeOpacity={0.75}
-      >
-        <View style={styles.quickActionLeft}>
-          <View style={styles.quickActionIcon}>
-            <Ionicons name="person-add-outline" size={20} color={theme.primary} />
+    <View style={styles.container}>
+      <StaffHeader
+        greeting={`${getGreeting()}, ${firstName}`}
+        title="Dashboard"
+        right={
+          <View style={styles.rolePill}>
+            <Text style={styles.rolePillText}>{formatRole(staffRole)}</Text>
           </View>
-          <Text style={styles.quickActionText}>Check In a Member</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-      </TouchableOpacity>
+        }
+      />
 
-      {/* Pending PR reviews */}
-      {pendingCount > 0 && (
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              activeCheckInsQ.refetch();
+              membersQ.refetch();
+            }}
+            tintColor={theme.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Pulse grid */}
+        <View style={styles.grid}>
+          <MetricTile
+            icon="pulse-outline"
+            value={activeCheckIns.length}
+            label="Active right now"
+            accent={theme.primary}
+            primary
+            onPress={() => router.navigate('/(staff)/checkins')}
+          />
+          <MetricTile
+            icon="people-outline"
+            value={totalMembers}
+            label="Total members"
+            onPress={() => goToMembers()}
+          />
+          <MetricTile
+            icon="time-outline"
+            value={expiringSoon}
+            label="Expiring soon"
+            accent={COLORS.warning}
+            badge="7 days"
+            onPress={() => goToMembers('expiring')}
+          />
+          <MetricTile
+            icon="alert-circle-outline"
+            value={expiredCount}
+            label="Expired"
+            accent={COLORS.expired}
+            onPress={() => goToMembers('expired')}
+          />
+        </View>
+
+        {/* Primary action */}
         <TouchableOpacity
-          style={styles.quickAction}
-          onPress={() => router.push('/(staff)/leaderboard')}
-          activeOpacity={0.75}
+          style={[styles.cta, { backgroundColor: theme.primary }]}
+          onPress={() => router.navigate('/(staff)/checkins')}
+          activeOpacity={0.85}
         >
-          <View style={styles.quickActionLeft}>
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="trophy-outline" size={20} color={theme.primary} />
-            </View>
-            <Text style={styles.quickActionText}>
+          <View style={styles.ctaIcon}>
+            <Ionicons name="person-add-outline" size={20} color="#000" />
+          </View>
+          <View style={styles.ctaText}>
+            <Text style={styles.ctaTitle}>Check in a member</Text>
+            <Text style={styles.ctaSub}>Scan QR or search by name</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#000" />
+        </TouchableOpacity>
+
+        {/* Pending reviews — status-colored alert, not another gray row */}
+        {pendingCount > 0 && (
+          <TouchableOpacity
+            style={styles.alert}
+            onPress={() => router.push('/(staff)/leaderboard')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="trophy-outline" size={18} color={COLORS.warning} />
+            <Text style={styles.alertText}>
               {pendingCount} PR {pendingCount === 1 ? 'submission' : 'submissions'} pending review
             </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
-        </TouchableOpacity>
-      )}
-
-      {/* Check-ins trend */}
-      {canViewReports && <CheckinsTrendChart />}
-
-      {/* Active now list (preview) */}
-      <View style={styles.sectionRow}>
-        <Text style={styles.sectionTitle}>CURRENTLY ACTIVE</Text>
-        {activeCheckIns.length > 5 && (
-          <TouchableOpacity onPress={() => router.navigate('/(staff)/checkins')}>
-            <Text style={[styles.seeAll, { color: theme.primary }]}>See all →</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.warning} />
           </TouchableOpacity>
         )}
-      </View>
 
-      {previewList.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Ionicons name="fitness-outline" size={32} color={COLORS.border} />
-          <Text style={styles.emptyText}>No one is checked in yet</Text>
+        {/* Check-ins trend */}
+        {canViewReports && (
+          <View style={styles.chartWrap}>
+            <CheckinsTrendChart />
+          </View>
+        )}
+
+        {/* Active now list (preview) */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>CURRENTLY ACTIVE</Text>
+          {activeCheckIns.length > 5 && (
+            <TouchableOpacity onPress={() => router.navigate('/(staff)/checkins')}>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>See all →</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      ) : (
-        <View style={styles.activeList}>
-          {previewList.map((item, index) => (
-            <View
-              key={item.id}
-              style={[
-                index < previewList.length - 1 && styles.activeRowBorder,
-              ]}
-            >
-              <ActiveRow
-                item={item}
-                onCheckOut={handleCheckOut}
-                checkingOut={checkingOutId === item.id}
-              />
-            </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+
+        {previewList.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="fitness-outline" size={32} color={COLORS.border} />
+            <Text style={styles.emptyText}>No one is checked in yet</Text>
+          </View>
+        ) : (
+          <View style={styles.activeList}>
+            {previewList.map((item, index) => (
+              <View key={item.id} style={index < previewList.length - 1 ? styles.activeRowBorder : undefined}>
+                <ActiveRow item={item} onCheckOut={handleCheckOut} checkingOut={checkingOutId === item.id} />
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   centered: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -243,20 +322,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 48 : SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  greeting: {
-    fontSize: 13,
-    color: COLORS.primary,
-    ...FONT.medium,
-    marginBottom: 4,
-  },
-  pageTitle: { fontSize: 26, color: COLORS.text, ...FONT.bold },
   rolePill: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
@@ -264,7 +329,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.full,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    marginTop: 6,
   },
   rolePillText: { fontSize: 12, color: COLORS.textMuted, ...FONT.medium },
 
@@ -278,52 +342,81 @@ const styles = StyleSheet.create({
   },
   errorText: { color: COLORS.error, fontSize: 13 },
 
-  // Stat card
-  statCard: {
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    ...FONT.semibold,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  statCount: {
-    fontSize: 52,
-    color: COLORS.primary,
-    ...FONT.bold,
-    lineHeight: 56,
-  },
-  statSub: { fontSize: 14, color: COLORS.textSecondary, ...FONT.regular, marginTop: 4 },
-
-  // Quick action
-  quickAction: {
+  // Pulse grid
+  grid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  metric: {
+    flexBasis: '47%',
+    flexGrow: 1,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    marginBottom: SPACING.lg,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  quickActionLeft: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  quickActionIcon: {
+  metricChip: {
+    width: 30,
+    height: 30,
+    borderRadius: RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  metricValue: { fontSize: 28, color: COLORS.text, ...FONT.bold, lineHeight: 30 },
+  metricLabel: { fontSize: 12, color: COLORS.textSecondary, ...FONT.medium, marginTop: 4 },
+  metricBadge: {
+    position: 'absolute',
+    top: SPACING.md,
+    right: SPACING.md,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  metricBadgeText: { fontSize: 10, ...FONT.semibold },
+
+  // Primary action
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  ctaIcon: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.background,
+    backgroundColor: 'rgba(0,0,0,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickActionText: { fontSize: 15, color: COLORS.text, ...FONT.medium },
+  ctaText: { flex: 1 },
+  ctaTitle: { fontSize: 15, color: '#000', ...FONT.semibold },
+  ctaSub: { fontSize: 12, color: 'rgba(0,0,0,0.65)', ...FONT.regular, marginTop: 1 },
+
+  // Alert
+  alert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.warningBg,
+    borderWidth: 1,
+    borderColor: COLORS.warning,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+    marginBottom: SPACING.lg,
+  },
+  alertText: { flex: 1, fontSize: 13, color: COLORS.warning, ...FONT.medium },
+
+  chartWrap: { marginBottom: SPACING.lg },
 
   // Section header
   sectionRow: {
@@ -349,10 +442,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     overflow: 'hidden',
   },
-  activeRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
+  activeRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
   activeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,9 +454,6 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

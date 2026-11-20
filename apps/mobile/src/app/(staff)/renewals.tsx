@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
+import { StaffHeader } from '../../components/StaffHeader';
 import { useGymRenewals } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { GymRenewal } from '../../types';
@@ -62,12 +56,7 @@ export default function StaffRenewalsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.screenTitle}>Renewals</Text>
-      </View>
+      <StaffHeader title="Renewals" onBack={() => router.back()} borderBottom />
 
       {renewalsQ.isLoading ? (
         <View style={styles.centered}>
@@ -102,18 +91,6 @@ export default function StaffRenewalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 52 : SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-    gap: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  backBtn: { padding: 4, marginRight: 4 },
-  screenTitle: { fontSize: 22, color: COLORS.text, ...FONT.bold },
 
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { padding: SPACING.lg },

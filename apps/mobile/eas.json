@@ -14,7 +14,7 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://localhost:3001/api"
+        "EXPO_PUBLIC_API_URL": "http://localhost:9001/api"
       }
     },
     "preview": {

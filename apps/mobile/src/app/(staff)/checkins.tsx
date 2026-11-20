@@ -1,22 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-} from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
+import { StaffHeader } from '../../components/StaffHeader';
 import {
   useActiveCheckIns,
   useCheckInManual,
@@ -301,18 +290,17 @@ export default function CheckInsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.screenTitle}>Check-ins</Text>
-          <Text style={styles.activeCount}>
-            {activeList.length} active{activeList.length !== 1 ? '' : ''}
-          </Text>
-        </View>
-        <TouchableOpacity style={[styles.checkInFab, { backgroundColor: theme.primary }]} onPress={openModal} activeOpacity={0.8}>
-          <Ionicons name="person-add-outline" size={18} color="#000" />
-          <Text style={styles.checkInFabText}>Check In</Text>
-        </TouchableOpacity>
-      </View>
+      <StaffHeader
+        title="Check-ins"
+        subtitle={`${activeList.length} active`}
+        borderBottom
+        right={
+          <TouchableOpacity style={[styles.checkInFab, { backgroundColor: theme.primary }]} onPress={openModal} activeOpacity={0.8}>
+            <Ionicons name="person-add-outline" size={18} color="#000" />
+            <Text style={styles.checkInFabText}>Check In</Text>
+          </TouchableOpacity>
+        }
+      />
 
       {/* Active list */}
       {listLoading ? (
@@ -471,19 +459,6 @@ export default function CheckInsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 52 : SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  screenTitle: { fontSize: 26, color: COLORS.text, ...FONT.bold },
-  activeCount: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginTop: 2 },
 
   checkInFab: {
     flexDirection: 'row',

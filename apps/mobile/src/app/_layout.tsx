@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, Text, Pressable } from 'react-native';
+import { View, ActivityIndicator, Pressable } from 'react-native';
+import { Text } from '../components/Text';
+import { useFonts } from 'expo-font';
 import {
-  useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+} from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { WorkoutProvider } from '../context/WorkoutContext';
@@ -59,11 +63,11 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
     PlusJakartaSans_800ExtraBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
   });
   const [splashDone, setSplashDone] = useState(false);
 
@@ -80,23 +84,27 @@ export default function RootLayout() {
 
   if (!splashDone) {
     return (
-      <ThemeProvider>
-        <StatusBar style="light" />
-        <AppSplash onDone={() => setSplashDone(true)} />
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <StatusBar style="light" />
+          <AppSplash onDone={() => setSplashDone(true)} />
+        </ThemeProvider>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <WorkoutProvider>
-            <StatusBar style="light" />
-            <RootNavigator />
-          </WorkoutProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <WorkoutProvider>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </WorkoutProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

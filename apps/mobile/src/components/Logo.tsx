@@ -1,6 +1,7 @@
 import React from 'react';
 import Svg, { Rect, Circle, G } from 'react-native-svg';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from './Text';
 import { useTheme } from '../context/ThemeContext';
 import { COLORS, FONT } from '../constants/theme';
 

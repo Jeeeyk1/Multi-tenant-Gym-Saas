@@ -12,7 +12,7 @@ export class EmailService {
   constructor(private readonly config: ConfigService) {
     this.resend = new Resend(config.getOrThrow<string>('RESEND_API_KEY'));
     this.from = config.get<string>('EMAIL_FROM') ?? 'noreply@gym.noetecha.com';
-    this.webUrl = config.get<string>('WEB_URL') ?? 'http://localhost:3000';
+    this.webUrl = config.get<string>('WEB_URL') ?? 'http://localhost:9002';
   }
 
   async sendOwnerInvite(opts: {

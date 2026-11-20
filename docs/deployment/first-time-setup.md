@@ -135,7 +135,7 @@ nano .env       # or your preferred editor
 | Variable | Notes |
 |---|---|
 | `NODE_ENV` | `production` |
-| `PORT` | `3000` (API port; Nginx proxies to this) |
+| `PORT` | `9001` (API port; Nginx proxies to this) |
 | `API_PREFIX` | `api/v1` |
 | `DATABASE_URL` | `postgresql://gymsaas:PASSWORD@localhost:5432/gymsaas?connection_limit=10&pool_timeout=15&connect_timeout=10` |
 | `REDIS_URL` | `redis://:REDIS_PASSWORD@localhost:6379` |
@@ -241,8 +241,8 @@ pm2 logs gym-api --lines 20
 ```bash
 cd /home/deploy/gym-saas
 
-# Start Next.js (port 3001 or whichever you choose)
-pm2 start "pnpm --filter @gym-saas/web start -- --port 3001" --name gym-web
+# Start Next.js (port 9002 or whichever you choose)
+pm2 start "pnpm --filter @gym-saas/web start -- --port 9002" --name gym-web
 pm2 save
 ```
 
@@ -264,7 +264,7 @@ server {
 
     # Web dashboard
     location / {
-        proxy_pass         http://localhost:3001;
+        proxy_pass         http://localhost:9002;
         proxy_http_version 1.1;
         proxy_set_header   Upgrade $http_upgrade;
         proxy_set_header   Connection 'upgrade';
@@ -274,7 +274,7 @@ server {
 
     # API + WebSocket (Socket.IO)
     location /api/ {
-        proxy_pass         http://localhost:3000;
+        proxy_pass         http://localhost:9001;
         proxy_http_version 1.1;
         proxy_set_header   Upgrade $http_upgrade;
         proxy_set_header   Connection 'upgrade';
@@ -289,7 +289,7 @@ server {
 
     # Socket.IO chat — WebSocket upgrade path
     location /chat {
-        proxy_pass         http://localhost:3000;
+        proxy_pass         http://localhost:9001;
         proxy_http_version 1.1;
         proxy_set_header   Upgrade $http_upgrade;
         proxy_set_header   Connection 'upgrade';

@@ -74,7 +74,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
   }
 
   if (result) {
-    const activationUrl = `${window.location.origin.replace(':3020', ':3010')}/activate?token=${result.inviteToken}`;
+    const activationUrl = `${window.location.origin.replace(':9003', ':9002')}/activate?token=${result.inviteToken}`;
     return (
       <div className="p-8 max-w-lg">
         <div className="bg-success/10 border border-success/30 rounded-xl p-6">

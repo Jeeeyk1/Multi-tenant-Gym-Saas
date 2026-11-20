@@ -12,7 +12,7 @@ pnpm dev:web
 pnpm dev
 ```
 
-App runs at `http://localhost:3000`.
+App runs at `http://localhost:9002`.
 
 ## Environment
 

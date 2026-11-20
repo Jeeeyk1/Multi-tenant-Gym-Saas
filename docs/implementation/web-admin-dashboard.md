@@ -137,6 +137,6 @@ Nav items are shown based on JWT permissions:
 
 | Variable | Where | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `apps/web/.env.local` | API base URL (e.g. `http://localhost:3000/api/v1`) |
+| `NEXT_PUBLIC_API_URL` | `apps/web/.env.local` | API base URL (e.g. `http://localhost:9001/api/v1`) |
 
 The JWT is verified by the API on every request. The web middleware decodes (without signature verification) only to check expiry and route the user to the correct layout.

@@ -9,7 +9,7 @@ Frontend and mobile agents **must read this file** before building any feature t
 ## Base URL
 
 ```
-http://localhost:3001/api        ← development
+http://localhost:9001/api        ← development
 https://<domain>/api             ← production
 ```
 
@@ -931,7 +931,7 @@ The WebSocket gateway runs on the `/chat` namespace. It handles real-time messag
 ```js
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:3001/chat', {
+const socket = io('http://localhost:9001/chat', {
   auth: { token: '<gym-jwt>' },   // gym JWT — org tokens are rejected
   transports: ['websocket'],
 });

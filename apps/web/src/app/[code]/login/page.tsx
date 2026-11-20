@@ -11,7 +11,7 @@ interface GymBranding {
 
 async function fetchGymBranding(code: string): Promise<GymBranding> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001/api/v1';
     const res = await fetch(`${apiUrl}/auth/resolve-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

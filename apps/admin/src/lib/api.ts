@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios';
 import { cookies } from 'next/headers';
 
-const BASE_URL = `${process.env.API_URL ?? 'http://localhost:3000'}/api`;
+const BASE_URL = `${process.env.API_URL ?? 'http://localhost:9001'}/api`;
 
 export interface ApiError {
   message: string;

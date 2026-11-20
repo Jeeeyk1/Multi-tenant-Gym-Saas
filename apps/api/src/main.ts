@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
   app.use(requestIdMiddleware);
 
   const config = app.get(ConfigService);
-  const port = config.get<number>('app.port') ?? 3001;
+  const port = config.get<number>('app.port') ?? 9001;
   const prefix = config.get<string>('app.apiPrefix') ?? 'api';
 
   // WebSocket adapter backed by Redis — enables real-time chat across

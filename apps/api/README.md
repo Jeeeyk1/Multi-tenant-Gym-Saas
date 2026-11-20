@@ -12,7 +12,7 @@ pnpm dev:api
 pnpm dev
 ```
 
-API runs at `http://localhost:3001/api`.
+API runs at `http://localhost:9001/api/v1`.
 Health endpoint: `GET /api/health`
 
 ## Environment

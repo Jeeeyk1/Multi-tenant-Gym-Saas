@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { getSessionUser } from '@/lib/auth';
 import type { GymDetail, GymProfile } from '@/types/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001/api';
 
 export async function uploadGymLogo(gymId: string, formData: FormData): Promise<string> {
   const cookieStore = await cookies();

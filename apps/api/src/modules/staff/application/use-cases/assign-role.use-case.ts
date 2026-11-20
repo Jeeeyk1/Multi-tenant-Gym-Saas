@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConflictError, ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
+import { assertCanManageStaff } from '../../domain/staff-management.rules';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface AssignRoleInput {
@@ -29,6 +30,8 @@ export class AssignRoleUseCase {
     if (!role) {
       throw new NotFoundError('Role not found');
     }
+
+    assertCanManageStaff(caller, staff, role.name);
 
     const existing = await this.repo.findStaffRoleAssignment(staffId, input.roleId);
     if (existing) {

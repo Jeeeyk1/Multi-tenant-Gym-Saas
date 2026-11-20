@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
+import { assertCanManageStaff } from '../../domain/staff-management.rules';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class DeactivateStaffUseCase {
     if (!staff) {
       throw new NotFoundError('Staff member not found');
     }
+
+    assertCanManageStaff(caller, staff);
 
     return this.repo.deactivate(staffId);
   }

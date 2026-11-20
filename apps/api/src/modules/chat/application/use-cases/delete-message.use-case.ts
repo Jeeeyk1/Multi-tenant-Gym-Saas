@@ -18,6 +18,12 @@ export class DeleteMessageUseCase {
       throw new ForbiddenError('Gym access denied', 'GYM_ACCESS_DENIED');
     }
 
+    // The conversation id comes from the URL — confirm it is one of this gym's.
+    const conversation = await this.repo.findConversation(conversationId, gymId);
+    if (!conversation) {
+      throw new NotFoundError('Conversation not found', 'CONVERSATION_NOT_FOUND');
+    }
+
     const message = await this.repo.findMessageById(messageId, conversationId);
     if (!message || message.isDeleted) {
       throw new NotFoundError('Message not found', 'MESSAGE_NOT_FOUND');

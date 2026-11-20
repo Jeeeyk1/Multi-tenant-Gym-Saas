@@ -15,6 +15,13 @@ export class LeaderboardRepository {
     });
   }
 
+  findMemberInGym(memberId: string, gymId: string) {
+    return this.prisma.gymMember.findFirst({
+      where: { id: memberId, gymId },
+      select: { id: true },
+    });
+  }
+
   // ── Exercises ──────────────────────────────────────────────────────────────
 
   listExercises(gymId: string) {

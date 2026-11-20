@@ -9,6 +9,7 @@ const mockRepo = {
   findRefreshToken: jest.fn(),
   findOrgMember: jest.fn(),
   findGymStaffWithPermissions: jest.fn(),
+  findGymMember: jest.fn(),
   revokeRefreshTokenById: jest.fn().mockResolvedValue(undefined),
   generateRefreshTokenPair: jest.fn().mockReturnValue({ raw: 'new-raw', hash: 'new-hash' }),
   saveRefreshToken: jest.fn().mockResolvedValue(undefined),
@@ -80,6 +81,7 @@ describe('RefreshTokenUseCase', () => {
       deviceInfo: { type: 'gym', gymId: 'gym-1' },
     });
     (mockRepo.findGymStaffWithPermissions as jest.Mock).mockResolvedValue(null);
+    (mockRepo.findGymMember as jest.Mock).mockResolvedValue({ id: 'member-3' });
 
     await useCase.execute('member-token');
 
@@ -100,5 +102,20 @@ describe('RefreshTokenUseCase', () => {
     (mockRepo.findOrgMember as jest.Mock).mockResolvedValue(null);
 
     await expect(useCase.execute('stale-token')).rejects.toThrow(TokenInvalidError);
+  });
+
+  it('throws TokenInvalidError when the user is neither active staff nor a member of the gym', async () => {
+    (mockRepo.findRefreshToken as jest.Mock).mockResolvedValue({
+      id: 'rt-5',
+      userId: 'user-5',
+      deviceInfo: { type: 'gym', gymId: 'gym-1' },
+    });
+    (mockRepo.findGymStaffWithPermissions as jest.Mock).mockResolvedValue(null);
+    (mockRepo.findGymMember as jest.Mock).mockResolvedValue(null);
+
+    await expect(useCase.execute('stale-token')).rejects.toBeInstanceOf(TokenInvalidError);
+    expect(mockRepo.findGymMember).toHaveBeenCalledWith('user-5', 'gym-1');
+    expect(mockJwt.sign).not.toHaveBeenCalled();
+    expect(mockRepo.saveRefreshToken).not.toHaveBeenCalled();
   });
 });

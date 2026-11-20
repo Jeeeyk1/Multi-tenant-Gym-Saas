@@ -7,6 +7,7 @@ const mockRepo = {
   upsertMembership: jest.fn(),
   findGymMemberStatus: jest.fn(),
   createMessage: jest.fn(),
+  findMessageById: jest.fn(),
 } as unknown as jest.Mocked<ChatRepository>;
 
 function makeCaller(gymId = 'gym-1') {
@@ -100,5 +101,32 @@ describe('SendMessageUseCase', () => {
     await expect(
       uc.execute('gym-1', 'conv-1', { content: 'Hi' }, makeCaller('other-gym')),
     ).rejects.toMatchObject({ code: 'GYM_ACCESS_DENIED' });
+  });
+
+  it('throws REPLY_TARGET_NOT_FOUND when replyToId is not a message in this conversation', async () => {
+    mockRepo.findConversation.mockResolvedValue(makeConversation());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
+    mockRepo.findGymMemberStatus.mockResolvedValue({ status: 'ACTIVE' });
+    mockRepo.findMessageById.mockResolvedValue(null);
+
+    const uc = new SendMessageUseCase(mockRepo);
+    await expect(
+      uc.execute('gym-1', 'conv-1', { content: 'hi', replyToId: 'msg-elsewhere' }, makeCaller()),
+    ).rejects.toMatchObject({ code: 'REPLY_TARGET_NOT_FOUND' });
+    expect(mockRepo.findMessageById).toHaveBeenCalledWith('msg-elsewhere', 'conv-1');
+    expect(mockRepo.createMessage).not.toHaveBeenCalled();
+  });
+
+  it('allows a reply to a message in the same conversation', async () => {
+    mockRepo.findConversation.mockResolvedValue(makeConversation());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
+    mockRepo.findGymMemberStatus.mockResolvedValue({ status: 'ACTIVE' });
+    mockRepo.findMessageById.mockResolvedValue({ id: 'msg-0' } as any);
+    mockRepo.createMessage.mockResolvedValue(makeMessage());
+
+    const uc = new SendMessageUseCase(mockRepo);
+    await uc.execute('gym-1', 'conv-1', { content: 'hi', replyToId: 'msg-0' }, makeCaller());
+
+    expect(mockRepo.createMessage).toHaveBeenCalledWith(expect.objectContaining({ replyToId: 'msg-0' }));
   });
 });

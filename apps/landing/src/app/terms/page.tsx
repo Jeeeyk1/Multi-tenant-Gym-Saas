@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/LegalLayout';
+import { BRAND_NAME } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — LiftHub',
-  description: 'The terms that govern use of the LiftHub gym management platform.',
+  title: `Terms of Service — ${BRAND_NAME}`,
+  description: `The terms that govern use of the ${BRAND_NAME} gym management platform.`,
 };
 
 const EFFECTIVE_DATE = 'July 22, 2026';
@@ -13,7 +14,7 @@ export default function TermsOfServicePage() {
     <LegalLayout title="Terms of Service" effectiveDate={EFFECTIVE_DATE}>
       <section>
         <p>
-          These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of LiftHub (the
+          These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of {BRAND_NAME} (the
           &ldquo;Service&rdquo;), a gym management platform operated by <strong>Noetech</strong>, based in
           Biñan City, Laguna, Philippines (&ldquo;Noetech,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
           &ldquo;our&rdquo;). By creating an account or using the Service, you agree to these Terms. If you
@@ -25,7 +26,7 @@ export default function TermsOfServicePage() {
       <section>
         <h2>1. The Service</h2>
         <p>
-          LiftHub provides gym owners and staff with a web dashboard and admin console for managing
+          {BRAND_NAME} provides gym owners and staff with a web dashboard and admin console for managing
           members, check-ins, plans, renewals, billing, and communication, and provides gym members with a
           mobile app for check-ins, membership status, and optional AI-assisted fitness and nutrition
           features.

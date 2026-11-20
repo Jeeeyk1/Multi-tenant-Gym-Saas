@@ -1,9 +1,11 @@
+import { BRAND_NAME } from '@/lib/brand';
+
 const STEPS = [
   {
     step: '01',
     title: 'Contact us to get started',
     description:
-      'Reach out to the LiftHub team. We set up your gym organization, assign your unique gym code, and send you an invite to activate your account.',
+      `Reach out to the ${BRAND_NAME} team. We set up your gym organization, assign your unique gym code, and send you an invite to activate your account.`,
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -37,7 +39,7 @@ const STEPS = [
     step: '04',
     title: 'Members join and thrive',
     description:
-      'Members download the LiftHub app, enter your gym code, and instantly access their membership card, AI coach, leaderboard, badges, and check-in history.',
+      `Members download the ${BRAND_NAME} app, enter your gym code, and instantly access their membership card, AI coach, leaderboard, badges, and check-in history.`,
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
@@ -55,7 +57,7 @@ export function HowItWorksSection() {
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">How it works</p>
           <h2 className="text-4xl font-bold text-foreground mb-4">Up and running in a day</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            No complex setup. No IT team required. LiftHub is designed to go live fast.
+            No complex setup. No IT team required. {BRAND_NAME} is designed to go live fast.
           </p>
         </div>
 

@@ -1,3 +1,5 @@
+import { BRAND_NAME } from '@/lib/brand';
+
 export function Footer() {
   return (
     <footer className="border-t border-border/50 py-10 px-6">
@@ -10,11 +12,11 @@ export function Footer() {
               <path d="M1 11h2v2H1z" /><path d="M21 11h2v2h-2z" />
             </svg>
           </div>
-          <span className="font-semibold text-foreground">LiftHub</span>
+          <span className="font-semibold text-foreground">{BRAND_NAME}</span>
         </div>
 
         <p className="text-sm text-muted-foreground text-center">
-          © {new Date().getFullYear()} LiftHub. All rights reserved.
+          © {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.
         </p>
 
         <div className="flex items-center gap-5 text-sm text-muted-foreground">

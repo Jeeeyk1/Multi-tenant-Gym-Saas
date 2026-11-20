@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { BRAND_NAME } from '@/lib/brand';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -51,7 +52,7 @@ export function ChatWidget() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001';
       const res = await fetch(`${apiUrl}/api/v1/public/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,7 +83,7 @@ export function ChatWidget() {
               </div>
               <div>
                 <p className="text-sm font-semibold leading-none">Maya</p>
-                <p className="text-xs opacity-80 mt-0.5">LiftHub Assistant · Online</p>
+                <p className="text-xs opacity-80 mt-0.5">{BRAND_NAME} Assistant · Online</p>
               </div>
             </div>
             <button
@@ -105,7 +106,7 @@ export function ChatWidget() {
                     M
                   </div>
                   <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm text-foreground max-w-[80%]">
-                    Hi! I'm Maya 👋 I can answer any questions about LiftHub — features, pricing, or how to get started.
+                    Hi! I&apos;m Maya 👋 I can answer any questions about {BRAND_NAME} — features, pricing, or how to get started.
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pl-9">

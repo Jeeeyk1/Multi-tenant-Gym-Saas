@@ -1,7 +1,5 @@
-import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
-
-const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3010';
+import { BRAND_NAME } from '@/lib/brand';
 
 export function Navbar() {
   return (
@@ -15,7 +13,7 @@ export function Navbar() {
               <path d="M1 11h2v2H1z" /><path d="M21 11h2v2h-2z" />
             </svg>
           </div>
-          <span className="text-lg font-bold text-foreground tracking-tight">LiftHub</span>
+          <span className="text-lg font-bold text-foreground tracking-tight">{BRAND_NAME}</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
@@ -26,12 +24,6 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link
-            href={WEB_URL}
-            className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            Staff login
-          </Link>
           <a
             href="#pricing"
             className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition"

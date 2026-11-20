@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
 import { FeaturesSection } from '@/components/FeaturesSection';
+import { MobileShowcaseSection } from '@/components/MobileShowcaseSection';
 import { HowItWorksSection } from '@/components/HowItWorksSection';
 import { PricingSection } from '@/components/PricingSection';
 import { CtaSection } from '@/components/CtaSection';
@@ -19,7 +20,7 @@ interface SaasPlan {
 
 async function getPlans(): Promise<SaasPlan[]> {
   try {
-    const url = `${process.env.API_URL ?? 'http://localhost:3000'}/api/v1/public/plans`;
+    const url = `${process.env.API_URL ?? 'http://localhost:9001'}/api/v1/public/plans`;
     const res = await fetch(url, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     return res.json();
@@ -37,6 +38,7 @@ export default async function LandingPage() {
       <main>
         <HeroSection />
         <FeaturesSection />
+        <MobileShowcaseSection />
         <HowItWorksSection />
         <PricingSection plans={plans} />
         <CtaSection />

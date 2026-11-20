@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { BRAND_NAME } from '@/lib/brand';
 
 /* ─────────────────────────────────────────────────
    Bento grid features section
@@ -81,8 +82,11 @@ function AiCoachingCard() {
 
           {/* CTA row */}
           <div className="px-3 pb-3">
-            <div className="w-full bg-primary/10 text-primary text-[10px] font-semibold py-2 rounded-xl text-center">
-              ✨ Ask AI for meal advice
+            <div className="w-full bg-primary/10 text-primary text-[10px] font-semibold py-2 rounded-xl text-center flex items-center justify-center gap-1.5">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+              </svg>
+              Ask AI for meal advice
             </div>
           </div>
         </div>
@@ -118,8 +122,11 @@ function LeaderboardCard() {
       <div className="flex items-start justify-between mb-5">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-lg">
-              🏆
+            <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+                <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
+              </svg>
             </div>
             <NewBadge />
           </div>
@@ -186,16 +193,27 @@ function LeaderboardCard() {
   );
 }
 
+const BADGE_ICON_PATHS: Record<string, string> = {
+  flame: 'M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 1 0 3 2 3 5a5 5 0 0 1-10 0c0-5 3-7 5-11z',
+  bolt: 'M13 2 4 14h6l-1 8 9-12h-6z',
+  dumbbell: 'M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10',
+  check: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM8 12l2.5 2.5L16 9',
+  medal: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a2 2 0 0 0 2 4M17 6h3a2 2 0 0 1-2 4',
+  crown: 'M3 8l3 3 6-7 6 7 3-3-2 11H5z',
+  star: 'M12 2l2.9 6.4 6.9.7-5.2 4.7 1.5 6.9L12 17.3 5.9 20.7l1.5-6.9-5.2-4.7 6.9-.7z',
+  target: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zM12 11a1 1 0 1 0 1 1 1 1 0 0 0-1-1z',
+};
+
 function BadgesCard() {
   const badges = [
-    { icon: '🔥', name: '7-Day Streak', earned: true },
-    { icon: '⚡', name: 'Power User', earned: true },
-    { icon: '💪', name: 'Iron Warrior', earned: true },
-    { icon: '🏃', name: 'First Check-in', earned: true },
-    { icon: '🥇', name: 'Century Club', earned: false },
-    { icon: '👑', name: 'Check-in Champ', earned: false },
-    { icon: '🌟', name: '30-Day Streak', earned: false },
-    { icon: '🎯', name: 'Goal Crusher', earned: false },
+    { icon: 'flame', name: '7-Day Streak', earned: true },
+    { icon: 'bolt', name: 'Power User', earned: true },
+    { icon: 'dumbbell', name: 'Iron Warrior', earned: true },
+    { icon: 'check', name: 'First Check-in', earned: true },
+    { icon: 'medal', name: 'Century Club', earned: false },
+    { icon: 'crown', name: 'Check-in Champ', earned: false },
+    { icon: 'star', name: '30-Day Streak', earned: false },
+    { icon: 'target', name: 'Goal Crusher', earned: false },
   ];
 
   return (
@@ -203,8 +221,10 @@ function BadgesCard() {
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-base">
-              🎖️
+            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d={BADGE_ICON_PATHS.medal} />
+              </svg>
             </div>
             <NewBadge />
           </div>
@@ -227,7 +247,9 @@ function BadgesCard() {
                 : 'bg-border/20 border-transparent opacity-50 grayscale'
             }`}
           >
-            <span className="text-xl">{b.icon}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={b.earned ? 'text-primary' : 'text-muted-foreground'}>
+              <path d={BADGE_ICON_PATHS[b.icon]} />
+            </svg>
             <span className={`text-[8px] text-center leading-tight font-medium ${b.earned ? 'text-foreground' : 'text-muted-foreground'}`}>
               {b.name}
             </span>
@@ -353,7 +375,7 @@ export function FeaturesSection() {
             <span className="text-primary">nothing it doesn't.</span>
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            From day one, LiftHub covers every operational need so you can focus on what matters — your members.
+            From day one, {BRAND_NAME} covers every operational need so you can focus on what matters — your members.
           </p>
         </div>
 

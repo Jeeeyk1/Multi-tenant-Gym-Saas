@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/LegalLayout';
+import { BRAND_NAME } from '@/lib/brand';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — LiftHub',
-  description: 'How Noetech collects, uses, and protects your data on the LiftHub platform.',
+  title: `Privacy Policy — ${BRAND_NAME}`,
+  description: `How Noetech collects, uses, and protects your data on the ${BRAND_NAME} platform.`,
 };
 
 const EFFECTIVE_DATE = 'July 22, 2026';
@@ -13,7 +14,7 @@ export default function PrivacyPolicyPage() {
     <LegalLayout title="Privacy Policy" effectiveDate={EFFECTIVE_DATE}>
       <section>
         <p>
-          LiftHub (the &ldquo;Service&rdquo;) is a gym management platform operated by{' '}
+          {BRAND_NAME} (the &ldquo;Service&rdquo;) is a gym management platform operated by{' '}
           <strong>Noetech</strong>, based in Biñan City, Laguna, Philippines (&ldquo;Noetech,&rdquo;
           &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). This Privacy Policy explains how we
           collect, use, disclose, and protect personal data when a gym, its staff, or its members use our

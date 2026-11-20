@@ -1,3 +1,5 @@
+import { BRAND_NAME } from '@/lib/brand';
+
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-24 pb-16 lg:pb-20 px-6">
@@ -30,7 +32,7 @@ export function HeroSection() {
             </h1>
 
             <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-              LiftHub gives gym owners everything they need — member management,
+              {BRAND_NAME} gives gym owners everything they need — member management,
               smart check-ins, AI coaching, leaderboards, and real-time analytics
               — all in one platform.
             </p>
@@ -81,20 +83,20 @@ export function HeroSection() {
               </div>
 
               {/* Dashboard body */}
-              <div className="flex" style={{ height: '296px' }}>
+              <div className="flex" style={{ height: '328px' }}>
                 {/* Sidebar */}
                 <div className="w-44 border-r border-border p-3 flex flex-col gap-0.5 bg-surface flex-shrink-0">
                   <div className="px-2 py-1.5 mb-2">
-                    <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">Fitness Forge</p>
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">Iron Forge Gym</p>
                   </div>
                   {[
-                    { label: 'Overview', active: true },
+                    { label: 'Dashboard', active: true },
                     { label: 'Members' },
                     { label: 'Check-ins' },
                     { label: 'Leaderboard' },
+                    { label: 'AI Assistant' },
                     { label: 'Staff' },
-                    { label: 'AI Coach' },
-                    { label: 'Reports' },
+                    { label: 'Billing' },
                   ].map(({ label, active }) => (
                     <div
                       key={label}
@@ -108,34 +110,34 @@ export function HeroSection() {
                   ))}
                 </div>
 
-                {/* Main content */}
+                {/* Main content — mirrors the real signed-in dashboard */}
                 <div className="flex-1 p-4 bg-background overflow-hidden">
-                  <p className="text-xs font-semibold text-foreground mb-3">Good morning, Coach Maria 👋</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-[9px] text-muted-foreground leading-none">Good morning, Maria</p>
+                      <p className="text-xs font-bold text-foreground mt-1">Dashboard</p>
+                    </div>
+                    <span className="text-[8px] px-2 py-1 rounded-full bg-surface border border-border text-muted-foreground">Mon, Jul 27</span>
+                  </div>
 
-                  {/* Stat cards */}
+                  {/* Stat cards — real dashboard has exactly two: Active Right Now, Total Members */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
-                    {[
-                      { label: 'Active Members', value: '1,248', badge: '↑ 12%', up: true },
-                      { label: 'Check-ins Today', value: '87', badge: '↑ 8%', up: true },
-                      { label: 'Renewals Due', value: '34', badge: '↓ 3', up: false },
-                      { label: 'Revenue (mo)', value: '₱58.2k', badge: '↑ 6%', up: true },
-                    ].map((s) => (
-                      <div key={s.label} className="bg-surface border border-border rounded-lg p-2.5">
-                        <p className="text-[9px] text-muted-foreground leading-none mb-1">{s.label}</p>
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-foreground">{s.value}</p>
-                          <span className={`text-[8px] font-semibold px-1 py-0.5 rounded ${s.up ? 'text-success bg-success/10' : 'text-muted-foreground bg-border/40'}`}>
-                            {s.badge}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="bg-surface border border-border border-l-[3px] border-l-primary rounded-lg p-2.5">
+                      <p className="text-[9px] text-muted-foreground leading-none mb-1.5">Active Right Now</p>
+                      <p className="text-lg font-bold text-primary leading-none">14</p>
+                      <p className="text-[8px] text-muted-foreground mt-1">members in gym</p>
+                    </div>
+                    <div className="bg-surface border border-border rounded-lg p-2.5">
+                      <p className="text-[9px] text-muted-foreground leading-none mb-1.5">Total Members</p>
+                      <p className="text-lg font-bold text-foreground leading-none">112</p>
+                      <p className="text-[8px] text-muted-foreground mt-1">enrolled across all plans</p>
+                    </div>
                   </div>
 
                   {/* Chart */}
-                  <div className="bg-surface border border-border rounded-lg p-3">
-                    <p className="text-[9px] font-medium text-muted-foreground mb-2">Check-in Activity — this week</p>
-                    <div className="flex items-end gap-1" style={{ height: '52px' }}>
+                  <div className="bg-surface border border-border rounded-lg p-3 mb-3">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Check-ins Trend</p>
+                    <div className="flex items-end gap-1" style={{ height: '40px' }}>
                       {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
                         <div
                           key={i}
@@ -150,6 +152,25 @@ export function HeroSection() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Currently Active list */}
+                  <div>
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Currently Active</p>
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      {[
+                        { initials: 'AR', name: 'Ana Reyes', num: 'MEM-0231', dur: '42m' },
+                        { initials: 'MS', name: 'Marco Santos', num: 'MEM-0198', dur: '18m' },
+                      ].map((m) => (
+                        <div key={m.num} className="flex items-center gap-2 px-2.5 py-1.5 border-b border-border last:border-b-0">
+                          <div className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[7px] font-bold flex items-center justify-center flex-shrink-0">
+                            {m.initials}
+                          </div>
+                          <p className="text-[9px] font-medium text-foreground flex-1 truncate">{m.name}</p>
+                          <p className="text-[8px] text-muted-foreground">{m.dur}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -158,7 +179,7 @@ export function HeroSection() {
             <div className="absolute bottom-0 left-6 w-[158px] rounded-[28px] overflow-hidden border-2 border-border shadow-2xl shadow-foreground/15 bg-background">
               {/* App header */}
               <div className="bg-primary px-4 py-2.5 flex items-center justify-between">
-                <span className="text-[10px] text-primary-foreground font-bold tracking-wide">LiftHub</span>
+                <span className="text-[10px] text-primary-foreground font-bold tracking-wide">{BRAND_NAME}</span>
                 <div className="w-5 h-5 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                   <span className="text-[8px] text-primary-foreground font-bold">AR</span>
                 </div>
@@ -166,8 +187,12 @@ export function HeroSection() {
 
               {/* Leaderboard screen */}
               <div className="p-3 bg-background">
-                <p className="text-[10px] font-bold text-foreground mb-2.5 flex items-center gap-1">
-                  <span>🏆</span> Leaderboard
+                <p className="text-[10px] font-bold text-foreground mb-2.5 flex items-center gap-1.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                    <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+                    <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
+                  </svg>
+                  Leaderboard
                 </p>
                 <div className="space-y-1">
                   {[
@@ -194,18 +219,39 @@ export function HeroSection() {
                 <div className="mt-2.5 pt-2.5 border-t border-border">
                   <p className="text-[8px] text-muted-foreground mb-1.5">Earned badges</p>
                   <div className="flex gap-1.5">
-                    {['🔥', '⚡', '💪'].map((b) => (
-                      <span key={b} className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center text-[13px]">{b}</span>
+                    {[
+                      <path key="flame" d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 1 0 3 2 3 5a5 5 0 0 1-10 0c0-5 3-7 5-11z" />,
+                      <path key="bolt" d="M13 2 4 14h6l-1 8 9-12h-6z" />,
+                      <path key="dumbbell" d="M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10" />,
+                    ].map((path, i) => (
+                      <span key={i} className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          {path}
+                        </svg>
+                      </span>
                     ))}
                     <span className="w-7 h-7 bg-border/40 rounded-lg flex items-center justify-center text-[8px] text-muted-foreground font-semibold">+5</span>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom nav */}
-              <div className="flex justify-around py-2 border-t border-border bg-surface">
-                {['🏠', '🏆', '🤖', '👤'].map((icon) => (
-                  <span key={icon} className="text-sm">{icon}</span>
+              {/* Bottom nav — mirrors the real app's 5 tabs */}
+              <div className="flex justify-around py-2.5 border-t border-border bg-surface">
+                {[
+                  { active: true, d: 'M3 11.5 12 4l9 7.5M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9' },
+                  { active: false, d: 'M6.5 6.5h11M6.5 17.5h11M3 9.5h2v5H3zM19 9.5h2v5h-2z' },
+                  { active: false, d: 'M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4zM10 10h4v4h-10' },
+                  { active: false, d: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM15 9l-2 6-6 2 2-6z' },
+                  { active: false, d: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 5-6 8-6s6.5 2 8 6' },
+                ].map((tab, i) => (
+                  <svg
+                    key={i}
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className={tab.active ? 'text-primary' : 'text-muted-foreground'}
+                  >
+                    <path d={tab.d} />
+                  </svg>
                 ))}
               </div>
             </div>
@@ -225,8 +271,11 @@ export function HeroSection() {
 
             {/* Floating stat card — bottom right */}
             <div className="absolute bottom-28 right-[-16px] bg-background border border-border rounded-xl shadow-lg shadow-foreground/8 px-3.5 py-2.5 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-400/15 flex items-center justify-center text-sm flex-shrink-0">
-                🏆
+              <div className="w-8 h-8 rounded-full bg-amber-400/15 flex items-center justify-center flex-shrink-0 text-amber-400">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+                  <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
+                </svg>
               </div>
               <div>
                 <p className="text-[11px] font-bold text-foreground leading-none">Ana R.</p>

@@ -2,6 +2,7 @@ import { DeleteMessageUseCase } from './delete-message.use-case';
 import type { ChatRepository } from '../../infrastructure/persistence/chat.repository';
 
 const mockRepo = {
+  findConversation: jest.fn(),
   findMessageById: jest.fn(),
   softDeleteMessage: jest.fn(),
 } as unknown as jest.Mocked<ChatRepository>;
@@ -26,7 +27,22 @@ function makeMessage(opts: { senderId?: string; isDeleted?: boolean } = {}) {
 }
 
 describe('DeleteMessageUseCase', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockRepo.findConversation.mockResolvedValue({ id: 'conv-1', gymId: 'gym-1' } as any);
+  });
+
+  it('throws CONVERSATION_NOT_FOUND when the conversation is not in the caller gym', async () => {
+    mockRepo.findConversation.mockResolvedValue(null);
+
+    const uc = new DeleteMessageUseCase(mockRepo);
+    await expect(
+      uc.execute('gym-1', 'conv-other-gym', 'msg-1', makeCaller({ permissions: ['chat.manage'] })),
+    ).rejects.toMatchObject({ code: 'CONVERSATION_NOT_FOUND' });
+    expect(mockRepo.findConversation).toHaveBeenCalledWith('conv-other-gym', 'gym-1');
+    expect(mockRepo.softDeleteMessage).not.toHaveBeenCalled();
+  });
+
 
   it('sender can delete their own message', async () => {
     mockRepo.findMessageById.mockResolvedValue(makeMessage());

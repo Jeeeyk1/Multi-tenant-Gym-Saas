@@ -58,6 +58,11 @@ export class RefreshTokenUseCase {
           permissions,
         };
       } else {
+        // Not (or no longer) active staff here — only keep issuing tokens if the
+        // user is still a member of this gym, as login requires.
+        const member = await this.repo.findGymMember(stored.userId, context.gymId);
+        if (!member) throw new TokenInvalidError();
+
         payload = {
           sub: stored.userId,
           type: 'gym',

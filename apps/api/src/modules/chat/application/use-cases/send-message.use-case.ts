@@ -39,6 +39,15 @@ export class SendMessageUseCase {
       throw new ForbiddenError('Membership is not active', 'MEMBERSHIP_NOT_ACTIVE');
     }
 
+    // A reply may only point at a message in this conversation — the stored
+    // reference is echoed back with the parent's content and author.
+    if (input.replyToId) {
+      const parent = await this.repo.findMessageById(input.replyToId, conversationId);
+      if (!parent) {
+        throw new NotFoundError('Replied-to message not found', 'REPLY_TARGET_NOT_FOUND');
+      }
+    }
+
     return this.repo.createMessage({
       conversationId,
       senderId: caller.sub,

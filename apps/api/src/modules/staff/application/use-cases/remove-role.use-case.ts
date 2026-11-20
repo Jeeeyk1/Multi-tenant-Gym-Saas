@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
+import { assertCanManageStaff } from '../../domain/staff-management.rules';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
@@ -15,6 +16,9 @@ export class RemoveRoleUseCase {
     if (!staff) {
       throw new NotFoundError('Staff member not found');
     }
+
+    const roleName = staff.roles.find((r) => r.roleId === roleId)?.role.name;
+    assertCanManageStaff(caller, staff, roleName);
 
     const assignment = await this.repo.findStaffRoleAssignment(staffId, roleId);
     if (!assignment) {

@@ -38,7 +38,10 @@ export class SubmitPrUseCase {
     // Resolve the member being submitted for
     let memberId: string;
     if (isStaffSubmission) {
-      memberId = input.targetMemberId!;
+      // The id comes from the request body — it must be a member of this gym.
+      const target = await this.repo.findMemberInGym(input.targetMemberId!, gymId);
+      if (!target) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+      memberId = target.id;
     } else {
       const member = await this.repo.findMemberByUserId(caller.sub, gymId);
       if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');

@@ -17,7 +17,7 @@ export class LogWeightUseCase {
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
     // Member can log own weight; staff need members.edit
-    const isSelf = caller.type === 'gym' && member.id === memberId;
+    const isSelf = caller.type === 'gym' && member.user.id === caller.sub;
     if (!isSelf && caller.type === 'gym' && !caller.permissions.includes('members.edit')) {
       throw new ForbiddenError('Missing permission: members.edit', 'PERMISSION_DENIED');
     }

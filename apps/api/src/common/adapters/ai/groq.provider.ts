@@ -5,7 +5,7 @@ export class GroqProvider implements AiProviderPort {
   private readonly client: OpenAI;
   private readonly model: string;
 
-  constructor(apiKey: string, baseURL: string, model = 'llama-3.3-70b-versatile') {
+  constructor(apiKey: string, baseURL: string, model = 'openai/gpt-oss-120b') {
     this.client = new OpenAI({ apiKey, baseURL });
     this.model = model;
   }

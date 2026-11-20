@@ -13,42 +13,27 @@ interface SaasPlan {
   isPopular: boolean;
 }
 
+// Mirrors the live "Standard" row in saas_plans (db/migrations/0045_seed_saas_plan.sql) —
+// used only if that table is unreachable, so it must stay in sync with the real plan.
 const FALLBACK_PLANS: SaasPlan[] = [
   {
-    id: 'starter',
-    name: 'Starter',
-    description: 'Everything you need to run your gym efficiently',
-    priceMonthly: 2299,
-    priceYearly: 22990,
-    isPopular: false,
-    features: [
-      'Up to 100 members',
-      'Member mobile app (iOS & Android)',
-      'Smart check-in system',
-      'Staff web portal',
-      'Membership plan management',
-      'Renewal tracking',
-      'Announcements & messaging',
-      'Basic analytics',
-      'Email support',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    description: 'Starter plus AI-powered tools for smarter management',
-    priceMonthly: 3299,
-    priceYearly: 32990,
+    id: 'standard',
+    name: 'Standard',
+    description: 'Everything you need to run your gym — one plan, no tiers to compare.',
+    priceMonthly: 3499,
+    priceYearly: 34990,
     isPopular: true,
     features: [
-      'Everything in Starter',
-      'Unlimited members',
-      'AI management assistant',
-      'Ask AI about your gym data & reports',
-      'AI workout coaching for members',
-      'Food photo analysis (meal tracking)',
-      'Advanced analytics & insights',
-      'Priority support',
+      'Up to 150 active members',
+      'Member mobile app (iOS & Android)',
+      'Smart check-in system',
+      'Staff & owner web dashboard',
+      'Membership plans, renewals & billing',
+      'Announcements & community chat',
+      'Leaderboard & badges',
+      'AI Coach — workout & meal plans for members',
+      'AI Insights — ask questions about your gym data',
+      'Email support',
     ],
   },
 ];
@@ -61,16 +46,19 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
   const [yearly, setYearly] = useState(false);
   const [subscribingPlan, setSubscribingPlan] = useState<string | null>(null);
 
-  const displayPlans = plans.length > 0 ? plans : FALLBACK_PLANS;
+  // There's one real plan — everything included, no tiers to compare or upsell into.
+  const plan = plans[0] ?? FALLBACK_PLANS[0];
+  const monthlyAmount = yearly && plan.priceYearly ? plan.priceYearly / 12 : Number(plan.priceMonthly);
 
   return (
     <section id="pricing" className="py-24 px-6 border-t border-border/50">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Pricing</p>
-          <h2 className="text-4xl font-bold text-foreground mb-4">Simple, affordable pricing</h2>
+          <h2 className="text-4xl font-bold text-foreground mb-4">One plan. Everything included.</h2>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-            Designed for Philippine gym owners. No hidden fees, no per-seat charges.
+            No tiers to compare, no features locked behind an upgrade. Just one price for
+            everything your gym needs.
           </p>
 
           {/* Billing toggle */}
@@ -99,84 +87,65 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {displayPlans.map((plan) => {
-            const monthlyAmount = yearly && plan.priceYearly
-              ? plan.priceYearly / 12
-              : Number(plan.priceMonthly);
+        {/* Single plan card — split layout instead of a comparison grid, since there's nothing to compare */}
+        <div className="rounded-3xl border border-border bg-surface overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-5">
+            {/* Left: price + CTA */}
+            <div className="md:col-span-2 p-8 md:p-10 flex flex-col justify-center bg-primary/5 border-b md:border-b-0 md:border-r border-border">
+              <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
+              {plan.description && (
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{plan.description}</p>
+              )}
 
-            return (
-              <div
-                key={plan.id}
-                className={`relative flex flex-col rounded-2xl border p-8 ${
-                  plan.isPopular
-                    ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/20'
-                    : 'bg-surface border-border'
-                }`}
-              >
-                {plan.isPopular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full whitespace-nowrap tracking-wide">
-                      MOST POPULAR
-                    </span>
-                  </div>
+              <div className="mt-6">
+                <div className="flex items-end gap-1">
+                  <span className="text-5xl font-extrabold text-foreground tracking-tight">
+                    {formatPhp(monthlyAmount)}
+                  </span>
+                  <span className="text-muted-foreground text-sm mb-1.5">/mo</span>
+                </div>
+                {yearly && plan.priceYearly && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Billed {formatPhp(plan.priceYearly)} yearly · Save {formatPhp(Number(plan.priceMonthly) * 12 - plan.priceYearly)}
+                  </p>
                 )}
-
-                <div className="mb-5">
-                  <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
-                  {plan.description && (
-                    <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{plan.description}</p>
-                  )}
-                </div>
-
-                <div className="mb-6">
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-extrabold text-foreground tracking-tight">
-                      {formatPhp(monthlyAmount)}
-                    </span>
-                    <span className="text-muted-foreground text-sm mb-1.5">/mo</span>
-                  </div>
-                  {yearly && plan.priceYearly && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Billed {formatPhp(plan.priceYearly)} yearly · Save {formatPhp(Number(plan.priceMonthly) * 12 - plan.priceYearly)}
-                    </p>
-                  )}
-                </div>
-
-                <ul className="space-y-3 flex-1 mb-8">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-primary flex-shrink-0 mt-0.5"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => setSubscribingPlan(plan.name)}
-                  className={`w-full text-center py-3.5 rounded-xl text-sm font-semibold transition ${
-                    plan.isPopular
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                      : 'bg-background border border-border text-foreground hover:border-primary/40 hover:bg-primary/5'
-                  }`}
-                >
-                  Get started — 14 days free
-                </button>
               </div>
-            );
-          })}
+
+              <button
+                onClick={() => setSubscribingPlan(plan.name)}
+                className="mt-8 w-full text-center py-3.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition"
+              >
+                Get started
+              </button>
+            </div>
+
+            {/* Right: what's included */}
+            <div className="md:col-span-3 p-8 md:p-10">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                What&apos;s included
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/90">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-primary flex-shrink-0 mt-0.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground">
@@ -191,7 +160,7 @@ export function PricingSection({ plans }: { plans: SaasPlan[] }) {
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Need a custom plan for multiple locations?{' '}
+          Have more than 150 members or multiple branches?{' '}
           <a href="mailto:hello@lifthub.app" className="text-primary font-medium hover:underline">
             Talk to us
           </a>

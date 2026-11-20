@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { BRAND_NAME } from '@/lib/brand';
 import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -10,11 +11,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'LiftHub — Gym Management Platform',
+  title: `${BRAND_NAME} — Gym Management Platform`,
   description:
     'The all-in-one platform for gym owners. Member management, check-ins, AI coaching, and more — built to scale with your business.',
   openGraph: {
-    title: 'LiftHub — Gym Management Platform',
+    title: `${BRAND_NAME} — Gym Management Platform`,
     description: 'The all-in-one platform for gym owners.',
     type: 'website',
   },

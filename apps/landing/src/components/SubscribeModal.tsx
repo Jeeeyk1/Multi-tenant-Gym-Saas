@@ -14,7 +14,7 @@ export function SubscribeModal({ plan, onClose }: { plan: string; onClose: () =>
     const fd = new FormData(e.currentTarget);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001';
       const res = await fetch(`${apiUrl}/api/v1/public/signup-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,3 +1,5 @@
+import { BRAND_NAME } from '@/lib/brand';
+
 export function CtaSection() {
   return (
     <section className="py-24 px-6 border-t border-border/50">
@@ -21,7 +23,7 @@ export function CtaSection() {
               Ready to transform your gym?
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-              Join gym owners who are already using LiftHub to grow their memberships and
+              Join gym owners who are already using {BRAND_NAME} to grow their memberships and
               deliver an exceptional fitness experience.
             </p>
 

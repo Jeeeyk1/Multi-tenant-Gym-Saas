@@ -184,7 +184,8 @@ pnpm prisma:generate
 # Run all SQL migrations
 pnpm db:migrate
 
-# Seed roles, permissions, plans, and dev fixtures
+# Seed roles, permissions and plans. With NODE_ENV=production in .env the dev
+# fixtures (005_dev_fixtures.sql — demo gym and test logins) are skipped.
 pnpm db:seed
 
 # Seed the first superadmin (prompts for email/password)

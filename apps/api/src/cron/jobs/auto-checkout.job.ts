@@ -25,16 +25,21 @@ export class AutoCheckoutJob {
       try {
         const now = new Date();
 
+        // Page by id cursor. Rows that don't qualify yet stay in the result set, so
+        // without a cursor a full batch of them would be re-read forever.
+        let cursor: string | undefined;
+
         // eslint-disable-next-line no-constant-condition
         while (true) {
           // Load open check-ins with their gym's auto-checkout threshold
           const batch = await this.prisma.checkIn.findMany({
-            where: { checkedOutAt: null },
+            where: { checkedOutAt: null, ...(cursor ? { id: { gt: cursor } } : {}) },
             select: {
               id: true,
               checkedInAt: true,
               gym: { select: { autoCheckoutHours: true } },
             },
+            orderBy: { id: 'asc' },
             take: BATCH_SIZE,
           });
 
@@ -55,6 +60,7 @@ export class AutoCheckoutJob {
           }
 
           if (batch.length < BATCH_SIZE) break;
+          cursor = batch[batch.length - 1].id;
         }
 
         this.logger.log(`processed ${totalProcessed} records in ${Date.now() - start}ms`);

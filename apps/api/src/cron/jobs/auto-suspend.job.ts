@@ -25,16 +25,21 @@ export class AutoSuspendJob {
       try {
         const now = new Date();
 
+        // Page by id cursor. Rows that don't qualify yet stay in the result set, so
+        // without a cursor a full batch of them would be re-read forever.
+        let cursor: string | undefined;
+
         // eslint-disable-next-line no-constant-condition
         while (true) {
           // Load EXPIRED members with their gym's threshold config
           const batch = await this.prisma.gymMember.findMany({
-            where: { status: 'EXPIRED' },
+            where: { status: 'EXPIRED', ...(cursor ? { id: { gt: cursor } } : {}) },
             select: {
               id: true,
               expiryDate: true,
               gym: { select: { autoSuspendMonths: true } },
             },
+            orderBy: { id: 'asc' },
             take: BATCH_SIZE,
           });
 
@@ -56,6 +61,7 @@ export class AutoSuspendJob {
           }
 
           if (batch.length < BATCH_SIZE) break;
+          cursor = batch[batch.length - 1].id;
         }
 
         this.logger.log(`processed ${totalProcessed} records in ${Date.now() - start}ms`);

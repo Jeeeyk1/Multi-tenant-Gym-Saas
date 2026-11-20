@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter.service';
+import { TooManyRequestsError } from '../../../../common/errors';
 import { AI_PROVIDER_PORT, AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 
 interface ChatMessage {
@@ -70,13 +72,28 @@ Both plans come with a free trial — no credit card required to start. Just req
 - Keep responses short — 2-4 sentences unless the user asks for details
 - If someone asks about something unrelated to LiftHub, politely redirect them`;
 
+const BURST_LIMIT = 10;
+const BURST_WINDOW_SECONDS = 60;
+const DAILY_LIMIT = 100;
+const DAILY_WINDOW_SECONDS = 24 * 60 * 60;
+
 @Injectable()
 export class LandingChatUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly ai: AiProviderPort,
+    private readonly rateLimiter: RateLimiterService,
   ) {}
 
-  async execute(message: string, history: ChatMessage[]): Promise<string> {
+  async execute(message: string, history: ChatMessage[], ip: string): Promise<string> {
+    // Every call costs LLM tokens and the endpoint is public — cap it per IP.
+    const [withinBurst, withinDaily] = await Promise.all([
+      this.rateLimiter.hit(`landing-chat:burst:${ip}`, BURST_LIMIT, BURST_WINDOW_SECONDS),
+      this.rateLimiter.hit(`landing-chat:daily:${ip}`, DAILY_LIMIT, DAILY_WINDOW_SECONDS),
+    ]);
+    if (!withinBurst || !withinDaily) {
+      throw new TooManyRequestsError('Too many messages — please try again later');
+    }
+
     const historyText = history
       .slice(-6)
       .map((m) => `${m.role === 'user' ? 'User' : 'Maya'}: ${m.content}`)

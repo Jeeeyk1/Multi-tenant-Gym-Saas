@@ -19,9 +19,10 @@ export class PublicController {
     return this.repo.listActivePlans();
   }
 
+  /** POST /public/chat — landing assistant. Unauthenticated, so rate-limited by IP. */
   @Post('chat')
-  async chat(@Body() dto: LandingChatDto) {
-    const reply = await this.landingChat.execute(dto.message, dto.history ?? []);
+  async chat(@Body() dto: LandingChatDto, @Req() req: Request) {
+    const reply = await this.landingChat.execute(dto.message, dto.history ?? [], req.ip ?? 'unknown');
     return { reply };
   }
 

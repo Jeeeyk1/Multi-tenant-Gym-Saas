@@ -265,7 +265,7 @@ Response `200`:
 
 ---
 
-#### PATCH /gyms/:id/profile
+#### PATCH /gyms/:gymId/profile
 Update gym profile (branding, contact info, social links).
 
 **Requires `gym.settings` permission.**
@@ -288,7 +288,7 @@ Response `200`: updated gym profile fields.
 
 ---
 
-#### POST /gyms/:id/profile/logo
+#### POST /gyms/:gymId/profile/logo
 Upload a gym logo image. Stores in Cloudinary and returns the CDN URL.
 
 **Requires `gym.settings` permission.**
@@ -300,13 +300,13 @@ Response `200`:
 { "url": "https://res.cloudinary.com/gym-saas/image/upload/gym-saas/logos/gym-<id>-logo.jpg" }
 ```
 
-Use the returned `url` as the `logoUrl` when calling `PATCH /gyms/:id/profile`.
+Use the returned `url` as the `logoUrl` when calling `PATCH /gyms/:gymId/profile`.
 
 **Storage is abstracted.** The current implementation uses Cloudinary. To switch to S3, change `StorageModule` provider from `CloudinaryAdapter` to `S3Adapter` — no other files change.
 
 ---
 
-#### PATCH /gyms/:id/schedules
+#### PATCH /gyms/:gymId/schedules
 Update weekly schedule.
 
 **Requires `gym.manage` permission.**

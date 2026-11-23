@@ -1,13 +1,21 @@
 import { NotFoundError, ValidationError } from '../../../common/errors';
 import {
   ActivityLevel,
+  FitnessDirection,
   FitnessGoal,
   FitnessPlanInputProblem,
+  type GoalPace,
   Sex,
 } from '../../../common/enums';
 import { localDate } from '../../../common/time/local-date';
-import { findInputProblem, type FitnessPlanInput } from '../domain/fitness-plan.calculator';
+import {
+  findInputProblem,
+  type DailyTargets,
+  type FitnessPlanInput,
+  type FitnessPlanOptions,
+} from '../domain/fitness-plan.calculator';
 import type {
+  CreateFitnessPlanData,
   FitnessPlanMember,
   FitnessPlanRepository,
   StoredFitnessPlan,
@@ -85,3 +93,56 @@ export function toPlanView(plan: StoredFitnessPlan) {
 }
 
 export type FitnessPlanView = ReturnType<typeof toPlanView>;
+
+/**
+ * The row to store for a pace. `pace` defaults to the recommended one and must be
+ * omitted for maintenance. Throws the 422 the client should show when it can't be used.
+ */
+export function planDataForPace(
+  member: FitnessPlanMember,
+  input: FitnessPlanInput,
+  result: FitnessPlanOptions,
+  pace?: GoalPace | null,
+): CreateFitnessPlanData {
+  let chosen: { pace: GoalPace | null; weeklyRateKg: number; targetDate: string | null; targets: DailyTargets };
+  if (result.direction === FitnessDirection.MAINTAIN) {
+    if (pace) {
+      throw new ValidationError('This goal keeps the current weight, so it has no pace', 'PACE_NOT_APPLICABLE');
+    }
+    chosen = { pace: null, weeklyRateKg: 0, targetDate: null, targets: result.maintenance };
+  } else {
+    const selectedPace = pace ?? result.recommendedPace;
+    if (!selectedPace) {
+      throw new ValidationError('No pace is safe for this goal right now', 'NO_SAFE_PACE');
+    }
+    const option = result.options.find((o) => o.pace === selectedPace)!;
+    if (!option.available) {
+      throw new ValidationError(`The ${selectedPace} pace is not available`, 'PACE_UNAVAILABLE');
+    }
+    chosen = option;
+  }
+
+  return {
+    memberId: member.memberId,
+    gymId: member.gymId,
+    calculatorVersion: result.calculatorVersion,
+    sex: input.sex,
+    age: input.age,
+    heightCm: input.heightCm,
+    weightKg: input.weightKg,
+    targetWeightKg: input.targetWeightKg,
+    activityLevel: input.activityLevel,
+    fitnessGoal: input.fitnessGoal,
+    direction: result.direction,
+    goalPace: chosen.pace,
+    bmrKcal: result.bmrKcal,
+    tdeeKcal: result.tdeeKcal,
+    targetKcal: chosen.targets.kcal,
+    proteinG: chosen.targets.proteinG,
+    carbsG: chosen.targets.carbsG,
+    fatG: chosen.targets.fatG,
+    waterMl: chosen.targets.waterMl,
+    weeklyRateKg: chosen.weeklyRateKg,
+    targetDate: chosen.targetDate,
+  };
+}

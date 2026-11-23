@@ -8,6 +8,7 @@ const mockRepo = {
   findPlanActiveAt: jest.fn(),
   dayBounds: jest.fn(),
   sumFoodLogs: jest.fn(),
+  recordWeighIn: jest.fn(),
 } as unknown as jest.Mocked<FitnessPlanRepository>;
 
 describe('GetCurrentFitnessPlanUseCase', () => {

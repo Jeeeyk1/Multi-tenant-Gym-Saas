@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { VISION_PROVIDER_PORT, type VisionProviderPort } from '../../../../common/adapters/ai/vision-provider.port';
+import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { AiRepository } from '../../infrastructure/persistence/ai.repository';
+import { AiFeature } from '../../../../common/enums';
 import { NotFoundError } from '../../../../common/errors';
 
 const TEXT_MAX_TOKENS = 512;
 const VISION_MAX_TOKENS = 768;
-const FEATURE_KEY = 'analyse_meal';
 
 export interface MealAnalysis {
   description: string;
@@ -32,6 +33,7 @@ export class AnalyseMealUseCase {
     @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AiProviderPort,
     @Inject(VISION_PROVIDER_PORT) private readonly visionProvider: VisionProviderPort,
     private readonly aiRepository: AiRepository,
+    private readonly limits: MemberAiLimitsService,
   ) {}
 
   async execute(
@@ -41,9 +43,9 @@ export class AnalyseMealUseCase {
   ): Promise<MealAnalysis> {
     const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
     if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+    const feature = options.photoUrl ? AiFeature.MEAL_PHOTO : AiFeature.MEAL_TEXT;
 
     let rawText: string;
-    let tokensUsed: number;
 
     if (options.photoUrl) {
       const prompt = `You are a nutrition expert. Analyse this food photo and estimate its nutritional content.${
@@ -53,9 +55,10 @@ export class AnalyseMealUseCase {
 Return ONLY valid JSON (no markdown, no explanation) in this exact shape:
 ${JSON_SHAPE}`;
 
-      const res = await this.visionProvider.analyseImage(options.photoUrl, prompt, VISION_MAX_TOKENS);
+      const res = await this.limits.run(ctx, feature, () =>
+        this.visionProvider.analyseImage(options.photoUrl!, prompt, VISION_MAX_TOKENS),
+      );
       rawText = res.text;
-      tokensUsed = res.tokensUsed;
     } else {
       const prompt = `Analyse this meal and estimate its nutritional content.
 
@@ -64,9 +67,8 @@ Meal: "${options.description ?? ''}"
 Return ONLY valid JSON (no markdown, no explanation) in this exact shape:
 ${JSON_SHAPE}`;
 
-      const res = await this.aiProvider.chat(prompt, TEXT_MAX_TOKENS);
+      const res = await this.limits.run(ctx, feature, () => this.aiProvider.chat(prompt, TEXT_MAX_TOKENS));
       rawText = res.text;
-      tokensUsed = res.tokensUsed;
     }
 
     let analysis: MealAnalysis;
@@ -76,14 +78,6 @@ ${JSON_SHAPE}`;
       const cleaned = rawText.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
       analysis = JSON.parse(cleaned) as MealAnalysis;
     }
-
-    await this.aiRepository.logUsage(
-      ctx.organizationId,
-      ctx.gymId,
-      ctx.userId,
-      FEATURE_KEY,
-      tokensUsed,
-    );
 
     return analysis;
   }

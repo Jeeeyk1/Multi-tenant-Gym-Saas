@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
+import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { AiRepository, type MemberContext } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError, ValidationError } from '../../../../common/errors';
-import { WorkoutEmphasis } from '../../../../common/enums';
+import { AiFeature, WorkoutEmphasis } from '../../../../common/enums';
 import { EMPHASIS_INSTRUCTION, emphasisFromGoal } from './workout-suggestion.use-case';
 
 const MAX_TOKENS = 700;
-const FEATURE_KEY = 'workout_exercise_swap';
 
 export interface SwapWorkoutExerciseInput {
   day: string;
@@ -45,6 +45,7 @@ export class SwapWorkoutExerciseUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AiProviderPort,
     private readonly aiRepository: AiRepository,
+    private readonly limits: MemberAiLimitsService,
   ) {}
 
   async execute(
@@ -84,15 +85,14 @@ export class SwapWorkoutExerciseUseCase {
     }
 
     const prompt = buildSwapPrompt({ ctx, day, section, emphasis, exerciseGroups, avoid, reason: input.reason });
-    const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
+    const { text } = await this.limits.run(ctx, AiFeature.EXERCISE_SWAP, () =>
+      this.aiProvider.chat(prompt, MAX_TOKENS),
+    );
     const replacement = parseExercise(text);
 
     section.exercises[index] = replacement;
 
-    await Promise.all([
-      this.aiRepository.logUsage(ctx.organizationId, ctx.gymId, ctx.userId, FEATURE_KEY, tokensUsed),
-      this.aiRepository.saveWorkoutPlan(memberId, gymId, JSON.stringify(plan)),
-    ]);
+    await this.aiRepository.saveWorkoutPlan(memberId, gymId, JSON.stringify(plan));
 
     return { exercise: replacement };
   }

@@ -678,6 +678,39 @@ Response `200`:
 ```
 `targets` and `remaining` are `null` when there is no saved plan.
 
+#### POST …/fitness-plan/weigh-ins
+Log the member's weight (member-only). Body: `{ "weightKg": 77.6 }` (30–300).
+Updates the profile weight in the same transaction, then:
+- `goalReached: true` when the active plan's goal weight is reached, within 0.5 kg. The plan is left as is.
+- Otherwise, if weight moved **≥ 2 kg** since the active plan, the plan is recalculated at the same pace
+  (or the recommended one if that pace is no longer allowed) and `planUpdated: true`.
+
+Response `201`: `{ "weightKg", "loggedAt", "goalReached", "planUpdated", "plan" }`.
+
+#### GET /gyms/:gymId/members/:memberId/weight-logs
+Weight history, newest first. The member themself, or staff with `members.view`.
+
+#### GET /gyms/:gymId/members/:memberId/ai/usage
+Member AI used and left this calendar month (gym timezone).
+
+Response `200`:
+```json
+{
+  "resetsAt": "2026-11-30T16:00:00.000Z",
+  "features": [
+    { "feature": "workout_suggestion", "used": 1, "limit": 4, "remaining": 3 },
+    { "feature": "workout_exercise_swap", "used": 0, "limit": 30, "remaining": 30 },
+    { "feature": "exercise_instructions", "used": 0, "limit": 60, "remaining": 60 },
+    { "feature": "meal_suggestion", "used": 0, "limit": 30, "remaining": 30 },
+    { "feature": "analyse_meal_photo", "used": 0, "limit": 20, "remaining": 20 },
+    { "feature": "analyse_meal_text", "used": 0, "limit": 60, "remaining": 60 }
+  ]
+}
+```
+Every member AI route returns `429 MEMBER_AI_LIMIT_REACHED` once that feature's monthly limit is used up.
+A single-meal `ai/meal-suggestion` without explicit targets aims at what is left of today's plan,
+bounded between 200 kcal and 40% of the day.
+
 #### GET /gyms/:gymId/members/:memberId/food-logs?limit=20&date=YYYY-MM-DD
 Most recent food logs. `limit` is 1–100 (default 20). `date` limits the list to that day in the
 gym's timezone.

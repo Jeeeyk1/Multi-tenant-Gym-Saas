@@ -4,6 +4,7 @@ import { GetCurrentFitnessPlanUseCase } from './application/use-cases/get-curren
 import { GetFitnessPlanOptionsUseCase } from './application/use-cases/get-fitness-plan-options.use-case';
 import { SaveFitnessPlanUseCase } from './application/use-cases/save-fitness-plan.use-case';
 import { GetDailyNutritionUseCase } from './application/use-cases/get-daily-nutrition.use-case';
+import { RecordWeighInUseCase } from './application/use-cases/record-weigh-in.use-case';
 import { FitnessPlanController } from './presentation/controllers/fitness-plan.controller';
 
 @Module({
@@ -14,6 +15,7 @@ import { FitnessPlanController } from './presentation/controllers/fitness-plan.c
     GetFitnessPlanOptionsUseCase,
     SaveFitnessPlanUseCase,
     GetDailyNutritionUseCase,
+    RecordWeighInUseCase,
   ],
 })
 export class FitnessPlanModule {}

@@ -7,6 +7,8 @@ import { SaveFitnessPlanUseCase } from '../../application/use-cases/save-fitness
 import { GetDailyNutritionUseCase } from '../../application/use-cases/get-daily-nutrition.use-case';
 import { SaveFitnessPlanDto } from '../dto/save-fitness-plan.dto';
 import { DailyNutritionQueryDto } from '../dto/daily-nutrition-query.dto';
+import { RecordWeighInDto } from '../dto/record-weigh-in.dto';
+import { RecordWeighInUseCase } from '../../application/use-cases/record-weigh-in.use-case';
 
 /**
  * A member's calorie/macro targets. Member-only: the plan is derived from health
@@ -20,6 +22,7 @@ export class FitnessPlanController {
     private readonly getFitnessPlanOptionsUseCase: GetFitnessPlanOptionsUseCase,
     private readonly saveFitnessPlanUseCase: SaveFitnessPlanUseCase,
     private readonly getDailyNutritionUseCase: GetDailyNutritionUseCase,
+    private readonly recordWeighInUseCase: RecordWeighInUseCase,
   ) {}
 
   /** GET .../fitness-plan — the active plan, or null. */
@@ -43,6 +46,20 @@ export class FitnessPlanController {
     @Body() dto: SaveFitnessPlanDto,
   ) {
     return this.saveFitnessPlanUseCase.execute(gymId, memberId, dto.pace);
+  }
+
+  /**
+   * POST .../fitness-plan/weigh-ins — log today's weight. Recalculates the plan once
+   * weight has moved 2 kg or more since it was made.
+   */
+  @Post('weigh-ins')
+  @HttpCode(HttpStatus.CREATED)
+  recordWeighIn(
+    @Param('gymId') gymId: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: RecordWeighInDto,
+  ) {
+    return this.recordWeighInUseCase.execute(gymId, memberId, dto.weightKg);
   }
 
   /** GET .../fitness-plan/daily-nutrition?date=YYYY-MM-DD — eaten vs targets for a day. */

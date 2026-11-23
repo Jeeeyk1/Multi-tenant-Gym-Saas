@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 import { localDayBounds } from '../../../../common/prisma/local-day-bounds';
+import { localDate } from '../../../../common/time/local-date';
 
 export interface MemberContext {
   memberId: string;
@@ -9,6 +10,7 @@ export interface MemberContext {
   gymId: string;
   gymName: string;
   organizationId: string;
+  timezone: string;
   age: number | null;
   weightKg: number | null;
   targetWeightKg: number | null;
@@ -51,6 +53,7 @@ export class AiRepository {
             id: true,
             name: true,
             organizationId: true,
+            timezone: true,
           },
         },
         user: { select: { fullName: true } },
@@ -87,6 +90,7 @@ export class AiRepository {
       gymId: member.gym.id,
       gymName: member.gym.name,
       organizationId: member.gym.organizationId,
+      timezone: member.gym.timezone,
       age: member.profile?.age ?? null,
       weightKg: member.profile?.weightKg ? Number(member.profile.weightKg) : null,
       targetWeightKg: member.profile?.targetWeightKg ? Number(member.profile.targetWeightKg) : null,
@@ -102,6 +106,78 @@ export class AiRepository {
     };
   }
 
+  /** Start and end of the current calendar month in `timeZone`, as instants. */
+  async monthBounds(timeZone: string): Promise<{ start: Date; end: Date }> {
+    const [bounds] = await this.prisma.$queryRaw<{ start: Date; end: Date }[]>`
+      SELECT (date_trunc('month', now() AT TIME ZONE ${timeZone}) AT TIME ZONE ${timeZone})                      AS "start",
+             ((date_trunc('month', now() AT TIME ZONE ${timeZone}) + interval '1 month') AT TIME ZONE ${timeZone}) AS "end"
+    `;
+    return bounds;
+  }
+
+  /** How many times a member used each feature since `since`, in this gym. */
+  async countMemberUsage(userId: string, gymId: string, since: Date): Promise<Map<string, number>> {
+    const rows = await this.prisma.aiUsageLog.groupBy({
+      by: ['featureKey'],
+      where: { userId, gymId, usedAt: { gte: since } },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((r) => [r.featureKey, r._count._all]));
+  }
+
+  /**
+   * Reserves one use of `feature` for this member if they are under `limit` since
+   * `since`. Count and insert happen under a per-member, per-feature advisory lock so
+   * concurrent requests are serialised. Returns the reserved row id, or null at the limit.
+   */
+  reserveMemberUsage(
+    ctx: { organizationId: string; gymId: string; userId: string },
+    feature: string,
+    limit: number,
+    since: Date,
+  ): Promise<string | null> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${ctx.userId}:${feature}`}))`;
+      const used = await tx.aiUsageLog.count({
+        where: { userId: ctx.userId, gymId: ctx.gymId, featureKey: feature, usedAt: { gte: since } },
+      });
+      if (used >= limit) return null;
+      const row = await tx.aiUsageLog.create({
+        data: {
+          organizationId: ctx.organizationId,
+          gymId: ctx.gymId,
+          userId: ctx.userId,
+          featureKey: feature,
+          tokensUsed: 0,
+          metadata: { status: 'reserved' },
+        },
+        select: { id: true },
+      });
+      return row.id;
+    });
+  }
+
+  /** Records the tokens a reserved call actually used. */
+  async completeUsage(id: string, tokensUsed: number): Promise<void> {
+    await this.prisma.aiUsageLog.update({ where: { id }, data: { tokensUsed, metadata: {} } });
+  }
+
+  /** Drops a reservation whose provider call failed (nothing was billed). */
+  async releaseUsage(id: string): Promise<void> {
+    await this.prisma.aiUsageLog.delete({ where: { id } });
+  }
+
+  /** What a member has eaten today (gym timezone), for "what's left today". */
+  async sumFoodToday(memberId: string, timeZone: string): Promise<{ kcal: number; proteinG: number }> {
+    const today = localDate(new Date(), timeZone);
+    const { start, end } = await localDayBounds(this.prisma, today, timeZone);
+    const result = await this.prisma.memberFoodLog.aggregate({
+      where: { memberId, loggedAt: { gte: start, lt: end } },
+      _sum: { calories: true, proteinG: true },
+    });
+    return { kcal: result._sum.calories ?? 0, proteinG: Math.round(Number(result._sum.proteinG ?? 0)) };
+  }
+
   /** Daily targets from the member's active fitness plan, or null if they have none. */
   async findActivePlanTargets(memberId: string): Promise<PlanTargets | null> {
     const plan = await this.prisma.memberFitnessPlan.findFirst({
@@ -110,25 +186,6 @@ export class AiRepository {
       select: { targetKcal: true, proteinG: true },
     });
     return plan ? { kcal: plan.targetKcal, proteinG: plan.proteinG } : null;
-  }
-
-  async logUsage(
-    organizationId: string,
-    gymId: string,
-    userId: string,
-    featureKey: string,
-    tokensUsed: number,
-  ): Promise<void> {
-    await this.prisma.aiUsageLog.create({
-      data: {
-        organizationId,
-        gymId,
-        userId,
-        featureKey,
-        tokensUsed,
-        metadata: {},
-      },
-    });
   }
 
   createFoodLog(memberId: string, data: CreateFoodLogData) {

@@ -13,6 +13,7 @@ const mockRepo = {
   findPlanActiveAt: jest.fn(),
   dayBounds: jest.fn(),
   sumFoodLogs: jest.fn(),
+  recordWeighIn: jest.fn(),
 } as unknown as jest.Mocked<FitnessPlanRepository>;
 
 function member(profile: Partial<NonNullable<FitnessPlanMember['profile']>> = {}): FitnessPlanMember {

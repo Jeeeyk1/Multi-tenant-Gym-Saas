@@ -26,6 +26,7 @@ import { GetLatestWorkoutPlanUseCase } from '../../application/use-cases/get-lat
 import { GetLatestMealPlanUseCase } from '../../application/use-cases/get-latest-meal-plan.use-case';
 import { GetExerciseInstructionsUseCase } from '../../application/use-cases/get-exercise-instructions.use-case';
 import { GetExerciseMediaUseCase } from '../../application/use-cases/get-exercise-media.use-case';
+import { GetMemberAiUsageUseCase } from '../../application/use-cases/get-member-ai-usage.use-case';
 import { LogFoodDto } from '../dto/log-food.dto';
 import { ExerciseInstructionsDto } from '../dto/exercise-instructions.dto';
 import { AnalyseMealDto } from '../dto/analyse-meal.dto';
@@ -49,7 +50,14 @@ export class AiController {
     private readonly getLatestMealPlanUseCase: GetLatestMealPlanUseCase,
     private readonly getExerciseInstructionsUseCase: GetExerciseInstructionsUseCase,
     private readonly getExerciseMediaUseCase: GetExerciseMediaUseCase,
+    private readonly getMemberAiUsageUseCase: GetMemberAiUsageUseCase,
   ) {}
+
+  /** GET .../ai/usage — how much of each AI feature the member has left this month. */
+  @Get('ai/usage')
+  getAiUsage(@Param('gymId') gymId: string, @Param('memberId') memberId: string) {
+    return this.getMemberAiUsageUseCase.execute(memberId, gymId);
+  }
 
   @Get('ai/workout-plan')
   getWorkoutPlan(@Param('memberId') memberId: string) {

@@ -136,6 +136,23 @@ export class FitnessPlanRepository {
     });
   }
 
+  /** Logs a weigh-in and makes it the profile's current weight, in one transaction. */
+  async recordWeighIn(memberId: string, weightKg: number): Promise<{ weightKg: number; loggedAt: Date }> {
+    const now = new Date();
+    const [log] = await this.prisma.$transaction([
+      this.prisma.memberWeightLog.create({
+        data: { memberId, weightKg },
+        select: { weightKg: true, loggedAt: true },
+      }),
+      this.prisma.memberProfile.upsert({
+        where: { memberId },
+        create: { memberId, weightKg, updatedAt: now },
+        update: { weightKg, updatedAt: now },
+      }),
+    ]);
+    return { weightKg: Number(log.weightKg), loggedAt: log.loggedAt };
+  }
+
   /** The most recent plan saved before `before`: the plan that was active at that moment. */
   findPlanActiveAt(memberId: string, before: Date): Promise<StoredFitnessPlan | null> {
     return this.prisma.memberFitnessPlan.findFirst({

@@ -169,7 +169,87 @@ export interface MemberProfile {
   preferredStyle?: string | null;
   dietType?: string | null;
   injuries?: string | null;
+  /** Calorie formula only. MALE | FEMALE | UNSPECIFIED */
+  sex?: string | null;
+  /** Display preference; values are always stored in kg / cm. METRIC | IMPERIAL */
+  unitSystem?: string;
+  healthCaution?: boolean;
+  healthDataConsentAt?: string | null;
   onboardingDone: boolean;
+}
+
+/** Body for PATCH me/profile. `healthDataConsent` is write-only. */
+export type MemberProfileUpdate = Partial<
+  Omit<MemberProfile, 'id' | 'memberId' | 'healthDataConsentAt'>
+> & { healthDataConsent?: boolean };
+
+// Fitness plan — GET/POST /gyms/:gymId/members/:memberId/fitness-plan…
+
+export interface DailyTargets {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  waterMl: number;
+}
+
+export interface PaceOption {
+  pace: string;
+  available: boolean;
+  unavailableReason: string | null;
+  /** Negative while losing, positive while gaining. */
+  weeklyRateKg: number;
+  targets: DailyTargets;
+  weeksToGoal: number | null;
+  /** YYYY-MM-DD */
+  targetDate: string | null;
+}
+
+export interface FitnessPlanOptions {
+  calculatorVersion: number;
+  direction: string;
+  bmrKcal: number;
+  tdeeKcal: number;
+  maintenance: DailyTargets;
+  /** STEADY, BALANCED, FAST — empty when direction is MAINTAIN. */
+  options: PaceOption[];
+  recommendedPace: string | null;
+  adviseProfessional: boolean;
+}
+
+export interface FitnessPlan {
+  id: string;
+  calculatorVersion: number;
+  direction: string;
+  goalPace: string | null;
+  fitnessGoal: string;
+  weightKg: number;
+  targetWeightKg: number | null;
+  bmrKcal: number;
+  tdeeKcal: number;
+  targetKcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  waterMl: number;
+  weeklyRateKg: number;
+  targetDate: string | null;
+  createdAt: string;
+}
+
+export interface Macros {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export interface DailyNutrition {
+  date: string;
+  entries: number;
+  eaten: Macros;
+  targets: (Macros & { waterMl: number }) | null;
+  remaining: Macros | null;
 }
 
 // Staff — active check-in (member is always present for staff views)

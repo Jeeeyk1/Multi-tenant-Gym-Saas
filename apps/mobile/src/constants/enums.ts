@@ -36,3 +36,34 @@ export enum DietType {
   HALAL        = 'HALAL',
   GLUTEN_FREE  = 'GLUTEN_FREE',
 }
+
+// Fitness plan — see apps/api/src/modules/fitness-plan
+
+export enum Sex {
+  MALE        = 'MALE',
+  FEMALE      = 'FEMALE',
+  UNSPECIFIED = 'UNSPECIFIED',
+}
+
+export enum UnitSystem {
+  METRIC   = 'METRIC',
+  IMPERIAL = 'IMPERIAL',
+}
+
+export enum GoalPace {
+  STEADY   = 'STEADY',
+  BALANCED = 'BALANCED',
+  FAST     = 'FAST',
+}
+
+export enum FitnessDirection {
+  LOSS     = 'LOSS',
+  GAIN     = 'GAIN',
+  MAINTAIN = 'MAINTAIN',
+}
+
+export enum PaceUnavailableReason {
+  UNDER_18           = 'UNDER_18',
+  HEALTH_CAUTION     = 'HEALTH_CAUTION',
+  SAFE_LIMIT_REACHED = 'SAFE_LIMIT_REACHED',
+}

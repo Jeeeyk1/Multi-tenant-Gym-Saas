@@ -4,6 +4,7 @@ import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
@@ -36,16 +37,14 @@ function computeStreak(checkIns: CheckIn[]): { streak: number; lastCheckInToday:
   return { streak, lastCheckInToday };
 }
 
-function getInitials(name: string): string {
-  return name.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
-}
-
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
   const C = theme.colors;
   const { activeSession } = useWorkout();
+  // The tab screens hide the header, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
 
   const memberQ = useMyMember();
   const checkInsQ = useMyCheckIns(7);
@@ -198,13 +197,13 @@ export default function DashboardScreen() {
   }
 
   const { streak, lastCheckInToday } = computeStreak(checkIns);
-  const firstName = user?.fullName?.split(' ')[0] ?? 'Member';
-  const initials = user?.fullName ? getInitials(user.fullName) : '?';
+  // A restored session's token has no name, so fall back to the member record.
+  const firstName = (user?.fullName || member?.user?.fullName || '').split(' ')[0] || 'there';
 
   return (
     <ScrollView
       style={s.container}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.sm }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.primary} />
       }
@@ -212,9 +211,9 @@ export default function DashboardScreen() {
     >
       <GreetingBanner
         name={firstName}
-        initials={initials}
         streak={streak}
         lastCheckInToday={lastCheckInToday}
+        kcalLeft={dailyQ.data?.remaining?.kcal ?? null}
       />
 
       {errorMessage && (

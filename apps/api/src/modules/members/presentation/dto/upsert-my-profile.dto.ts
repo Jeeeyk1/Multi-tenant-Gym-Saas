@@ -13,6 +13,8 @@ import { PROFILE_LIMITS } from '../../../fitness-plan/domain/fitness-plan.calcul
 /**
  * Body for PATCH .../members/me/profile and PATCH .../members/:memberId/profile.
  * Every field is optional so the onboarding flow can save one step at a time.
+ * Omitted fields are left unchanged; `targetWeightKg` and `injuries` also accept null
+ * to clear them (IsOptional lets null through).
  * Weights and heights are always metric; `unitSystem` is the display preference.
  */
 export class UpsertMyProfileDto {
@@ -32,7 +34,8 @@ export class UpsertMyProfileDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(PROFILE_LIMITS.weightKg.min)
   @Max(PROFILE_LIMITS.weightKg.max)
-  targetWeightKg?: number;
+  /** null clears a previously saved goal weight. */
+  targetWeightKg?: number | null;
 
   @IsOptional()
   @IsInt()
@@ -77,7 +80,8 @@ export class UpsertMyProfileDto {
   @IsOptional()
   @IsString()
   @Length(0, 500)
-  injuries?: string;
+  /** null clears the note. */
+  injuries?: string | null;
 
   /** Pregnancy or a medical condition. The fitness plan becomes conservative. */
   @IsOptional()

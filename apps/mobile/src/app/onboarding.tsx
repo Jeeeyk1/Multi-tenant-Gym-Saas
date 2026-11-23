@@ -1,650 +1,740 @@
-import { useRef, useState } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
-import { Text } from '../components/Text';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Text } from '../components/Text';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useUpdateMyProfile } from '../hooks/members';
-import { AnimatedMascot } from '../components/AnimatedMascot';
-import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
+import { useMyMember, useMyProfile, useUpdateMyProfile } from '../hooks/members';
+import { useFitnessPlanOptions, useSaveFitnessPlan } from '../hooks/fitness-plan';
+import { CoachMessage } from '../components/onboarding/CoachMessage';
+import { WelcomeStage } from '../components/onboarding/WelcomeStage';
 import {
-  FitnessGoal,
+  NumberField,
+  Notice,
+  OptionList,
+  PrimaryButton,
+  SegmentedToggle,
+  TextButton,
+  type Option,
+} from '../components/onboarding/controls';
+import { PaceCards } from '../components/onboarding/PaceCards';
+import { TargetsReveal } from '../components/onboarding/TargetsReveal';
+import { formatGoalDate } from '../components/onboarding/format';
+import { useInstantContent, useReduceMotion, useScreenReader } from '../components/onboarding/use-reduce-motion';
+import { cmToFeetInches, feetInchesToCm, kgToLb, lbToKg, toNumber } from '../lib/units';
+import { formatApiError } from '../lib/format-error';
+import {
   ActivityLevel,
-  ExperienceLevel,
-  PreferredStyle,
   DietType,
+  ExperienceLevel,
+  FitnessDirection,
+  FitnessGoal,
+  Sex,
+  UnitSystem,
 } from '../constants/enums';
+import type { ApiErrorFields } from '../services/api';
+import type { DailyTargets } from '../types';
 
-const NUM_STEPS = 11;
+// Same limits as the API (PROFILE_LIMITS); checked here only to give instant feedback.
+const LIMITS = { age: [13, 100], heightCm: [120, 230], weightKg: [30, 300] } as const;
 
-const FITNESS_GOAL_OPTIONS = [
-  { value: FitnessGoal.LOSE_WEIGHT,  label: 'Lose Weight',   emoji: '🔥' },
-  { value: FitnessGoal.BUILD_MUSCLE, label: 'Build Muscle',  emoji: '💪' },
-  { value: FitnessGoal.GET_FIT,      label: 'Get Fit',       emoji: '🏃' },
-  { value: FitnessGoal.STAY_HEALTHY, label: 'Stay Healthy',  emoji: '🥗' },
-  { value: FitnessGoal.OTHER,        label: 'Other',         emoji: '✨' },
+const STEPS = [
+  'welcome',
+  'consent',
+  'goal',
+  'sex',
+  'body',
+  'target',
+  'activity',
+  'training',
+  'diet',
+  'plan',
+  'reveal',
+] as const;
+type Step = (typeof STEPS)[number];
+
+const GOAL_OPTIONS: Option<FitnessGoal>[] = [
+  { value: FitnessGoal.LOSE_WEIGHT, label: 'Lose fat', description: 'Drop weight and get leaner', icon: 'trending-down' },
+  { value: FitnessGoal.BUILD_MUSCLE, label: 'Build muscle', description: 'Gain size and strength', icon: 'barbell' },
+  { value: FitnessGoal.GET_FIT, label: 'Get fit', description: 'More energy, better conditioning', icon: 'flash' },
+  { value: FitnessGoal.STAY_HEALTHY, label: 'Stay healthy', description: 'Keep my weight and build habits', icon: 'heart' },
 ];
 
-const ACTIVITY_LEVEL_OPTIONS = [
-  { value: ActivityLevel.SEDENTARY,   label: 'Mostly Sitting', emoji: '🪑' },
-  { value: ActivityLevel.LIGHT,       label: 'Lightly Active', emoji: '🚶' },
-  { value: ActivityLevel.MODERATE,    label: 'Moderately Active', emoji: '🏋️' },
-  { value: ActivityLevel.VERY_ACTIVE, label: 'Very Active',    emoji: '⚡' },
-  { value: ActivityLevel.ATHLETE,     label: 'Athlete',        emoji: '🏆' },
+const SEX_OPTIONS: Option<Sex>[] = [
+  { value: Sex.MALE, label: 'Male', icon: 'male' },
+  { value: Sex.FEMALE, label: 'Female', icon: 'female' },
+  { value: Sex.UNSPECIFIED, label: 'Prefer not to say', description: 'We use an average', icon: 'remove-circle-outline' },
 ];
 
-const EXPERIENCE_LEVEL_OPTIONS = [
-  { value: ExperienceLevel.BEGINNER,     label: 'Beginner',      emoji: '🌱', desc: 'Less than 1 year training' },
-  { value: ExperienceLevel.INTERMEDIATE, label: 'Intermediate',  emoji: '🏋️', desc: '1–3 years training' },
-  { value: ExperienceLevel.ADVANCED,     label: 'Advanced',      emoji: '🔱', desc: '3+ years training' },
+const ACTIVITY_OPTIONS: Option<ActivityLevel>[] = [
+  { value: ActivityLevel.SEDENTARY, label: 'Mostly sitting', description: 'Desk job, little walking', icon: 'desktop-outline' },
+  { value: ActivityLevel.LIGHT, label: 'Lightly active', description: '1–3 light workouts, or on my feet part of the day', icon: 'walk-outline' },
+  { value: ActivityLevel.MODERATE, label: 'Moderately active', description: '3–5 workouts, e.g. weights or 30–45 min cardio', icon: 'bicycle-outline' },
+  { value: ActivityLevel.VERY_ACTIVE, label: 'Very active', description: '6–7 hard sessions, or a physical job', icon: 'flame-outline' },
+  { value: ActivityLevel.ATHLETE, label: 'Athlete', description: 'Training twice a day', icon: 'trophy-outline' },
 ];
 
-const PREFERRED_STYLE_OPTIONS = [
-  { value: PreferredStyle.WEIGHTS, label: 'Weight Training', emoji: '🏋️', desc: 'Barbells, dumbbells, machines' },
-  { value: PreferredStyle.CARDIO,  label: 'Cardio',          emoji: '🏃', desc: 'Running, cycling, rowing' },
-  { value: PreferredStyle.MIXED,   label: 'Mixed',           emoji: '⚡', desc: 'Weights + cardio combined' },
-  { value: PreferredStyle.HIIT,    label: 'HIIT',            emoji: '🔥', desc: 'High-intensity intervals' },
+const EXPERIENCE_OPTIONS: Option<ExperienceLevel>[] = [
+  { value: ExperienceLevel.BEGINNER, label: 'Beginner', description: 'Under 1 year of training', icon: 'leaf-outline' },
+  { value: ExperienceLevel.INTERMEDIATE, label: 'Intermediate', description: '1–3 years', icon: 'barbell-outline' },
+  { value: ExperienceLevel.ADVANCED, label: 'Advanced', description: '3+ years', icon: 'medal-outline' },
 ];
 
-const DIET_TYPE_OPTIONS = [
-  { value: DietType.NONE,        label: 'No restriction', emoji: '🍽️' },
-  { value: DietType.VEGETARIAN,  label: 'Vegetarian',     emoji: '🥦' },
-  { value: DietType.VEGAN,       label: 'Vegan',          emoji: '🌱' },
-  { value: DietType.HALAL,       label: 'Halal',          emoji: '☪️' },
-  { value: DietType.GLUTEN_FREE, label: 'Gluten-Free',    emoji: '🌾' },
+const DAYS_OPTIONS: Option<number>[] = [1, 2, 3, 4, 5, 6, 7].map((d) => ({
+  value: d,
+  label: `${d}×`,
+}));
+
+const DIET_OPTIONS: Option<DietType>[] = [
+  { value: DietType.NONE, label: 'No restrictions' },
+  { value: DietType.VEGETARIAN, label: 'Vegetarian' },
+  { value: DietType.VEGAN, label: 'Vegan' },
+  { value: DietType.HALAL, label: 'Halal' },
+  { value: DietType.GLUTEN_FREE, label: 'Gluten-free' },
 ];
 
-const DAYS_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+// API error code → the step where the member can fix it.
+const ERROR_STEP: Record<string, Step> = {
+  PROFILE_INCOMPLETE: 'body',
+  PROFILE_OUT_OF_RANGE: 'body',
+  TARGET_WEIGHT_REQUIRED: 'target',
+  TARGET_CONFLICTS_WITH_GOAL: 'target',
+  TARGET_BELOW_HEALTHY_RANGE: 'target',
+  LOSS_NOT_RECOMMENDED: 'goal',
+  HEALTH_DATA_CONSENT_REQUIRED: 'consent',
+};
+
+function inRange(value: number | null, [min, max]: readonly [number, number]): boolean {
+  return value !== null && value >= min && value <= max;
+}
 
 export default function OnboardingScreen() {
-  const { width } = useWindowDimensions();
-  const { user } = useAuth();
+  const { user, gymInfo } = useAuth();
   const { theme } = useTheme();
+  const colors = theme.colors;
+  const reduceMotion = useReduceMotion();
+  const instant = useInstantContent();
+  const screenReader = useScreenReader();
+  const existing = useMyProfile().data;
+  const member = useMyMember().data;
   const updateProfile = useUpdateMyProfile();
-  const translateX = useRef(new Animated.Value(0)).current;
-  const [step, setStep] = useState(0);
-  const submitting = updateProfile.isPending;
+  const savePlan = useSaveFitnessPlan();
 
-  // Step 1–3: body stats
-  const [age, setAge] = useState('');
-  const [weightKg, setWeightKg] = useState('');
-  const [targetWeightKg, setTargetWeightKg] = useState('');
-  const [heightCm, setHeightCm] = useState('');
-  // Step 4–5: existing fields
-  const [fitnessGoal, setFitnessGoal] = useState<FitnessGoal | ''>('');
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('');
-  // Steps 6–10: new fields
-  const [daysPerWeek, setDaysPerWeek] = useState<number | null>(null);
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel | ''>('');
-  const [preferredStyle, setPreferredStyle] = useState<PreferredStyle | ''>('');
-  const [dietType, setDietType] = useState<DietType | ''>('');
-  const [injuries, setInjuries] = useState('');
+  const [step, setStep] = useState<Step>('welcome');
+  const [typed, setTyped] = useState(false);
 
-  const firstName = user?.fullName?.split(' ')[0] || 'there';
+  // Answers. Weight and height are kept as typed, in the chosen unit, and converted on save.
+  const [goal, setGoal] = useState<FitnessGoal | null>((existing?.fitnessGoal as FitnessGoal) ?? null);
+  const [sex, setSex] = useState<Sex | null>((existing?.sex as Sex) ?? null);
+  // Saved values are metric; show them in the member's saved unit.
+  const startImperial = existing?.unitSystem === UnitSystem.IMPERIAL;
+  const savedCm = toNumber(existing?.heightCm);
+  const savedFtIn = savedCm !== null ? cmToFeetInches(savedCm) : null;
+  const displayWeight = (kg: number | null) =>
+    kg === null ? '' : String(startImperial ? Math.round(kgToLb(kg) * 10) / 10 : kg);
+  const [units, setUnits] = useState<UnitSystem>(startImperial ? UnitSystem.IMPERIAL : UnitSystem.METRIC);
+  const [age, setAge] = useState(existing?.age ? String(existing.age) : '');
+  const [heightCm, setHeightCm] = useState(savedCm !== null ? String(savedCm) : '');
+  const [heightFt, setHeightFt] = useState(savedFtIn ? String(savedFtIn.feet) : '');
+  const [heightIn, setHeightIn] = useState(savedFtIn ? String(savedFtIn.inches) : '');
+  const [weight, setWeight] = useState(() => displayWeight(toNumber(existing?.weightKg)));
+  const [target, setTarget] = useState(() => displayWeight(toNumber(existing?.targetWeightKg)));
+  const [activity, setActivity] = useState<ActivityLevel | null>((existing?.activityLevel as ActivityLevel) ?? null);
+  const [days, setDays] = useState<number | null>(existing?.daysPerWeek ?? null);
+  const [experience, setExperience] = useState<ExperienceLevel | null>(
+    (existing?.experienceLevel as ExperienceLevel) ?? null,
+  );
+  const [diet, setDiet] = useState<DietType>((existing?.dietType as DietType) ?? DietType.NONE);
+  const [injuries, setInjuries] = useState(existing?.injuries ?? '');
+  const [healthCaution, setHealthCaution] = useState(existing?.healthCaution ?? false);
+  const [pace, setPace] = useState<string | null>(null);
+  const [planReady, setPlanReady] = useState(false);
+  const [savedTargets, setSavedTargets] = useState<{ targets: DailyTargets; targetDate: string | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function animateTo(next: number) {
-    Animated.spring(translateX, {
-      toValue: -width * next,
-      useNativeDriver: true,
-      tension: 80,
-      friction: 12,
-    }).start();
+  const imperial = units === UnitSystem.IMPERIAL;
+  const weightUnit = imperial ? 'lb' : 'kg';
+  // A restored session's token has no name, so fall back to the member record.
+  const fullName = user?.fullName || member?.user.fullName || '';
+  const firstName = fullName.split(' ')[0] || 'there';
+  const gymName = gymInfo?.gymName || 'the gym';
+
+  const options = useFitnessPlanOptions(planReady);
+
+  // ── Derived metric values ────────────────────────────────────────────────────
+  const toKg = useCallback(
+    (text: string) => {
+      const n = toNumber(text);
+      if (n === null) return null;
+      return imperial ? lbToKg(n) : Math.round(n * 100) / 100;
+    },
+    [imperial],
+  );
+  const ageN = toNumber(age);
+  const heightCmN = imperial
+    ? toNumber(heightFt) !== null
+      ? feetInchesToCm(toNumber(heightFt) ?? 0, toNumber(heightIn) ?? 0)
+      : null
+    : toNumber(heightCm);
+  const weightKg = toKg(weight);
+  const targetKg = toKg(target);
+
+  const bodyErrors = {
+    age: age && !inRange(ageN, LIMITS.age) ? `Enter an age between ${LIMITS.age[0]} and ${LIMITS.age[1]}` : null,
+    height:
+      (imperial ? heightFt : heightCm) && !inRange(heightCmN, LIMITS.heightCm)
+        ? imperial
+          ? 'Enter a height between 3 ft 11 in and 7 ft 6 in'
+          : `Enter a height between ${LIMITS.heightCm[0]} and ${LIMITS.heightCm[1]} cm`
+        : null,
+    weight: weight && !inRange(weightKg, LIMITS.weightKg) ? `That weight looks off — check the ${weightUnit} value` : null,
+  };
+  const bodyValid =
+    inRange(ageN, LIMITS.age) && inRange(heightCmN, LIMITS.heightCm) && inRange(weightKg, LIMITS.weightKg);
+
+  const targetRequired = goal === FitnessGoal.LOSE_WEIGHT || goal === FitnessGoal.BUILD_MUSCLE;
+  const targetError = useMemo(() => {
+    if (!target) return null;
+    if (!inRange(targetKg, LIMITS.weightKg) || weightKg === null || targetKg === null) return 'Check this value';
+    if (goal === FitnessGoal.LOSE_WEIGHT && targetKg >= weightKg) return 'To lose fat, aim below your current weight';
+    if (goal === FitnessGoal.BUILD_MUSCLE && targetKg <= weightKg) return 'To build muscle, aim above your current weight';
+    return null;
+  }, [target, targetKg, weightKg, goal]);
+
+  // ── Unit switching keeps the numbers the member already typed ────────────────
+  function switchUnits(next: UnitSystem) {
+    if (next === units) return;
+    const convertWeight = (text: string) => {
+      const n = toNumber(text);
+      if (n === null) return text;
+      return next === UnitSystem.IMPERIAL ? String(Math.round(kgToLb(n) * 10) / 10) : String(lbToKg(n));
+    };
+    setWeight(convertWeight(weight));
+    setTarget(convertWeight(target));
+    if (next === UnitSystem.IMPERIAL) {
+      const cm = toNumber(heightCm);
+      if (cm !== null) {
+        const { feet, inches } = cmToFeetInches(cm);
+        setHeightFt(String(feet));
+        setHeightIn(String(inches));
+      }
+    } else if (heightCmN !== null) {
+      setHeightCm(String(heightCmN));
+    }
+    setUnits(next);
   }
 
-  function goNext() {
-    const next = step + 1;
-    setStep(next);
-    animateTo(next);
+  // ── Navigation ───────────────────────────────────────────────────────────────
+  const fade = useRef(new Animated.Value(1)).current;
+  function goTo(next: Step) {
+    setError(null);
+    const swap = () => {
+      setTyped(false);
+      setStep(next);
+    };
+    if (reduceMotion) return swap();
+    Animated.timing(fade, { toValue: 0, duration: 120, useNativeDriver: true }).start(() => {
+      swap();
+      Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+    });
   }
+  const index = STEPS.indexOf(step);
+  const next = () => goTo(STEPS[index + 1]);
+  const back = () => {
+    if (step === 'reveal') return;
+    if (step === 'plan') setPlanReady(false);
+    goTo(STEPS[Math.max(0, index - 1)]);
+  };
 
-  function goBack() {
-    if (step === 0) return;
-    const prev = step - 1;
-    setStep(prev);
-    animateTo(prev);
-  }
-
-  async function handleFinish() {
-    if (!user) return;
+  async function skipForNow() {
     try {
-      await updateProfile.mutateAsync({
-        age: age ? parseInt(age, 10) : undefined,
-        weightKg: weightKg ? parseFloat(weightKg) : undefined,
-        targetWeightKg: targetWeightKg ? parseFloat(targetWeightKg) : undefined,
-        heightCm: heightCm ? parseInt(heightCm, 10) : undefined,
-        fitnessGoal: fitnessGoal || undefined,
-        activityLevel: activityLevel || undefined,
-        daysPerWeek: daysPerWeek ?? undefined,
-        experienceLevel: experienceLevel || undefined,
-        preferredStyle: preferredStyle || undefined,
-        dietType: dietType || undefined,
-        injuries: injuries.trim() || undefined,
-        onboardingDone: true,
-      });
+      await updateProfile.mutateAsync({ onboardingDone: true });
       router.replace('/(member)/dashboard');
-    } catch {
-      // Mutation status is reflected via updateProfile.isPending; stay on screen on error.
+    } catch (err) {
+      setError(formatApiError(err, 'Could not save. Please try again.'));
     }
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {/* Progress dots */}
-      <View style={styles.dotsRow}>
-        {Array.from({ length: NUM_STEPS }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              i <= step && styles.dotActive,
-              i <= step && { backgroundColor: theme.primary },
-            ]}
-          />
-        ))}
-      </View>
+  // Save every answer, then ask the API for the pace options.
+  async function saveAnswersAndPlan() {
+    setError(null);
+    try {
+      await updateProfile.mutateAsync({
+        healthDataConsent: true,
+        fitnessGoal: goal ?? undefined,
+        sex: sex ?? undefined,
+        unitSystem: units,
+        age: ageN ?? undefined,
+        heightCm: heightCmN ?? undefined,
+        weightKg: weightKg ?? undefined,
+        // null clears a goal weight saved earlier (e.g. after switching to "Get fit").
+        targetWeightKg: targetKg,
+        activityLevel: activity ?? undefined,
+        daysPerWeek: days ?? undefined,
+        experienceLevel: experience ?? undefined,
+        dietType: diet,
+        injuries: injuries.trim() || null,
+        healthCaution,
+      });
+      setPace(null);
+      setPlanReady(true);
+      next();
+    } catch (err) {
+      setError(formatApiError(err, 'Could not save your answers. Please try again.'));
+    }
+  }
 
-      {step > 0 && (
-        <View style={styles.mascotCorner}>
-          <AnimatedMascot size="sm" />
-        </View>
-      )}
+  // When fresh options arrive, preselect the recommended pace. Ignore cached options
+  // from an earlier visit while the new answers are being recalculated.
+  // A failed refetch keeps the previous data, so an error must win over it.
+  const optionsSettled = Boolean(options.data) && !options.isFetching && !options.isError;
+  useEffect(() => {
+    if (optionsSettled && pace === null) setPace(options.data!.recommendedPace);
+  }, [optionsSettled, options.data, pace]);
 
-      <View style={{ flex: 1, overflow: 'hidden' }}>
-        <Animated.View
-          style={[styles.slidesRow, { width: width * NUM_STEPS, transform: [{ translateX }] }]}
-        >
-          {/* ── Step 0 — Intro ─────────────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <View style={styles.introMascotWrap}>
-              <AnimatedMascot size="lg" enterAnim />
+  const optionsError = options.error as (Error & ApiErrorFields) | null;
+  const fixStep = optionsError?.code ? ERROR_STEP[optionsError.code] : undefined;
+
+  async function confirmPlan() {
+    setError(null);
+    try {
+      const plan = await savePlan.mutateAsync(pace ?? undefined);
+      setSavedTargets({
+        targets: { kcal: plan.targetKcal, proteinG: plan.proteinG, carbsG: plan.carbsG, fatG: plan.fatG, waterMl: plan.waterMl },
+        targetDate: plan.targetDate,
+      });
+      next();
+    } catch (err) {
+      setError(formatApiError(err, 'Could not save your plan. Please try again.'));
+    }
+  }
+
+  async function finish() {
+    try {
+      await updateProfile.mutateAsync({ onboardingDone: true });
+      router.replace('/(member)/dashboard');
+    } catch (err) {
+      setError(formatApiError(err, 'Something went wrong. Please try again.'));
+    }
+  }
+
+  // ── Copy per step ────────────────────────────────────────────────────────────
+  const coach: Record<Step, string[]> = {
+    welcome: [`Hey ${firstName}! Welcome to ${gymName}.`, "I'm your coach. Let's build your plan together — it takes about a minute."],
+    consent: ['Quick thing first.', 'To work out your calories I need a few health details. Is that okay?'],
+    goal: ['What are we chasing?'],
+    sex: ['Which formula should I use for your calories?'],
+    body: ['Now your numbers. Pick the units you like.'],
+    target: targetRequired ? ["What's your goal weight?"] : ['Do you have a goal weight? You can skip this.'],
+    activity: ['How active is a normal day for you?', 'Count your job and walking too, not just workouts.'],
+    training: ['How often do you want to train, and how experienced are you?'],
+    diet: ['Last one. Anything I should know about how you eat or your health?'],
+    plan:
+      options.data?.direction === FitnessDirection.MAINTAIN
+        ? ["Here's what keeps you where you are."]
+        : ['Done the maths. Pick your pace.'],
+    reveal: [`That's your plan, ${firstName}.`, "Log your meals and I'll keep score."],
+  };
+
+  // Read the new question aloud when a screen reader is on.
+  const coachText = coach[step].join(' ');
+  useEffect(() => {
+    if (screenReader) AccessibilityInfo.announceForAccessibility(coachText);
+  }, [screenReader, coachText]);
+
+  // ── Per-step body and primary action ─────────────────────────────────────────
+  let body: React.ReactNode = null;
+  let action: { label: string; onPress: () => void; disabled?: boolean; loading?: boolean } | null = null;
+  let secondary: { label: string; onPress: () => void } | null = null;
+
+  switch (step) {
+    case 'welcome':
+      action = { label: "Let's go", onPress: next };
+      break;
+
+    case 'consent':
+      body = (
+        <View style={styles.card(colors)}>
+          {[
+            ['body-outline', 'Age, height, weight, sex and any health condition you tell me about'],
+            ['calculator-outline', 'Used only to calculate your calories and goal date'],
+            ['eye-off-outline', 'Gym staff cannot see your health details'],
+            ['refresh-outline', 'You can withdraw this anytime in your profile; your plan is then deleted'],
+          ].map(([icon, text]) => (
+            <View key={text} style={styles.consentRow}>
+              <Ionicons name={icon as 'body-outline'} size={18} color={theme.primary} />
+              <Text variant="label" style={{ color: colors.text, flex: 1 }}>
+                {text}
+              </Text>
             </View>
-            <Text style={styles.headline}>Hey {firstName}!</Text>
-            <Text style={styles.subheading}>
-              Let's build your fitness profile. A few quick questions help us personalise your workouts and nutrition plans.
+          ))}
+          {error && <Notice tone="error">{error}</Notice>}
+        </View>
+      );
+      action = { label: 'I agree', onPress: next };
+      secondary = { label: 'Not now', onPress: skipForNow };
+      break;
+
+    case 'goal':
+      body = <OptionList options={GOAL_OPTIONS} value={goal} onChange={setGoal} />;
+      action = { label: 'Continue', onPress: next, disabled: !goal };
+      break;
+
+    case 'sex':
+      body = (
+        <View style={styles.gap}>
+          <OptionList options={SEX_OPTIONS} value={sex} onChange={setSex} />
+          <Text variant="caption" style={{ color: colors.textMuted }}>
+            Only used in the calorie formula.
+          </Text>
+        </View>
+      );
+      action = { label: 'Continue', onPress: next, disabled: !sex };
+      break;
+
+    case 'body':
+      body = (
+        <View style={styles.gap}>
+          <SegmentedToggle
+            options={[
+              { value: UnitSystem.METRIC, label: 'kg · cm' },
+              { value: UnitSystem.IMPERIAL, label: 'lb · ft' },
+            ]}
+            value={units}
+            onChange={switchUnits}
+          />
+          <NumberField label="Age" value={age} onChange={setAge} suffix="years" error={bodyErrors.age} />
+          {imperial ? (
+            <View style={styles.row}>
+              <NumberField
+                label="Height"
+                accessibilityLabel="Height, feet"
+                value={heightFt}
+                onChange={setHeightFt}
+                suffix="ft"
+              />
+              <NumberField
+                label=" "
+                accessibilityLabel="Height, inches"
+                value={heightIn}
+                onChange={setHeightIn}
+                suffix="in"
+              />
+            </View>
+          ) : (
+            <NumberField label="Height" value={heightCm} onChange={setHeightCm} suffix="cm" />
+          )}
+          {bodyErrors.height && (
+            <Text variant="caption" style={{ color: colors.error }}>
+              {bodyErrors.height}
             </Text>
-            <Pressable style={styles.btnPrimary} onPress={goNext}>
-              <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.btnGradient}>
-                <Text style={styles.btnPrimaryText}>Let's go →</Text>
-              </LinearGradient>
-            </Pressable>
-          </View>
+          )}
+          <NumberField
+            label="Current weight"
+            value={weight}
+            onChange={setWeight}
+            suffix={weightUnit}
+            decimal
+            error={bodyErrors.weight}
+          />
+        </View>
+      );
+      action = { label: 'Continue', onPress: next, disabled: !bodyValid };
+      break;
 
-          {/* ── Step 1 — Age ───────────────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🎂</Text>
-            <Text style={styles.headline}>How old are you?</Text>
-            <TextInput
-              style={styles.input}
-              value={age}
-              onChangeText={setAge}
-              keyboardType="number-pad"
-              placeholder="e.g. 28"
-              placeholderTextColor={COLORS.textMuted}
-              maxLength={3}
-            />
-            <ContinueBtn canContinue={age.trim().length > 0} onPress={goNext} gradient={theme.gradient} />
-            <SkipBtn onPress={goNext} />
-          </View>
+    case 'target':
+      body = (
+        <NumberField
+          label="Goal weight"
+          value={target}
+          onChange={setTarget}
+          suffix={weightUnit}
+          decimal
+          error={targetError}
+        />
+      );
+      action = {
+        label: 'Continue',
+        onPress: next,
+        disabled: targetRequired ? !target || Boolean(targetError) : Boolean(targetError),
+      };
+      if (!targetRequired) {
+        secondary = {
+          label: 'Skip',
+          onPress: () => {
+            setTarget('');
+            next();
+          },
+        };
+      }
+      break;
 
-          {/* ── Step 2 — Weight ────────────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>⚖️</Text>
-            <Text style={styles.headline}>Current weight?</Text>
-            <UnitInput value={weightKg} onChange={setWeightKg} unit="kg" placeholder="e.g. 75" />
-            <ContinueBtn canContinue={weightKg.trim().length > 0} onPress={goNext} gradient={theme.gradient} />
-            <SkipBtn onPress={goNext} />
-          </View>
+    case 'activity':
+      body = <OptionList options={ACTIVITY_OPTIONS} value={activity} onChange={setActivity} />;
+      action = { label: 'Continue', onPress: next, disabled: !activity };
+      break;
 
-          {/* ── Step 3 — Target weight ─────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🎯</Text>
-            <Text style={styles.headline}>Target weight?</Text>
-            <Text style={styles.subheading}>Optional — helps the AI tailor your plan.</Text>
-            <UnitInput value={targetWeightKg} onChange={setTargetWeightKg} unit="kg" placeholder="e.g. 68" />
-            <ContinueBtn canContinue={true} onPress={goNext} label="Continue →" gradient={theme.gradient} />
-          </View>
-
-          {/* ── Step 4 — Height ────────────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>📏</Text>
-            <Text style={styles.headline}>How tall are you?</Text>
-            <UnitInput value={heightCm} onChange={setHeightCm} unit="cm" placeholder="e.g. 175" keyboardType="number-pad" />
-            <ContinueBtn canContinue={heightCm.trim().length > 0} onPress={goNext} gradient={theme.gradient} />
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 5 — Fitness goal ──────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🏆</Text>
-            <Text style={styles.headline}>What's your main goal?</Text>
-            <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
-              {FITNESS_GOAL_OPTIONS.map((g) => (
-                <OptionCard
-                  key={g.value}
-                  emoji={g.emoji}
-                  label={g.label}
-                  selected={fitnessGoal === g.value}
-                  theme={theme}
-                  onPress={() => { setFitnessGoal(g.value); setTimeout(goNext, 150); }}
-                />
-              ))}
-            </ScrollView>
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 6 — Activity level ────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>⚡</Text>
-            <Text style={styles.headline}>How active are you?</Text>
-            <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
-              {ACTIVITY_LEVEL_OPTIONS.map((a) => (
-                <OptionCard
-                  key={a.value}
-                  emoji={a.emoji}
-                  label={a.label}
-                  selected={activityLevel === a.value}
-                  theme={theme}
-                  onPress={() => { setActivityLevel(a.value); setTimeout(goNext, 150); }}
-                />
-              ))}
-            </ScrollView>
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 7 — Days per week ─────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>📅</Text>
-            <Text style={styles.headline}>Days per week?</Text>
-            <Text style={styles.subheading}>How many days can you commit to training?</Text>
-            <View style={styles.daysRow}>
-              {DAYS_OPTIONS.map((d) => (
+    case 'training':
+      body = (
+        <View style={styles.gap}>
+          <Text variant="label" style={{ color: colors.textSecondary }}>
+            Workouts per week
+          </Text>
+          <View style={styles.daysRow}>
+            {DAYS_OPTIONS.map((d) => {
+              const selected = d.value === days;
+              return (
                 <Pressable
-                  key={d}
+                  key={d.value}
+                  onPress={() => setDays(d.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${d.value} times a week`}
                   style={[
                     styles.dayChip,
-                    daysPerWeek === d && styles.dayChipSelected,
-                    daysPerWeek === d && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    {
+                      backgroundColor: selected ? theme.primary : colors.surface,
+                      borderColor: selected ? theme.primary : colors.border,
+                    },
                   ]}
-                  onPress={() => setDaysPerWeek(d)}
                 >
-                  <Text style={[styles.dayChipText, daysPerWeek === d && styles.dayChipTextSelected]}>
-                    {d}
+                  <Text variant="bodyMed" style={{ color: selected ? colors.onPrimary : colors.text }}>
+                    {d.label}
                   </Text>
                 </Pressable>
-              ))}
-            </View>
-            <ContinueBtn canContinue={daysPerWeek !== null} onPress={goNext} gradient={theme.gradient} />
-            <SkipBtn onPress={goNext} />
+              );
+            })}
           </View>
+          <Text variant="label" style={{ color: colors.textSecondary, marginTop: 8 }}>
+            Experience
+          </Text>
+          <OptionList options={EXPERIENCE_OPTIONS} value={experience} onChange={setExperience} />
+        </View>
+      );
+      action = { label: 'Continue', onPress: next, disabled: !days || !experience };
+      break;
 
-          {/* ── Step 8 — Experience level ──────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🏅</Text>
-            <Text style={styles.headline}>Experience level?</Text>
-            <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
-              {EXPERIENCE_LEVEL_OPTIONS.map((e) => (
-                <OptionCard
-                  key={e.value}
-                  emoji={e.emoji}
-                  label={e.label}
-                  desc={e.desc}
-                  selected={experienceLevel === e.value}
-                  theme={theme}
-                  onPress={() => { setExperienceLevel(e.value); setTimeout(goNext, 150); }}
-                />
-              ))}
-            </ScrollView>
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 9 — Preferred style ───────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🏋️</Text>
-            <Text style={styles.headline}>Preferred workout style?</Text>
-            <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
-              {PREFERRED_STYLE_OPTIONS.map((s) => (
-                <OptionCard
-                  key={s.value}
-                  emoji={s.emoji}
-                  label={s.label}
-                  desc={s.desc}
-                  selected={preferredStyle === s.value}
-                  theme={theme}
-                  onPress={() => { setPreferredStyle(s.value); setTimeout(goNext, 150); }}
-                />
-              ))}
-            </ScrollView>
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 10 — Diet type ────────────────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🥗</Text>
-            <Text style={styles.headline}>Dietary preference?</Text>
-            <ScrollView contentContainerStyle={styles.cards} showsVerticalScrollIndicator={false}>
-              {DIET_TYPE_OPTIONS.map((d) => (
-                <OptionCard
-                  key={d.value}
-                  emoji={d.emoji}
-                  label={d.label}
-                  selected={dietType === d.value}
-                  theme={theme}
-                  onPress={() => { setDietType(d.value); setTimeout(goNext, 150); }}
-                />
-              ))}
-            </ScrollView>
-            <SkipBtn onPress={goNext} />
-          </View>
-
-          {/* ── Step 11 — Injuries / wrap-up ───────────────────────────────── */}
-          <View style={[styles.slide, { width }]}>
-            <Text style={styles.stepEmoji}>🩺</Text>
-            <Text style={styles.headline}>Any injuries?</Text>
-            <Text style={styles.subheading}>
-              Optional. Mention anything we should know so your plan avoids aggravating it (e.g. "bad lower back", "knee surgery").
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={injuries}
-              onChangeText={setInjuries}
-              placeholder="e.g. Lower back pain"
-              placeholderTextColor={COLORS.textMuted}
-              multiline
-              numberOfLines={3}
-              maxLength={500}
+    case 'diet':
+      body = (
+        <View style={styles.gap}>
+          <OptionList options={DIET_OPTIONS} value={diet} onChange={setDiet} columns={2} />
+          <Text variant="label" style={{ color: colors.textSecondary, marginTop: 8 }}>
+            Injuries or limits (optional)
+          </Text>
+          <TextInput
+            value={injuries}
+            onChangeText={setInjuries}
+            placeholder="e.g. bad left knee"
+            placeholderTextColor={colors.textMuted}
+            maxLength={500}
+            style={[styles.textArea, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
+            accessibilityLabel="Injuries or limits"
+          />
+          <Pressable
+            onPress={() => setHealthCaution((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: healthCaution }}
+            style={[styles.checkRow, { borderColor: healthCaution ? theme.primary : colors.border, backgroundColor: colors.surface }]}
+          >
+            <Ionicons
+              name={healthCaution ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={healthCaution ? theme.primary : colors.textMuted}
             />
-            <Pressable
-              style={[styles.btnPrimary, submitting && styles.btnDisabled]}
-              onPress={!submitting ? handleFinish : undefined}
-            >
-              <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.btnGradient}>
-                <Text style={styles.btnPrimaryText}>{submitting ? 'Saving…' : "Let's go! 🚀"}</Text>
-              </LinearGradient>
-            </Pressable>
-            <SkipBtn onPress={!submitting ? handleFinish : undefined} label="Skip & finish" />
+            <Text variant="label" style={{ color: colors.text, flex: 1 }}>
+              I&apos;m pregnant or have a medical condition
+            </Text>
+          </Pressable>
+          {error && <Notice tone="error">{error}</Notice>}
+        </View>
+      );
+      action = { label: 'Build my plan', onPress: saveAnswersAndPlan, loading: updateProfile.isPending };
+      break;
+
+    case 'plan':
+      if (!optionsSettled || !options.data) {
+        body = optionsError && !options.isFetching ? (
+          <View style={styles.gap}>
+            <Notice tone="error">{formatApiError(optionsError, 'Could not calculate your plan.')}</Notice>
           </View>
-        </Animated.View>
-      </View>
+        ) : (
+          <View style={styles.calculating}>
+            <Ionicons name="calculator-outline" size={28} color={theme.primary} />
+            <Text variant="bodyMed" style={{ color: colors.textSecondary }}>
+              Calculating your plan…
+            </Text>
+          </View>
+        );
+        action = optionsError && !options.isFetching
+          ? fixStep
+            ? { label: 'Fix my answers', onPress: () => { setPlanReady(false); goTo(fixStep); } }
+            : { label: 'Try again', onPress: () => options.refetch() }
+          : null;
+      } else {
+        const data = options.data;
+        const maintain = data.direction === FitnessDirection.MAINTAIN;
+        body = (
+          <View style={styles.gap}>
+            {data.adviseProfessional && (
+              <Notice tone="warning">
+                Please check this plan with a doctor or health professional before you start.
+              </Notice>
+            )}
+            {maintain ? (
+              <View style={styles.card(colors)}>
+                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                  MAINTENANCE
+                </Text>
+                <Text variant="h1" style={{ color: colors.text }}>
+                  {data.maintenance.kcal.toLocaleString()} kcal / day
+                </Text>
+              </View>
+            ) : (
+              <PaceCards
+                options={data.options}
+                selected={pace}
+                recommended={data.recommendedPace}
+                unit={weightUnit}
+                onSelect={setPace}
+              />
+            )}
+            {!maintain && !data.recommendedPace && (
+              <Notice tone="info">
+                Your calories can&apos;t safely go lower. Moving more each day is the way to make progress.
+              </Notice>
+            )}
+            {error && <Notice tone="error">{error}</Notice>}
+          </View>
+        );
+        action =
+          !maintain && !data.recommendedPace
+            ? // No pace is safe: finish without a plan rather than leave the member stuck.
+              { label: 'Continue without a plan', onPress: skipForNow, loading: updateProfile.isPending }
+            : { label: 'Use this plan', onPress: confirmPlan, loading: savePlan.isPending, disabled: !maintain && !pace };
+      }
+      break;
 
-      {step > 0 && (
-        <Pressable style={styles.backBtn} onPress={goBack}>
-          <Text style={styles.backText}>← Back</Text>
-        </Pressable>
-      )}
-    </KeyboardAvoidingView>
-  );
-}
+    case 'reveal':
+      body = savedTargets ? (
+        <View style={styles.gap}>
+          <TargetsReveal targets={savedTargets.targets} />
+          {savedTargets.targetDate && (
+            <Text variant="label" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+              On track to reach your goal by {formatGoalDate(savedTargets.targetDate)}
+            </Text>
+          )}
+          {error && <Notice tone="error">{error}</Notice>}
+        </View>
+      ) : null;
+      action = { label: 'Go to my dashboard', onPress: finish, loading: updateProfile.isPending };
+      break;
+  }
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
+  const progress = index / (STEPS.length - 1);
+  const showBack = index > 0 && step !== 'reveal';
 
-function ContinueBtn({
-  canContinue,
-  onPress,
-  label = 'Continue →',
-  gradient,
-}: {
-  canContinue: boolean;
-  onPress: () => void;
-  label?: string;
-  gradient: [string, string];
-}) {
   return (
-    <Pressable
-      style={[styles.btnPrimary, !canContinue && styles.btnDisabled]}
-      onPress={canContinue ? onPress : undefined}
-    >
-      <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.btnGradient}>
-        <Text style={styles.btnPrimaryText}>{label}</Text>
-      </LinearGradient>
-    </Pressable>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.topBar}>
+          {showBack ? (
+            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10}>
+              <Ionicons name="chevron-back" size={24} color={colors.text} />
+            </Pressable>
+          ) : (
+            <View style={styles.topBarSpacer} />
+          )}
+          <View
+            style={[styles.progressTrack, { backgroundColor: colors.border }]}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: STEPS.length - 1, now: index }}
+          >
+            <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: theme.primary }]} />
+          </View>
+          <View style={styles.topBarSpacer} />
+        </View>
+
+        <ScrollView
+          contentContainerStyle={[styles.content, step === 'welcome' && styles.contentCentered]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View style={[styles.gap, { opacity: fade }]}>
+            {step === 'welcome' ? (
+              <View style={styles.hero}>
+                <WelcomeStage talking={!typed} />
+                <CoachMessage
+                  key={step}
+                  lines={coach.welcome}
+                  avatar={false}
+                  centered
+                  onDone={() => setTyped(true)}
+                />
+              </View>
+            ) : (
+              <>
+                <CoachMessage key={step} lines={coach[step]} onDone={() => setTyped(true)} />
+                {/* Inputs appear once the coach has finished "typing". */}
+                {(typed || instant) && <View style={styles.body}>{body}</View>}
+              </>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          {action && (typed || instant) && (
+            <PrimaryButton
+              label={action.label}
+              onPress={action.onPress}
+              disabled={action.disabled}
+              loading={action.loading}
+            />
+          )}
+          {secondary && (typed || instant) && <TextButton label={secondary.label} onPress={secondary.onPress} />}
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-function SkipBtn({ onPress, label = 'Skip for now' }: { onPress?: () => void; label?: string }) {
-  return (
-    <Pressable style={styles.skip} onPress={onPress}>
-      <Text style={styles.skipText}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function UnitInput({
-  value,
-  onChange,
-  unit,
-  placeholder,
-  keyboardType = 'decimal-pad',
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  unit: string;
-  placeholder: string;
-  keyboardType?: 'decimal-pad' | 'number-pad';
-}) {
-  return (
-    <View style={styles.inputRow}>
-      <TextInput
-        style={[styles.input, { flex: 1 }]}
-        value={value}
-        onChangeText={onChange}
-        keyboardType={keyboardType}
-        placeholder={placeholder}
-        placeholderTextColor={COLORS.textMuted}
-        maxLength={6}
-      />
-      <Text style={styles.unit}>{unit}</Text>
-    </View>
-  );
-}
-
-function OptionCard({
-  emoji,
-  label,
-  desc,
-  selected,
-  theme,
-  onPress,
-}: {
-  emoji: string;
-  label: string;
-  desc?: string;
-  selected: boolean;
-  theme: { primary: string; primaryMuted: string };
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={[
-        styles.card,
-        selected && styles.cardSelected,
-        selected && { borderColor: theme.primary, backgroundColor: theme.primaryMuted },
-      ]}
-      onPress={onPress}
-    >
-      <Text style={styles.cardEmoji}>{emoji}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.cardLabel, selected && { color: theme.primary }]}>{label}</Text>
-        {desc ? <Text style={styles.cardDesc}>{desc}</Text> : null}
-      </View>
-    </Pressable>
-  );
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    paddingTop: 56,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.border,
-  },
-  dotActive: {
-    width: 16,
-    borderRadius: 3,
-  },
-  mascotCorner: {
-    position: 'absolute',
-    right: SPACING.lg,
-    top: 56,
-    zIndex: 10,
-  },
-  slidesRow: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  slide: {
-    flex: 1,
-    paddingHorizontal: SPACING.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  introMascotWrap: {
-    marginBottom: SPACING.lg,
-  },
-  stepEmoji: {
-    fontSize: 52,
-    marginBottom: SPACING.sm,
-  },
-  headline: {
-    fontSize: 26,
-    color: COLORS.text,
-    ...FONT.bold,
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  subheading: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: SPACING.lg,
-  },
-  input: {
-    backgroundColor: COLORS.surface,
+const styles = {
+  ...StyleSheet.create({
+    root: { flex: 1 },
+    topBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
+    topBarSpacer: { width: 24 },
+    progressTrack: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 3 },
+    content: { padding: 20, paddingBottom: 32 },
+    contentCentered: { flexGrow: 1, justifyContent: 'center' },
+    gap: { gap: 12 },
+    hero: { gap: 20, paddingTop: 12 },
+    body: { marginTop: 8 },
+    row: { flexDirection: 'row', gap: 10 },
+    consentRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+    daysRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    dayChip: { width: 44, height: 44, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+    textArea: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
+    checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderRadius: 12, padding: 12 },
+    calculating: { alignItems: 'center', gap: 10, paddingVertical: 32 },
+    footer: { paddingHorizontal: 20, paddingBottom: 12, gap: 4 },
+  }),
+  card: (colors: { surface: string; border: string }) => ({
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    color: COLORS.text,
-    fontSize: 22,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    width: '100%',
-    marginBottom: SPACING.lg,
-    textAlign: 'center',
-  },
-  textArea: {
-    fontSize: 15,
-    textAlign: 'left',
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    width: '100%',
-    marginBottom: SPACING.lg,
-  },
-  unit: {
-    fontSize: 18,
-    color: COLORS.textSecondary,
-    ...FONT.medium,
-  },
-  daysRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.xl,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  dayChip: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayChipSelected: {},
-  dayChipText: {
-    fontSize: 18,
-    ...FONT.semibold,
-    color: COLORS.textSecondary,
-  },
-  dayChipTextSelected: {
-    color: '#000',
-  },
-  btnPrimary: {
-    width: '100%',
-    borderRadius: RADIUS.button,
-    overflow: 'hidden',
-    marginBottom: SPACING.sm,
-  },
-  btnGradient: {
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnPrimaryText: {
-    color: '#000',
-    fontSize: 16,
-    ...FONT.semibold,
-  },
-  skip: { padding: SPACING.sm },
-  skipText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-  },
-  cards: {
-    gap: SPACING.sm,
-    width: '100%',
-    paddingBottom: SPACING.md,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-  },
-  cardSelected: {},
-  cardEmoji: { fontSize: 24 },
-  cardLabel: {
-    fontSize: 16,
-    color: COLORS.text,
-    ...FONT.medium,
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  backBtn: { padding: SPACING.lg },
-  backText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
-  },
-});
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  }),
+};

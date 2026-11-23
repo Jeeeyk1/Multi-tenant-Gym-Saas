@@ -2,6 +2,9 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { authService, decodeJwt } from '../services/auth.service';
 import { getAccessToken, clearTokens, setUnauthorizedHandler, setSubscriptionInactiveHandler } from '../services/api';
 import { registerPushToken } from '../services/push.service';
+import { useTheme } from './ThemeContext';
+import { gymService } from '../services/gym.service';
+import { DARK_COLORS } from '../constants/theme';
 import type { AuthUser } from '../types';
 
 interface GymInfo {
@@ -28,6 +31,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [gymInfo, setGymInfo] = useState<GymInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { setGymTheme, clearGymTheme } = useTheme();
+  // ThemeContext's setters are recreated every render; keep the latest in a ref.
+  const themeRef = useRef({ setGymTheme, clearGymTheme });
+  themeRef.current = { setGymTheme, clearGymTheme };
+
+  /**
+   * Loads the signed-in gym's name, colours and logo. Branding is per tenant, so it
+   * must come from the gym in the token, never from what an earlier session stored.
+   */
+  // The gym of the current session; a branding response for any other gym is dropped.
+  const sessionGymRef = useRef<string | null>(null);
+
+  const syncGymBranding = useCallback(async (gymId: string | undefined) => {
+    if (!gymId) return;
+    sessionGymRef.current = gymId;
+    try {
+      const gym = await gymService.getBranding(gymId);
+      if (sessionGymRef.current !== gymId) return;
+      await themeRef.current.setGymTheme(
+        gym.profile?.primaryColor ?? DARK_COLORS.primary,
+        gym.profile?.secondaryColor ?? DARK_COLORS.secondary,
+        gym.profile?.logoUrl ?? null,
+      );
+      setGymInfo((prev) => (prev ? { ...prev, gymName: gym.name, gymCode: gym.code } : prev));
+    } catch (err) {
+      // Not this user's gym any more: drop the stored branding. When offline, keep what
+      // is stored — it was written for this gym by an earlier sync.
+      if (sessionGymRef.current !== gymId) return;
+      const status = (err as { statusCode?: number }).statusCode;
+      if (status === 403 || status === 404) await themeRef.current.clearGymTheme();
+    }
+  }, []);
   const [subscriptionLocked, setSubscriptionLocked] = useState(false);
 
   function applyPayload(payload: Record<string, unknown>) {
@@ -48,9 +83,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = useCallback(async () => {
+    sessionGymRef.current = null;
     await authService.logout();
     setUser(null);
     setGymInfo(null);
+    await themeRef.current.clearGymTheme();
     setSubscriptionLocked(false);
   }, []);
 
@@ -91,12 +128,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const newPayload = decodeJwt(newToken);
       applyPayload(newPayload);
+      syncGymBranding(newPayload.gymId as string | undefined);
     } else {
       applyPayload(payload);
+      syncGymBranding(payload.gymId as string | undefined);
     }
 
     setIsLoading(false);
-  }, []);
+  }, [syncGymBranding]);
 
   useEffect(() => {
     hydrateFromToken();
@@ -110,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName: res.user.fullName,
     });
     setSubscriptionLocked(false);
+    syncGymBranding(payload.gymId as string);
     // Register push token in the background — never block login
     const gymId = payload.gymId as string;
     registerPushToken(gymId).catch(() => {});

@@ -6,10 +6,12 @@ import { useMyMember } from './members';
 
 export const fitnessPlanKeys = {
   all: ['fitness-plan'] as const,
-  options: (memberId: string | undefined) => [...fitnessPlanKeys.all, 'options', memberId] as const,
-  current: (memberId: string | undefined) => [...fitnessPlanKeys.all, 'current', memberId] as const,
-  daily: (memberId: string | undefined, date: string | undefined) =>
-    [...fitnessPlanKeys.all, 'daily', memberId, date ?? 'today'] as const,
+  options: (gymId: string | undefined, memberId: string | undefined) =>
+    [...fitnessPlanKeys.all, 'options', gymId, memberId] as const,
+  current: (gymId: string | undefined, memberId: string | undefined) =>
+    [...fitnessPlanKeys.all, 'current', gymId, memberId] as const,
+  daily: (gymId: string | undefined, memberId: string | undefined, date: string | undefined) =>
+    [...fitnessPlanKeys.all, 'daily', gymId, memberId, date ?? 'today'] as const,
 };
 
 function useIds() {
@@ -25,7 +27,7 @@ function useIds() {
 export function useFitnessPlanOptions(enabled = true) {
   const { gymId, memberId } = useIds();
   return useQuery({
-    queryKey: fitnessPlanKeys.options(memberId),
+    queryKey: fitnessPlanKeys.options(gymId, memberId),
     queryFn: () => fitnessPlanService.getOptions(gymId!, memberId!),
     enabled: enabled && Boolean(gymId && memberId),
     // Always recalculate from the latest profile answers.
@@ -36,7 +38,7 @@ export function useFitnessPlanOptions(enabled = true) {
 export function useCurrentFitnessPlan() {
   const { gymId, memberId } = useIds();
   return useQuery({
-    queryKey: fitnessPlanKeys.current(memberId),
+    queryKey: fitnessPlanKeys.current(gymId, memberId),
     queryFn: async () => (await fitnessPlanService.getCurrent(gymId!, memberId!)).plan,
     enabled: Boolean(gymId && memberId),
     staleTime: STALE.static,
@@ -49,7 +51,9 @@ export function useSaveFitnessPlan() {
   return useMutation({
     mutationFn: (pace?: string) => fitnessPlanService.save(gymId!, memberId!, pace),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: fitnessPlanKeys.all });
+      // Options depend on the profile, not on the saved plan, so they stay as they are.
+      queryClient.invalidateQueries({ queryKey: [...fitnessPlanKeys.all, 'current'] });
+      queryClient.invalidateQueries({ queryKey: [...fitnessPlanKeys.all, 'daily'] });
     },
   });
 }
@@ -58,7 +62,7 @@ export function useSaveFitnessPlan() {
 export function useDailyNutrition(date?: string) {
   const { gymId, memberId } = useIds();
   return useQuery({
-    queryKey: fitnessPlanKeys.daily(memberId, date),
+    queryKey: fitnessPlanKeys.daily(gymId, memberId, date),
     queryFn: () => fitnessPlanService.getDailyNutrition(gymId!, memberId!, date),
     enabled: Boolean(gymId && memberId),
   });

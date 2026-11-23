@@ -14,6 +14,8 @@ import { GetLatestWorkoutPlanUseCase } from './application/use-cases/get-latest-
 import { GetLatestMealPlanUseCase } from './application/use-cases/get-latest-meal-plan.use-case';
 import { GetExerciseInstructionsUseCase } from './application/use-cases/get-exercise-instructions.use-case';
 import { GetExerciseMediaUseCase } from './application/use-cases/get-exercise-media.use-case';
+import { MemberAiLimitsService } from './application/member-ai-limits.service';
+import { GetMemberAiUsageUseCase } from './application/use-cases/get-member-ai-usage.use-case';
 import { AiController } from './presentation/controllers/ai.controller';
 
 @Module({
@@ -21,6 +23,8 @@ import { AiController } from './presentation/controllers/ai.controller';
   controllers: [AiController],
   providers: [
     AiRepository,
+    MemberAiLimitsService,
+    GetMemberAiUsageUseCase,
     WorkoutSuggestionUseCase,
     SwapWorkoutExerciseUseCase,
     MealSuggestionUseCase,

@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
+import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { AiRepository, type MemberContext, type PlanTargets } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError } from '../../../../common/errors';
-import { DietType, FitnessGoal, MealPlanMode } from '../../../../common/enums';
+import { AiFeature, DietType, FitnessGoal, MealPlanMode } from '../../../../common/enums';
 
 const MAX_TOKENS = 1500;
-const FEATURE_KEY = 'meal_suggestion';
 
 export interface MealPlanParams {
   mode: MealPlanMode;
@@ -19,24 +19,28 @@ export class MealSuggestionUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AiProviderPort,
     private readonly aiRepository: AiRepository,
+    private readonly limits: MemberAiLimitsService,
   ) {}
 
   async execute(memberId: string, gymId: string, params: MealPlanParams): Promise<{ suggestion: string }> {
     const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
     if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
-    const planTargets = await this.aiRepository.findActivePlanTargets(memberId);
-    const prompt = buildMealPrompt(ctx, params, planTargets);
-    const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
+    const plan = await this.aiRepository.findActivePlanTargets(memberId);
+    const eatenToday =
+      plan && params.mode === MealPlanMode.SINGLE_MEAL
+        ? await this.aiRepository.sumFoodToday(memberId, ctx.timezone)
+        : null;
+    const prompt = buildMealPrompt(ctx, params, defaultMealTargets(params, plan, eatenToday));
+    const { text } = await this.limits.run(ctx, AiFeature.MEAL_SUGGESTION, () =>
+      this.aiProvider.chat(prompt, MAX_TOKENS),
+    );
 
     const suggestion = extractJson(text);
 
-    await Promise.all([
-      this.aiRepository.logUsage(ctx.organizationId, ctx.gymId, ctx.userId, FEATURE_KEY, tokensUsed),
-      // Persist so the plan survives app navigation/reopen instead of living only
-      // in mobile component state (mirrors saveWorkoutPlan).
-      this.aiRepository.saveMealPlan(memberId, gymId, suggestion),
-    ]);
+    // Persist so the plan survives app navigation/reopen instead of living only
+    // in mobile component state (mirrors saveWorkoutPlan).
+    await this.aiRepository.saveMealPlan(memberId, gymId, suggestion);
 
     return { suggestion };
   }
@@ -59,8 +63,46 @@ const DIET_RULES: Record<DietType, string | null> = {
   [DietType.GLUTEN_FREE]: 'Gluten-free: no wheat, barley or rye (watch soy sauce and breading).',
 };
 
+// A single meal never aims below this, or above this share of the day.
+const MIN_MEAL_KCAL = 200;
+const MIN_MEAL_PROTEIN_G = 15;
+const MAX_MEAL_SHARE = 0.4;
+
+/**
+ * Targets to use when the request gives none, from the member's saved plan:
+ * - FULL_DAY: the plan's daily targets.
+ * - SINGLE_MEAL: what is left of today, kept between a small meal and 40% of the day,
+ *   so a "meal idea" fits the rest of the member's day.
+ * Explicit request values always win; with no plan the model estimates.
+ */
+export function defaultMealTargets(
+  params: MealPlanParams,
+  plan: PlanTargets | null,
+  eatenToday: { kcal: number; proteinG: number } | null,
+): { kcal?: number; proteinG?: number } {
+  const clamp = (n: number, min: number, max: number) => Math.round(Math.min(Math.max(n, min), max));
+  let kcal: number | undefined;
+  let proteinG: number | undefined;
+  if (plan && params.mode === MealPlanMode.FULL_DAY) {
+    kcal = plan.kcal;
+    proteinG = plan.proteinG;
+  } else if (plan) {
+    const eaten = eatenToday ?? { kcal: 0, proteinG: 0 };
+    kcal = clamp(plan.kcal - eaten.kcal, MIN_MEAL_KCAL, plan.kcal * MAX_MEAL_SHARE);
+    proteinG = clamp(plan.proteinG - eaten.proteinG, MIN_MEAL_PROTEIN_G, plan.proteinG * MAX_MEAL_SHARE);
+  }
+  return {
+    kcal: params.targetCalories ?? kcal,
+    proteinG: params.targetProteinG ?? proteinG,
+  };
+}
+
 // The member's name is deliberately not sent to the AI provider: it adds nothing to the plan.
-function buildMealPrompt(ctx: MemberContext, params: MealPlanParams, plan: PlanTargets | null): string {
+function buildMealPrompt(
+  ctx: MemberContext,
+  params: MealPlanParams,
+  targets: { kcal?: number; proteinG?: number },
+): string {
   const goal = ctx.fitnessGoal ?? FitnessGoal.GET_FIT;
   const level = ctx.activityLevel ?? 'MODERATE';
   const dietRule = DIET_RULES[ctx.dietType as DietType] ?? null;
@@ -75,11 +117,8 @@ function buildMealPrompt(ctx: MemberContext, params: MealPlanParams, plan: PlanT
   const isFullDay = params.mode === MealPlanMode.FULL_DAY;
   const mealCount = params.mealCount ?? 3;
 
-  // Explicit request values win; otherwise use the member's saved plan (a single meal
-  // gets an even share of the day); otherwise let the model estimate.
-  const planShare = isFullDay ? 1 : 1 / mealCount;
-  const targetCalories = params.targetCalories ?? (plan ? Math.round(plan.kcal * planShare) : undefined);
-  const targetProteinG = params.targetProteinG ?? (plan ? Math.round(plan.proteinG * planShare) : undefined);
+  const targetCalories = targets.kcal;
+  const targetProteinG = targets.proteinG;
 
   const requestLines: string[] = [];
   if (targetCalories) {

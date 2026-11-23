@@ -8,6 +8,7 @@ const mockRepo = {
   findPlanActiveAt: jest.fn(),
   dayBounds: jest.fn(),
   sumFoodLogs: jest.fn(),
+  recordWeighIn: jest.fn(),
 } as unknown as jest.Mocked<FitnessPlanRepository>;
 
 const totals = { entries: 2, kcal: 900, proteinG: 60, carbsG: 100, fatG: 25 };

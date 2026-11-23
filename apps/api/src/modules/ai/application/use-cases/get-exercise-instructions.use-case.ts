@@ -1,16 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
+import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { AiRepository } from '../../infrastructure/persistence/ai.repository';
+import { AiFeature } from '../../../../common/enums';
 import { NotFoundError } from '../../../../common/errors';
 
 const MAX_TOKENS = 600;
-const FEATURE_KEY = 'exercise_instructions';
 
 @Injectable()
 export class GetExerciseInstructionsUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AiProviderPort,
     private readonly aiRepository: AiRepository,
+    private readonly limits: MemberAiLimitsService,
   ) {}
 
   async execute(
@@ -40,14 +42,8 @@ Schema:
 
 Keep every step to one concise action. Avoid generic filler.`;
 
-    const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
-
-    await this.aiRepository.logUsage(
-      ctx.organizationId,
-      ctx.gymId,
-      ctx.userId,
-      FEATURE_KEY,
-      tokensUsed,
+    const { text } = await this.limits.run(ctx, AiFeature.EXERCISE_INSTRUCTIONS, () =>
+      this.aiProvider.chat(prompt, MAX_TOKENS),
     );
 
     const start = text.indexOf('{');

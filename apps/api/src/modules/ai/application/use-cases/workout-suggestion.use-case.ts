@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
+import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { AiRepository, type MemberContext } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError } from '../../../../common/errors';
-import { WorkoutEmphasis, WorkoutFocus } from '../../../../common/enums';
+import { AiFeature, WorkoutEmphasis, WorkoutFocus } from '../../../../common/enums';
 
 const MAX_TOKENS = 4000;
-const FEATURE_KEY = 'workout_suggestion';
 
 export interface WorkoutPlanRequest {
   focus?: WorkoutFocus;
@@ -19,6 +19,7 @@ export class WorkoutSuggestionUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly aiProvider: AiProviderPort,
     private readonly aiRepository: AiRepository,
+    private readonly limits: MemberAiLimitsService,
   ) {}
 
   async execute(memberId: string, gymId: string, request: WorkoutPlanRequest = {}): Promise<{ suggestion: string }> {
@@ -27,7 +28,9 @@ export class WorkoutSuggestionUseCase {
 
     const exerciseGroups = await this.aiRepository.listExercisesGrouped();
     const prompt = buildWeeklyPlanPrompt(ctx, exerciseGroups, request);
-    const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
+    const { text } = await this.limits.run(ctx, AiFeature.WORKOUT_PLAN, () =>
+      this.aiProvider.chat(prompt, MAX_TOKENS),
+    );
 
     // Persist the goal/focus alongside the plan so a later single-exercise swap can honour the
     // "same target and goal" the plan was built with, even after the app reloads.
@@ -38,10 +41,7 @@ export class WorkoutSuggestionUseCase {
     };
     const suggestion = JSON.stringify(plan);
 
-    await Promise.all([
-      this.aiRepository.logUsage(ctx.organizationId, ctx.gymId, ctx.userId, FEATURE_KEY, tokensUsed),
-      this.aiRepository.saveWorkoutPlan(memberId, gymId, suggestion),
-    ]);
+    await this.aiRepository.saveWorkoutPlan(memberId, gymId, suggestion);
 
     return { suggestion };
   }

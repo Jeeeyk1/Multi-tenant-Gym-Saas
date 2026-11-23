@@ -65,7 +65,7 @@ const MIN_RATE_STEP_KG = 0.05;
 // Below this effective loss rate the deficit is too small to call it a plan.
 const MIN_LOSS_RATE_KG = 0.1;
 // Differences smaller than this between current and target weight count as "no target".
-const TARGET_TOLERANCE_KG = 0.5;
+export const TARGET_TOLERANCE_KG = 0.5;
 
 const PROTEIN_G_PER_KG_LOSS = 1.8;
 const PROTEIN_G_PER_KG_OTHER = 1.6;

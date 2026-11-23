@@ -24,3 +24,4 @@ export { GoalPace } from './goal-pace.enum';
 export { FitnessDirection } from './fitness-direction.enum';
 export { PaceUnavailableReason } from './pace-unavailable-reason.enum';
 export { FitnessPlanInputProblem } from './fitness-plan-input-problem.enum';
+export { AiFeature } from './ai-feature.enum';

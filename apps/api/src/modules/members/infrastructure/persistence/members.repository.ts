@@ -17,6 +17,26 @@ function generateQrToken(): string {
   return randomBytes(32).toString('hex');
 }
 
+export interface ProfileUpdateData {
+  age?: number;
+  weightKg?: number;
+  targetWeightKg?: number;
+  heightCm?: number;
+  sex?: string;
+  unitSystem?: string;
+  fitnessGoal?: string;
+  activityLevel?: string;
+  daysPerWeek?: number;
+  experienceLevel?: string;
+  preferredStyle?: string;
+  dietType?: string;
+  injuries?: string;
+  healthCaution?: boolean;
+  /** null withdraws consent; undefined leaves it unchanged. */
+  healthDataConsentAt?: Date | null;
+  onboardingDone?: boolean;
+}
+
 @Injectable()
 export class MembersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -205,28 +225,29 @@ export class MembersRepository {
     });
   }
 
-  upsertMyProfile(
-    memberId: string,
-    data: {
-      age?: number;
-      weightKg?: number;
-      targetWeightKg?: number;
-      heightCm?: number;
-      fitnessGoal?: string;
-      activityLevel?: string;
-      daysPerWeek?: number;
-      experienceLevel?: string;
-      preferredStyle?: string;
-      dietType?: string;
-      injuries?: string;
-      onboardingDone?: boolean;
-    },
-  ) {
+  upsertMyProfile(memberId: string, data: ProfileUpdateData) {
     return this.prisma.memberProfile.upsert({
       where: { memberId },
       create: { memberId, ...data, updatedAt: new Date() },
       update: { ...data, updatedAt: new Date() },
     });
+  }
+
+  /**
+   * Saves the profile with consent cleared and deletes the plans calculated from the
+   * member's health data, in one transaction.
+   */
+  async withdrawHealthDataConsent(memberId: string, data: ProfileUpdateData) {
+    const values = { ...data, healthDataConsentAt: null, updatedAt: new Date() };
+    const [profile] = await this.prisma.$transaction([
+      this.prisma.memberProfile.upsert({
+        where: { memberId },
+        create: { memberId, ...values },
+        update: values,
+      }),
+      this.prisma.memberFitnessPlan.deleteMany({ where: { memberId } }),
+    ]);
+    return profile;
   }
 
   findProfileByMemberId(memberId: string) {

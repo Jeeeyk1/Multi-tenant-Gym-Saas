@@ -32,6 +32,7 @@ import { AnalyseMealDto } from '../dto/analyse-meal.dto';
 import { GenerateMealPlanDto } from '../dto/generate-meal-plan.dto';
 import { GenerateWorkoutPlanDto } from '../dto/generate-workout-plan.dto';
 import { SwapWorkoutExerciseDto } from '../dto/swap-workout-exercise.dto';
+import { ListFoodLogsQueryDto } from '../dto/list-food-logs-query.dto';
 
 @Controller('gyms/:gymId/members/:memberId')
 @UseGuards(JwtAuthGuard, MemberAccessGuard)
@@ -164,8 +165,8 @@ export class AiController {
   listFoodLogs(
     @Param('gymId') gymId: string,
     @Param('memberId') memberId: string,
-    @Query('limit') limit?: string,
+    @Query() query: ListFoodLogsQueryDto,
   ) {
-    return this.listFoodLogsUseCase.execute(memberId, gymId, limit ? parseInt(limit, 10) : 20);
+    return this.listFoodLogsUseCase.execute(memberId, gymId, query.limit ?? 20, query.date);
   }
 }

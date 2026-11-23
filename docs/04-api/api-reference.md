@@ -581,6 +581,109 @@ Response `200`:
 
 ---
 
+#### PATCH /gyms/:gymId/members/me/profile
+Save the caller's fitness profile. Every field is optional so onboarding can save one step at a time.
+`PATCH /gyms/:gymId/members/:memberId/profile` is the staff version (`members.edit`); it ignores
+`sex`, `unitSystem`, `healthCaution` and `healthDataConsent`, and staff responses omit the health fields.
+
+Request (all optional; weights in kg, height in cm — clients convert imperial input):
+```json
+{
+  "age": 30, "heightCm": 180, "weightKg": 80, "targetWeightKg": 70,
+  "sex": "MALE", "unitSystem": "METRIC",
+  "fitnessGoal": "LOSE_WEIGHT", "activityLevel": "MODERATE", "daysPerWeek": 4,
+  "experienceLevel": "BEGINNER", "preferredStyle": "WEIGHTS", "dietType": "NONE", "injuries": "",
+  "healthCaution": false, "healthDataConsent": true, "onboardingDone": true
+}
+```
+
+| Field | Values / bounds |
+|---|---|
+| `age` | 13–100 |
+| `heightCm` | 120–230 |
+| `weightKg`, `targetWeightKg` | 30–300, max 2 decimals |
+| `sex` | `MALE` \| `FEMALE` \| `UNSPECIFIED` (calorie formula only) |
+| `unitSystem` | `METRIC` \| `IMPERIAL` (display preference only) |
+| `activityLevel` | `SEDENTARY` \| `LIGHT` \| `MODERATE` \| `VERY_ACTIVE` \| `ATHLETE` |
+| `healthCaution` | `true` when the member reports pregnancy or a medical condition |
+| `healthDataConsent` | `true` records consent (first time only); `false` withdraws it |
+
+---
+
+### Fitness plan
+
+Deterministic daily targets (no AI). All routes are `/gyms/:gymId/members/:memberId/fitness-plan…`
+and are **member-only** (`MemberSelfGuard`): plans are derived from health data, so staff get `403`.
+Withdrawing consent deletes the member's saved plans.
+
+#### GET …/fitness-plan/options
+Maintenance targets and each pace option, calculated from the stored profile. Saves nothing.
+
+Response `200`:
+```json
+{
+  "calculatorVersion": 1,
+  "direction": "LOSS",
+  "bmrKcal": 1780,
+  "tdeeKcal": 2759,
+  "maintenance": { "kcal": 2760, "proteinG": 128, "carbsG": 389, "fatG": 77, "waterMl": 2800 },
+  "options": [
+    {
+      "pace": "BALANCED",
+      "available": true,
+      "unavailableReason": null,
+      "weeklyRateKg": -0.5,
+      "targets": { "kcal": 2210, "proteinG": 144, "carbsG": 271, "fatG": 61, "waterMl": 2800 },
+      "weeksToGoal": 20,
+      "targetDate": "2027-04-12"
+    }
+  ],
+  "recommendedPace": "BALANCED",
+  "adviseProfessional": false
+}
+```
+`options` has STEADY, BALANCED and FAST in that order (empty when `direction` is `MAINTAIN`).
+`unavailableReason`: `UNDER_18` | `HEALTH_CAUTION` | `SAFE_LIMIT_REACHED`.
+
+Errors (`422`): `HEALTH_DATA_CONSENT_REQUIRED`, `PROFILE_INCOMPLETE` (message lists the missing
+fields), `PROFILE_OUT_OF_RANGE`, `TARGET_WEIGHT_REQUIRED` (weight loss needs a target),
+`TARGET_CONFLICTS_WITH_GOAL`, `LOSS_NOT_RECOMMENDED`, `TARGET_BELOW_HEALTHY_RANGE`.
+
+#### POST …/fitness-plan
+Recalculate on the server and save the plan for a pace as the active plan.
+
+Request: `{ "pace": "BALANCED" }` — omit `pace` to take the recommended one; it must be omitted
+for a maintenance plan.
+
+Response `201`: the saved plan (`targetKcal`, `proteinG`, `carbsG`, `fatG`, `waterMl`,
+`weeklyRateKg`, `targetDate`, inputs used) plus `adviseProfessional`.
+
+Errors (`422`): the options errors above, plus `PACE_NOT_APPLICABLE`, `PACE_UNAVAILABLE`, `NO_SAFE_PACE`.
+
+#### GET …/fitness-plan
+`{ "plan": <saved plan> }` for the active (most recent) plan, or `{ "plan": null }`.
+
+#### GET …/fitness-plan/daily-nutrition?date=YYYY-MM-DD
+Food eaten on one day (gym timezone; defaults to today) against the plan that was active that day.
+
+Response `200`:
+```json
+{
+  "date": "2026-11-23",
+  "entries": 1,
+  "eaten": { "kcal": 450, "proteinG": 20, "carbsG": 60, "fatG": 12 },
+  "targets": { "kcal": 1930, "proteinG": 144, "carbsG": 217, "fatG": 54, "waterMl": 2800 },
+  "remaining": { "kcal": 1480, "proteinG": 124, "carbsG": 157, "fatG": 42 }
+}
+```
+`targets` and `remaining` are `null` when there is no saved plan.
+
+#### GET /gyms/:gymId/members/:memberId/food-logs?limit=20&date=YYYY-MM-DD
+Most recent food logs. `limit` is 1–100 (default 20). `date` limits the list to that day in the
+gym's timezone.
+
+---
+
 ### Check-ins
 
 #### POST /gyms/:gymId/checkins

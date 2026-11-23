@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
+import { localDayBounds } from '../../../../common/prisma/local-day-bounds';
 
 export interface MemberContext {
   memberId: string;
@@ -20,6 +21,11 @@ export interface MemberContext {
   dietType: string;
   injuries: string | null;
   recentCheckInsCount: number;
+}
+
+export interface PlanTargets {
+  kcal: number;
+  proteinG: number;
 }
 
 export interface CreateFoodLogData {
@@ -96,6 +102,16 @@ export class AiRepository {
     };
   }
 
+  /** Daily targets from the member's active fitness plan, or null if they have none. */
+  async findActivePlanTargets(memberId: string): Promise<PlanTargets | null> {
+    const plan = await this.prisma.memberFitnessPlan.findFirst({
+      where: { memberId },
+      orderBy: { createdAt: 'desc' },
+      select: { targetKcal: true, proteinG: true },
+    });
+    return plan ? { kcal: plan.targetKcal, proteinG: plan.proteinG } : null;
+  }
+
   async logUsage(
     organizationId: string,
     gymId: string,
@@ -137,9 +153,23 @@ export class AiRepository {
     });
   }
 
-  listFoodLogs(memberId: string, limit: number) {
+  /** The timezone of the member's gym, or null if the member is not in this gym. */
+  async findMemberGymTimezone(memberId: string, gymId: string): Promise<string | null> {
+    const member = await this.prisma.gymMember.findFirst({
+      where: { id: memberId, gymId },
+      select: { gym: { select: { timezone: true } } },
+    });
+    return member?.gym.timezone ?? null;
+  }
+
+  async listFoodLogs(memberId: string, limit: number, day?: { date: string; timezone: string }) {
+    let loggedAt: { gte: Date; lt: Date } | undefined;
+    if (day) {
+      const { start, end } = await localDayBounds(this.prisma, day.date, day.timezone);
+      loggedAt = { gte: start, lt: end };
+    }
     return this.prisma.memberFoodLog.findMany({
-      where: { memberId },
+      where: { memberId, loggedAt },
       orderBy: { loggedAt: 'desc' },
       take: limit,
       select: {

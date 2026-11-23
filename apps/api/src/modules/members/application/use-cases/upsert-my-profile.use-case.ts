@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
+import { profileUpdateFromDto } from '../member-profile';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import type { UpsertMyProfileDto } from '../../presentation/dto/upsert-my-profile.dto';
 
@@ -18,13 +19,17 @@ export class UpsertMyProfileUseCase {
       throw new NotFoundError('Member record not found', 'MEMBER_NOT_FOUND');
     }
 
-    return this.repo.upsertMyProfile(member.id, {
-      age: dto.age,
-      weightKg: dto.weightKg,
-      heightCm: dto.heightCm,
-      fitnessGoal: dto.fitnessGoal,
-      activityLevel: dto.activityLevel,
-      onboardingDone: dto.onboardingDone,
-    });
+    const data = { ...profileUpdateFromDto(dto), healthCaution: dto.healthCaution };
+    if (dto.healthDataConsent === false) {
+      // Stop processing health data: saved plans go with the consent.
+      return this.repo.withdrawHealthDataConsent(member.id, data);
+    }
+    if (dto.healthDataConsent === true) {
+      // Keep the original consent time if consent was already given.
+      const existing = await this.repo.findMyProfile(member.id);
+      if (!existing?.healthDataConsentAt) data.healthDataConsentAt = new Date();
+    }
+
+    return this.repo.upsertMyProfile(member.id, data);
   }
 }

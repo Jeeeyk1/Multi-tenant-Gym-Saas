@@ -1,6 +1,12 @@
+/**
+ * Everyday activity outside planned training — drives the TDEE multiplier in
+ * the fitness-plan calculator. Experience with training is a separate field
+ * (ExperienceLevel).
+ */
 export enum ActivityLevel {
-  BEGINNER            = 'BEGINNER',
-  OCCASIONALLY_ACTIVE = 'OCCASIONALLY_ACTIVE',
-  PRETTY_ACTIVE       = 'PRETTY_ACTIVE',
-  VERY_ACTIVE         = 'VERY_ACTIVE',
+  SEDENTARY   = 'SEDENTARY',
+  LIGHT       = 'LIGHT',
+  MODERATE    = 'MODERATE',
+  VERY_ACTIVE = 'VERY_ACTIVE',
+  ATHLETE     = 'ATHLETE',
 }

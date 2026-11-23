@@ -173,6 +173,7 @@ model Gym {
   prSubmissions        MemberPrSubmission[]
   workoutPlans         MemberWorkoutPlan[]
   mealPlans            MemberMealPlan[]
+  fitnessPlans         MemberFitnessPlan[]
   workoutSessions      WorkoutSession[]
   badgeSettings        GymBadgeSetting[]
   customBadges         GymCustomBadge[]
@@ -470,6 +471,7 @@ model GymMember {
   renewals       MembershipRenewal[]
   weightLogs     MemberWeightLog[]
   foodLogs       MemberFoodLog[]
+  fitnessPlans   MemberFitnessPlan[]
   prSubmissions  MemberPrSubmission[]
   workoutPlan     MemberWorkoutPlan?
   mealPlan        MemberMealPlan?
@@ -494,6 +496,10 @@ model MemberProfile {
   preferredStyle  String?  @map("preferred_style")
   dietType        String   @default("NONE") @map("diet_type")
   injuries        String?
+  sex             String?
+  unitSystem      String   @default("METRIC") @map("unit_system")
+  healthCaution   Boolean  @default(false) @map("health_caution")
+  healthDataConsentAt DateTime? @map("health_data_consent_at") @db.Timestamptz
   onboardingDone  Boolean  @default(false) @map("onboarding_done")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
@@ -541,6 +547,38 @@ model MemberFoodLog {
   member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
   @@map("member_food_logs")
+}
+
+model MemberFitnessPlan {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberId          String    @map("member_id") @db.Uuid
+  gymId             String    @map("gym_id") @db.Uuid
+  calculatorVersion Int       @map("calculator_version") @db.SmallInt
+  sex               String
+  age               Int       @db.SmallInt
+  heightCm          Int       @map("height_cm") @db.SmallInt
+  weightKg          Decimal   @map("weight_kg") @db.Decimal(5, 2)
+  targetWeightKg    Decimal?  @map("target_weight_kg") @db.Decimal(5, 2)
+  activityLevel     String    @map("activity_level")
+  fitnessGoal       String    @map("fitness_goal")
+  direction         String
+  goalPace          String?   @map("goal_pace")
+  bmrKcal           Int       @map("bmr_kcal") @db.SmallInt
+  tdeeKcal          Int       @map("tdee_kcal") @db.SmallInt
+  targetKcal        Int       @map("target_kcal") @db.SmallInt
+  proteinG          Int       @map("protein_g") @db.SmallInt
+  carbsG            Int       @map("carbs_g") @db.SmallInt
+  fatG              Int       @map("fat_g") @db.SmallInt
+  waterMl           Int       @map("water_ml") @db.SmallInt
+  weeklyRateKg      Decimal   @map("weekly_rate_kg") @db.Decimal(4, 2)
+  targetDate        DateTime? @map("target_date") @db.Date
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  member GymMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  gym    Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, createdAt(sort: Desc)], map: "idx_member_fitness_plans_member_created")
+  @@map("member_fitness_plans")
 }
 
 model MemberWorkoutPlan {

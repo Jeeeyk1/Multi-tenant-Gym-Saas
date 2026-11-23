@@ -157,6 +157,8 @@ Safe set: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`
 | announcements | Announcements | Staff broadcasts to members. |
 | announcement_reads | Announcements | Tracks who has read each announcement. |
 | ai_usage_log | AI | Token usage tracking per org. |
+| member_profiles | Members | Fitness profile from onboarding. `sex`, `health_caution`, `health_data_consent_at` are health data: staff responses omit the last two. |
+| member_fitness_plans | Members | Every calculated plan with its inputs and `calculator_version`; the newest row is the active plan. |
 
 ---
 

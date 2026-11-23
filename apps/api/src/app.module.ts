@@ -25,6 +25,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { CronModule } from './cron/cron.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AiModule } from './modules/ai/ai.module';
+import { FitnessPlanModule } from './modules/fitness-plan/fitness-plan.module';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PublicModule } from './modules/public/public.module';
@@ -102,6 +103,7 @@ import { GymAccessGuard } from './common/guards/gym-access.guard';
     CronModule,
     NotificationsModule,
     AiModule,
+    FitnessPlanModule,
     LeaderboardModule,
     AdminModule,
     PublicModule,

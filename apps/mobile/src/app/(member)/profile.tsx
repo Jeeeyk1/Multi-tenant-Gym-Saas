@@ -36,10 +36,11 @@ const GOAL_LABELS: Record<FitnessGoal, string> = {
 };
 
 const ACTIVITY_LABELS: Record<ActivityLevel, string> = {
-  [ActivityLevel.BEGINNER]: 'Beginner',
-  [ActivityLevel.OCCASIONALLY_ACTIVE]: 'Occasionally Active',
-  [ActivityLevel.PRETTY_ACTIVE]: 'Pretty Active',
+  [ActivityLevel.SEDENTARY]: 'Mostly Sitting',
+  [ActivityLevel.LIGHT]: 'Lightly Active',
+  [ActivityLevel.MODERATE]: 'Moderately Active',
   [ActivityLevel.VERY_ACTIVE]: 'Very Active',
+  [ActivityLevel.ATHLETE]: 'Athlete',
 };
 
 const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {

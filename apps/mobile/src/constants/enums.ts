@@ -9,10 +9,11 @@ export enum FitnessGoal {
 }
 
 export enum ActivityLevel {
-  BEGINNER            = 'BEGINNER',
-  OCCASIONALLY_ACTIVE = 'OCCASIONALLY_ACTIVE',
-  PRETTY_ACTIVE       = 'PRETTY_ACTIVE',
-  VERY_ACTIVE         = 'VERY_ACTIVE',
+  SEDENTARY   = 'SEDENTARY',
+  LIGHT       = 'LIGHT',
+  MODERATE    = 'MODERATE',
+  VERY_ACTIVE = 'VERY_ACTIVE',
+  ATHLETE     = 'ATHLETE',
 }
 
 export enum ExperienceLevel {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
+import { staffVisibleProfile } from '../member-profile';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Injectable()
@@ -19,6 +20,6 @@ export class GetMemberProfileUseCase {
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
     const profile = await this.repo.findProfileByMemberId(memberId);
-    return profile ?? { memberId, onboardingDone: false };
+    return profile ? staffVisibleProfile(profile) : { memberId, onboardingDone: false };
   }
 }

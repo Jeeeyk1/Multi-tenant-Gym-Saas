@@ -5,32 +5,48 @@ import {
   ExperienceLevel,
   PreferredStyle,
   DietType,
+  Sex,
+  UnitSystem,
 } from '../../../../common/enums';
+import { PROFILE_LIMITS } from '../../../fitness-plan/domain/fitness-plan.calculator';
 
+/**
+ * Body for PATCH .../members/me/profile and PATCH .../members/:memberId/profile.
+ * Every field is optional so the onboarding flow can save one step at a time.
+ * Weights and heights are always metric; `unitSystem` is the display preference.
+ */
 export class UpsertMyProfileDto {
   @IsOptional()
   @IsInt()
-  @Min(10)
-  @Max(100)
+  @Min(PROFILE_LIMITS.age.min)
+  @Max(PROFILE_LIMITS.age.max)
   age?: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(20)
-  @Max(500)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(PROFILE_LIMITS.weightKg.min)
+  @Max(PROFILE_LIMITS.weightKg.max)
   weightKg?: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(20)
-  @Max(500)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(PROFILE_LIMITS.weightKg.min)
+  @Max(PROFILE_LIMITS.weightKg.max)
   targetWeightKg?: number;
 
   @IsOptional()
   @IsInt()
-  @Min(50)
-  @Max(300)
+  @Min(PROFILE_LIMITS.heightCm.min)
+  @Max(PROFILE_LIMITS.heightCm.max)
   heightCm?: number;
+
+  @IsOptional()
+  @IsEnum(Sex)
+  sex?: Sex;
+
+  @IsOptional()
+  @IsEnum(UnitSystem)
+  unitSystem?: UnitSystem;
 
   @IsOptional()
   @IsEnum(FitnessGoal)
@@ -62,6 +78,19 @@ export class UpsertMyProfileDto {
   @IsString()
   @Length(0, 500)
   injuries?: string;
+
+  /** Pregnancy or a medical condition. The fitness plan becomes conservative. */
+  @IsOptional()
+  @IsBoolean()
+  healthCaution?: boolean;
+
+  /**
+   * The member's own consent to process their health data. Only honoured on the
+   * member's own profile; staff cannot give or withdraw it on a member's behalf.
+   */
+  @IsOptional()
+  @IsBoolean()
+  healthDataConsent?: boolean;
 
   @IsOptional()
   @IsBoolean()

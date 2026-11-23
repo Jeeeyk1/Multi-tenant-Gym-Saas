@@ -27,10 +27,11 @@ const FITNESS_GOAL_OPTIONS = [
 ];
 
 const ACTIVITY_LEVEL_OPTIONS = [
-  { value: ActivityLevel.BEGINNER,            label: 'Just Starting',      emoji: '🌱' },
-  { value: ActivityLevel.OCCASIONALLY_ACTIVE, label: 'Occasionally Active', emoji: '🚶' },
-  { value: ActivityLevel.PRETTY_ACTIVE,       label: 'Pretty Active',       emoji: '🏋️' },
-  { value: ActivityLevel.VERY_ACTIVE,         label: 'Very Active',         emoji: '⚡' },
+  { value: ActivityLevel.SEDENTARY,   label: 'Mostly Sitting', emoji: '🪑' },
+  { value: ActivityLevel.LIGHT,       label: 'Lightly Active', emoji: '🚶' },
+  { value: ActivityLevel.MODERATE,    label: 'Moderately Active', emoji: '🏋️' },
+  { value: ActivityLevel.VERY_ACTIVE, label: 'Very Active',    emoji: '⚡' },
+  { value: ActivityLevel.ATHLETE,     label: 'Athlete',        emoji: '🏆' },
 ];
 
 const EXPERIENCE_LEVEL_OPTIONS = [

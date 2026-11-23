@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
+import { staffProfileUpdateFromDto, staffVisibleProfile } from '../member-profile';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import type { UpsertMyProfileDto } from '../../presentation/dto/upsert-my-profile.dto';
 
@@ -19,13 +20,7 @@ export class UpsertMemberProfileUseCase {
     const member = await this.repo.findMemberById(memberId, gymId);
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
-    return this.repo.upsertMyProfile(memberId, {
-      age: dto.age,
-      weightKg: dto.weightKg,
-      heightCm: dto.heightCm,
-      fitnessGoal: dto.fitnessGoal,
-      activityLevel: dto.activityLevel,
-      onboardingDone: dto.onboardingDone,
-    });
+    const profile = await this.repo.upsertMyProfile(memberId, staffProfileUpdateFromDto(dto));
+    return staffVisibleProfile(profile);
   }
 }

@@ -6,10 +6,11 @@ import { NotFoundError } from '../../../../common/errors';
 export class ListFoodLogsUseCase {
   constructor(private readonly aiRepository: AiRepository) {}
 
-  async execute(memberId: string, gymId: string, limit = 20) {
-    const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
-    if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+  /** `date` (YYYY-MM-DD) limits the list to that day in the gym's timezone. */
+  async execute(memberId: string, gymId: string, limit = 20, date?: string) {
+    const timezone = await this.aiRepository.findMemberGymTimezone(memberId, gymId);
+    if (!timezone) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
-    return this.aiRepository.listFoodLogs(memberId, limit);
+    return this.aiRepository.listFoodLogs(memberId, limit, date ? { date, timezone } : undefined);
   }
 }

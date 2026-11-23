@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
-import { AiRepository } from '../../infrastructure/persistence/ai.repository';
+import { AiRepository, type MemberContext, type PlanTargets } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError } from '../../../../common/errors';
-import { MealPlanMode } from '../../../../common/enums';
+import { DietType, FitnessGoal, MealPlanMode } from '../../../../common/enums';
 
 const MAX_TOKENS = 1500;
 const FEATURE_KEY = 'meal_suggestion';
@@ -25,7 +25,8 @@ export class MealSuggestionUseCase {
     const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
     if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
-    const prompt = buildMealPrompt(ctx, params);
+    const planTargets = await this.aiRepository.findActivePlanTargets(memberId);
+    const prompt = buildMealPrompt(ctx, params, planTargets);
     const { text, tokensUsed } = await this.aiProvider.chat(prompt, MAX_TOKENS);
 
     const suggestion = extractJson(text);
@@ -50,42 +51,47 @@ function extractJson(raw: string): string {
   return json;
 }
 
-function buildMealPrompt(
-  ctx: {
-    fullName: string;
-    age: number | null;
-    weightKg: number | null;
-    heightCm: number | null;
-    fitnessGoal: string | null;
-    activityLevel: string | null;
-    recentCheckInsCount: number;
-  },
-  params: MealPlanParams,
-): string {
-  const name = ctx.fullName.split(' ')[0];
-  const goal = ctx.fitnessGoal ?? 'IMPROVE_FITNESS';
+const DIET_RULES: Record<DietType, string | null> = {
+  [DietType.NONE]: null,
+  [DietType.VEGETARIAN]: 'Vegetarian: no meat, poultry or fish. Eggs and dairy are fine.',
+  [DietType.VEGAN]: 'Vegan: no animal products at all (no meat, fish, eggs, dairy or honey).',
+  [DietType.HALAL]: 'Halal: no pork, no alcohol, and only halal meat.',
+  [DietType.GLUTEN_FREE]: 'Gluten-free: no wheat, barley or rye (watch soy sauce and breading).',
+};
+
+// The member's name is deliberately not sent to the AI provider: it adds nothing to the plan.
+function buildMealPrompt(ctx: MemberContext, params: MealPlanParams, plan: PlanTargets | null): string {
+  const goal = ctx.fitnessGoal ?? FitnessGoal.GET_FIT;
   const level = ctx.activityLevel ?? 'MODERATE';
+  const dietRule = DIET_RULES[ctx.dietType as DietType] ?? null;
 
   const calorieHint =
-    goal === 'LOSE_WEIGHT'
+    goal === FitnessGoal.LOSE_WEIGHT
       ? 'calorie deficit (focus on lean protein and vegetables)'
-      : goal === 'GAIN_MUSCLE'
+      : goal === FitnessGoal.BUILD_MUSCLE
         ? 'calorie surplus with high protein intake'
         : 'balanced macros for performance and recovery';
 
   const isFullDay = params.mode === MealPlanMode.FULL_DAY;
   const mealCount = params.mealCount ?? 3;
 
+  // Explicit request values win; otherwise use the member's saved plan (a single meal
+  // gets an even share of the day); otherwise let the model estimate.
+  const planShare = isFullDay ? 1 : 1 / mealCount;
+  const targetCalories = params.targetCalories ?? (plan ? Math.round(plan.kcal * planShare) : undefined);
+  const targetProteinG = params.targetProteinG ?? (plan ? Math.round(plan.proteinG * planShare) : undefined);
+
   const requestLines: string[] = [];
-  if (params.targetCalories) {
-    requestLines.push(`- Target calories: ${params.targetCalories} kcal (${isFullDay ? 'for the whole day' : 'for this one meal'})`);
+  if (targetCalories) {
+    requestLines.push(`- Target calories: ${targetCalories} kcal (${isFullDay ? 'for the whole day' : 'for this one meal'})`);
   } else {
     requestLines.push(`- Target calories: estimate an appropriate amount from the profile and goal`);
   }
+  if (targetProteinG != null) {
+    requestLines.push(`- Target protein: ~${targetProteinG} g (${isFullDay ? 'for the whole day' : 'for this one meal'})`);
+  }
   if (isFullDay) {
     requestLines.push(`- Split the day into exactly ${mealCount} meals`);
-  } else if (params.targetProteinG != null) {
-    requestLines.push(`- Target protein for this meal: ~${params.targetProteinG} g`);
   }
 
   const task = isFullDay
@@ -96,7 +102,7 @@ function buildMealPrompt(
     ? `"meals" must contain exactly ${mealCount} entries covering the day.`
     : `"meals" must contain exactly 1 entry (the single meal).`;
 
-  return `You are a sports nutritionist at a gym. ${task} Personalise it for ${name}.
+  return `You are a sports nutritionist at a gym. ${task} Personalise it for this member.
 
 Member profile:
 - Age: ${ctx.age ?? 'unknown'}
@@ -105,6 +111,7 @@ Member profile:
 - Goal: ${goal.replace(/_/g, ' ')}
 - Activity level: ${level.replace(/_/g, ' ')}
 - Gym sessions in last 30 days: ${ctx.recentCheckInsCount}
+- Diet: ${dietRule ?? 'no restrictions'}
 
 Request:
 ${requestLines.join('\n')}
@@ -134,7 +141,7 @@ Schema:
 
 Rules:
 - ${mealsSchemaNote}
-- Use realistic Filipino-friendly foods and portions where sensible.
+- Use realistic Filipino-friendly foods and portions where sensible.${dietRule ? `\n- Every item must follow the diet: ${dietRule}` : ''}
 - Keep each tip under 15 words. Provide 2-3 tips.
 - All macro numbers are grams, calories are kcal, integers only.`;
 }

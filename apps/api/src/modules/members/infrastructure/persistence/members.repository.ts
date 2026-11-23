@@ -20,7 +20,7 @@ function generateQrToken(): string {
 export interface ProfileUpdateData {
   age?: number;
   weightKg?: number;
-  targetWeightKg?: number;
+  targetWeightKg?: number | null;
   heightCm?: number;
   sex?: string;
   unitSystem?: string;
@@ -30,7 +30,7 @@ export interface ProfileUpdateData {
   experienceLevel?: string;
   preferredStyle?: string;
   dietType?: string;
-  injuries?: string;
+  injuries?: string | null;
   healthCaution?: boolean;
   /** null withdraws consent; undefined leaves it unchanged. */
   healthDataConsentAt?: Date | null;

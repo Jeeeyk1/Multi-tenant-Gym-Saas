@@ -64,6 +64,14 @@ describe('UpsertMyProfileUseCase', () => {
     );
   });
 
+  it('passes null through so a goal weight or injury note can be cleared', async () => {
+    await useCase.execute('gym-1', { targetWeightKg: null, injuries: null }, caller());
+    expect(mockRepo.upsertMyProfile).toHaveBeenCalledWith(
+      'member-1',
+      expect.objectContaining({ targetWeightKg: null, injuries: null }),
+    );
+  });
+
   it('records consent the first time it is given', async () => {
     mockRepo.findMyProfile.mockResolvedValue(null);
     await useCase.execute('gym-1', { healthDataConsent: true }, caller());

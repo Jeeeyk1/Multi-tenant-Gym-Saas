@@ -8,6 +8,7 @@ import type {
   MemberBadge,
   MemberPrivacy,
   MemberProfile,
+  MemberProfileUpdate,
   MembershipRenewal,
   PublicActiveCheckinsResult,
 } from '../types';
@@ -192,7 +193,7 @@ export function useUpdateMyProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Omit<MemberProfile, 'id' | 'memberId'>>) => {
+    mutationFn: (data: MemberProfileUpdate) => {
       if (!gymId) throw new Error('Not authenticated');
       return memberService.updateMyProfile(gymId, data);
     },

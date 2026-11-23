@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { MemberAiLimitsService } from '../member-ai-limits.service';
+import { parseAiJson } from '../parse-ai-json';
 import { AiRepository, type MemberContext } from '../../infrastructure/persistence/ai.repository';
-import { NotFoundError, ValidationError } from '../../../../common/errors';
+import { AiResponseError, NotFoundError, ValidationError } from '../../../../common/errors';
 import { AiFeature, WorkoutEmphasis } from '../../../../common/enums';
 import { EMPHASIS_INSTRUCTION, emphasisFromGoal } from './workout-suggestion.use-case';
 
@@ -99,13 +100,8 @@ export class SwapWorkoutExerciseUseCase {
 }
 
 function parseExercise(raw: string): PlanExercise {
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('AI did not return a valid exercise');
-  const obj = JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
-  if (typeof obj.name !== 'string' || !obj.name.trim()) {
-    throw new Error('AI did not return a valid exercise name');
-  }
+  const obj = parseAiJson(raw);
+  if (typeof obj.name !== 'string' || !obj.name.trim()) throw new AiResponseError();
   return {
     name: obj.name.trim(),
     sets: typeof obj.sets === 'number' ? obj.sets : null,

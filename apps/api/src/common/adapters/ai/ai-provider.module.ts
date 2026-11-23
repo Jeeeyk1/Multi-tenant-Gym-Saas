@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AI_PROVIDER_PORT } from './ai-provider.port';
-import { GroqProvider } from './groq.provider';
+import { GroqProvider, type ReasoningEffort } from './groq.provider';
 import { AnthropicProvider } from './anthropic.provider';
 
 @Module({
@@ -23,7 +23,8 @@ import { AnthropicProvider } from './anthropic.provider';
 
         // Default: Groq (OpenAI-compatible)
         const baseURL = config.get<string>('AI_BASE_URL', 'https://api.groq.com/openai/v1');
-        return new GroqProvider(apiKey, baseURL, model);
+        const reasoningEffort = config.get<ReasoningEffort>('AI_REASONING_EFFORT', 'low');
+        return new GroqProvider(apiKey, baseURL, model, reasoningEffort);
       },
     },
   ],

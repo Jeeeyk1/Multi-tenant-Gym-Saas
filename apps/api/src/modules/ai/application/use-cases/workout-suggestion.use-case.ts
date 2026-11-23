@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { MemberAiLimitsService } from '../member-ai-limits.service';
+import { parseAiJson } from '../parse-ai-json';
 import { AiRepository, type MemberContext } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError } from '../../../../common/errors';
 import { AiFeature, WorkoutEmphasis, WorkoutFocus } from '../../../../common/enums';
@@ -34,7 +35,7 @@ export class WorkoutSuggestionUseCase {
 
     // Persist the goal/focus alongside the plan so a later single-exercise swap can honour the
     // "same target and goal" the plan was built with, even after the app reloads.
-    const plan = JSON.parse(extractJson(text)) as Record<string, unknown>;
+    const plan = parseAiJson(text);
     plan.meta = {
       emphasis: request.emphasis ?? emphasisFromGoal(ctx.fitnessGoal),
       focus: request.focus ?? WorkoutFocus.AUTO,
@@ -45,15 +46,6 @@ export class WorkoutSuggestionUseCase {
 
     return { suggestion };
   }
-}
-
-function extractJson(raw: string): string {
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('AI did not return valid JSON');
-  const json = raw.slice(start, end + 1);
-  JSON.parse(json);
-  return json;
 }
 
 /** Maps a member's onboarding fitness goal to a per-plan training emphasis. */

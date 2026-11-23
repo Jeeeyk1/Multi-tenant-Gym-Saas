@@ -2,9 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { VISION_PROVIDER_PORT, type VisionProviderPort } from '../../../../common/adapters/ai/vision-provider.port';
 import { MemberAiLimitsService } from '../member-ai-limits.service';
+import { parseAiJson } from '../parse-ai-json';
 import { AiRepository } from '../../infrastructure/persistence/ai.repository';
 import { AiFeature } from '../../../../common/enums';
-import { NotFoundError } from '../../../../common/errors';
+import { AiResponseError, NotFoundError } from '../../../../common/errors';
 
 const TEXT_MAX_TOKENS = 512;
 const VISION_MAX_TOKENS = 768;
@@ -71,14 +72,12 @@ ${JSON_SHAPE}`;
       rawText = res.text;
     }
 
-    let analysis: MealAnalysis;
-    try {
-      analysis = JSON.parse(rawText) as MealAnalysis;
-    } catch {
-      const cleaned = rawText.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-      analysis = JSON.parse(cleaned) as MealAnalysis;
+    const analysis = parseAiJson<MealAnalysis>(rawText);
+    // Every number must be present: the app saves them straight into the food log.
+    const numbers = [analysis.calories, analysis.proteinG, analysis.carbsG, analysis.fatG];
+    if (!numbers.every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0)) {
+      throw new AiResponseError();
     }
-
     return analysis;
   }
 }

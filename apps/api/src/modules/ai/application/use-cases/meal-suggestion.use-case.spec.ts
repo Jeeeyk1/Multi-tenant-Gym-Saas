@@ -72,6 +72,34 @@ describe('MealSuggestionUseCase prompt', () => {
     expect(sentPrompt()).toContain('Target protein: ~26 g');
   });
 
+  it('accepts a single meal below 800 kcal', async () => {
+    await new MealSuggestionUseCase(mockProvider, mockRepo, mockLimits).execute('member-1', 'gym-1', {
+      mode: MealPlanMode.SINGLE_MEAL,
+      targetCalories: 600,
+    });
+    expect(sentPrompt()).toContain('Target calories: 600 kcal (for this one meal)');
+  });
+
+  it('rejects a full day below 800 kcal before calling the AI', async () => {
+    await expect(
+      new MealSuggestionUseCase(mockProvider, mockRepo, mockLimits).execute('member-1', 'gym-1', {
+        mode: MealPlanMode.FULL_DAY,
+        targetCalories: 600,
+      }),
+    ).rejects.toMatchObject({ code: 'TARGET_CALORIES_TOO_LOW' });
+    expect(mockProvider.chat).not.toHaveBeenCalled();
+  });
+
+  it('turns an empty AI reply into a retryable 502', async () => {
+    mockProvider.chat.mockResolvedValue({ text: '', tokensUsed: 1500 } as never);
+    await expect(
+      new MealSuggestionUseCase(mockProvider, mockRepo, mockLimits).execute('member-1', 'gym-1', {
+        mode: MealPlanMode.SINGLE_MEAL,
+      }),
+    ).rejects.toMatchObject({ statusCode: 502, code: 'AI_BAD_RESPONSE' });
+    expect(mockRepo.saveMealPlan).not.toHaveBeenCalled();
+  });
+
   it('runs the AI call through the monthly limit', async () => {
     mockLimits.run.mockRejectedValue(Object.assign(new Error('limit'), { code: 'MEMBER_AI_LIMIT_REACHED' }));
     await expect(

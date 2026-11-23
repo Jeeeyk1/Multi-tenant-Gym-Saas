@@ -7,7 +7,12 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
-import { useActivePublicCheckins, useMyMember, useMyCheckIns } from '../../hooks/members';
+import { useActivePublicCheckins, useMyMember, useMyCheckIns, useMyProfile } from '../../hooks/members';
+import { useCurrentFitnessPlan, useDailyNutrition } from '../../hooks/fitness-plan';
+import { TodayCard } from '../../components/dashboard/TodayCard';
+import { SetupPlanCard } from '../../components/dashboard/SetupPlanCard';
+import { WeightCard } from '../../components/dashboard/WeightCard';
+import { UnitSystem } from '../../constants/enums';
 import { GreetingBanner } from '../../components/GreetingBanner';
 import { MembershipCard } from '../../components/MembershipCard';
 import { useWorkout } from '../../context/WorkoutContext';
@@ -45,6 +50,9 @@ export default function DashboardScreen() {
   const memberQ = useMyMember();
   const checkInsQ = useMyCheckIns(7);
   const whosHereQ = useActivePublicCheckins();
+  const planQ = useCurrentFitnessPlan();
+  const dailyQ = useDailyNutrition();
+  const profileQ = useMyProfile();
 
   const isLoading = memberQ.isLoading || checkInsQ.isLoading;
   const refreshing = memberQ.isRefetching || checkInsQ.isRefetching;
@@ -58,6 +66,8 @@ export default function DashboardScreen() {
   function handleRefresh() {
     memberQ.refetch();
     checkInsQ.refetch();
+    planQ.refetch();
+    dailyQ.refetch();
   }
 
   const s = useMemo(() => StyleSheet.create({
@@ -213,6 +223,25 @@ export default function DashboardScreen() {
         </View>
       )}
 
+      {/* Daily plan: set it up, or track today against it */}
+      {planQ.data === null && (
+        <SetupPlanCard
+          title="Set up your plan"
+          subtitle="One minute to get your daily calorie and protein targets."
+          onPress={() => router.push('/onboarding')}
+        />
+      )}
+      {dailyQ.data?.targets && (
+        <TodayCard data={dailyQ.data} onPress={() => router.push('/(member)/nutrition')} />
+      )}
+      {planQ.data && (
+        <WeightCard
+          plan={planQ.data}
+          imperial={profileQ.data?.unitSystem === UnitSystem.IMPERIAL}
+          onGoalReached={() => router.push('/onboarding')}
+        />
+      )}
+
       {member && <MembershipCard member={member} />}
 
       {/* AI Coach — headline feature, kept prominent so members discover it */}
@@ -290,6 +319,13 @@ export default function DashboardScreen() {
         >
           <Ionicons name="barbell-outline" size={24} color={theme.primary} />
           <Text style={s.quickActionLabel}>Start Workout</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [s.quickActionBtn, pressed && { opacity: 0.8 }]}
+          onPress={() => router.push('/(member)/nutrition')}
+        >
+          <Ionicons name="restaurant-outline" size={24} color={theme.primary} />
+          <Text style={s.quickActionLabel}>Log Meal</Text>
         </Pressable>
       </View>
 

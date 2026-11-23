@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { STALE } from '../lib/query-client';
 import { fitnessPlanService } from '../services/fitness-plan.service';
-import { useMyMember } from './members';
+import { memberKeys, useMyMember } from './members';
 
 export const fitnessPlanKeys = {
   all: ['fitness-plan'] as const,
@@ -12,6 +12,8 @@ export const fitnessPlanKeys = {
     [...fitnessPlanKeys.all, 'current', gymId, memberId] as const,
   daily: (gymId: string | undefined, memberId: string | undefined, date: string | undefined) =>
     [...fitnessPlanKeys.all, 'daily', gymId, memberId, date ?? 'today'] as const,
+  weights: (gymId: string | undefined, memberId: string | undefined) =>
+    [...fitnessPlanKeys.all, 'weights', gymId, memberId] as const,
 };
 
 function useIds() {
@@ -65,5 +67,31 @@ export function useDailyNutrition(date?: string) {
     queryKey: fitnessPlanKeys.daily(gymId, memberId, date),
     queryFn: () => fitnessPlanService.getDailyNutrition(gymId!, memberId!, date),
     enabled: Boolean(gymId && memberId),
+  });
+}
+
+export function useWeightLogs() {
+  const { gymId, memberId } = useIds();
+  return useQuery({
+    queryKey: fitnessPlanKeys.weights(gymId, memberId),
+    queryFn: () => fitnessPlanService.getWeightLogs(gymId!, memberId!),
+    enabled: Boolean(gymId && memberId),
+  });
+}
+
+/** Log a weigh-in; refreshes the plan, today's targets and the weight history. */
+export function useWeighIn() {
+  const { gymId, memberId } = useIds();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (weightKg: number) => fitnessPlanService.weighIn(gymId!, memberId!, weightKg),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...fitnessPlanKeys.all, 'current'] });
+      queryClient.invalidateQueries({ queryKey: [...fitnessPlanKeys.all, 'daily'] });
+      queryClient.invalidateQueries({ queryKey: [...fitnessPlanKeys.all, 'weights'] });
+      // The API also writes the new weight to the profile; refresh it so screens that
+      // prefill from the profile (e.g. onboarding) don't send the old weight back.
+      queryClient.invalidateQueries({ queryKey: memberKeys.myProfile(gymId) });
+    },
   });
 }

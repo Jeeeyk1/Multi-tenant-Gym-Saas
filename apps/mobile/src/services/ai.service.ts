@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { WorkoutSuggestion, WorkoutPlanRequest, WorkoutExercise, MealSuggestion, MealPlanRequest, MealAnalysis, FoodLog, ExerciseInstructions } from '../types';
+import type { WorkoutSuggestion, WorkoutPlanRequest, WorkoutExercise, MealSuggestion, MealPlanRequest, MealAnalysis, FoodLog, ExerciseInstructions, AiUsage } from '../types';
 
 export const aiService = {
   getLatestWorkoutPlan: (gymId: string, memberId: string) =>
@@ -52,8 +52,15 @@ export const aiService = {
     },
   ) => api.post<FoodLog>(`/gyms/${gymId}/members/${memberId}/food-logs`, data),
 
-  listFoodLogs: (gymId: string, memberId: string, limit = 20) =>
-    api.get<FoodLog[]>(`/gyms/${gymId}/members/${memberId}/food-logs?limit=${limit}`),
+  /** `date` (YYYY-MM-DD, gym timezone) limits the list to that day. */
+  listFoodLogs: (gymId: string, memberId: string, limit = 20, date?: string) =>
+    api.get<FoodLog[]>(
+      `/gyms/${gymId}/members/${memberId}/food-logs?limit=${limit}${date ? `&date=${date}` : ''}`,
+    ),
+
+  /** How much of each AI feature the member has left this month. */
+  getUsage: (gymId: string, memberId: string) =>
+    api.get<AiUsage>(`/gyms/${gymId}/members/${memberId}/ai/usage`),
 
   getExerciseInstructions: (gymId: string, memberId: string, exerciseName: string) =>
     api.post<ExerciseInstructions>(`/gyms/${gymId}/members/${memberId}/ai/exercise-instructions`, { exerciseName }),

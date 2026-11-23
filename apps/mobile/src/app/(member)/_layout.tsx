@@ -108,6 +108,7 @@ export default function MemberLayout() {
       <Tabs.Screen name="workout-history" options={HIDDEN} />
       <Tabs.Screen name="whos-here" options={HIDDEN} />
       <Tabs.Screen name="membership" options={HIDDEN} />
+      <Tabs.Screen name="nutrition" options={HIDDEN} />
     </Tabs>
   );
 }

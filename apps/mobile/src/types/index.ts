@@ -584,3 +584,33 @@ export interface InsightsHistoryTurn {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface WeightLog {
+  id: string;
+  /** Decimal from the API — normalise with toNumber(). */
+  weightKg: string | number;
+  notes: string | null;
+  loggedAt: string;
+}
+
+export interface WeighInResult {
+  weightKg: number;
+  loggedAt: string;
+  /** At (or within 0.5 kg of) the active plan's goal weight. */
+  goalReached: boolean;
+  /** The plan was recalculated because weight moved 2 kg or more. */
+  planUpdated: boolean;
+  plan: FitnessPlan | null;
+}
+
+export interface AiFeatureUsage {
+  feature: string;
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
+export interface AiUsage {
+  resetsAt: string;
+  features: AiFeatureUsage[];
+}

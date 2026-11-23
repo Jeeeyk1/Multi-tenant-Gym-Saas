@@ -11,9 +11,10 @@ export class GenerateMealPlanDto {
   @IsEnum(MealPlanMode)
   mode!: MealPlanMode;
 
+  /** Whole day for FULL_DAY (at least 800, checked in the use case), one meal for SINGLE_MEAL. */
   @IsOptional()
   @IsInt()
-  @Min(800)
+  @Min(100)
   @Max(6000)
   targetCalories?: number;
 

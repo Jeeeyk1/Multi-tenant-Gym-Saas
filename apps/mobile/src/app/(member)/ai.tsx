@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useMyMember, useMyProfile } from '../../hooks/members';
 import { AiGeneratingLoader } from '../../components/AiGeneratingLoader';
 import { aiService } from '../../services/ai.service';
+import { formatApiError } from '../../lib/format-error';
 import { SPACING, FONT, RADIUS, type ColorPalette } from '../../constants/theme';
 import type { FoodLog, MealAnalysis, MealPlan, MealPlanMode, MealPlanRequest, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions, WorkoutPlanRequest, WorkoutFocus, WorkoutEmphasis } from '../../types';
 
@@ -128,8 +129,8 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
       try {
         const res = await aiService.getWorkoutSuggestion(gymId, memberId, params);
         applyPlan(JSON.parse(res.suggestion), new Date().toISOString());
-      } catch {
-        Alert.alert('Error', 'Could not generate workout plan. Try again.');
+      } catch (err) {
+        Alert.alert('Error', formatApiError(err, 'Could not generate workout plan. Try again.'));
       } finally {
         setLoading(false);
       }
@@ -1007,8 +1008,8 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
         const res = await aiService.getMealSuggestion(gymId, memberId, params);
         setSuggestion(res.suggestion);
         setGeneratedAt(new Date().toISOString());
-      } catch {
-        Alert.alert('Error', 'Could not generate meal plan. Try again.');
+      } catch (err) {
+        Alert.alert('Error', formatApiError(err, 'Could not generate meal plan. Try again.'));
       } finally {
         setLoading(false);
       }
@@ -1502,15 +1503,16 @@ function LogMealModal({
     try {
       const log = await aiService.logFood(gymId, memberId, {
         description: note.trim() || analysis.description,
-        calories: analysis.calories,
-        proteinG: analysis.proteinG,
-        carbsG: analysis.carbsG,
-        fatG: analysis.fatG,
+        // The API takes whole calories and macros with at most one decimal.
+        calories: Math.round(analysis.calories),
+        proteinG: Math.round(analysis.proteinG * 10) / 10,
+        carbsG: Math.round(analysis.carbsG * 10) / 10,
+        fatG: Math.round(analysis.fatG * 10) / 10,
       });
       onLogged(log);
       reset();
-    } catch {
-      Alert.alert('Error', 'Could not save the meal log.');
+    } catch (err) {
+      Alert.alert('Error', formatApiError(err, 'Could not save the meal log.'));
     } finally {
       setSaving(false);
     }

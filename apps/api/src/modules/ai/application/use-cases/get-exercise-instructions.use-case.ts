@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { MemberAiLimitsService } from '../member-ai-limits.service';
+import { parseAiJson } from '../parse-ai-json';
 import { AiRepository } from '../../infrastructure/persistence/ai.repository';
 import { AiFeature } from '../../../../common/enums';
 import { NotFoundError } from '../../../../common/errors';
@@ -46,9 +47,6 @@ Keep every step to one concise action. Avoid generic filler.`;
       this.aiProvider.chat(prompt, MAX_TOKENS),
     );
 
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('AI did not return valid JSON');
-    return JSON.parse(text.slice(start, end + 1));
+    return parseAiJson(text);
   }
 }

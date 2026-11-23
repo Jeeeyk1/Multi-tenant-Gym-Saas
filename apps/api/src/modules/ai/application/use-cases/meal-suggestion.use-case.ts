@@ -1,11 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AI_PROVIDER_PORT, type AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import { MemberAiLimitsService } from '../member-ai-limits.service';
+import { parseAiJson } from '../parse-ai-json';
 import { AiRepository, type MemberContext, type PlanTargets } from '../../infrastructure/persistence/ai.repository';
-import { NotFoundError } from '../../../../common/errors';
+import { NotFoundError, ValidationError } from '../../../../common/errors';
 import { AiFeature, DietType, FitnessGoal, MealPlanMode } from '../../../../common/enums';
 
 const MAX_TOKENS = 1500;
+// Below this a full day of eating isn't a safe target.
+const MIN_FULL_DAY_KCAL = 800;
 
 export interface MealPlanParams {
   mode: MealPlanMode;
@@ -25,6 +28,9 @@ export class MealSuggestionUseCase {
   async execute(memberId: string, gymId: string, params: MealPlanParams): Promise<{ suggestion: string }> {
     const ctx = await this.aiRepository.findMemberContext(memberId, gymId);
     if (!ctx) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+    if (params.mode === MealPlanMode.FULL_DAY && params.targetCalories !== undefined && params.targetCalories < MIN_FULL_DAY_KCAL) {
+      throw new ValidationError(`A full day needs at least ${MIN_FULL_DAY_KCAL} kcal`, 'TARGET_CALORIES_TOO_LOW');
+    }
 
     const plan = await this.aiRepository.findActivePlanTargets(memberId);
     const eatenToday =
@@ -36,7 +42,7 @@ export class MealSuggestionUseCase {
       this.aiProvider.chat(prompt, MAX_TOKENS),
     );
 
-    const suggestion = extractJson(text);
+    const suggestion = JSON.stringify(parseAiJson(text));
 
     // Persist so the plan survives app navigation/reopen instead of living only
     // in mobile component state (mirrors saveWorkoutPlan).
@@ -46,14 +52,6 @@ export class MealSuggestionUseCase {
   }
 }
 
-function extractJson(raw: string): string {
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('AI did not return valid JSON');
-  const json = raw.slice(start, end + 1);
-  JSON.parse(json);
-  return json;
-}
 
 const DIET_RULES: Record<DietType, string | null> = {
   [DietType.NONE]: null,

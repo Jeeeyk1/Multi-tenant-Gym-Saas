@@ -3,6 +3,7 @@ import type {
   GymMember,
   CheckIn,
   MemberProfile,
+  MemberProfileUpdate,
   MemberBadge,
   MembershipRenewal,
   EquippedBadgeRow,
@@ -23,7 +24,7 @@ export const memberService = {
   getMyProfile: (gymId: string) =>
     api.get<MemberProfile>(`/gyms/${gymId}/members/me/profile`),
 
-  updateMyProfile: (gymId: string, data: Partial<Omit<MemberProfile, 'id' | 'memberId'>>) =>
+  updateMyProfile: (gymId: string, data: MemberProfileUpdate) =>
     api.patch<MemberProfile>(`/gyms/${gymId}/members/me/profile`, data),
 
   registerDeviceToken: (gymId: string, token: string, platform: 'ios' | 'android') =>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Text } from '../../components/Text';
 import QRCode from 'react-native-qrcode-svg';
@@ -449,6 +450,8 @@ function EditProfileModal({ visible, initialForm, onClose }: {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  // Tab screens hide the header, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuth();
   const { theme, toggleColorScheme } = useTheme();
   const C = theme.colors;
@@ -472,7 +475,7 @@ export default function ProfileScreen() {
 
   const s = useMemo(() => StyleSheet.create({
     root: { flex: 1, backgroundColor: C.background },
-    content: { paddingTop: 60, paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.md, gap: SPACING.md },
+    content: { paddingBottom: SPACING.xxl, paddingHorizontal: SPACING.md, gap: SPACING.md },
     centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
     avatarWrap: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.lg },
     avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xs },
@@ -527,7 +530,7 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <ScrollView style={s.root} contentContainerStyle={s.content}>
+      <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.md }]}>
         {/* Avatar */}
         <View style={s.avatarWrap}>
           <View style={[s.avatar, { backgroundColor: theme.primary }]}>

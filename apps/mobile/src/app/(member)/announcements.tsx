@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Modal } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
@@ -23,6 +24,8 @@ export default function AnnouncementsScreen() {
   const { theme } = useTheme();
   const C = theme.colors;
   const router = useRouter();
+  // No header on this screen, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
   const announcementsQ = useAnnouncements();
   const markRead = useMarkAnnouncementRead();
   const [selected, setSelected] = useState<Announcement | null>(null);
@@ -87,7 +90,7 @@ export default function AnnouncementsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => announcementsQ.refetch()} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >

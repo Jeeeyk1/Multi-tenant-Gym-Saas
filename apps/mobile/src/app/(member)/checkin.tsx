@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Pressable, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,8 @@ const BUTTON_SIZE = 190;
 
 export default function CheckInScreen() {
   const { user } = useAuth();
+  // Tab screens hide the header, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const C = theme.colors;
   const selfCheckIn = useSelfCheckIn();
@@ -127,7 +130,7 @@ export default function CheckInScreen() {
       fontSize: 26,
       ...FONT.bold,
       color: C.text,
-      marginTop: SPACING.xl + SPACING.md,
+      marginTop: SPACING.lg,
       marginBottom: 4,
       alignSelf: 'flex-start',
     },
@@ -192,14 +195,14 @@ export default function CheckInScreen() {
   }), [C]);
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { paddingTop: insets.top }]}>
       <Text style={s.heading}>Check In</Text>
       <Text style={s.subheading}>Tap to record your visit</Text>
 
       {isSuccess && checkIn && (
         <Animated.View style={[s.successBox, { opacity: mascotOpacity }]}>
           <AnimatedMascot size="md" />
-          <Text style={s.successTitle}>You&apos;re in! 🎉</Text>
+          <Text style={s.successTitle}>You&apos;re in!</Text>
           <Text style={s.successTime}>
             {new Date(checkIn.checkedInAt).toLocaleTimeString('en-US', {
               hour: '2-digit',

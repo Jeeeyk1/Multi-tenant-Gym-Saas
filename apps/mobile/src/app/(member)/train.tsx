@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -62,6 +63,8 @@ function relativeDay(iso: string) {
 
 export default function TrainScreen() {
   const router = useRouter();
+  // Tab screens hide the header, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const C = theme.colors;
   const { activeSession } = useWorkout();
@@ -218,7 +221,7 @@ export default function TrainScreen() {
   return (
     <ScrollView
       style={s.container}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.sm }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={() => sessionsQ.refetch()} tintColor={theme.primary} />
       }

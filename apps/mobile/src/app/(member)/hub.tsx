@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +43,8 @@ const HUB_ITEMS: HubItem[] = [
 
 export default function HubScreen() {
   const router = useRouter();
+  // Tab screens hide the header, so keep content clear of the notch / status bar.
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const C = theme.colors;
 
@@ -81,7 +84,7 @@ export default function HubScreen() {
   return (
     <ScrollView
       style={s.container}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.sm }]}
       showsVerticalScrollIndicator={false}
     >
       <Text style={s.pageTitle}>Community</Text>

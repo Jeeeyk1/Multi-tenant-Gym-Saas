@@ -1,7 +1,7 @@
 import { MealSuggestionUseCase, defaultMealTargets } from './meal-suggestion.use-case';
 import type { AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
 import type { AiRepository, MemberContext } from '../../infrastructure/persistence/ai.repository';
-import { AiFeature, MealPlanMode } from '../../../../common/enums';
+import { AiFeature, MealPlanMode, MealStyle } from '../../../../common/enums';
 import type { MemberAiLimitsService } from '../member-ai-limits.service';
 
 const mockLimits = { run: jest.fn() } as unknown as jest.Mocked<MemberAiLimitsService>;
@@ -98,6 +98,14 @@ describe('MealSuggestionUseCase prompt', () => {
       }),
     ).rejects.toMatchObject({ statusCode: 502, code: 'AI_BAD_RESPONSE' });
     expect(mockRepo.saveMealPlan).not.toHaveBeenCalled();
+  });
+
+  it('passes the chosen style to the prompt', async () => {
+    await new MealSuggestionUseCase(mockProvider, mockRepo, mockLimits).execute('member-1', 'gym-1', {
+      mode: MealPlanMode.SINGLE_MEAL,
+      style: MealStyle.BUDGET,
+    });
+    expect(sentPrompt()).toContain('Style: Budget-friendly');
   });
 
   it('runs the AI call through the monthly limit', async () => {

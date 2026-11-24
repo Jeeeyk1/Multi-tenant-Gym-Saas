@@ -117,6 +117,7 @@ export class AiController {
       targetCalories: dto.targetCalories,
       mealCount: dto.mealCount,
       targetProteinG: dto.targetProteinG,
+      style: dto.style,
     });
   }
 

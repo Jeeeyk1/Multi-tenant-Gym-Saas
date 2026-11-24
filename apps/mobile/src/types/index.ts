@@ -392,11 +392,15 @@ export interface MealSuggestion {
 
 export type MealPlanMode = 'FULL_DAY' | 'SINGLE_MEAL';
 
+/** Optional steer for a meal suggestion (apps/api MealStyle). */
+export type MealStyle = 'QUICK' | 'BUDGET' | 'HIGH_PROTEIN' | 'LIGHT';
+
 export interface MealPlanRequest {
   mode: MealPlanMode;
   targetCalories?: number;
   mealCount?: number;
   targetProteinG?: number;
+  style?: MealStyle;
 }
 
 export interface PlannedMeal {

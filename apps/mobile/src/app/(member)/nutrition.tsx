@@ -1,22 +1,19 @@
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Text } from '../../components/Text';
 import { useTheme } from '../../context/ThemeContext';
 import { useDailyNutrition } from '../../hooks/fitness-plan';
-import { useAiUsage, useAnalyseMeal, useFoodLogs, useLogFood, useMealIdea } from '../../hooks/nutrition';
+import { useFoodLogs } from '../../hooks/nutrition';
 import { TodayCard } from '../../components/dashboard/TodayCard';
 import { SetupPlanCard } from '../../components/dashboard/SetupPlanCard';
-import { NumberField, Notice, PrimaryButton, SegmentedToggle, TextButton } from '../../components/onboarding/controls';
+import { Notice, TextButton } from '../../components/onboarding/controls';
+import { AddMealSheet } from '../../components/nutrition/AddMealSheet';
+import { MealIdeaSheet } from '../../components/nutrition/MealIdeaSheet';
 import { formatApiError } from '../../lib/format-error';
-import { toNumber } from '../../lib/units';
-import type { MealAnalysis, MealPlan } from '../../types';
-
-// ai_usage_log feature keys (apps/api AiFeature)
-const FEATURE_MEAL_TEXT = 'analyse_meal_text';
-const FEATURE_MEAL_IDEA = 'meal_suggestion';
+import { useReduceMotion } from '../../components/onboarding/use-reduce-motion';
 
 function shiftDate(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -35,7 +32,34 @@ function dayLabel(date: string, today: string): string {
   });
 }
 
-type AddMode = 'ai' | 'manual';
+/** A short confirmation that slides in after logging, then fades away. */
+function useToast() {
+  const reduceMotion = useReduceMotion();
+  const [message, setMessage] = useState<string | null>(null);
+  const anim = useRef(new Animated.Value(0)).current;
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function show(text: string) {
+    if (timer.current) clearTimeout(timer.current);
+    setMessage(text);
+    // accessibilityLiveRegion only works on Android; announce for VoiceOver too.
+    AccessibilityInfo.announceForAccessibility(text);
+    anim.setValue(reduceMotion ? 1 : 0);
+    if (!reduceMotion) Animated.spring(anim, { toValue: 1, friction: 7, tension: 110, useNativeDriver: true }).start();
+    timer.current = setTimeout(() => {
+      // Only clear if the fade finished; a new toast during the fade interrupts it.
+      Animated.timing(anim, { toValue: 0, duration: 250, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) setMessage(null);
+      });
+    }, 3200);
+  }
+
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  return { message, anim, show };
+}
 
 export default function NutritionScreen() {
   const router = useRouter();
@@ -53,66 +77,12 @@ export default function NutritionScreen() {
   const isToday = shownDate !== undefined && shownDate === todayDate;
 
   const logsQ = useFoodLogs(shownDate);
-  const usageQ = useAiUsage();
-  const remaining = (feature: string) => usageQ.data?.features.find((f) => f.feature === feature)?.remaining;
-
-  const analyse = useAnalyseMeal();
-  const mealIdea = useMealIdea();
-  const logFood = useLogFood();
-
-  const [mode, setMode] = useState<AddMode>('ai');
-  const [description, setDescription] = useState('');
-  const [estimate, setEstimate] = useState<MealAnalysis | null>(null);
-  const [kcal, setKcal] = useState('');
-  const [protein, setProtein] = useState('');
-  const [idea, setIdea] = useState<MealPlan | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function resetForm() {
-    setDescription('');
-    setEstimate(null);
-    setKcal('');
-    setProtein('');
-  }
-
-  async function runEstimate() {
-    setError(null);
-    try {
-      setEstimate(await analyse.mutateAsync(description.trim()));
-    } catch (err) {
-      setError(formatApiError(err, 'Could not estimate this meal.'));
-    }
-  }
-
-  /** Returns false when saving failed (the error is shown). */
-  async function save(data: Parameters<typeof logFood.mutateAsync>[0]): Promise<boolean> {
-    setError(null);
-    try {
-      await logFood.mutateAsync(data);
-      resetForm();
-      return true;
-    } catch (err) {
-      setError(formatApiError(err, 'Could not save this meal.'));
-      return false;
-    }
-  }
-
-  async function suggest() {
-    setError(null);
-    try {
-      setIdea(await mealIdea.mutateAsync());
-    } catch (err) {
-      setError(formatApiError(err, 'Could not get a meal idea.'));
-    }
-  }
-
-  const mealTextLeft = remaining(FEATURE_MEAL_TEXT);
-  const ideasLeft = remaining(FEATURE_MEAL_IDEA);
-  const ideaMeal = idea?.meals[0];
+  const [sheet, setSheet] = useState<'add' | 'idea' | null>(null);
+  const toast = useToast();
+  const remaining = dailyQ.data?.remaining ?? null;
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: C.background }]} edges={['top']}>
-      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" hitSlop={10}>
             <Ionicons name="chevron-back" size={24} color={C.text} />
@@ -168,160 +138,40 @@ export default function NutritionScreen() {
             />
           ) : null}
 
-          {error && <Notice tone="error">{error}</Notice>}
-
-          {/* Add a meal (today only — the API logs meals at the current time) */}
+          {/* Log a meal / meal idea — today only (meals are logged at the current time) */}
           {isToday && (
-            <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.border }]}>
-              <View style={styles.cardHead}>
-                <Text variant="h3" style={{ color: C.text, flex: 1 }}>
-                  Add a meal
-                </Text>
-                <SegmentedToggle
-                  options={[
-                    { value: 'ai', label: 'Describe' },
-                    { value: 'manual', label: 'Numbers' },
+            <View style={styles.actions}>
+              <Pressable
+                onPress={() => setSheet('add')}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.actionMain, { backgroundColor: theme.primary }, pressed && { opacity: 0.9 }]}
+              >
+                <Ionicons name="add-circle" size={24} color={C.onPrimary} />
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodyMed" style={{ color: C.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
+                    Log a meal
+                  </Text>
+                  <Text variant="caption" style={{ color: C.onPrimary, opacity: 0.85 }}>
+                    Snap, describe or re-log
+                  </Text>
+                </View>
+              </Pressable>
+              {remaining && (
+                <Pressable
+                  onPress={() => setSheet('idea')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Meal idea"
+                  style={({ pressed }) => [
+                    styles.actionSide,
+                    { backgroundColor: C.surface, borderColor: theme.primary },
+                    pressed && { opacity: 0.85 },
                   ]}
-                  value={mode}
-                  onChange={(m) => {
-                    setMode(m);
-                    setEstimate(null);
-                  }}
-                />
-              </View>
-
-              <TextInput
-                value={description}
-                onChangeText={(t) => {
-                  setDescription(t);
-                  setEstimate(null);
-                }}
-                placeholder="e.g. 1 cup rice, 2 pcs chicken adobo"
-                placeholderTextColor={C.textMuted}
-                maxLength={300}
-                multiline
-                style={[styles.input, { color: C.text, borderColor: C.border, backgroundColor: C.background }]}
-                accessibilityLabel="What did you eat?"
-              />
-
-              {mode === 'manual' ? (
-                <>
-                  <View style={styles.row}>
-                    <NumberField label="Calories" value={kcal} onChange={setKcal} suffix="kcal" />
-                    <NumberField label="Protein" value={protein} onChange={setProtein} suffix="g" decimal />
-                  </View>
-                  <PrimaryButton
-                    label="Save meal"
-                    disabled={!description.trim() || toNumber(kcal) === null}
-                    loading={logFood.isPending}
-                    onPress={() =>
-                      save({
-                        description: description.trim(),
-                        calories: toNumber(kcal) ?? undefined,
-                        proteinG: toNumber(protein) ?? undefined,
-                      })
-                    }
-                  />
-                </>
-              ) : estimate ? (
-                <View style={styles.gap}>
-                  <View style={[styles.estimate, { backgroundColor: theme.primaryMuted }]}>
-                    <Text variant="bodyMed" style={{ color: C.text }}>
-                      {estimate.calories} kcal · P {Math.round(estimate.proteinG)} g · C {Math.round(estimate.carbsG)} g · F{' '}
-                      {Math.round(estimate.fatG)} g
-                    </Text>
-                    {estimate.notes ? (
-                      <Text variant="caption" style={{ color: C.textSecondary }}>
-                        {estimate.notes}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <PrimaryButton
-                    label="Save meal"
-                    loading={logFood.isPending}
-                    onPress={() =>
-                      save({
-                        description: description.trim() || estimate.description,
-                        calories: estimate.calories,
-                        proteinG: estimate.proteinG,
-                        carbsG: estimate.carbsG,
-                        fatG: estimate.fatG,
-                      })
-                    }
-                  />
-                  <TextButton label="Discard" onPress={() => setEstimate(null)} />
-                </View>
-              ) : (
-                <>
-                  <PrimaryButton
-                    label="Estimate with AI"
-                    disabled={!description.trim() || mealTextLeft === 0}
-                    loading={analyse.isPending}
-                    onPress={runEstimate}
-                  />
-                  {mealTextLeft !== undefined && (
-                    <Text variant="caption" style={{ color: C.textMuted, textAlign: 'center' }}>
-                      {mealTextLeft} AI estimates left this month
-                    </Text>
-                  )}
-                </>
-              )}
-            </View>
-          )}
-
-          {/* Meal idea that fits what is left today */}
-          {isToday && dailyQ.data?.targets && (
-            <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.border }]}>
-              <Text variant="h3" style={{ color: C.text }}>
-                Meal idea
-              </Text>
-              {ideaMeal ? (
-                <View style={styles.gap}>
-                  <Text variant="bodyMed" style={{ color: C.text }}>
-                    {ideaMeal.name}
+                >
+                  <Ionicons name="sparkles-outline" size={22} color={theme.primary} />
+                  <Text variant="label" style={{ color: theme.primary, fontFamily: 'Inter_600SemiBold' }}>
+                    Meal idea
                   </Text>
-                  {ideaMeal.items.map((item) => (
-                    <Text key={item} variant="label" style={{ color: C.textSecondary }}>
-                      • {item}
-                    </Text>
-                  ))}
-                  <Text variant="caption" style={{ color: C.textMuted }}>
-                    {ideaMeal.calories} kcal · P {ideaMeal.proteinG} g · C {ideaMeal.carbsG} g · F {ideaMeal.fatG} g
-                  </Text>
-                  <PrimaryButton
-                    label="I ate this"
-                    loading={logFood.isPending}
-                    onPress={async () => {
-                      // Keep the idea on failure so retrying doesn't use up another suggestion.
-                      const saved = await save({
-                        description: ideaMeal.name,
-                        calories: ideaMeal.calories,
-                        proteinG: ideaMeal.proteinG,
-                        carbsG: ideaMeal.carbsG,
-                        fatG: ideaMeal.fatG,
-                      });
-                      if (saved) setIdea(null);
-                    }}
-                  />
-                  <TextButton label="Another idea" onPress={suggest} />
-                </View>
-              ) : (
-                <>
-                  <Text variant="caption" style={{ color: C.textSecondary }}>
-                    A meal that fits the calories and protein you have left today.
-                  </Text>
-                  <PrimaryButton
-                    label="Suggest a meal"
-                    onPress={suggest}
-                    loading={mealIdea.isPending}
-                    disabled={ideasLeft === 0}
-                  />
-                  {ideasLeft !== undefined && (
-                    <Text variant="caption" style={{ color: C.textMuted, textAlign: 'center' }}>
-                      {ideasLeft} meal ideas left this month
-                    </Text>
-                  )}
-                </>
+                </Pressable>
               )}
             </View>
           )}
@@ -365,7 +215,40 @@ export default function NutritionScreen() {
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      {toast.message && (
+        <Animated.View
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={[
+            styles.toast,
+            {
+              backgroundColor: theme.primary,
+              opacity: toast.anim,
+              transform: [{ translateY: toast.anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+            },
+          ]}
+        >
+          <Ionicons name="checkmark-circle" size={20} color={C.onPrimary} />
+          <Text variant="bodyMed" style={{ color: C.onPrimary, flex: 1 }}>
+            {toast.message}
+          </Text>
+        </Animated.View>
+      )}
+
+      <AddMealSheet
+        visible={sheet === 'add'}
+        kcalLeftToday={remaining?.kcal ?? null}
+        onClose={() => setSheet(null)}
+        onLogged={toast.show}
+      />
+      {remaining && (
+        <MealIdeaSheet
+          visible={sheet === 'idea'}
+          remaining={{ kcal: remaining.kcal, proteinG: remaining.proteinG }}
+          onClose={() => setSheet(null)}
+          onLogged={toast.show}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -376,11 +259,22 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingBottom: 8 },
   content: { padding: 16, paddingBottom: 40 },
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 12, marginBottom: 16 },
-  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  input: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, minHeight: 56 },
-  row: { flexDirection: 'row', gap: 10 },
   gap: { gap: 8 },
-  estimate: { borderRadius: 12, padding: 12, gap: 4 },
+  actions: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  actionMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14 },
+  actionSide: { width: 104, borderWidth: 1.5, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  toast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
   sectionLabel: { marginBottom: 8, letterSpacing: 0.8 },
   list: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },

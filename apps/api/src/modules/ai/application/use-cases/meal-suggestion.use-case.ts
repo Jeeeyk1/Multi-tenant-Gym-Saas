@@ -4,7 +4,7 @@ import { MemberAiLimitsService } from '../member-ai-limits.service';
 import { parseAiJson } from '../parse-ai-json';
 import { AiRepository, type MemberContext, type PlanTargets } from '../../infrastructure/persistence/ai.repository';
 import { NotFoundError, ValidationError } from '../../../../common/errors';
-import { AiFeature, DietType, FitnessGoal, MealPlanMode } from '../../../../common/enums';
+import { AiFeature, DietType, FitnessGoal, MealPlanMode, MealStyle } from '../../../../common/enums';
 
 const MAX_TOKENS = 1500;
 // Below this a full day of eating isn't a safe target.
@@ -15,7 +15,15 @@ export interface MealPlanParams {
   targetCalories?: number;
   mealCount?: number;
   targetProteinG?: number;
+  style?: MealStyle;
 }
+
+const STYLE_HINT: Record<MealStyle, string> = {
+  [MealStyle.QUICK]: 'Quick to prepare: 15 minutes or less, few ingredients, or easy to buy ready-made.',
+  [MealStyle.BUDGET]: 'Budget-friendly: affordable, common ingredients from a local market or carinderia.',
+  [MealStyle.HIGH_PROTEIN]: 'Extra high in protein; lean protein is the centre of every meal.',
+  [MealStyle.LIGHT]: 'Light and not heavy: more vegetables, less oil and fewer heavy carbs.',
+};
 
 @Injectable()
 export class MealSuggestionUseCase {
@@ -152,7 +160,7 @@ Member profile:
 
 Request:
 ${requestLines.join('\n')}
-- Emphasis: ${calorieHint}
+- Emphasis: ${calorieHint}${params.style ? `\n- Style: ${STYLE_HINT[params.style]}` : ''}
 
 Return ONLY a valid JSON object — no markdown, no extra text, just the JSON.
 

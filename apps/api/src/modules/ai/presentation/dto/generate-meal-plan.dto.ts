@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
-import { MealPlanMode } from '../../../../common/enums';
+import { MealPlanMode, MealStyle } from '../../../../common/enums';
 
 /**
  * Parameters for the guided meal-plan generation flow.
@@ -29,4 +29,9 @@ export class GenerateMealPlanDto {
   @Min(0)
   @Max(400)
   targetProteinG?: number;
+
+  /** Optional steer: quick to make, budget-friendly, extra protein or light. */
+  @IsOptional()
+  @IsEnum(MealStyle)
+  style?: MealStyle;
 }

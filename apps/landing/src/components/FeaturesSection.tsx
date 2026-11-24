@@ -49,7 +49,7 @@ function AiCoachingCard() {
           <div className="bg-primary px-4 py-3 flex items-center justify-between">
             <div>
               <p className="text-[9px] text-primary-foreground/70 leading-none">Tuesday</p>
-              <p className="text-[11px] text-primary-foreground font-bold">Today's Workout</p>
+              <p className="text-[11px] text-primary-foreground font-bold">Today&apos;s Workout</p>
             </div>
             <span className="text-[9px] bg-primary-foreground/20 text-primary-foreground px-2 py-1 rounded-full font-semibold">2 / 4 done</span>
           </div>
@@ -372,7 +372,7 @@ export function FeaturesSection() {
           <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Features</p>
           <h2 className="text-4xl font-bold text-foreground mb-4">
             Everything your gym needs,{' '}
-            <span className="text-primary">nothing it doesn't.</span>
+            <span className="text-primary">nothing it doesn&apos;t.</span>
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
             From day one, {BRAND_NAME} covers every operational need so you can focus on what matters — your members.

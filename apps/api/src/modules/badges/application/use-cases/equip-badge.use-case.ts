@@ -31,6 +31,6 @@ export class EquipBadgeUseCase {
       throw new ForbiddenError('Cannot equip an expired badge', 'BADGE_EXPIRED');
     }
 
-    await this.repo.setBadgeEquipped(badgeId, member.id, gymId, equipped);
+    await this.repo.setBadgeEquipped(badge, member.id, gymId, equipped);
   }
 }

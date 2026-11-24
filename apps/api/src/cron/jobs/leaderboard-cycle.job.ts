@@ -33,7 +33,8 @@ export class LeaderboardCycleJob {
           closed++;
         }
 
-        this.logger.log(`closed ${closed} cycles in ${Date.now() - start}ms`);
+        const unequipped = await this.badgesService.unequipExpiredBadges();
+        this.logger.log(`closed ${closed} cycles, unequipped ${unequipped} expired badges in ${Date.now() - start}ms`);
       } catch (err) {
         this.logger.error('failed', err instanceof Error ? err.message : String(err));
       }

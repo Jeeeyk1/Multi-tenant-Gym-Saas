@@ -1258,3 +1258,58 @@ Stable across re-seedings. Safe to use in Postman collections and tests.
 Credentials:
 - `manager@devgym.com` / `Password123!` — MANAGER role, all permissions
 - `member@devgym.com` / `Password123!` — ACTIVE member
+
+### Badges v2
+
+Badges belong to one of three categories: `CONSISTENCY`, `LOYALTY` or `STRENGTH`. A member can equip
+one badge per category, so three at most; the database enforces this.
+
+#### GET /gyms/:gymId/members/:memberId/badges/collection
+Every badge the gym offers, grouped by category. The member themself, or staff with `members.view`.
+
+Before answering, the API:
+- creates default ladders for leaderboard lifts that have none;
+- awards any badges the member already qualifies for.
+
+Response `200`: `{ earnedCount, totalCount, categories: [{ category, equipped, badges }] }`.
+
+Each badge has:
+- `key` (`catalog:<id>`, `milestone:<id>` or `custom:<id>`);
+- `category`, `name`, `description`, `icon`, `color`;
+- `tier` (BRONZE / SILVER / GOLD for ladder rungs and cycle wins);
+- `exercise` (for ladders and milestones);
+- `earned` (`{ memberBadgeId, awardedAt, expiresAt, expired, isEquipped, seenAt }`, or `null` when locked);
+- `timesEarned`;
+- `progress` (`{ current, target, unit }`, or `null`);
+- `rarityPct` (the share of active members who hold it, cached for an hour).
+
+#### PATCH /gyms/:gymId/badges/my/:badgeId
+`{ "equipped": true }` equips the badge and unequips the member's other badge in the same category.
+`false` unequips it; expired badges can always be unequipped.
+
+#### POST /gyms/:gymId/badges/my/seen
+`{ "badgeIds": [<memberBadgeId>, …] }` (1–50 ids) marks the "new badge" celebration as seen.
+New badges have `seenAt: null`.
+
+#### GET /gyms/:gymId/badges/equipped
+`[{ userId, badges: [{ memberBadgeId, category, name, description, icon, color, tier, awardedAt }], badge }]`.
+`badges` is in category order. `badge` (the first badge, old shape) is kept for app versions before Badges v2.
+
+#### GET /gyms/:gymId/badges/ladders
+For staff with `badges.manage`. Returns the gym's leaderboard lifts:
+`[{ exercise, enabled, weights: { BRONZE, SILVER, GOLD } | null, suggested }]`.
+
+#### PUT /gyms/:gymId/badges/ladders/:exerciseId
+`{ "enabled": true, "bronzeKg": 60, "silverKg": 80, "goldKg": 100 }` sets a lift's ladder.
+The weights must increase, otherwise `422 INVALID_LADDER`. `{ "enabled": false }` switches it off.
+
+**How rungs are earned:**
+- A rung is earned by an **approved** lift at or above its weight, using the actual weight lifted.
+- One lift can earn several rungs.
+- Saving a ladder (or creating the default when a lift joins the leaderboard) also credits lifts already approved.
+- Members keep rungs they earned, even if the weights change later.
+
+**Other changes:**
+- `POST /gyms/:gymId/badges/custom` accepts an optional `category`; the default is `LOYALTY`.
+- Awarding a custom badge now checks that the badge belongs to the gym.
+- New badges trigger a push notification (`data.type: "BADGE_EARNED"`).

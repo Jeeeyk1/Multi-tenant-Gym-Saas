@@ -1,13 +1,13 @@
 name: CI
 
-# WHEN does this workflow run?
-# - On every pull request targeting main (the important one — blocks bad merges)
-# - On every direct push to main (catches anything that slips through)
+# WHEN does this workflow run? (Git Flow: features → develop → main)
+# - On every pull request targeting develop or main (blocks bad merges)
+# - On every direct push to develop or main (catches anything that slips through)
 on:
   pull_request:
-    branches: [main]
+    branches: [develop, main]
   push:
-    branches: [main]
+    branches: [develop, main]
 
 jobs:
   # ─── Job 1: Type Check ────────────────────────────────────────────────────────

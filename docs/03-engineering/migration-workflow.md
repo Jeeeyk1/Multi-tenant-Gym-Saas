@@ -138,3 +138,19 @@ run docker
 run migrations
 run seeds
 and have a fully working database without manual steps.
+## Schema drift check (CI)
+
+CI applies every file in `db/migrations` to an empty Postgres 16, then runs `pnpm db:check-drift`
+(`db/scripts/check-schema-drift.ts`).
+
+**What it checks:** that each table and column in `prisma/schema.prisma` exists in the migrated database with
+the same nullability, and that the database has no tables or columns Prisma doesn't know about.
+
+**Typical failures:** a column added to `schema.prisma` without a SQL migration, or a migration that changed
+a column Prisma still describes the old way.
+
+**Run it locally:** point `DATABASE_URL` at a database that has just had `pnpm db:migrate` applied, then run
+`pnpm db:check-drift`.
+
+**Not covered yet:** CHECK constraints that list enum values (the bug class fixed in `0041`). When adding a
+value to a status enum, still grep `db/migrations/` for that column's CHECK constraint and update it in the same PR.

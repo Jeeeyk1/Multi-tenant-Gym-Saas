@@ -9,59 +9,60 @@ on:
   push:
     branches: [develop, main]
 
+# A newer push to the same branch makes the older run pointless — cancel it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ─── Job 1: Type Check ────────────────────────────────────────────────────────
   # TypeScript catches type errors at compile time, before the code ever runs.
-  # If a developer accidentally passes the wrong type to a function, this fails.
+  # Every app is checked: a change to a shared type can break one we didn't touch.
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest   # GitHub spins up a fresh Ubuntu VM for this job
 
     steps:
-      # Step 1: Download the code from the branch being checked
-      # Without this, the VM has no code to work with
+      # Download the code from the branch being checked
       - uses: actions/checkout@v4
 
-      # Step 2: Install pnpm (our package manager)
-      # No version specified here — the action reads "packageManager" from
-      # package.json automatically. Avoids the "multiple versions" conflict.
+      # Install pnpm. No version here — the action reads "packageManager" from package.json.
       - uses: pnpm/action-setup@v4
 
-      # Step 3: Install the correct Node.js version
-      # "cache: pnpm" tells GitHub to cache node_modules between runs
-      # so we don't re-download all packages every time (saves ~1-2 minutes)
+      # Install Node from .nvmrc so CI, local dev and production all use the same version.
+      # "cache: pnpm" reuses downloaded packages between runs (saves ~1-2 minutes).
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
-      # Step 4: Install all workspace dependencies
-      # --frozen-lockfile means: fail if pnpm-lock.yaml is out of date
-      # This prevents "works on my machine" issues from lockfile drift
+      # --frozen-lockfile fails if pnpm-lock.yaml is out of date ("works on my machine").
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Step 5: Generate the Prisma client
-      # Prisma generates typed DB client code from prisma/schema.prisma.
-      # Without this, TypeScript has no knowledge of any DB models and
-      # every repository file fails to compile with "Property X does not exist".
-      # This must run before typecheck — it's a code generation step, not a dep install.
+      # Prisma generates the typed DB client from prisma/schema.prisma. Without it every
+      # repository file fails to compile with "Property X does not exist".
       - name: Generate Prisma client
         run: pnpm prisma generate
 
-      # Step 6 & 7: Run tsc --noEmit for API and Web separately
-      # --filter means "only run this for that specific package"
-      # If tsc finds a type error anywhere, this step fails and the PR is blocked
       - name: Typecheck API
         run: pnpm --filter @gym-saas/api typecheck
 
       - name: Typecheck Web
         run: pnpm --filter @gym-saas/web typecheck
 
+      - name: Typecheck Admin
+        run: pnpm --filter @gym-saas/admin typecheck
+
+      - name: Typecheck Landing
+        run: pnpm --filter @gym-saas/landing typecheck
+
+      - name: Typecheck Mobile
+        run: pnpm --filter @gym-saas/mobile typecheck
+
   # ─── Job 2: Lint ──────────────────────────────────────────────────────────────
-  # ESLint enforces code style and catches common mistakes (unused vars,
-  # missing deps in useEffect, etc.) that TypeScript alone won't catch.
-  # Runs in parallel with typecheck — no reason to wait for one before the other.
+  # ESLint catches mistakes TypeScript alone won't (unused vars, hook dependencies,
+  # unescaped JSX). Runs in parallel with typecheck. Warnings don't fail the build.
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -73,7 +74,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -85,11 +86,18 @@ jobs:
       - name: Lint Web
         run: pnpm --filter @gym-saas/web lint
 
+      - name: Lint Admin
+        run: pnpm --filter @gym-saas/admin lint
+
+      - name: Lint Landing
+        run: pnpm --filter @gym-saas/landing lint
+
+      - name: Lint Mobile
+        run: pnpm --filter @gym-saas/mobile lint
+
   # ─── Job 3: Tests ─────────────────────────────────────────────────────────────
-  # Runs Jest unit tests on the API.
-  # Unit tests verify business logic in isolation (no real DB, no real HTTP).
+  # Runs Jest unit tests on the API: business logic in isolation (no real DB or HTTP).
   # --passWithNoTests means: don't fail just because a package has no test files yet.
-  # Remove that flag once you have solid coverage.
   test:
     name: Tests
     runs-on: ubuntu-latest
@@ -101,7 +109,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -112,3 +120,84 @@ jobs:
 
       - name: Run API unit tests
         run: pnpm --filter @gym-saas/api test -- --passWithNoTests
+
+  # ─── Job 4: Migrations & schema drift ─────────────────────────────────────────
+  # Unit tests mock Prisma, so a broken migration or a schema.prisma that no longer
+  # matches the real database only shows up at runtime. This job:
+  #   1. applies every migration in db/migrations to an empty Postgres (proves they run in order), then
+  #   2. compares the resulting tables/columns/nullability with schema.prisma.
+  migrations:
+    name: Migrations & schema drift
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: gym_ci
+        ports:
+          - 5432:5432
+        # Wait until Postgres accepts connections before the steps start.
+        options: >-
+          --health-cmd "pg_isready -U ci -d gym_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/gym_ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Apply all migrations to an empty database
+        run: pnpm db:migrate
+
+      - name: Check schema.prisma matches the migrated database
+        run: pnpm db:check-drift
+
+  # ─── Job 5: Security ──────────────────────────────────────────────────────────
+  # Secret scan: blocks the PR if a key, token or password was committed.
+  # Dependency audit: reports known vulnerabilities in production dependencies.
+  # The audit doesn't block yet (one known issue has no upstream fix; see tech-debt);
+  # make it blocking once that's resolved.
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+
+    steps:
+      # Full history so the secret scan can check every commit in the PR.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Audit production dependencies
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level high

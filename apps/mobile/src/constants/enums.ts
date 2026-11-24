@@ -67,3 +67,15 @@ export enum PaceUnavailableReason {
   HEALTH_CAUTION     = 'HEALTH_CAUTION',
   SAFE_LIMIT_REACHED = 'SAFE_LIMIT_REACHED',
 }
+
+export enum BadgeCategory {
+  CONSISTENCY = 'CONSISTENCY',
+  LOYALTY     = 'LOYALTY',
+  STRENGTH    = 'STRENGTH',
+}
+
+export enum BadgeTier {
+  GOLD   = 'GOLD',
+  SILVER = 'SILVER',
+  BRONZE = 'BRONZE',
+}

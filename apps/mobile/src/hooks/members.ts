@@ -128,9 +128,7 @@ export function useEquippedBadgesMap() {
     queryKey: memberKeys.equippedBadges(gymId),
     queryFn: async () => {
       const rows: EquippedBadgeRow[] = await memberService.getEquippedBadges(gymId!);
-      const map = new Map<string, EquippedBadgeRow['badge']>();
-      for (const row of rows) map.set(row.userId, row.badge);
-      return map;
+      return new Map(rows.map((row) => [row.userId, row.badges]));
     },
     enabled: Boolean(gymId),
     staleTime: 60_000,
@@ -150,6 +148,8 @@ export function useEquipBadge() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memberKeys.myBadges(gymId) });
       queryClient.invalidateQueries({ queryKey: memberKeys.equippedBadges(gymId) });
+      // badgesKeys.collection lives in hooks/badges, which imports this file.
+      queryClient.invalidateQueries({ queryKey: ['badges', 'collection'] });
     },
   });
 }

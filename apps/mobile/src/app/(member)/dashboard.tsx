@@ -15,6 +15,7 @@ import { SetupPlanCard } from '../../components/dashboard/SetupPlanCard';
 import { WeightCard } from '../../components/dashboard/WeightCard';
 import { UnitSystem } from '../../constants/enums';
 import { GreetingBanner } from '../../components/GreetingBanner';
+import { NewBadgeCelebration } from '../../components/badges/NewBadgeCelebration';
 import { MembershipCard } from '../../components/MembershipCard';
 import { useWorkout } from '../../context/WorkoutContext';
 import { SPACING, RADIUS, FONT } from '../../constants/theme';
@@ -359,6 +360,8 @@ export default function DashboardScreen() {
           })}
         </View>
       )}
+
+      <NewBadgeCelebration />
     </ScrollView>
   );
 }

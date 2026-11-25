@@ -196,10 +196,17 @@ export function PrimaryButton({
   );
 }
 
-export function TextButton({ label, onPress }: { label: string; onPress: () => void }) {
+export function TextButton({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   const { theme } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.textButton} hitSlop={8}>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      style={[styles.textButton, disabled && { opacity: 0.4 }]}
+      hitSlop={8}
+    >
       <Text variant="label" style={{ color: theme.colors.textSecondary }}>
         {label}
       </Text>

@@ -12,8 +12,9 @@ import {
   useUploadLeaderboardPhoto,
 } from '../../hooks/leaderboard';
 import { useEquippedBadgesMap } from '../../hooks/members';
-import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
-import type { Exercise, LeaderboardEntry, PrSubmission } from '../../types';
+import { BadgeStack } from '../../components/badges/BadgeStack';
+import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
+import type { EquippedBadge, Exercise, LeaderboardEntry, PrSubmission } from '../../types';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -354,6 +355,7 @@ export default function LeaderboardScreen() {
     leaderboardQ.isRefetching || exercisesQ.isRefetching || myPrsQ.isRefetching;
 
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
   const [tab, setTab] = useState<'board' | 'mine'>('board');
   const [submitVisible, setSubmitVisible] = useState(false);
 
@@ -560,7 +562,7 @@ export default function LeaderboardScreen() {
                     <Text style={styles.emptyText}>No approved PRs yet. Be the first!</Text>
                   ) : (
                     current.entries.map((entry: LeaderboardEntry) => {
-                      const badge = equippedBadges?.get(entry.member.user.id);
+                      const badges = equippedBadges?.get(entry.member.user.id) ?? [];
                       return (
                         <View key={entry.id} style={styles.rankRow}>
                           <View style={styles.rankMedal}>
@@ -574,7 +576,10 @@ export default function LeaderboardScreen() {
                             <Text style={styles.rankName} numberOfLines={1}>
                               {entry.member.user.fullName}
                             </Text>
-                            {badge && <EquippedBadgeChip badge={badge} />}
+                            <BadgeStack
+                              badges={badges}
+                              onPress={() => setBadgeOwner({ name: entry.member.user.fullName, badges })}
+                            />
                           </View>
                           <View style={styles.rankStats}>
                             <Text style={[styles.rankORM, { color: theme.primary }]}>
@@ -640,6 +645,12 @@ export default function LeaderboardScreen() {
           handleRefresh();
           setTab('mine');
         }}
+      />
+
+      <EquippedBadgesSheet
+        ownerName={badgeOwner?.name ?? null}
+        badges={badgeOwner?.badges ?? []}
+        onClose={() => setBadgeOwner(null)}
       />
     </View>
   );

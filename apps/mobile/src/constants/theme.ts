@@ -121,3 +121,16 @@ export const FONT = {
   bold: { fontFamily: 'PlusJakartaSans_700Bold', fontWeight: '700' as const },
   display: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontWeight: '800' as const },
 };
+
+/** Badge medal rims by tier; iron for untiered badges. Fixed across tenants and themes. */
+export const BADGE_COLORS = {
+  GOLD: '#D8A632',
+  SILVER: '#AEB5BF',
+  BRONZE: '#B8743F',
+  IRON: '#3C4049',
+  LOCKED: '#4A4D57',
+  LOCKED_FACE: '#2B2D35',
+  LOCKED_GLYPH: '#7C7F8A',
+  GLYPH: '#FFFFFF',
+  FALLBACK: '#6B7280',
+} as const;

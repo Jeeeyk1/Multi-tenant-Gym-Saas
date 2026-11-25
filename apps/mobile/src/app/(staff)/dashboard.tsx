@@ -4,13 +4,12 @@ import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { StaffHeader } from '../../components/StaffHeader';
 import { useActiveCheckIns, useCheckOut, useStaffMembers } from '../../hooks/staff';
 import { usePendingSubmissions } from '../../hooks/leaderboard';
 import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 import type { StaffCheckIn, MemberListItem } from '../../types';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
@@ -101,11 +100,10 @@ function ActiveRow({
   onCheckOut: (id: string) => void;
   checkingOut: boolean;
 }) {
-  const { theme } = useTheme();
   return (
     <View style={styles.activeRow}>
-      <View style={[styles.activeAvatar, { backgroundColor: theme.primary + '18' }]}>
-        <Text style={[styles.activeAvatarText, { color: theme.primary }]}>
+      <View style={[styles.activeAvatar, { backgroundColor: COLORS.primary + '18' }]}>
+        <Text style={[styles.activeAvatarText, { color: COLORS.primary }]}>
           {getInitials(item.member.user.fullName)}
         </Text>
       </View>
@@ -136,7 +134,6 @@ function ActiveRow({
 export default function StaffDashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { theme } = useTheme();
   const activeCheckInsQ = useActiveCheckIns();
   const membersQ = useStaffMembers();
   const checkOutMutation = useCheckOut();
@@ -200,7 +197,7 @@ export default function StaffDashboardScreen() {
               activeCheckInsQ.refetch();
               membersQ.refetch();
             }}
-            tintColor={theme.primary}
+            tintColor={COLORS.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -217,7 +214,7 @@ export default function StaffDashboardScreen() {
             icon="pulse-outline"
             value={activeCheckIns.length}
             label="Active right now"
-            accent={theme.primary}
+            accent={COLORS.primary}
             primary
             onPress={() => router.navigate('/(staff)/checkins')}
           />
@@ -246,18 +243,18 @@ export default function StaffDashboardScreen() {
 
         {/* Primary action */}
         <TouchableOpacity
-          style={[styles.cta, { backgroundColor: theme.primary }]}
+          style={[styles.cta, { backgroundColor: COLORS.primary }]}
           onPress={() => router.navigate('/(staff)/checkins')}
           activeOpacity={0.85}
         >
           <View style={styles.ctaIcon}>
-            <Ionicons name="person-add-outline" size={20} color="#000" />
+            <Ionicons name="person-add-outline" size={20} color={COLORS.onPrimary} />
           </View>
           <View style={styles.ctaText}>
             <Text style={styles.ctaTitle}>Check in a member</Text>
             <Text style={styles.ctaSub}>Scan QR or search by name</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#000" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.onPrimary} />
         </TouchableOpacity>
 
         {/* Pending reviews — status-colored alert, not another gray row */}
@@ -287,7 +284,7 @@ export default function StaffDashboardScreen() {
           <Text style={styles.sectionTitle}>CURRENTLY ACTIVE</Text>
           {activeCheckIns.length > 5 && (
             <TouchableOpacity onPress={() => router.navigate('/(staff)/checkins')}>
-              <Text style={[styles.seeAll, { color: theme.primary }]}>See all →</Text>
+              <Text style={[styles.seeAll, { color: COLORS.primary }]}>See all →</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -323,10 +320,10 @@ const styles = StyleSheet.create({
   },
 
   rolePill: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: STAFF_SURFACE_RAISED,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
@@ -355,7 +352,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
     position: 'relative',
     overflow: 'hidden',
@@ -374,7 +371,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: SPACING.md,
     right: SPACING.md,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
@@ -393,13 +390,13 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: COLORS.onPrimary + '26',
     alignItems: 'center',
     justifyContent: 'center',
   },
   ctaText: { flex: 1 },
-  ctaTitle: { fontSize: 15, color: '#000', ...FONT.semibold },
-  ctaSub: { fontSize: 12, color: 'rgba(0,0,0,0.65)', ...FONT.regular, marginTop: 1 },
+  ctaTitle: { fontSize: 15, color: COLORS.onPrimary, ...FONT.semibold },
+  ctaSub: { fontSize: 12, color: COLORS.onPrimary + 'A6', ...FONT.regular, marginTop: 1 },
 
   // Alert
   alert: {
@@ -437,7 +434,7 @@ const styles = StyleSheet.create({
   // Active list
   activeList: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
@@ -465,7 +462,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.control,
     paddingHorizontal: 12,
     paddingVertical: 6,
     minWidth: 48,
@@ -476,7 +473,7 @@ const styles = StyleSheet.create({
   // Empty state
   emptyCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.xl,

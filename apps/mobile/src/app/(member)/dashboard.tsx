@@ -78,7 +78,7 @@ export default function DashboardScreen() {
       backgroundColor: C.errorBg,
       borderWidth: 1,
       borderColor: C.error,
-      borderRadius: RADIUS.md,
+      borderRadius: RADIUS.xl,
       padding: SPACING.md,
       marginBottom: SPACING.md,
     },
@@ -98,7 +98,7 @@ export default function DashboardScreen() {
       alignItems: 'center',
       gap: SPACING.sm,
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.border,
       paddingHorizontal: SPACING.md,
@@ -112,7 +112,7 @@ export default function DashboardScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       gap: SPACING.md,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       paddingHorizontal: SPACING.md,
       paddingVertical: SPACING.md,
     },
@@ -122,17 +122,17 @@ export default function DashboardScreen() {
       borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(0,0,0,0.12)',
+      backgroundColor: theme.onPrimary + '1F',
     },
-    aiTitle: { fontSize: 16, color: '#000', ...FONT.bold },
-    aiSub: { fontSize: 12, color: 'rgba(0,0,0,0.72)', marginTop: 2, ...FONT.medium },
+    aiTitle: { fontSize: 16, color: theme.onPrimary, ...FONT.bold },
+    aiSub: { fontSize: 12, color: theme.onPrimary, marginTop: 2, ...FONT.medium },
     // Resume banner
     resumeCard: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: SPACING.sm,
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.success + '50',
       paddingHorizontal: SPACING.md,
@@ -150,7 +150,7 @@ export default function DashboardScreen() {
     quickActionBtn: {
       flex: 1,
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.border,
       paddingVertical: SPACING.md,
@@ -161,7 +161,7 @@ export default function DashboardScreen() {
     // Recent visits
     emptyCard: {
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       padding: SPACING.lg,
       alignItems: 'center',
       borderWidth: 1,
@@ -170,7 +170,7 @@ export default function DashboardScreen() {
     emptyText: { color: C.textSecondary, fontSize: 14 },
     checkInList: {
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.border,
       overflow: 'hidden',
@@ -187,7 +187,7 @@ export default function DashboardScreen() {
     checkInDate: { fontSize: 14, color: C.text, ...FONT.medium },
     checkInTime: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
     checkInDuration: { fontSize: 13, color: C.textMuted, ...FONT.regular },
-  }), [C]);
+  }), [C, theme.onPrimary]);
 
   if (isLoading) {
     return (
@@ -256,13 +256,13 @@ export default function DashboardScreen() {
           style={s.aiCard}
         >
           <View style={s.aiIconWrap}>
-            <Ionicons name="sparkles" size={22} color="#000" />
+            <Ionicons name="sparkles" size={22} color={theme.onPrimary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.aiTitle}>AI Coach</Text>
             <Text style={s.aiSub}>Personalised workouts, meal plans &amp; form tips</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#000" />
+          <Ionicons name="chevron-forward" size={20} color={theme.onPrimary} />
         </LinearGradient>
       </Pressable>
 

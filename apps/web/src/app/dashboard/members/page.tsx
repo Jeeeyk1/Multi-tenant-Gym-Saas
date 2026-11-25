@@ -38,7 +38,7 @@ export default async function MembersPage({ searchParams }: Props) {
           <BulkInviteButton />
           <Link
             href="/dashboard/members/new"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <span className="text-base leading-none">+</span>
             Register Member
@@ -58,7 +58,7 @@ export default async function MembersPage({ searchParams }: Props) {
             {page > 1 && (
               <Link
                 href={`/dashboard/members?page=${page - 1}`}
-                className="text-sm px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition"
+                className="bg-surface text-sm px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 ← Prev
               </Link>
@@ -66,7 +66,7 @@ export default async function MembersPage({ searchParams }: Props) {
             {page < meta.totalPages && (
               <Link
                 href={`/dashboard/members?page=${page + 1}`}
-                className="text-sm px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition"
+                className="bg-surface text-sm px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 Next →
               </Link>

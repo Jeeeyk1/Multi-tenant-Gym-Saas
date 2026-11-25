@@ -3,7 +3,6 @@ import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Touchabl
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import {
   useApproveSubmission,
@@ -13,7 +12,7 @@ import {
   useRejectSubmission,
   useUpdateLeaderboardConfig,
 } from '../../hooks/leaderboard';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 import type { PrSubmission, Exercise } from '../../types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -45,7 +44,6 @@ function SubmissionCard({
 }) {
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [reason, setReason] = useState('');
-  const { theme } = useTheme();
 
   const handleRejectConfirm = () => {
     const r = reason.trim();
@@ -79,8 +77,8 @@ function SubmissionCard({
           <View style={styles.statPill}>
             <Text style={styles.statValue}>{item.reps} reps</Text>
           </View>
-          <View style={[styles.statPill, styles.statPillAccent, { borderColor: theme.primary }]}>
-            <Text style={[styles.statValue, { color: theme.primary }]}>
+          <View style={[styles.statPill, styles.statPillAccent, { borderColor: COLORS.primary }]}>
+            <Text style={[styles.statValue, { color: COLORS.primary }]}>
               ~{item.estimated1rm} kg 1RM
             </Text>
           </View>
@@ -119,7 +117,7 @@ function SubmissionCard({
                 disabled={!reason.trim() || rejecting}
               >
                 {rejecting ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={COLORS.onPrimary} />
                 ) : (
                   <Text style={styles.rejectConfirmText}>Reject</Text>
                 )}
@@ -173,7 +171,6 @@ function ExerciseConfigRow({
   isActive: boolean;
   onToggle: (id: string, val: boolean) => void;
 }) {
-  const { theme } = useTheme();
   return (
     <View style={styles.configRow}>
       <View style={styles.configInfo}>
@@ -185,8 +182,8 @@ function ExerciseConfigRow({
       <Switch
         value={isActive}
         onValueChange={(v) => onToggle(exercise.id, v)}
-        trackColor={{ false: COLORS.border, true: theme.primary + '66' }}
-        thumbColor={isActive ? theme.primary : COLORS.textMuted}
+        trackColor={{ false: COLORS.border, true: COLORS.primary + '66' }}
+        thumbColor={isActive ? COLORS.primary : COLORS.textMuted}
       />
     </View>
   );
@@ -198,7 +195,6 @@ type TabKey = 'pending' | 'config';
 
 export default function StaffLeaderboardScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
 
@@ -320,19 +316,19 @@ export default function StaffLeaderboardScreen() {
           onPress={() => setActiveTab('pending')}
           activeOpacity={0.7}
         >
-          <Text style={[styles.tabText, activeTab === 'pending' && { color: theme.primary }]}>
+          <Text style={[styles.tabText, activeTab === 'pending' && { color: COLORS.primary }]}>
             Pending
             {pending.length > 0 ? ` (${pending.length})` : ''}
           </Text>
-          {activeTab === 'pending' && <View style={[styles.tabUnderline, { backgroundColor: theme.primary }]} />}
+          {activeTab === 'pending' && <View style={[styles.tabUnderline, { backgroundColor: COLORS.primary }]} />}
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'config' && styles.tabActive]}
           onPress={() => setActiveTab('config')}
           activeOpacity={0.7}
         >
-          <Text style={[styles.tabText, activeTab === 'config' && { color: theme.primary }]}>Config</Text>
-          {activeTab === 'config' && <View style={[styles.tabUnderline, { backgroundColor: theme.primary }]} />}
+          <Text style={[styles.tabText, activeTab === 'config' && { color: COLORS.primary }]}>Config</Text>
+          {activeTab === 'config' && <View style={[styles.tabUnderline, { backgroundColor: COLORS.primary }]} />}
         </TouchableOpacity>
       </View>
 
@@ -347,7 +343,7 @@ export default function StaffLeaderboardScreen() {
             <View style={styles.centered}>
               <Text style={styles.errorText}>{pendingError}</Text>
               <TouchableOpacity onPress={() => pendingQ.refetch()} style={styles.retryBtn}>
-                <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
+                <Text style={[styles.retryText, { color: COLORS.primary }]}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -359,7 +355,7 @@ export default function StaffLeaderboardScreen() {
                 <RefreshControl
                   refreshing={pendingRefreshing}
                   onRefresh={() => pendingQ.refetch()}
-                  tintColor={theme.primary}
+                  tintColor={COLORS.primary}
                 />
               }
               ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -398,7 +394,7 @@ export default function StaffLeaderboardScreen() {
                 onPress={() => { exercisesQ.refetch(); configQ.refetch(); }}
                 style={styles.retryBtn}
               >
-                <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
+                <Text style={[styles.retryText, { color: COLORS.primary }]}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -433,13 +429,13 @@ export default function StaffLeaderboardScreen() {
               {hasConfigChanges && (
                 <View style={styles.saveBar}>
                   <TouchableOpacity
-                    style={[styles.saveBtn, { backgroundColor: theme.primary }]}
+                    style={[styles.saveBtn, { backgroundColor: COLORS.primary }]}
                     onPress={handleSaveConfig}
                     disabled={configSaving}
                     activeOpacity={0.8}
                   >
                     {configSaving ? (
-                      <ActivityIndicator size="small" color="#000" />
+                      <ActivityIndicator size="small" color={COLORS.onPrimary} />
                     ) : (
                       <Text style={styles.saveBtnText}>Save Changes</Text>
                     )}
@@ -474,14 +470,14 @@ const styles = StyleSheet.create({
   screenTitle: { fontSize: 22, color: COLORS.text, ...FONT.bold },
   badge: {
     backgroundColor: COLORS.error,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
   },
-  badgeText: { fontSize: 11, color: '#fff', ...FONT.bold },
+  badgeText: { fontSize: 11, color: COLORS.onPrimary, ...FONT.semibold },
 
   // Tabs
   tabRow: {
@@ -529,7 +525,7 @@ const styles = StyleSheet.create({
   // Submission card
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
@@ -553,10 +549,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   statPill: {
-    backgroundColor: COLORS.background,
+    backgroundColor: STAFF_SURFACE_RAISED,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
@@ -579,7 +575,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     borderWidth: 1,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: 10,
   },
   rejectBtn: {
@@ -589,7 +585,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     borderWidth: 1,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: 10,
   },
   actionBtnText: { fontSize: 14, ...FONT.semibold },
@@ -600,7 +596,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.error,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     padding: SPACING.sm,
     color: COLORS.text,
     fontSize: 14,
@@ -617,18 +613,18 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
   },
-  rejectCancelText: { fontSize: 14, color: COLORS.textSecondary, ...FONT.medium },
+  rejectCancelText: { fontSize: 14, color: COLORS.text, ...FONT.semibold },
   rejectConfirmBtn: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     backgroundColor: COLORS.error,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
   },
-  rejectConfirmText: { fontSize: 14, color: '#fff', ...FONT.semibold },
+  rejectConfirmText: { fontSize: 14, color: COLORS.onPrimary, ...FONT.semibold },
   btnDisabled: { opacity: 0.4 },
 
   // Config tab
@@ -647,7 +643,7 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
@@ -675,8 +671,9 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     paddingVertical: 14,
-    borderRadius: RADIUS.button,
+    borderRadius: RADIUS.control,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveBtnText: { fontSize: 15, color: '#000', ...FONT.semibold },
+  saveBtnText: { fontSize: 15, color: COLORS.onPrimary, ...FONT.semibold },
 });

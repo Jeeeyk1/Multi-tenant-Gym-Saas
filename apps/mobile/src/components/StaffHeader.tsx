@@ -3,8 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
-import { useTheme } from '../context/ThemeContext';
-import { COLORS, SPACING, FONT } from '../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, FONT } from '../constants/theme';
 
 interface StaffHeaderProps {
   /** Big page title. */
@@ -24,7 +23,7 @@ interface StaffHeaderProps {
 /**
  * One header for every staff screen. Uses real safe-area insets instead of a
  * hardcoded iOS gap, so notched Androids and every iPhone size sit correctly.
- * Neutrals come from the dark palette; the greeting accent follows the tenant theme.
+ * Uses staff colors only, not the gym's theme.
  */
 export function StaffHeader({
   title,
@@ -35,7 +34,6 @@ export function StaffHeader({
   borderBottom,
 }: StaffHeaderProps) {
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
 
   return (
     <View
@@ -56,7 +54,7 @@ export function StaffHeader({
         ) : (
           <>
             {greeting ? (
-              <Text style={[styles.greeting, { color: theme.primary }]}>{greeting}</Text>
+              <Text style={[styles.greeting, { color: COLORS.primary }]}>{greeting}</Text>
             ) : null}
             <Text style={styles.title}>{title}</Text>
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}

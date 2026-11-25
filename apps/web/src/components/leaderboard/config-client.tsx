@@ -97,12 +97,12 @@ export function LeaderboardConfigClient({
           {activeCount} exercise{activeCount !== 1 ? 's' : ''} enabled
         </p>
         <div className="flex items-center gap-3">
-          {saved && <span className="text-xs text-green-400">✓ Saved</span>}
+          {saved && <span className="text-xs text-success">✓ Saved</span>}
           {error && <span className="text-xs text-destructive">{error}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 bg-primary text-black text-sm font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
+            className="px-5 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
@@ -125,7 +125,7 @@ export function LeaderboardConfigClient({
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-foreground font-medium">{ex.name}</span>
                   {!ex.isGlobal && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-pill font-semibold">
                       Custom
                     </span>
                   )}

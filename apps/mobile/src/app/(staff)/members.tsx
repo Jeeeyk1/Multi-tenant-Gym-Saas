@@ -3,11 +3,10 @@ import { View, FlatList, TextInput, StyleSheet, RefreshControl, TouchableOpacity
 import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { StaffHeader } from '../../components/StaffHeader';
 import { useStaffMembers } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MemberListItem } from '../../types';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -45,11 +44,10 @@ function isExpiring(m: MemberListItem): boolean {
 
 function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => void }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
-  const { theme } = useTheme();
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
-      <View style={[styles.avatar, { backgroundColor: theme.primary + '18' }]}>
-        <Text style={[styles.avatarText, { color: theme.primary }]}>{getInitials(item.user.fullName)}</Text>
+      <View style={[styles.avatar, { backgroundColor: COLORS.primary + '18' }]}>
+        <Text style={[styles.avatarText, { color: COLORS.primary }]}>{getInitials(item.user.fullName)}</Text>
       </View>
       <View style={styles.rowInfo}>
         <Text style={styles.memberName} numberOfLines={1}>
@@ -73,7 +71,6 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
 
 export default function MembersScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const params = useLocalSearchParams<{ filter?: string }>();
   const membersQ = useStaffMembers();
   const [search, setSearch] = useState('');
@@ -169,7 +166,7 @@ export default function MembersScreen() {
               style={[
                 styles.chip,
                 active
-                  ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                  ? { backgroundColor: COLORS.primary, borderColor: COLORS.primary }
                   : null,
               ]}
             >
@@ -206,7 +203,7 @@ export default function MembersScreen() {
           </View>
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => membersQ.refetch()} tintColor={theme.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => membersQ.refetch()} tintColor={COLORS.primary} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -240,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.control,
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.sm,
     paddingHorizontal: SPACING.md,
@@ -257,14 +254,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 14,
     paddingVertical: 7,
   },
   chipText: { fontSize: 13, color: COLORS.textSecondary, ...FONT.semibold },
-  chipTextActive: { color: '#000' },
+  chipTextActive: { color: COLORS.onPrimary },
   chipCount: { color: COLORS.textMuted, ...FONT.medium },
-  chipCountActive: { color: 'rgba(0,0,0,0.55)', ...FONT.medium },
+  chipCountActive: { color: COLORS.onPrimary + 'B3', ...FONT.medium },
 
   errorBox: {
     backgroundColor: COLORS.errorBg,
@@ -296,7 +293,7 @@ const styles = StyleSheet.create({
   memberName: { fontSize: 14, color: COLORS.text, ...FONT.medium },
   memberSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   rowRight: { alignItems: 'flex-end', gap: 4 },
-  statusBadge: { borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3 },
+  statusBadge: { borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { fontSize: 10, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.4 },
   expiryText: { fontSize: 11, color: COLORS.textMuted, ...FONT.regular },
 

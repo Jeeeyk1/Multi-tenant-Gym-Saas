@@ -55,7 +55,7 @@ function StatCard({
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
         {label}
       </p>
-      <p className={cn('text-4xl font-bold tracking-tight', accent ? 'text-primary' : 'text-foreground')}>
+      <p className={cn('text-4xl font-heading font-extrabold tracking-tight tabular', accent ? 'text-primary' : 'text-foreground')}>
         {value}
       </p>
       {sub && <p className="text-sm text-muted-foreground mt-1.5">{sub}</p>}

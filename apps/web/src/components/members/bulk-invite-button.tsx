@@ -13,10 +13,10 @@ import {
 type Step = 'upload' | 'preview' | 'done';
 
 const STATUS_STYLE: Record<BulkInviteRowStatus, string> = {
-  ready: 'bg-success/10 text-success',
-  duplicate_in_file: 'bg-warning/10 text-warning',
-  already_registered: 'bg-warning/10 text-warning',
-  invalid: 'bg-destructive/10 text-destructive',
+  ready: 'bg-success-bg text-success',
+  duplicate_in_file: 'bg-warning-bg text-warning',
+  already_registered: 'bg-warning-bg text-warning',
+  invalid: 'bg-destructive-bg text-destructive-text',
 };
 
 const STATUS_LABEL: Record<BulkInviteRowStatus, string> = {
@@ -90,15 +90,15 @@ export function BulkInviteButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 border border-border text-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:bg-foreground/5 transition"
+        className="bg-surface inline-flex items-center gap-2 border border-border text-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         Bulk Invite
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={close}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60 p-4" onClick={close}>
           <div
-            className="bg-surface border border-border rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl"
+            className="bg-surface border border-border rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-1"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -152,7 +152,7 @@ export function BulkInviteButton() {
                               <td className="px-3 py-2 text-muted-foreground">{r.email || '—'}</td>
                               <td className="px-3 py-2 text-muted-foreground">{r.expiryDate || '—'}</td>
                               <td className="px-3 py-2">
-                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLE[r.status]}`} title={r.reason ?? ''}>
+                                <span className={`inline-block px-2 py-0.5 rounded-pill text-xs font-semibold ${STATUS_STYLE[r.status]}`} title={r.reason ?? ''}>
                                   {STATUS_LABEL[r.status]}
                                 </span>
                               </td>
@@ -172,7 +172,7 @@ export function BulkInviteButton() {
 
               {step === 'done' && result && (
                 <div className="space-y-3 text-center py-4">
-                  <p className="text-2xl font-bold text-foreground">{result.created} member{result.created !== 1 ? 's' : ''} added</p>
+                  <p className="text-2xl font-heading font-extrabold text-foreground">{result.created} member{result.created !== 1 ? 's' : ''} added</p>
                   <p className="text-sm text-muted-foreground">
                     Invitations are sending in the background — members will get an email to activate their accounts.
                     {result.skipped.length > 0 && ` ${result.skipped.length} row${result.skipped.length !== 1 ? 's were' : ' was'} skipped.`}
@@ -184,25 +184,25 @@ export function BulkInviteButton() {
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
               {step === 'preview' && (
                 <>
-                  <button onClick={reset} disabled={pending} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition disabled:opacity-50">
+                  <button onClick={reset} disabled={pending} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition disabled:opacity-50 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                     Choose different file
                   </button>
                   <button
                     onClick={handleSend}
                     disabled={pending || preview?.summary.ready === 0}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+                    className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                   >
                     {pending ? 'Sending…' : `Send ${preview?.summary.ready ?? 0} invite${preview?.summary.ready !== 1 ? 's' : ''}`}
                   </button>
                 </>
               )}
               {step === 'done' && (
-                <button onClick={close} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition">
+                <button onClick={close} className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                   Done
                 </button>
               )}
               {step === 'upload' && (
-                <button onClick={close} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">
+                <button onClick={close} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                   Cancel
                 </button>
               )}

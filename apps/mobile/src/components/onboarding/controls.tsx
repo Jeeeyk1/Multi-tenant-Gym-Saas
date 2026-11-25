@@ -52,7 +52,7 @@ export function OptionList<T extends string | number>({
           >
             {option.icon && (
               <View style={[styles.optionIcon, { backgroundColor: selected ? theme.primary : theme.colors.background }]}>
-                <Ionicons name={option.icon} size={18} color={selected ? theme.colors.onPrimary : theme.colors.textSecondary} />
+                <Ionicons name={option.icon} size={18} color={selected ? theme.onPrimary : theme.colors.textSecondary} />
               </View>
             )}
             <View style={styles.optionText}>
@@ -96,7 +96,7 @@ export function SegmentedToggle<T extends string>({
             accessibilityState={{ selected }}
             style={[styles.segmentItem, selected && { backgroundColor: theme.primary }]}
           >
-            <Text variant="label" style={{ color: selected ? theme.colors.onPrimary : theme.colors.textSecondary }}>
+            <Text variant="label" style={{ color: selected ? theme.onPrimary : theme.colors.textSecondary }}>
               {option.label}
             </Text>
           </Pressable>
@@ -186,9 +186,9 @@ export function PrimaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={theme.colors.onPrimary} />
+        <ActivityIndicator color={theme.onPrimary} />
       ) : (
-        <Text variant="bodyMed" style={{ color: theme.colors.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
+        <Text variant="bodyMed" style={{ color: theme.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
           {label}
         </Text>
       )}

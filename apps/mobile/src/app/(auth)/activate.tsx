@@ -60,7 +60,7 @@ export default function ActivateScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.button}
           >
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Sign In</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -127,9 +127,9 @@ export default function ActivateScreen() {
               style={styles.button}
             >
               {isLoading ? (
-                <ActivityIndicator color="#000" size="small" />
+                <ActivityIndicator color={theme.onPrimary} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Activate Account</Text>
+                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Activate Account</Text>
               )}
             </LinearGradient>
           </TouchableOpacity>
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 13,
     color: COLORS.text,
@@ -180,8 +180,9 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonText: { color: '#000', fontSize: 16, ...FONT.semibold },
+  buttonText: { fontSize: 16, ...FONT.semibold },
   doneContainer: {
     flex: 1,
     backgroundColor: COLORS.background,

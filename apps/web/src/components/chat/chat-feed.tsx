@@ -140,7 +140,7 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
     <div className="flex flex-col h-full min-h-0">
       {/* Connection status bar */}
       {!connected && (
-        <div className="px-5 py-1.5 text-xs text-center bg-warning/10 text-warning border-b border-warning/20 shrink-0">
+        <div className="px-5 py-1.5 text-xs text-center bg-warning-bg text-warning border-b border-warning/20 shrink-0">
           Connecting to live chat…
         </div>
       )}
@@ -188,7 +188,7 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
                     )}
 
                     {/* Bubble */}
-                    <div className={`relative px-3 py-2 rounded-2xl text-sm ${
+                    <div className={`relative px-3 py-2 rounded-xl text-sm ${
                       msg.isDeleted
                         ? 'bg-background border border-border text-muted-foreground italic'
                         : isOwn
@@ -207,7 +207,7 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
                             return acc;
                           }, {}),
                         ).map(([emoji, count]) => (
-                          <span key={emoji} className="text-xs bg-surface border border-border rounded-full px-2 py-0.5">
+                          <span key={emoji} className="text-xs bg-surface border border-border rounded-pill px-2 py-0.5 font-semibold">
                             {emoji} {count}
                           </span>
                         ))}
@@ -221,7 +221,7 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
                         <button
                           onClick={() => handleDelete(msg.id)}
                           disabled={deletingId === msg.id}
-                          className="text-xs text-muted-foreground hover:text-destructive transition opacity-0 group-hover:opacity-100 disabled:opacity-40"
+                          className="text-xs text-muted-foreground hover:text-destructive-text transition opacity-0 group-hover:opacity-100 disabled:opacity-40"
                         >
                           {deletingId === msg.id ? '…' : 'Delete'}
                         </button>
@@ -246,12 +246,12 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
             onChange={(e) => setInput(e.target.value)}
             placeholder={connected ? 'Write a message…' : 'Connecting…'}
             disabled={sending || !connected}
-            className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition disabled:opacity-60"
+            className="flex-1 bg-surface py-2.5 text-sm border border-border rounded-md px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={sending || !input.trim() || !connected}
-            className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition disabled:opacity-50"
+            className="bg-primary text-primary-foreground text-sm py-2.5 font-semibold px-4 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {sending ? '…' : 'Send'}
           </button>

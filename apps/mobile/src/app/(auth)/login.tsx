@@ -140,9 +140,9 @@ export default function LoginScreen() {
               style={styles.button}
             >
               {isLoading ? (
-                <ActivityIndicator color="#000" size="small" />
+                <ActivityIndicator color={theme.onPrimary} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
+                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Sign In</Text>
               )}
             </LinearGradient>
           </TouchableOpacity>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 13,
     color: COLORS.text,
@@ -254,9 +254,9 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    color: '#000',
     fontSize: 16,
     ...FONT.semibold,
   },

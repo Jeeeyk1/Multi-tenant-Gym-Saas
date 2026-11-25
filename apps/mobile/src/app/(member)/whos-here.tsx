@@ -36,7 +36,7 @@ export default function WhosHereScreen() {
 
         totalCard: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           padding: SPACING.md,
           gap: SPACING.xs,
@@ -48,7 +48,7 @@ export default function WhosHereScreen() {
 
         privacyCard: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.md,
@@ -61,7 +61,7 @@ export default function WhosHereScreen() {
 
         list: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           overflow: 'hidden',
@@ -75,14 +75,14 @@ export default function WhosHereScreen() {
         },
         personRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
         personDot: { width: 10, height: 10, alignItems: 'center', justifyContent: 'center' },
-        personDotInner: { width: 8, height: 8, borderRadius: 4 },
+        personDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.success },
         personNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
         personName: { fontSize: 14, color: C.text, ...FONT.semibold },
         personTime: { fontSize: 12, color: C.textMuted, marginTop: 2 },
 
         emptyCard: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.xl,
@@ -247,7 +247,7 @@ function PersonRow({
   return (
     <View style={[styles.personRow, withBorder && styles.personRowBorder]}>
       <View style={styles.personDot}>
-        <View style={[styles.personDotInner, { backgroundColor: '#10B981' }]} />
+        <View style={styles.personDotInner} />
       </View>
       <View style={{ flex: 1 }}>
         <View style={styles.personNameRow}>

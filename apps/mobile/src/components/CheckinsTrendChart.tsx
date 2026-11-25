@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from './Text';
 import { BarChart } from 'react-native-chart-kit';
-import { useTheme } from '../context/ThemeContext';
 import { useCheckinsTrend } from '../hooks/reports';
-import { COLORS, SPACING, RADIUS, FONT } from '../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../constants/theme';
 
 const CARD_HORIZONTAL_PADDING = SPACING.md * 2;
 const CHART_WIDTH = Dimensions.get('window').width - SPACING.lg * 2 - CARD_HORIZONTAL_PADDING;
@@ -17,7 +16,6 @@ function formatDayLabel(dateStr: string): string {
 }
 
 export function CheckinsTrendChart() {
-  const { theme } = useTheme();
   const [range, setRange] = useState<RangeOption>(7);
   const trendQ = useCheckinsTrend(range);
   const data = trendQ.data ?? [];
@@ -36,7 +34,7 @@ export function CheckinsTrendChart() {
           {([7, 30] as const).map((option) => (
             <TouchableOpacity
               key={option}
-              style={[styles.toggleBtn, range === option && { backgroundColor: theme.primary }]}
+              style={[styles.toggleBtn, range === option && { backgroundColor: COLORS.primary }]}
               onPress={() => setRange(option)}
               activeOpacity={0.7}
             >
@@ -50,7 +48,7 @@ export function CheckinsTrendChart() {
 
       {trendQ.isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator color={theme.primary} />
+          <ActivityIndicator color={COLORS.primary} />
         </View>
       ) : trendQ.isError || data.length === 0 ? (
         <View style={styles.centered}>
@@ -70,8 +68,8 @@ export function CheckinsTrendChart() {
             backgroundGradientFrom: COLORS.surface,
             backgroundGradientTo: COLORS.surface,
             decimalPlaces: 0,
-            color: () => theme.primary,
-            labelColor: () => COLORS.textMuted,
+            color: () => COLORS.primary,
+            labelColor: () => COLORS.textSecondary,
             barPercentage: range === 30 ? 0.5 : 0.6,
             propsForBackgroundLines: { stroke: COLORS.border },
           }}
@@ -85,7 +83,7 @@ export function CheckinsTrendChart() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.md,
@@ -117,7 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
   },
   toggleText: { fontSize: 11, color: COLORS.textMuted, ...FONT.medium },
-  toggleTextActive: { color: '#000' },
+  toggleTextActive: { color: COLORS.onPrimary },
   centered: { height: 180, alignItems: 'center', justifyContent: 'center' },
   emptyText: { fontSize: 13, color: COLORS.textMuted },
   chart: { marginLeft: -SPACING.md, borderRadius: RADIUS.md },

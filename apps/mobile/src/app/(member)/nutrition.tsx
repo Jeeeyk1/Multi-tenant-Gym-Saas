@@ -146,12 +146,12 @@ export default function NutritionScreen() {
                 accessibilityRole="button"
                 style={({ pressed }) => [styles.actionMain, { backgroundColor: theme.primary }, pressed && { opacity: 0.9 }]}
               >
-                <Ionicons name="add-circle" size={24} color={C.onPrimary} />
+                <Ionicons name="add-circle" size={24} color={theme.onPrimary} />
                 <View style={{ flex: 1 }}>
-                  <Text variant="bodyMed" style={{ color: C.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
+                  <Text variant="bodyMed" style={{ color: theme.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
                     Log a meal
                   </Text>
-                  <Text variant="caption" style={{ color: C.onPrimary, opacity: 0.85 }}>
+                  <Text variant="caption" style={{ color: theme.onPrimary, opacity: 0.85 }}>
                     Snap, describe or re-log
                   </Text>
                 </View>
@@ -228,8 +228,8 @@ export default function NutritionScreen() {
             },
           ]}
         >
-          <Ionicons name="checkmark-circle" size={20} color={C.onPrimary} />
-          <Text variant="bodyMed" style={{ color: C.onPrimary, flex: 1 }}>
+          <Ionicons name="checkmark-circle" size={20} color={theme.onPrimary} />
+          <Text variant="bodyMed" style={{ color: theme.onPrimary, flex: 1 }}>
             {toast.message}
           </Text>
         </Animated.View>

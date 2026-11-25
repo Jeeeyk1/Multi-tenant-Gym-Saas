@@ -96,14 +96,14 @@ export function SchedulesForm({ gymId, schedules: initial }: Props) {
                   type="time"
                   value={row.openTime ?? '06:00'}
                   onChange={(e) => update(row.dayOfWeek, { openTime: e.target.value })}
-                  className="bg-background border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-surface border border-border rounded-md px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                 />
                 <span className="text-muted-foreground text-xs">to</span>
                 <input
                   type="time"
                   value={row.closeTime ?? '22:00'}
                   onChange={(e) => update(row.dayOfWeek, { closeTime: e.target.value })}
-                  className="bg-background border border-border rounded-lg px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-surface border border-border rounded-md px-2 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                 />
               </div>
             )}
@@ -118,11 +118,11 @@ export function SchedulesForm({ gymId, schedules: initial }: Props) {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-5 py-2.5 bg-primary text-black text-sm font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+          className="px-5 py-2.5 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           {saving ? 'Saving…' : 'Save Hours'}
         </button>
-        {success && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
+        {success && <span className="text-sm text-success font-medium">✓ Saved</span>}
         {error && <span className="text-sm text-destructive">{error}</span>}
       </div>
     </section>

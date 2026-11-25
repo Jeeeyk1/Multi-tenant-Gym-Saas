@@ -32,7 +32,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
 
   const s = useMemo(() => StyleSheet.create({
     card: {
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       padding: SPACING.lg,
       marginBottom: SPACING.lg,
@@ -53,7 +53,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
     planName: { fontSize: 15, color: C.text, ...FONT.semibold },
     statusBadge: {
       borderWidth: 1,
-      borderRadius: RADIUS.full,
+      borderRadius: RADIUS.pill,
       paddingHorizontal: 10,
       paddingVertical: 3,
     },

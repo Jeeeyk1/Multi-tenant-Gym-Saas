@@ -33,7 +33,7 @@ function MessageBubble({
 }) {
   const { theme } = useTheme();
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const isMine = msg.sender.id === currentUserId;
   const time = new Date(msg.sentAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -43,7 +43,7 @@ function MessageBubble({
   if (msg.isDeleted) {
     return (
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
-        <Text style={styles.deletedText}>This message was deleted</Text>
+        <Text style={[styles.deletedText, isMine && styles.messageTextMine]}>This message was deleted</Text>
       </View>
     );
   }
@@ -65,7 +65,7 @@ function MessageBubble({
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
         {msg.replyTo && !msg.replyTo.isDeleted && (
           <View style={[styles.replyBanner, { borderLeftColor: theme.primary + '99' }]}>
-            <Text style={styles.replyText} numberOfLines={1}>
+            <Text style={[styles.replyText, isMine && styles.messageTextMine]} numberOfLines={1}>
               ↩ {msg.replyTo.content}
             </Text>
           </View>
@@ -83,7 +83,7 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const equippedBadgesQ = useEquippedBadgesMap();
   const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
 
@@ -334,7 +334,7 @@ export default function ChatScreen() {
   );
 }
 
-const makeStyles = (C: ColorPalette) => StyleSheet.create({
+const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
   centered: {
     flex: 1,
@@ -392,9 +392,9 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   bubbleMine: { backgroundColor: C.primary },
   bubbleTheirs: { backgroundColor: C.card },
   messageText: { fontSize: 14, color: C.text, lineHeight: 20 },
-  messageTextMine: { color: '#000' },
+  messageTextMine: { color: onPrimary },
   timeText: { fontSize: 10, color: C.textMuted, marginTop: 4, textAlign: 'right' },
-  timeTextMine: { color: 'rgba(255,255,255,0.6)' },
+  timeTextMine: { color: onPrimary, opacity: 0.7 },
   deletedText: { fontSize: 13, color: C.textMuted, fontStyle: 'italic' },
   replyBanner: {
     borderLeftWidth: 2,
@@ -417,7 +417,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: Platform.OS === 'ios' ? 10 : 8,
     color: C.text,
@@ -427,13 +427,13 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   sendBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: RADIUS.control,
     backgroundColor: C.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
-  sendIcon: { fontSize: 18, color: '#000', ...FONT.bold },
+  sendIcon: { fontSize: 18, color: onPrimary, ...FONT.bold },
   inlineError: {
     backgroundColor: C.errorBg,
     paddingHorizontal: SPACING.md,

@@ -1,12 +1,10 @@
 import { LoginForm } from '@/components/auth/login-form';
 import Link from 'next/link';
-import { hexToHsl } from '@/lib/utils';
+import { FitOpsMark } from '@/components/brand/fitops-mark';
 
 interface GymBranding {
   name: string | null;
   logoUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
 }
 
 async function fetchGymBranding(code: string): Promise<GymBranding> {
@@ -18,61 +16,42 @@ async function fetchGymBranding(code: string): Promise<GymBranding> {
       body: JSON.stringify({ code }),
       next: { revalidate: 300 },
     });
-    if (!res.ok) return { name: null, logoUrl: null, primaryColor: null, secondaryColor: null };
+    if (!res.ok) return { name: null, logoUrl: null };
     const data = await res.json() as {
       name?: string;
       logoUrl?: string | null;
-      primaryColor?: string | null;
-      secondaryColor?: string | null;
     };
     return {
       name: data.name ?? null,
       logoUrl: data.logoUrl ?? null,
-      primaryColor: data.primaryColor ?? null,
-      secondaryColor: data.secondaryColor ?? null,
     };
   } catch {
-    return { name: null, logoUrl: null, primaryColor: null, secondaryColor: null };
+    return { name: null, logoUrl: null };
   }
 }
 
 interface Props {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ type?: string; name?: string; logo?: string; primary?: string; secondary?: string; activated?: string }>;
+  searchParams: Promise<{ type?: string; name?: string; logo?: string; activated?: string }>;
 }
 
 export default async function LoginPage({ params, searchParams }: Props) {
   const { code } = await params;
-  const { type = 'gym', name, logo, primary, secondary, activated } = await searchParams;
+  const { type = 'gym', name, logo, activated } = await searchParams;
   const loginType = type === 'org' ? 'org' : 'gym';
 
   // Branding from query params (code-entry flow) takes priority.
   // If missing (subdomain flow), fetch directly from the API.
   let gymName = name ? decodeURIComponent(name) : null;
   let logoUrl = logo ? decodeURIComponent(logo) : null;
-  let primaryRaw = primary ? decodeURIComponent(primary) : null;
-  let secondaryRaw = secondary ? decodeURIComponent(secondary) : null;
-
-  if (!gymName && !logoUrl && !primaryRaw) {
+  if (!gymName && !logoUrl) {
     const branding = await fetchGymBranding(code);
     gymName = branding.name;
     logoUrl = branding.logoUrl;
-    primaryRaw = branding.primaryColor;
-    secondaryRaw = branding.secondaryColor;
   }
-
-  const primaryHsl = primaryRaw ? hexToHsl(primaryRaw) : null;
-  const secondaryHsl = secondaryRaw ? hexToHsl(secondaryRaw) : null;
-  const cssVars = [
-    primaryHsl && `--primary: ${primaryHsl};`,
-    secondaryHsl && `--secondary: ${secondaryHsl};`,
-  ]
-    .filter(Boolean)
-    .join(' ');
 
   return (
     <>
-      {cssVars && <style>{`:root { ${cssVars} }`}</style>}
       <main className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
           {/* Gym identity header */}
@@ -81,16 +60,10 @@ export default async function LoginPage({ params, searchParams }: Props) {
               <img
                 src={logoUrl}
                 alt={gymName ?? 'Gym logo'}
-                className="w-16 h-16 rounded-2xl object-contain mx-auto mb-4 border border-border bg-surface"
+                className="w-16 h-16 rounded-xl object-contain mx-auto mb-4 border border-border bg-surface"
               />
             ) : (
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                  <path d="M6.5 6.5h11" /><path d="M6.5 17.5h11" />
-                  <path d="M3 9.5h2v5H3z" /><path d="M19 9.5h2v5h-2z" />
-                  <path d="M1 11h2v2H1z" /><path d="M21 11h2v2h-2z" />
-                </svg>
-              </div>
+              <FitOpsMark size={64} className="mb-4" />
             )}
             {gymName ? (
               <>
@@ -104,7 +77,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
           </div>
 
           {activated === '1' && (
-            <div className="mb-4 px-4 py-3 rounded-xl bg-success/10 border border-success/30 text-sm text-success text-center font-medium">
+            <div className="mb-4 px-4 py-3 rounded-xl bg-success-bg border border-success/30 text-sm text-success text-center font-medium">
               ✓ Account activated! Sign in below to get started.
             </div>
           )}

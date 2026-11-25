@@ -35,7 +35,7 @@ const MEAL_LOADING_MESSAGES = [
 export default function AIScreen() {
   const { theme } = useTheme();
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('workout');
   const memberQ = useMyMember();
@@ -49,7 +49,7 @@ export default function AIScreen() {
         end={{ x: 1, y: 0 }}
         style={styles.header}
       >
-        <Ionicons name="flash" size={22} color="#000" />
+        <Ionicons name="flash" size={22} color={theme.onPrimary} />
         <Text style={styles.headerTitle}>AI Coach</Text>
       </LinearGradient>
 
@@ -86,7 +86,7 @@ const TODAY_NAME = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
 function WorkoutTab({ gymId, memberId, theme }: TabProps) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const profileQ = useMyProfile();
   const [weekPlan, setWeekPlan] = useState<WorkoutWeekPlan | null>(null);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -180,10 +180,10 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
         disabled={loading || initialising || !memberId}
       >
         {loading ? (
-          <ActivityIndicator color="#000" size="small" />
+          <ActivityIndicator color={theme.onPrimary} size="small" />
         ) : (
           <>
-            <Ionicons name="flash-outline" size={16} color="#000" />
+            <Ionicons name="flash-outline" size={16} color={theme.onPrimary} />
             <Text style={styles.generateBtnText}>{weekPlan ? 'Regenerate Plan' : 'Generate Weekly Plan'}</Text>
           </>
         )}
@@ -222,7 +222,7 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                   <Text style={[styles.dayPillText, isActive && styles.dayPillTextActive]}>
                     {d.day.slice(0, 3)}
                   </Text>
-                  {isToday && <View style={[styles.todayDot, { backgroundColor: isActive ? '#000' : theme.primary }]} />}
+                  {isToday && <View style={[styles.todayDot, { backgroundColor: isActive ? theme.onPrimary : theme.primary }]} />}
                 </Pressable>
               );
             })}
@@ -385,7 +385,7 @@ function SwapExerciseModal({
   onConfirm: (reason: string) => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [reason, setReason] = useState('');
 
   useEffect(() => {
@@ -448,7 +448,7 @@ function SwapExerciseModal({
             style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]}
             onPress={() => onConfirm(reason)}
           >
-            <Ionicons name="swap-horizontal" size={16} color="#000" />
+            <Ionicons name="swap-horizontal" size={16} color={theme.onPrimary} />
             <Text style={styles.generateBtnText}>Find alternative</Text>
           </Pressable>
         </ScrollView>
@@ -542,7 +542,7 @@ function WorkoutPlanModal({
   onGenerate: (params: WorkoutPlanRequest) => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [focus, setFocus] = useState<WorkoutFocus>('AUTO');
@@ -657,7 +657,7 @@ function WorkoutPlanModal({
                     style={[styles.segment, days === n && { backgroundColor: theme.primary, borderColor: theme.primary }]}
                     onPress={() => pick(() => setDays(n))}
                   >
-                    <Text style={[styles.segmentText, days === n && { color: '#000' }]}>{n}</Text>
+                    <Text style={[styles.segmentText, days === n && { color: theme.onPrimary }]}>{n}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -673,7 +673,7 @@ function WorkoutPlanModal({
                     style={[styles.segment, length === n && { backgroundColor: theme.primary, borderColor: theme.primary }]}
                     onPress={() => pick(() => setLength(n))}
                   >
-                    <Text style={[styles.segmentText, length === n && { color: '#000' }]}>{n}m</Text>
+                    <Text style={[styles.segmentText, length === n && { color: theme.onPrimary }]}>{n}m</Text>
                   </Pressable>
                 ))}
               </View>
@@ -689,7 +689,7 @@ function WorkoutPlanModal({
                 <ReviewRow styles={styles} C={C} icon="time-outline" label="Session" value={`${length} min`} />
               </View>
               <Pressable style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]} onPress={submit}>
-                <Ionicons name="flash-outline" size={16} color="#000" />
+                <Ionicons name="flash-outline" size={16} color={theme.onPrimary} />
                 <Text style={styles.generateBtnText}>Generate My Plan</Text>
               </Pressable>
             </WizardQuestion>
@@ -743,7 +743,7 @@ function OptionCard({
   onPress: () => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   return (
     <Pressable
       style={[
@@ -810,7 +810,7 @@ function ExerciseDetailModal({
   onClose: () => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [instructions, setInstructions] = useState<ExerciseInstructions | null>(
     cache.current.get(exercise.name) ?? null,
   );
@@ -976,7 +976,7 @@ function parseMealPlan(raw: string | null): MealPlan | null {
 
 function NutritionTab({ gymId, memberId, theme }: TabProps) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1035,10 +1035,10 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
           disabled={loading || initialising || !memberId}
         >
           {loading ? (
-            <ActivityIndicator color="#000" size="small" />
+            <ActivityIndicator color={theme.onPrimary} size="small" />
           ) : (
             <>
-              <Ionicons name="flash-outline" size={16} color="#000" />
+              <Ionicons name="flash-outline" size={16} color={theme.onPrimary} />
               <Text style={styles.generateBtnText}>{suggestion ? 'New Meal Plan' : 'Create Meal Plan'}</Text>
             </>
           )}
@@ -1092,7 +1092,7 @@ function MealPlanModal({
   onGenerate: (params: MealPlanRequest) => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [mode, setMode] = useState<MealPlanMode | null>(null);
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -1175,7 +1175,7 @@ function MealPlanModal({
                         ]}
                         onPress={() => setMealCount(n)}
                       >
-                        <Text style={[styles.segmentText, mealCount === n && { color: '#000' }]}>{n}</Text>
+                        <Text style={[styles.segmentText, mealCount === n && { color: theme.onPrimary }]}>{n}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -1195,7 +1195,7 @@ function MealPlanModal({
               )}
 
               <Pressable style={[styles.generateBtn, styles.mealGenerateBtn, { backgroundColor: theme.primary }]} onPress={submit}>
-                <Ionicons name="flash-outline" size={16} color="#000" />
+                <Ionicons name="flash-outline" size={16} color={theme.onPrimary} />
                 <Text style={styles.generateBtnText}>Generate Plan</Text>
               </Pressable>
 
@@ -1225,7 +1225,7 @@ function ModeCard({
   onPress: () => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   return (
     <Pressable style={[styles.modeCard, { borderColor: theme.primary + '30' }]} onPress={onPress}>
       <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18', width: 48, height: 48, borderRadius: 24, marginBottom: 0 }]}>
@@ -1252,7 +1252,7 @@ function MealPlanView({
   theme: ReturnType<typeof useTheme>['theme'];
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const dateLabel = generatedAt
     ? new Date(generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
@@ -1329,7 +1329,7 @@ function MealPlanView({
 
 function DiaryTab({ gymId, memberId, theme }: TabProps) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [logs, setLogs] = useState<FoodLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -1365,7 +1365,7 @@ function DiaryTab({ gymId, memberId, theme }: TabProps) {
           onPress={() => setShowModal(true)}
           disabled={!memberId}
         >
-          <Ionicons name="add" size={18} color="#000" />
+          <Ionicons name="add" size={18} color={theme.onPrimary} />
           <Text style={styles.logBtnText}>Log Meal</Text>
         </Pressable>
       </View>
@@ -1420,7 +1420,7 @@ function LogMealModal({
   onLogged: (log: FoodLog) => void;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [step, setStep] = useState<ModalStep>('photo');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<MealAnalysis | null>(null);
@@ -1558,7 +1558,7 @@ function LogMealModal({
                 onPress={() => pickPhoto('camera')}
                 activeOpacity={0.8}
               >
-                <Ionicons name="camera" size={18} color="#000" />
+                <Ionicons name="camera" size={18} color={theme.onPrimary} />
                 <Text style={styles.photoBtnText}>Take Photo</Text>
               </TouchableOpacity>
 
@@ -1629,7 +1629,7 @@ function LogMealModal({
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color="#000" size="small" />
+                  <ActivityIndicator color={theme.onPrimary} size="small" />
                 ) : (
                   <Text style={styles.saveBtnText}>Save to Diary</Text>
                 )}
@@ -1661,7 +1661,7 @@ function SuggestionCard({
   generatedAt?: string | null;
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const dateLabel = generatedAt
     ? new Date(generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
@@ -1679,7 +1679,7 @@ function SuggestionCard({
 
 function FoodLogRow({ log, theme }: { log: FoodLog; theme: ReturnType<typeof useTheme>['theme'] }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const time = new Date(log.loggedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   return (
     <View style={styles.logRow}>
@@ -1708,7 +1708,7 @@ function MacroChip({
   theme: ReturnType<typeof useTheme>['theme'];
 }) {
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   return (
     <View style={[styles.macroChip, { backgroundColor: theme.primary + '12' }]}>
       <Text style={[styles.macroValue, { color: theme.primary }]}>
@@ -1729,7 +1729,7 @@ interface TabProps {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const makeStyles = (C: ColorPalette) => StyleSheet.create({
+const makeStyles = (C: ColorPalette, onAccent: string) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: C.background,
@@ -1745,7 +1745,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     ...FONT.bold,
-    color: '#000',
+    color: onAccent,
   },
   tabs: {
     flexDirection: 'row',
@@ -1778,7 +1778,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   heroCard: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     alignItems: 'center',
     gap: SPACING.sm,
@@ -1809,8 +1809,9 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.xs,
     paddingVertical: SPACING.sm,
+    justifyContent: 'center',
     paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.button,
     marginTop: SPACING.sm,
   },
   generateBtnDisabled: {
@@ -1819,11 +1820,11 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   generateBtnText: {
     fontSize: 14,
     ...FONT.semibold,
-    color: '#000',
+    color: onAccent,
   },
   suggestionCard: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: C.border,
@@ -1871,12 +1872,12 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     gap: 4,
     paddingVertical: 6,
     paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
   },
   logBtnText: {
     fontSize: 13,
     ...FONT.semibold,
-    color: '#000',
+    color: onAccent,
   },
   emptyState: {
     flex: 1,
@@ -1899,7 +1900,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'flex-start',
     gap: SPACING.sm,
     backgroundColor: C.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderWidth: 1,
@@ -1952,7 +1953,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   textArea: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,
@@ -1968,7 +1969,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.xs,
     borderWidth: 1.5,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: SPACING.sm,
     marginBottom: SPACING.md,
   },
@@ -1981,7 +1982,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   analysisCard: {
     borderWidth: 1,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
     marginBottom: SPACING.md,
   },
@@ -2022,7 +2023,8 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   saveBtn: {
     alignItems: 'center',
     paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    borderRadius: RADIUS.button,
     marginTop: SPACING.sm,
     marginBottom: SPACING.xl,
   },
@@ -2032,7 +2034,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   saveBtnText: {
     fontSize: 15,
     ...FONT.semibold,
-    color: '#000',
+    color: onAccent,
   },
 
   // Photo modal
@@ -2082,7 +2084,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   photoBtnText: {
     fontSize: 15,
-    color: '#000',
+    color: onAccent,
     ...FONT.semibold,
   },
   photoPreview: {
@@ -2157,7 +2159,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     minWidth: 62,
     height: 26,
     paddingHorizontal: 8,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
   },
   swapBtnText: {
     fontSize: 11,
@@ -2168,7 +2170,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     borderWidth: 1,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
   },
   swapCurrentName: {
@@ -2184,13 +2186,13 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   swapChip: {
     borderWidth: 1,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.md,
     paddingVertical: 8,
   },
   swapChipText: {
     fontSize: 13,
-    ...FONT.medium,
+    ...FONT.semibold,
   },
   // Exercise detail modal
   exModalContainer: {
@@ -2265,7 +2267,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   musclePill: {
     paddingVertical: 4,
     paddingHorizontal: SPACING.sm,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
   },
   musclePillText: {
     fontSize: 13,
@@ -2288,7 +2290,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   stepNumText: {
     fontSize: 11,
     ...FONT.bold,
-    color: '#000',
+    color: onAccent,
   },
   stepText: {
     flex: 1,
@@ -2311,7 +2313,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   modCard: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,
@@ -2339,7 +2341,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: C.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,
@@ -2367,7 +2369,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   dayPill: {
     paddingVertical: 6,
     paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.surface,
@@ -2380,7 +2382,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     color: C.textSecondary,
   },
   dayPillTextActive: {
-    color: '#000',
+    color: onAccent,
   },
   todayDot: {
     width: 5,
@@ -2390,7 +2392,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   // Workout plan cards
   workoutEmpty: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.lg,
     alignItems: 'center',
     gap: SPACING.sm,
@@ -2398,7 +2400,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     borderColor: C.border,
   },
   planHeader: {
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     padding: SPACING.md,
     gap: SPACING.xs,
@@ -2445,7 +2447,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   exerciseCard: {
     width: 200,
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     padding: SPACING.md,
     gap: SPACING.sm,
@@ -2466,13 +2468,13 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     gap: 3,
     backgroundColor: C.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
   statValue: {
     fontSize: 12,
-    ...FONT.bold,
+    ...FONT.semibold,
   },
   statLabel: {
     fontSize: 11,
@@ -2503,7 +2505,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.md,
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     padding: SPACING.md,
   },
@@ -2521,7 +2523,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   mealInput: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,
@@ -2542,7 +2544,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     borderWidth: 1,
     borderColor: C.border,
     backgroundColor: C.surface,
@@ -2559,7 +2561,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   mealCard: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,
@@ -2644,7 +2646,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.md,
     borderWidth: 1,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
   },
   optionIcon: {
@@ -2667,7 +2669,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   },
   reviewCard: {
     backgroundColor: C.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: C.border,
     padding: SPACING.md,

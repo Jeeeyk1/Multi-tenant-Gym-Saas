@@ -141,9 +141,9 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
             rows={1}
             placeholder="Ask anything about your gym…"
             className={cn(
-              'flex-1 resize-none bg-background border border-border rounded-xl px-4 py-3',
+              'flex-1 resize-none bg-surface border border-border rounded-md px-4 py-3',
               'text-sm text-foreground placeholder:text-muted-foreground',
-              'focus:outline-none focus:border-primary/40',
+              'focus:outline-none focus:border-focus-ring',
               'disabled:opacity-50 transition',
             )}
             style={{ maxHeight: '120px', overflowY: 'auto' }}
@@ -153,7 +153,7 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
             disabled={!input.trim() || isPending}
             className={cn(
               'shrink-0 px-4 py-3 rounded-xl text-sm font-semibold transition',
-              'bg-primary text-primary-foreground hover:opacity-90',
+              'bg-primary text-primary-foreground hover:bg-primary-hover font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:opacity-40 disabled:cursor-not-allowed',
             )}
           >
@@ -177,11 +177,11 @@ function ChatBubble({ message }: { message: Message }) {
       <div className={cn('max-w-2xl space-y-2', isUser ? 'items-end' : 'items-start', 'flex flex-col')}>
         <div
           className={cn(
-            'px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap',
+            'px-4 py-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap',
             isUser
               ? 'bg-primary/10 text-foreground border border-primary/20'
               : message.error
-                ? 'bg-destructive/5 text-destructive border border-destructive/20'
+                ? 'bg-destructive-bg text-destructive-text border border-destructive/20'
                 : 'bg-surface border border-border text-foreground',
           )}
         >
@@ -201,7 +201,7 @@ function ChatBubble({ message }: { message: Message }) {
 function TraceBubble({ completed, active }: { completed: string[]; active: string | null }) {
   return (
     <div className="flex justify-start">
-      <div className="bg-surface border border-border rounded-2xl px-4 py-3 space-y-2 min-w-[220px]">
+      <div className="bg-surface border border-border rounded-xl px-4 py-3 space-y-2 min-w-[220px]">
         {completed.map((label, i) => (
           <TraceLine key={`done-${i}`} label={label} done />
         ))}
@@ -236,7 +236,7 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-8 py-16">
       <div className="text-center space-y-2">
-        <p className="text-2xl font-semibold text-foreground">Ask your gym anything</p>
+        <p className="text-2xl font-heading font-bold text-foreground">Ask your gym anything</p>
         <p className="text-sm text-muted-foreground">
           Get instant answers about members, attendance, revenue, and trends.
         </p>
@@ -248,7 +248,7 @@ function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
             key={q}
             onClick={() => onSuggest(q)}
             className={cn(
-              'text-left px-4 py-3 rounded-xl border border-border bg-surface',
+              'text-left px-4 py-3 rounded-md border border-border bg-surface font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'text-sm text-muted-foreground hover:text-foreground hover:border-primary/30',
               'transition',
             )}

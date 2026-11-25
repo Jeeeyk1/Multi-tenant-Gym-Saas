@@ -97,10 +97,10 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition',
+                'flex items-center gap-3 px-3 py-2 text-sm rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 isActive
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5',
+                  ? 'bg-nav-active text-nav-active-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-hover',
               )}
             >
               <span className="text-base leading-none w-4 text-center">{item.icon}</span>
@@ -120,7 +120,7 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
           <form action={logout}>
             <button
               type="submit"
-              className="text-xs text-muted-foreground hover:text-destructive transition px-2 py-1 rounded"
+              className="text-xs text-muted-foreground hover:text-destructive-text transition px-2 py-1 rounded"
               title="Sign out"
             >
               Sign out
@@ -129,7 +129,7 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
         </div>
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-hover transition"
         >
           <span>{dark ? '☀' : '☾'}</span>
           {dark ? 'Light mode' : 'Dark mode'}

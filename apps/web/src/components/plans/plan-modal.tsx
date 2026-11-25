@@ -48,8 +48,8 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl p-6">
+      <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-surface border border-border rounded-xl shadow-1 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-foreground">
@@ -78,7 +78,7 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                 placeholder="e.g. Monthly Unlimited"
                 required
                 disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
               />
             </div>
 
@@ -92,7 +92,7 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                 defaultValue={plan?.type ?? ''}
                 required
                 disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
               >
                 <option value="" disabled>Select type…</option>
                 {PLAN_TYPES.map((t) => (
@@ -116,7 +116,7 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                   placeholder="0.00"
                   required
                   disabled={isPending}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                  className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
                 />
               </div>
               <div>
@@ -132,7 +132,7 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                   placeholder="30"
                   required
                   disabled={isPending}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                  className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
                 />
               </div>
             </div>
@@ -148,12 +148,12 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                 defaultValue={plan?.description ?? ''}
                 placeholder="Short description of what's included…"
                 disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition resize-none"
+                className="w-full bg-surface border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition resize-none"
               />
             </div>
 
             {error && (
-              <div className="bg-red-950/60 border border-destructive rounded-lg px-3 py-2">
+              <div className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
@@ -163,14 +163,14 @@ export function PlanModal({ gymId, plan, onClose }: Props) {
                 type="button"
                 onClick={onClose}
                 disabled={isPending}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition disabled:opacity-50"
+                className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition disabled:opacity-50 font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Plan'}
               </button>

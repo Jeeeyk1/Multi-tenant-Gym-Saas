@@ -11,6 +11,7 @@ import { useSelfCheckIn } from '../../hooks/members';
 import { AnimatedMascot } from '../../components/AnimatedMascot';
 import { SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { CheckIn } from '../../types';
+import { onAccent } from '../../theme/accent';
 
 type Status = 'idle' | 'loading' | 'checked_in' | 'already_in' | 'error';
 
@@ -112,12 +113,13 @@ export default function CheckInScreen() {
   const isWarn = status === 'already_in';
 
   const buttonColors: [string, string] = isSuccess
-    ? [C.success, '#16a34a']
+    ? [C.success, C.success]
     : isError
     ? isWarn
-      ? [C.warning, '#d97706']
-      : [C.error, '#dc2626']
+      ? [C.warning, C.warning]
+      : [C.error, C.error]
     : theme.gradient;
+  const buttonFg = isIdle ? theme.onPrimary : onAccent(buttonColors[0]);
 
   const s = useMemo(() => StyleSheet.create({
     container: {
@@ -145,7 +147,7 @@ export default function CheckInScreen() {
     successTime: { fontSize: 14, color: C.textSecondary },
     statusBox: {
       borderWidth: 1,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       padding: SPACING.md,
       width: '100%',
       marginBottom: SPACING.md,
@@ -170,10 +172,6 @@ export default function CheckInScreen() {
     buttonPressable: {
       borderRadius: BUTTON_SIZE / 2,
       overflow: 'hidden',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.55,
-      shadowRadius: 24,
-      elevation: 14,
     },
     bigButton: {
       width: BUTTON_SIZE,
@@ -183,7 +181,7 @@ export default function CheckInScreen() {
       justifyContent: 'center',
       gap: SPACING.xs,
     },
-    bigButtonLabel: { fontSize: 15, ...FONT.semibold, color: '#fff' },
+    bigButtonLabel: { fontSize: 15, ...FONT.semibold },
     hint: {
       marginTop: SPACING.xxl,
       color: C.textMuted,
@@ -231,7 +229,7 @@ export default function CheckInScreen() {
           <Pressable
             onPress={isIdle ? handleCheckIn : reset}
             disabled={status === 'loading'}
-            style={[s.buttonPressable, { shadowColor: theme.primary }]}
+            style={s.buttonPressable}
           >
             <LinearGradient
               colors={buttonColors}
@@ -240,15 +238,15 @@ export default function CheckInScreen() {
               style={s.bigButton}
             >
               {status === 'loading' ? (
-                <ActivityIndicator color="#fff" size="large" />
+                <ActivityIndicator color={buttonFg} size="large" />
               ) : (
                 <>
                   <Ionicons
                     name={isSuccess ? 'checkmark' : isError ? 'refresh' : 'flash'}
                     size={44}
-                    color={isIdle ? '#000' : '#fff'}
+                    color={buttonFg}
                   />
-                  <Text style={[s.bigButtonLabel, isIdle && { color: '#000' }]}>
+                  <Text style={[s.bigButtonLabel, { color: buttonFg }]}>
                     {isSuccess ? 'Tap to reset' : isError ? 'Try again' : 'Check In'}
                   </Text>
                 </>

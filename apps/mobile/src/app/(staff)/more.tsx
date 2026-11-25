@@ -4,9 +4,8 @@ import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { StaffHeader } from '../../components/StaffHeader';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -25,7 +24,6 @@ function getInitials(name: string): string {
 export default function MoreScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { theme } = useTheme();
 
   const staffRoles = user?.roles.filter((r) => r !== 'MEMBER') ?? [];
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
@@ -47,8 +45,8 @@ export default function MoreScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Profile card */}
       <View style={styles.profileCard}>
-        <View style={[styles.avatar, { borderColor: theme.primary }]}>
-          <Text style={[styles.avatarText, { color: theme.primary }]}>{initials}</Text>
+        <View style={[styles.avatar, { borderColor: COLORS.primary }]}>
+          <Text style={[styles.avatarText, { color: COLORS.primary }]}>{initials}</Text>
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{user?.fullName ?? firstName}</Text>
@@ -113,7 +111,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.md,
@@ -140,18 +138,18 @@ const styles = StyleSheet.create({
   profileEmail: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular },
   rolesRow: { flexDirection: 'row', gap: SPACING.xs, marginTop: 4, flexWrap: 'wrap' },
   roleBadge: {
-    backgroundColor: COLORS.background,
+    backgroundColor: STAFF_SURFACE_RAISED,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  roleBadgeText: { fontSize: 11, color: COLORS.textMuted, ...FONT.medium },
+  roleBadgeText: { fontSize: 11, color: COLORS.textSecondary, ...FONT.semibold },
 
   section: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: SPACING.lg,
@@ -198,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.errorBg,
     borderWidth: 1,
     borderColor: COLORS.error,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: 14,
   },
   logoutText: { fontSize: 15, color: COLORS.error, ...FONT.semibold },

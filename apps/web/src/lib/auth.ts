@@ -27,8 +27,6 @@ export async function resolveCode(
     name: string;
     code?: string;
     slug?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
     logoUrl?: string | null;
   };
 
@@ -48,8 +46,6 @@ export async function resolveCode(
   if (data.type === 'GYM') {
     const params = new URLSearchParams({ type: 'gym', name: data.name });
     if (data.logoUrl) params.set('logo', data.logoUrl);
-    if (data.primaryColor) params.set('primary', data.primaryColor);
-    if (data.secondaryColor) params.set('secondary', data.secondaryColor);
     redirect(`/${data.code}/login?${params.toString()}`);
   } else {
     redirect(`/${data.slug}/login?type=org&name=${encodeURIComponent(data.name)}`);

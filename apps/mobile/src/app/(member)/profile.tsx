@@ -25,6 +25,7 @@ import {
   PreferredStyle,
 } from '../../constants/enums';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
+import { onAccent } from '../../theme/accent';
 import type { ColorPalette } from '../../constants/theme';
 
 // ─── Display label maps ───────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ function NavRow({ icon, label, onPress, C }: { icon: string; label: string; onPr
           alignItems: 'center',
           justifyContent: 'space-between',
           backgroundColor: C.surface,
-          borderRadius: RADIUS.md,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           paddingHorizontal: SPACING.md,
@@ -196,7 +197,7 @@ function NumericInput({ label, unit, value, onChange, C }: {
           style={{
             color: C.text, fontSize: 16, ...FONT.medium, textAlign: 'right',
             minWidth: 60, paddingVertical: 4, paddingHorizontal: SPACING.sm,
-            backgroundColor: C.background, borderRadius: RADIUS.sm,
+            backgroundColor: C.background, borderRadius: RADIUS.control,
             borderWidth: 1, borderColor: C.border,
           }}
           value={value}
@@ -222,13 +223,13 @@ function ChipPicker<T extends string>({ options, labels, value, onChange, C, pri
           <Pressable
             key={opt}
             style={{
-              paddingHorizontal: SPACING.md, paddingVertical: 8, borderRadius: RADIUS.full,
+              paddingHorizontal: SPACING.md, paddingVertical: 8, borderRadius: RADIUS.pill,
               backgroundColor: value === opt ? primary : C.background,
               borderWidth: 1, borderColor: value === opt ? primary : C.border,
             }}
             onPress={() => onChange(opt)}
           >
-            <Text style={{ color: value === opt ? '#fff' : C.textSecondary, fontSize: 13, ...FONT.medium }}>
+            <Text style={{ color: value === opt ? onAccent(primary) : C.textSecondary, fontSize: 13, ...FONT.semibold }}>
               {labels[opt]}
             </Text>
           </Pressable>
@@ -247,14 +248,14 @@ function DaysPicker({ value, onChange, C, primary }: {
         <Pressable
           key={d}
           style={{
-            paddingHorizontal: SPACING.sm, paddingVertical: 8, borderRadius: RADIUS.full,
+            paddingHorizontal: SPACING.sm, paddingVertical: 8, borderRadius: RADIUS.pill,
             minWidth: 36, alignItems: 'center',
             backgroundColor: value === d ? primary : C.background,
             borderWidth: 1, borderColor: value === d ? primary : C.border,
           }}
           onPress={() => onChange(d)}
         >
-          <Text style={{ color: value === d ? '#fff' : C.textSecondary, fontSize: 13, ...FONT.medium }}>{d}</Text>
+          <Text style={{ color: value === d ? onAccent(primary) : C.textSecondary, fontSize: 13, ...FONT.semibold }}>{d}</Text>
         </Pressable>
       ))}
     </View>
@@ -340,7 +341,7 @@ function EditProfileModal({ visible, initialForm, onClose }: {
     cancel: { color: C.textSecondary, fontSize: 16 },
     divider: { height: 1, backgroundColor: C.border, marginVertical: 2 },
     formCard: {
-      backgroundColor: C.surface, borderRadius: RADIUS.lg,
+      backgroundColor: C.surface, borderRadius: RADIUS.xl,
       borderWidth: 1, borderColor: C.border, padding: SPACING.md, gap: SPACING.sm,
     },
     formSection: {
@@ -351,11 +352,11 @@ function EditProfileModal({ visible, initialForm, onClose }: {
     formLabel: { color: C.textSecondary, fontSize: 14, ...FONT.medium, marginBottom: 2 },
     textArea: {
       color: C.text, fontSize: 14, ...FONT.regular,
-      backgroundColor: C.background, borderRadius: RADIUS.sm,
+      backgroundColor: C.background, borderRadius: RADIUS.control,
       borderWidth: 1, borderColor: C.border,
       padding: SPACING.sm, minHeight: 72, textAlignVertical: 'top', marginTop: SPACING.xs,
     },
-    errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.md },
+    errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.xl, padding: SPACING.md, marginTop: SPACING.md },
     errorText: { color: C.error, fontSize: 14 },
   }), [C]);
 
@@ -464,12 +465,12 @@ export default function ProfileScreen() {
     centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
     avatarWrap: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.lg },
     avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xs },
-    avatarInitials: { color: '#fff', fontSize: 28, ...FONT.bold },
+    avatarInitials: { color: theme.onPrimary, fontSize: 28, ...FONT.bold },
     fullNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     fullName: { color: C.text, fontSize: 22, ...FONT.bold },
     email: { color: C.textSecondary, fontSize: 14 },
     card: {
-      backgroundColor: C.surface, borderRadius: RADIUS.lg,
+      backgroundColor: C.surface, borderRadius: RADIUS.xl,
       borderWidth: 1, borderColor: C.border, padding: SPACING.md, gap: SPACING.sm,
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -480,7 +481,7 @@ export default function ProfileScreen() {
     qrToken: { color: C.textMuted, fontSize: 12, textAlign: 'center', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
     appearanceRow: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-      backgroundColor: C.surface, borderRadius: RADIUS.md,
+      backgroundColor: C.surface, borderRadius: RADIUS.xl,
       borderWidth: 1, borderColor: C.border,
       paddingHorizontal: SPACING.md, paddingVertical: 14,
     },
@@ -488,12 +489,12 @@ export default function ProfileScreen() {
     appearanceLabel: { fontSize: 15, color: C.text, ...FONT.medium },
     appearanceValue: { fontSize: 13, color: C.textSecondary, marginTop: 1 },
     signOutBtn: {
-      backgroundColor: C.errorBg, borderRadius: RADIUS.md,
+      backgroundColor: C.error, borderRadius: RADIUS.button,
       borderWidth: 1, borderColor: C.error,
       paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm,
     },
-    signOutText: { color: C.error, fontSize: 16, ...FONT.semibold },
-  }), [C]);
+    signOutText: { color: onAccent(C.error), fontSize: 16, ...FONT.semibold },
+  }), [C, theme.onPrimary]);
 
   if (loading) {
     return <View style={s.centered}><ActivityIndicator color={theme.primary} /></View>;

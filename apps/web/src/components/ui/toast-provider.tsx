@@ -71,7 +71,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   return (
     <div
       className={cn(
-        'flex items-start gap-3 min-w-72 max-w-sm bg-surface border border-l-4 rounded-xl shadow-lg px-4 py-3 transition-all duration-300',
+        'flex items-start gap-3 min-w-72 max-w-sm bg-surface border border-l-4 rounded-xl shadow-1 px-4 py-3 transition-all duration-300',
         ACCENT[toast.type],
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
       )}

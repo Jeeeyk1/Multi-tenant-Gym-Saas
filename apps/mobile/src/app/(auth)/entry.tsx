@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Logo } from '../../components/Logo';
 import { authService } from '../../services/auth.service';
 import { useTheme } from '../../context/ThemeContext';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { COLORS, SPACING, RADIUS, FONT, DEFAULT_ACCENT } from '../../constants/theme';
 
 export default function EntryScreen() {
   const router = useRouter();
@@ -49,7 +49,7 @@ export default function EntryScreen() {
       await AsyncStorage.setItem('pending_gym_name', result.gymName ?? '');
       await AsyncStorage.setItem('pending_gym_logo', result.logoUrl ?? '');
       if (result.primaryColor || result.secondaryColor) {
-        await setGymTheme(result.primaryColor ?? '#6EE7B7', result.secondaryColor ?? '#3B82F6', result.logoUrl ?? null);
+        await setGymTheme(result.primaryColor ?? DEFAULT_ACCENT, result.secondaryColor ?? DEFAULT_ACCENT, result.logoUrl ?? null);
       }
       router.push('/(auth)/login');
     } catch (err: unknown) {
@@ -117,9 +117,9 @@ export default function EntryScreen() {
               style={styles.button}
             >
               {isLoading ? (
-                <ActivityIndicator color="#000" size="small" />
+                <ActivityIndicator color={theme.onPrimary} size="small" />
               ) : (
-                <Text style={styles.buttonText}>Continue</Text>
+                <Text style={[styles.buttonText, { color: theme.onPrimary }]}>Continue</Text>
               )}
             </LinearGradient>
           </TouchableOpacity>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 14,
     color: COLORS.text,
@@ -198,9 +198,9 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
-    color: '#000',
     fontSize: 16,
     ...FONT.semibold,
   },

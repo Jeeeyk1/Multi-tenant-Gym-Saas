@@ -3,7 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import { Text } from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { COLORS, SPACING, RADIUS, FONT } from '../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../constants/theme';
 
 // Chat bubble is maxWidth 86% of screen; account for the card's horizontal padding + border.
 const TREND_W = Math.round(Dimensions.get('window').width * 0.86) - SPACING.sm * 2 - 2;
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.xl,
     padding: SPACING.sm,
     maxWidth: '86%',
     gap: 6,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 11, color: COLORS.textMuted, ...FONT.regular, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.full },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill},
   badgeText: { fontSize: 11, ...FONT.semibold },
   metricValue: { fontSize: 24, color: COLORS.text, ...FONT.bold },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },

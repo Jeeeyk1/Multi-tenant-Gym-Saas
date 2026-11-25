@@ -1,9 +1,9 @@
 import React from 'react';
-import Svg, { Rect, Circle, G } from 'react-native-svg';
+import Svg, { Rect, Circle } from 'react-native-svg';
 import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
 import { useTheme } from '../context/ThemeContext';
-import { COLORS, FONT } from '../constants/theme';
+import { FONT } from '../constants/theme';
 
 interface LogoProps {
   size?: number;
@@ -11,39 +11,22 @@ interface LogoProps {
   gymName?: string;
 }
 
+const MARK_TILE = '#FFFFFF';
+const MARK_DOT = '#3B82F6';
+
 export function Logo({ size = 72, showText = true, gymName }: LogoProps) {
   const { theme } = useTheme();
-  const s = size;
-  const light = theme.primary + '99';
   return (
     <View style={styles.container}>
-      <Svg width={s} height={s} viewBox="0 0 80 80">
-        {/* Background circle */}
-        <Circle cx="40" cy="40" r="38" fill={theme.primary} opacity={0.15} />
-
-        {/* Barbell — left outer plate */}
-        <Rect x="4" y="24" width="12" height="32" rx="4" fill={theme.primary} />
-        {/* Left inner collar */}
-        <Rect x="16" y="30" width="7" height="20" rx="3" fill={light} />
-        {/* Bar */}
-        <Rect x="23" y="35" width="34" height="10" rx="3" fill={light} />
-        {/* Right inner collar */}
-        <Rect x="57" y="30" width="7" height="20" rx="3" fill={light} />
-        {/* Right outer plate */}
-        <Rect x="64" y="24" width="12" height="32" rx="4" fill={theme.primary} />
-
-        {/* Grip knurling marks on bar */}
-        <G opacity={0.4}>
-          <Rect x="30" y="37" width="2" height="6" rx="1" fill={COLORS.background} />
-          <Rect x="35" y="37" width="2" height="6" rx="1" fill={COLORS.background} />
-          <Rect x="40" y="37" width="2" height="6" rx="1" fill={COLORS.background} />
-          <Rect x="45" y="37" width="2" height="6" rx="1" fill={COLORS.background} />
-          <Rect x="50" y="37" width="2" height="6" rx="1" fill={COLORS.background} />
-        </G>
+      <Svg width={size} height={size} viewBox="0 0 48 48" accessibilityLabel="FitOps">
+        <Rect x="3" y="3" width="19" height="19" rx="5" fill={MARK_TILE} />
+        <Circle cx="35.5" cy="12.5" r="9.5" fill={MARK_DOT} />
+        <Rect x="3" y="26" width="19" height="19" rx="5" fill={MARK_TILE} />
+        <Rect x="26" y="26" width="19" height="19" rx="5" fill={MARK_TILE} />
       </Svg>
 
       {showText && gymName ? (
-        <Text style={[styles.appName, { fontSize: size * 0.36 }]}>
+        <Text style={[styles.appName, { fontSize: size * 0.36, color: theme.colors.text }]}>
           {gymName}
         </Text>
       ) : null}
@@ -57,7 +40,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   appName: {
-    color: COLORS.text,
     ...FONT.bold,
     letterSpacing: 1,
   },

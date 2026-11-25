@@ -71,13 +71,13 @@ function SubmitPrModal({
         modalSave: { fontSize: 16, ...FONT.semibold, textAlign: 'right' },
         modalContent: { padding: SPACING.md, gap: SPACING.xs, paddingBottom: SPACING.xxl },
 
-        errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.sm },
+        errorBanner: { backgroundColor: C.errorBg, borderRadius: RADIUS.xl, padding: SPACING.md, marginBottom: SPACING.sm },
         errorBannerText: { color: C.error, fontSize: 13 },
 
         fieldLabel: { color: C.textSecondary, fontSize: 12, ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.xs },
         input: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.sm,
+          borderRadius: RADIUS.control,
           borderWidth: 1,
           borderColor: C.border,
           paddingHorizontal: SPACING.md,
@@ -100,12 +100,12 @@ function SubmitPrModal({
         exerciseChip: {
           paddingHorizontal: SPACING.md,
           paddingVertical: 8,
-          borderRadius: RADIUS.full,
+          borderRadius: RADIUS.pill,
           backgroundColor: C.surface,
           borderWidth: 1,
           borderColor: C.border,
         },
-        exerciseChipText: { fontSize: 13, color: C.textSecondary, ...FONT.medium },
+        exerciseChipText: { fontSize: 13, color: C.textSecondary, ...FONT.semibold },
 
         photoPreviewWrap: { position: 'relative', borderRadius: RADIUS.md, overflow: 'hidden', marginTop: SPACING.xs },
         photoPreview: { width: '100%', height: 200, borderRadius: RADIUS.md },
@@ -117,7 +117,7 @@ function SubmitPrModal({
           justifyContent: 'center',
           gap: SPACING.xs,
           borderWidth: 1,
-          borderRadius: RADIUS.md,
+          borderRadius: RADIUS.button,
           paddingVertical: SPACING.md,
           backgroundColor: C.surface,
         },
@@ -251,7 +251,7 @@ function SubmitPrModal({
                     exerciseId === ex.id && { backgroundColor: theme.primary, borderColor: theme.primary },
                   ]}
                 >
-                  <Text style={[styles.exerciseChipText, exerciseId === ex.id && { color: '#000' }]}>
+                  <Text style={[styles.exerciseChipText, exerciseId === ex.id && { color: theme.onPrimary }]}>
                     {ex.name}
                   </Text>
                 </Pressable>
@@ -390,18 +390,18 @@ export default function LeaderboardScreen() {
         exerciseTab: {
           paddingHorizontal: SPACING.md,
           paddingVertical: 8,
-          borderRadius: RADIUS.full,
+          borderRadius: RADIUS.pill,
           backgroundColor: C.surface,
           borderWidth: 1,
           borderColor: C.border,
         },
-        exerciseTabText: { fontSize: 13, color: C.textSecondary, ...FONT.medium },
+        exerciseTabText: { fontSize: 13, color: C.textSecondary, ...FONT.semibold },
 
         card: {
           marginHorizontal: SPACING.md,
           marginBottom: SPACING.md,
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.md,
@@ -430,7 +430,7 @@ export default function LeaderboardScreen() {
         myPrsSection: { padding: SPACING.md, gap: SPACING.sm },
         prCard: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.md,
@@ -445,13 +445,13 @@ export default function LeaderboardScreen() {
         prCardRight: { alignItems: 'flex-end', gap: 4 },
         prORM: { fontSize: 18, ...FONT.bold },
         prORMLabel: { fontSize: 10, color: C.textMuted, textTransform: 'uppercase' },
-        statusPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.full },
+        statusPill: { paddingHorizontal: SPACING.sm, paddingVertical: 2, borderRadius: RADIUS.pill },
         statusPillText: { fontSize: 10, ...FONT.semibold },
 
         emptyCard: {
           margin: SPACING.md,
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.xl,
@@ -470,11 +470,6 @@ export default function LeaderboardScreen() {
           borderRadius: 28,
           alignItems: 'center',
           justifyContent: 'center',
-          elevation: 4,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
         },
       }),
     [C],
@@ -544,7 +539,7 @@ export default function LeaderboardScreen() {
                       idx === selectedIdx && { backgroundColor: theme.primary, borderColor: theme.primary },
                     ]}
                   >
-                    <Text style={[styles.exerciseTabText, idx === selectedIdx && { color: '#000' }]}>
+                    <Text style={[styles.exerciseTabText, idx === selectedIdx && { color: theme.onPrimary }]}>
                       {item.exercise.name}
                     </Text>
                   </Pressable>
@@ -634,7 +629,7 @@ export default function LeaderboardScreen() {
         onPress={() => setSubmitVisible(true)}
         style={[styles.fab, { backgroundColor: theme.primary }]}
       >
-        <Ionicons name="add" size={28} color="#000" />
+        <Ionicons name="add" size={28} color={theme.onPrimary} />
       </Pressable>
 
       <SubmitPrModal

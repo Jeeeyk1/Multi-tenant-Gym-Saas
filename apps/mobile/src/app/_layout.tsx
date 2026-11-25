@@ -5,9 +5,10 @@ import { View, ActivityIndicator, Pressable } from 'react-native';
 import { Text } from '../components/Text';
 import { useFonts } from 'expo-font';
 import {
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
+  Manrope_500Medium,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -45,7 +46,7 @@ function RootNavigator() {
           This gym&apos;s subscription is currently inactive. Please contact your gym owner to
           resolve billing before continuing.
         </Text>
-        <Pressable onPress={signOut} style={{ paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border }}>
+        <Pressable onPress={signOut} style={{ paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border }}>
           <Text style={{ color: COLORS.textSecondary, fontSize: 14 }}>Sign out</Text>
         </Pressable>
       </View>
@@ -63,8 +64,9 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    Manrope_500Medium,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,

@@ -11,14 +11,14 @@ function fmtDate(iso: string) {
 
 function CategoryBadge({ category }: { category: string }) {
   const colors: Record<string, string> = {
-    CHEST: 'bg-blue-500/10 text-blue-400',
-    BACK: 'bg-green-500/10 text-green-400',
-    LEGS: 'bg-purple-500/10 text-purple-400',
-    SHOULDERS: 'bg-orange-500/10 text-orange-400',
-    ARMS: 'bg-yellow-500/10 text-yellow-400',
+    CHEST: 'bg-hover text-muted-foreground',
+    BACK: 'bg-hover text-muted-foreground',
+    LEGS: 'bg-hover text-muted-foreground',
+    SHOULDERS: 'bg-hover text-muted-foreground',
+    ARMS: 'bg-hover text-muted-foreground',
   };
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colors[category] ?? 'bg-muted text-muted-foreground'}`}>
+    <span className={`text-xs font-semibold px-2 py-0.5 rounded-pill ${colors[category] ?? 'bg-hover text-muted-foreground'}`}>
       {category}
     </span>
   );
@@ -50,9 +50,9 @@ export default async function LeaderboardPage() {
           {pendingCount > 0 && (
             <Link
               href="/dashboard/leaderboard/pending"
-              className="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm font-medium rounded-lg hover:bg-yellow-500/20 transition"
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-warning-bg border border-warning/30 text-warning font-semibold rounded-md hover:bg-warning/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
-              <span className="w-5 h-5 rounded-full bg-yellow-500 text-black text-xs font-bold flex items-center justify-center">
+              <span className="w-5 h-5 rounded-full bg-warning text-warning-bg text-xs font-bold flex items-center justify-center">
                 {pendingCount}
               </span>
               Pending Approvals
@@ -60,7 +60,7 @@ export default async function LeaderboardPage() {
           )}
           <Link
             href="/dashboard/leaderboard/config"
-            className="px-4 py-2 bg-background border border-border text-sm text-muted-foreground rounded-lg hover:text-foreground hover:border-primary/40 transition"
+            className="px-4 py-2 text-sm bg-surface border border-border text-foreground rounded-md hover:text-foreground hover:border-primary/40 transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             Configure
           </Link>
@@ -113,14 +113,14 @@ export default async function LeaderboardPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {entries.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-foreground/5 transition">
+                      <tr key={entry.id} className="hover:bg-hover transition">
                         <td className="px-5 py-3 text-center">
                           {entry.rank === 1 ? (
-                            <span className="text-yellow-400 font-bold text-base">🥇</span>
+                            <span className="font-bold text-base">🥇</span>
                           ) : entry.rank === 2 ? (
-                            <span className="text-slate-300 font-bold text-base">🥈</span>
+                            <span className="font-bold text-base">🥈</span>
                           ) : entry.rank === 3 ? (
-                            <span className="text-amber-600 font-bold text-base">🥉</span>
+                            <span className="font-bold text-base">🥉</span>
                           ) : (
                             <span className="text-muted-foreground font-mono text-xs">#{entry.rank}</span>
                           )}

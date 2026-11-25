@@ -91,7 +91,7 @@ export function MemberActions({ member, plans }: Props) {
         {/* Renew — always available */}
         <button
           onClick={() => { setRenewOpen(true); setRenewError(null); setRenewSuccess(false); }}
-          className="px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition"
+          className="px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Renew Membership
         </button>
@@ -101,7 +101,7 @@ export function MemberActions({ member, plans }: Props) {
           <button
             onClick={handleSuspend}
             disabled={!!actionPending}
-            className="px-4 py-2 text-sm font-medium border border-warning/50 text-warning rounded-lg hover:bg-warning/10 transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold bg-surface border border-warning/50 text-warning rounded-md hover:bg-warning-bg transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {actionPending === 'suspend' ? 'Suspending…' : 'Suspend'}
           </button>
@@ -112,7 +112,7 @@ export function MemberActions({ member, plans }: Props) {
           <button
             onClick={handleReactivate}
             disabled={!!actionPending}
-            className="px-4 py-2 text-sm font-medium border border-success/50 text-success rounded-lg hover:bg-success/10 transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold bg-surface border border-success/50 text-success rounded-md hover:bg-success-bg transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             {actionPending === 'reactivate' ? 'Reactivating…' : 'Reactivate'}
           </button>
@@ -122,7 +122,7 @@ export function MemberActions({ member, plans }: Props) {
         <button
           onClick={() => setRemoveOpen(true)}
           disabled={!!actionPending}
-          className="px-4 py-2 text-sm font-medium border border-destructive/50 text-destructive rounded-lg hover:bg-destructive/10 transition disabled:opacity-50 ml-auto"
+          className="px-4 py-2 text-sm font-semibold bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition disabled:opacity-50 ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Remove Member
         </button>
@@ -131,8 +131,8 @@ export function MemberActions({ member, plans }: Props) {
       {/* Remove confirmation dialog */}
       {removeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRemoveOpen(false)} />
-          <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6">
+          <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={() => setRemoveOpen(false)} />
+          <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
             <h3 className="text-base font-semibold text-foreground mb-2">Remove member?</h3>
             <p className="text-sm text-muted-foreground mb-1">
               This will permanently delete <strong className="text-foreground">{member.user.fullName}</strong>&apos;s membership, check-in history, and all associated data.
@@ -143,14 +143,14 @@ export function MemberActions({ member, plans }: Props) {
             <div className="flex gap-3">
               <button
                 onClick={() => setRemoveOpen(false)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition"
+                className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 Cancel
               </button>
               <button
                 onClick={() => { setRemoveOpen(false); handleRemove(); }}
                 disabled={actionPending === 'remove'}
-                className="flex-1 bg-destructive text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                className="flex-1 bg-destructive text-destructive-foreground font-semibold py-2.5 rounded-md hover:opacity-90 transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 {actionPending === 'remove' ? 'Removing…' : 'Yes, remove'}
               </button>
@@ -162,8 +162,8 @@ export function MemberActions({ member, plans }: Props) {
       {/* Renew dialog */}
       {renewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRenewOpen(false)} />
-          <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6">
+          <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={() => setRenewOpen(false)} />
+          <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold text-foreground">Renew Membership</h3>
               <button onClick={() => setRenewOpen(false)} className="text-muted-foreground hover:text-foreground transition text-lg px-1">✕</button>
@@ -183,7 +183,7 @@ export function MemberActions({ member, plans }: Props) {
                       id="r-planId"
                       name="planId"
                       defaultValue={member.membershipPlan?.id ?? ''}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                      className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
                     >
                       <option value="">— Keep current plan —</option>
                       {activePlans.map((p) => (
@@ -208,7 +208,7 @@ export function MemberActions({ member, plans }: Props) {
                     step="0.01"
                     placeholder="0.00"
                     required
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                    className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
                   />
                 </div>
 
@@ -222,7 +222,7 @@ export function MemberActions({ member, plans }: Props) {
                     name="paymentMethod"
                     type="text"
                     placeholder="Cash, GCash, card…"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                    className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
                   />
                 </div>
 
@@ -236,7 +236,7 @@ export function MemberActions({ member, plans }: Props) {
                     name="notes"
                     rows={2}
                     placeholder="Any notes about this renewal…"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition resize-none"
+                    className="w-full bg-surface border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition resize-none"
                   />
                 </div>
 
@@ -248,14 +248,14 @@ export function MemberActions({ member, plans }: Props) {
                   <button
                     type="button"
                     onClick={() => setRenewOpen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition"
+                    className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={renewPending}
-                    className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                    className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                   >
                     {renewPending ? 'Processing…' : 'Confirm Renewal'}
                   </button>

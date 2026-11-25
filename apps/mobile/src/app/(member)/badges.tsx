@@ -31,7 +31,7 @@ function BadgeCell({ badge, onPress }: { badge: CollectionBadge; onPress: () => 
         <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={58} locked={!earned} />
         {earned?.isEquipped && (
           <View style={[styles.equippedDot, { backgroundColor: theme.primary, borderColor: C.background }]}>
-            <Ionicons name="checkmark" size={11} color={C.onPrimary} />
+            <Ionicons name="checkmark" size={11} color={theme.onPrimary} />
           </View>
         )}
       </View>

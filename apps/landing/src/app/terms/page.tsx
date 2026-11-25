@@ -15,8 +15,8 @@ export default function TermsOfServicePage() {
       <section>
         <p>
           These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of {BRAND_NAME} (the
-          &ldquo;Service&rdquo;), a gym management platform operated by <strong>Noetech</strong>, based in
-          Biñan City, Laguna, Philippines (&ldquo;Noetech,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
+          &ldquo;Service&rdquo;), a gym management platform operated by <strong>VerSolutions</strong>, based in
+          Biñan City, Laguna, Philippines (&ldquo;VerSolutions,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or
           &ldquo;our&rdquo;). By creating an account or using the Service, you agree to these Terms. If you
           are using the Service on behalf of a gym, you confirm you have authority to bind that gym to
           these Terms.
@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
       <section>
         <h2>2. Accounts</h2>
         <p>
-          Gym owner and staff accounts are created through an invitation from Noetech or from an existing
+          Gym owner and staff accounts are created through an invitation from VerSolutions or from an existing
           gym administrator. Member accounts are created by gym staff or through a self-service activation
           link. You are responsible for keeping your login credentials confidential and for all activity
           under your account.
@@ -48,9 +48,9 @@ export default function TermsOfServicePage() {
         <ul>
           <li>Gym owners subscribe to a plan, priced in Philippine Pesos (₱), to access the Service.</li>
           <li>New gyms may be granted a free trial period. At the end of the trial, continued access requires payment.</li>
-          <li>Payments are currently submitted and verified manually by Noetech staff; we do not yet process card payments automatically.</li>
+          <li>Payments are currently submitted and verified manually by VerSolutions staff; we do not yet process card payments automatically.</li>
           <li>Unpaid invoices past their due date may result in the account being marked past due and, if unresolved, suspended until payment is verified.</li>
-          <li>Fees are non-refundable except where required by law or agreed by Noetech in writing.</li>
+          <li>Fees are non-refundable except where required by law or agreed by VerSolutions in writing.</li>
         </ul>
       </section>
 
@@ -69,8 +69,8 @@ export default function TermsOfServicePage() {
       <section>
         <h2>5. Member data and gym ownership</h2>
         <p>
-          As between a gym and Noetech, the gym owns the membership data it collects through the Service
-          (member records, check-ins, renewals). Noetech processes this data on the gym&rsquo;s behalf to
+          As between a gym and VerSolutions, the gym owns the membership data it collects through the Service
+          (member records, check-ins, renewals). VerSolutions processes this data on the gym&rsquo;s behalf to
           provide the Service, as described in our <a href="/privacy">Privacy Policy</a>.
         </p>
       </section>
@@ -88,7 +88,7 @@ export default function TermsOfServicePage() {
       <section>
         <h2>7. Intellectual property</h2>
         <p>
-          The Service, including its software, design, and branding, is owned by Noetech and protected by
+          The Service, including its software, design, and branding, is owned by VerSolutions and protected by
           applicable intellectual property laws. These Terms do not grant you any rights to our trademarks
           or branding beyond what is necessary to use the Service.
         </p>
@@ -106,7 +106,7 @@ export default function TermsOfServicePage() {
       <section>
         <h2>9. Limitation of liability</h2>
         <p>
-          The Service is provided &ldquo;as is.&rdquo; To the fullest extent permitted by law, Noetech is
+          The Service is provided &ldquo;as is.&rdquo; To the fullest extent permitted by law, VerSolutions is
           not liable for indirect, incidental, or consequential damages arising from your use of the
           Service, including reliance on AI-generated content.
         </p>
@@ -133,7 +133,7 @@ export default function TermsOfServicePage() {
         <h2>12. Contact us</h2>
         <p>
           Questions about these Terms can be sent to{' '}
-          <a href="mailto:privacy@noetecha.com">privacy@noetecha.com</a>.
+          <a href="mailto:hello@getversolutions.com">hello@getversolutions.com</a>.
         </p>
       </section>
     </LegalLayout>

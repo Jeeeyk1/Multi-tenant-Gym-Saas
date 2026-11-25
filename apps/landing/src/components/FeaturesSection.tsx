@@ -1,436 +1,135 @@
-import type { ReactNode } from 'react';
-import { BRAND_NAME } from '@/lib/brand';
+import clsx from 'clsx';
+import { DEMO_WEEKLY_CHECK_INS } from '@/lib/demo-data';
+import { Container } from './ui/Container';
+import {
+  BadgeIdIcon,
+  CardIcon,
+  ChatIcon,
+  CheckIcon,
+  GridIcon,
+  MedalIcon,
+  MegaphoneIcon,
+  RenewIcon,
+  SparkleIcon,
+  UsersIcon,
+} from './ui/icons';
+import { SectionHeader } from './ui/SectionHeader';
+import { motionDelay } from '@/lib/motion';
 
-/* ─────────────────────────────────────────────────
-   Bento grid features section
-   Row 1 (tall): AI Coaching (7) | Leaderboard (5)
-   Row 2 (medium): Badges (5) | Check-ins (3) | Analytics (4)
-   Row 3 (compact): Members (3) | Staff (3) | Multi-tenant (3) | Announcements (3)
-───────────────────────────────────────────────── */
+const HIGHLIGHTS = [
+  {
+    icon: RenewIcon,
+    title: 'Renewals',
+    text: 'Every membership due and expired, with reminders sent to members in one tap.',
+  },
+  { icon: CheckIcon, title: 'Smart check-ins', text: 'QR code and manual check-ins, live attendance and duplicate guard.' },
+  { icon: SparkleIcon, title: 'AI Insights', text: 'Ask questions about your gym data in plain language.' },
+];
 
-function NewBadge() {
-  return (
-    <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/25 tracking-wide">
-      NEW
-    </span>
-  );
-}
+const MORE_FEATURES = [
+  { icon: UsersIcon, title: 'Member management', text: 'Full profiles, photo ID and membership cards.' },
+  { icon: CardIcon, title: 'Plans and billing', text: 'Monthly, annual, student and day passes.' },
+  { icon: MegaphoneIcon, title: 'Announcements', text: 'Push updates to members by gym or across all locations.' },
+  { icon: ChatIcon, title: 'Community chat', text: 'Your gym’s community, moderated by your staff.' },
+  {
+    icon: MedalIcon,
+    title: 'Leaderboards and badges',
+    text: 'Weekly and monthly rankings, points from check-ins and activities.',
+  },
+  {
+    icon: BadgeIdIcon,
+    title: 'Branches and roles',
+    text: 'Several gyms in one organization, with owner, manager and staff access.',
+  },
+];
 
-function AiCoachingCard() {
-  const exercises = [
-    { name: 'Bench Press', sets: '4 × 8', done: true },
-    { name: 'Incline DB Press', sets: '3 × 10', done: true },
-    { name: 'Cable Fly', sets: '3 × 12', done: false },
-    { name: 'Tricep Pushdown', sets: '3 × 15', done: false },
-  ];
-
-  return (
-    <div className="group col-span-1 sm:col-span-2 lg:col-span-7 bg-surface border border-border rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 overflow-hidden flex flex-col min-h-[440px] lg:min-h-[480px]">
-      {/* Header */}
-      <div className="mb-5">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" /><path d="M12 8v4l3 3" />
-            </svg>
-          </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">AI-Powered</span>
-        </div>
-        <h3 className="text-xl font-bold text-foreground mb-1.5">AI Coaching</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-          Personalized workout plans and meal analysis powered by AI. Members get real coaching from day one — no extra trainer needed.
-        </p>
-      </div>
-
-      {/* Phone mockup */}
-      <div className="flex-1 flex items-end justify-end">
-        <div className="relative w-[210px] rounded-[28px] border-2 border-border shadow-xl shadow-foreground/10 overflow-hidden bg-background">
-          {/* App header */}
-          <div className="bg-primary px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-[9px] text-primary-foreground/70 leading-none">Tuesday</p>
-              <p className="text-[11px] text-primary-foreground font-bold">Today&apos;s Workout</p>
-            </div>
-            <span className="text-[9px] bg-primary-foreground/20 text-primary-foreground px-2 py-1 rounded-full font-semibold">2 / 4 done</span>
-          </div>
-
-          {/* Exercise list */}
-          <div className="p-3 space-y-2">
-            {exercises.map((ex) => (
-              <div
-                key={ex.name}
-                className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${
-                  ex.done
-                    ? 'bg-success/5 border-success/20'
-                    : 'bg-surface border-border'
-                }`}
-              >
-                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${ex.done ? 'border-success bg-success/10' : 'border-border'}`}>
-                  {ex.done && (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-success">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-[10px] font-semibold leading-none ${ex.done ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{ex.name}</p>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">{ex.sets}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA row */}
-          <div className="px-3 pb-3">
-            <div className="w-full bg-primary/10 text-primary text-[10px] font-semibold py-2 rounded-xl text-center flex items-center justify-center gap-1.5">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
-              </svg>
-              Ask AI for meal advice
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LeaderboardCard() {
-  const members = [
-    { rank: 1, name: 'Ana Reyes', pts: '2,450', delta: '+120', you: false },
-    { rank: 2, name: 'Marco Santos', pts: '2,100', delta: '+85', you: false },
-    { rank: 3, name: 'Kelly Torres', pts: '1,890', delta: '+60', you: false },
-    { rank: 4, name: 'You', pts: '1,650', delta: '+45', you: true },
-    { rank: 5, name: 'Ben Cruz', pts: '1,480', delta: '+30', you: false },
-  ];
-
-  const rankColors: Record<number, string> = {
-    1: 'text-amber-400',
-    2: 'text-slate-400',
-    3: 'text-amber-600',
-  };
-
-  const rankBg: Record<number, string> = {
-    1: 'bg-amber-400/15',
-    2: 'bg-slate-400/10',
-    3: 'bg-amber-700/10',
-  };
-
-  return (
-    <div className="group col-span-1 sm:col-span-2 lg:col-span-5 bg-surface border border-border rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 flex flex-col min-h-[440px] lg:min-h-[480px]">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-400/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
-                <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
-              </svg>
-            </div>
-            <NewBadge />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-1.5">Leaderboard</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Drive member engagement with weekly and monthly gym rankings. Points earned through check-ins and activities.
-          </p>
-        </div>
-      </div>
-
-      {/* Ranking list */}
-      <div className="flex-1 flex flex-col justify-center space-y-1.5">
-        {members.map((m) => (
-          <div
-            key={m.rank}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-              m.you
-                ? 'bg-primary/8 border-primary/25'
-                : 'bg-background border-border'
-            }`}
-          >
-            {/* Rank badge */}
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${rankBg[m.rank] ?? 'bg-border/30'}`}>
-              <span className={`text-xs font-bold ${rankColors[m.rank] ?? (m.you ? 'text-primary' : 'text-muted-foreground')}`}>
-                {m.rank}
-              </span>
-            </div>
-
-            {/* Avatar */}
-            <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold ${m.you ? 'bg-primary/20 text-primary' : 'bg-border/50 text-muted-foreground'}`}>
-              {m.name.split(' ').map(n => n[0]).join('')}
-            </div>
-
-            {/* Name */}
-            <span className={`flex-1 text-xs font-medium truncate ${m.you ? 'text-primary font-semibold' : 'text-foreground'}`}>
-              {m.name}{m.you ? ' (you)' : ''}
-            </span>
-
-            {/* Points */}
-            <div className="text-right flex-shrink-0">
-              <p className="text-xs font-bold text-foreground">{m.pts}</p>
-              <p className="text-[9px] text-success">{m.delta}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Period selector */}
-      <div className="mt-4 flex gap-1.5">
-        {['This Week', 'This Month', 'All Time'].map((p, i) => (
-          <span
-            key={p}
-            className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${
-              i === 0
-                ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'text-muted-foreground hover:text-foreground cursor-pointer'
-            }`}
-          >
-            {p}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const BADGE_ICON_PATHS: Record<string, string> = {
-  flame: 'M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 1 0 3 2 3 5a5 5 0 0 1-10 0c0-5 3-7 5-11z',
-  bolt: 'M13 2 4 14h6l-1 8 9-12h-6z',
-  dumbbell: 'M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10',
-  check: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM8 12l2.5 2.5L16 9',
-  medal: 'M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a2 2 0 0 0 2 4M17 6h3a2 2 0 0 1-2 4',
-  crown: 'M3 8l3 3 6-7 6 7 3-3-2 11H5z',
-  star: 'M12 2l2.9 6.4 6.9.7-5.2 4.7 1.5 6.9L12 17.3 5.9 20.7l1.5-6.9-5.2-4.7 6.9-.7z',
-  target: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zM12 11a1 1 0 1 0 1 1 1 1 0 0 0-1-1z',
-};
-
-function BadgesCard() {
-  const badges = [
-    { icon: 'flame', name: '7-Day Streak', earned: true },
-    { icon: 'bolt', name: 'Power User', earned: true },
-    { icon: 'dumbbell', name: 'Iron Warrior', earned: true },
-    { icon: 'check', name: 'First Check-in', earned: true },
-    { icon: 'medal', name: 'Century Club', earned: false },
-    { icon: 'crown', name: 'Check-in Champ', earned: false },
-    { icon: 'star', name: '30-Day Streak', earned: false },
-    { icon: 'target', name: 'Goal Crusher', earned: false },
-  ];
-
-  return (
-    <div className="group col-span-1 sm:col-span-2 lg:col-span-5 bg-surface border border-border rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 flex flex-col min-h-[240px]">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d={BADGE_ICON_PATHS.medal} />
-              </svg>
-            </div>
-            <NewBadge />
-          </div>
-          <h3 className="font-bold text-foreground mb-1">Badges & Achievements</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Reward consistency and milestones. Members earn badges that show up on their profile and leaderboard.
-          </p>
-        </div>
-      </div>
-
-      {/* Badge grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {badges.map((b) => (
-          <div
-            key={b.name}
-            title={b.name}
-            className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
-              b.earned
-                ? 'bg-primary/5 border-primary/20'
-                : 'bg-border/20 border-transparent opacity-50 grayscale'
-            }`}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={b.earned ? 'text-primary' : 'text-muted-foreground'}>
-              <path d={BADGE_ICON_PATHS[b.icon]} />
-            </svg>
-            <span className={`text-[8px] text-center leading-tight font-medium ${b.earned ? 'text-foreground' : 'text-muted-foreground'}`}>
-              {b.name}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CheckInsCard() {
-  const recent = [
-    { name: 'Ana R.', time: '2 min ago' },
-    { name: 'Marco S.', time: '5 min ago' },
-    { name: 'Kelly T.', time: '11 min ago' },
-    { name: 'Ben C.', time: '14 min ago' },
-  ];
-
-  return (
-    <div className="group col-span-1 lg:col-span-3 bg-surface border border-border rounded-2xl p-5 hover:border-primary/30 transition-all duration-300 flex flex-col min-h-[240px]">
-      <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-        </svg>
-      </div>
-      <h3 className="font-bold text-foreground text-sm mb-0.5">Smart Check-ins</h3>
-      <p className="text-xs text-muted-foreground mb-4 leading-relaxed">QR code and manual. Real-time attendance with duplicate guard.</p>
-
-      {/* Live feed */}
-      <div className="space-y-2 flex-1">
-        {recent.map((r) => (
-          <div key={r.name} className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center text-[9px] font-bold text-primary">
-              {r.name[0]}
-            </div>
-            <span className="text-xs text-foreground font-medium flex-1">{r.name}</span>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse-slow" />
-              <span className="text-[9px] text-muted-foreground">{r.time}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function AnalyticsCard() {
-  const bars = [45, 70, 55, 85, 60, 92, 75];
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-  return (
-    <div className="group col-span-1 lg:col-span-4 bg-surface border border-border rounded-2xl p-5 hover:border-primary/30 transition-all duration-300 flex flex-col min-h-[240px]">
-      <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
-        </svg>
-      </div>
-      <h3 className="font-bold text-foreground text-sm mb-0.5">Analytics & Insights</h3>
-      <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Revenue trends, peak hours, retention rates — all in one clean dashboard.</p>
-
-      {/* Mini chart */}
-      <div className="flex-1 flex flex-col justify-end">
-        <div className="flex items-end gap-1.5 mb-1" style={{ height: '72px' }}>
-          {bars.map((h, i) => (
-            <div
-              key={i}
-              className={`flex-1 rounded-sm ${i === 5 ? 'bg-primary' : 'bg-primary/25'}`}
-              style={{ height: `${h}%` }}
-            />
-          ))}
-        </div>
-        <div className="flex">
-          {days.map((d, i) => (
-            <span key={i} className="flex-1 text-center text-[9px] text-muted-foreground">{d}</span>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-3">
-          {[
-            { label: 'Peak day', value: 'Saturday' },
-            { label: 'Avg/day', value: '72' },
-          ].map((m) => (
-            <div key={m.label} className="flex-1 bg-background border border-border rounded-lg p-2">
-              <p className="text-[9px] text-muted-foreground">{m.label}</p>
-              <p className="text-xs font-bold text-foreground mt-0.5">{m.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SmallFeatureCard({
-  icon,
+function HighlightCard({
+  icon: Icon,
   title,
-  description,
+  step,
+  children,
 }: {
-  icon: ReactNode;
+  icon: typeof CheckIcon;
   title: string;
-  description: string;
+  step: number;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="group col-span-1 lg:col-span-3 bg-surface border border-border rounded-2xl p-5 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 min-h-[160px]">
-      <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-3 group-hover:bg-primary/20 transition">
-        {icon}
+    <li style={motionDelay(step)} className="reveal navy-card flex flex-[1_1_250px] flex-col gap-3 rounded-2xl p-7">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-sky/20 bg-signal/20 text-volt">
+        <Icon size={24} />
+      </span>
+      <h3 className="font-display text-[22px] font-extrabold text-white">{title}</h3>
+      {children}
+    </li>
+  );
+}
+
+function WeeklyCheckInsChart() {
+  const peakIndex = DEMO_WEEKLY_CHECK_INS.bars.indexOf(Math.max(...DEMO_WEEKLY_CHECK_INS.bars));
+
+  return (
+    <div
+      role="img"
+      aria-label={`Weekly check-ins chart. Peak day ${DEMO_WEEKLY_CHECK_INS.peakDay}, average ${DEMO_WEEKLY_CHECK_INS.averagePerDay} a day.`}
+      className="mt-auto flex flex-col gap-2"
+    >
+      <div className="flex h-16 items-end gap-1.5">
+        {DEMO_WEEKLY_CHECK_INS.bars.map((height, index) => (
+          <span
+            key={index}
+            className={clsx('grow-bar flex-1 rounded-t', index === peakIndex ? 'bg-volt' : 'bg-navy-line')}
+            style={{ height: `${height}%`, ...motionDelay(index + 6, 60) }}
+          />
+        ))}
       </div>
-      <h3 className="font-semibold text-foreground text-sm mb-1.5">{title}</h3>
-      <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+      <div className="flex justify-between text-[11px] text-ink-muted">
+        <span>Peak day {DEMO_WEEKLY_CHECK_INS.peakDay}</span>
+        <span>Avg {DEMO_WEEKLY_CHECK_INS.averagePerDay}/day</span>
+      </div>
     </div>
   );
 }
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="py-24 px-6 border-t border-border/50">
-      <div className="max-w-7xl mx-auto">
-        {/* Section header */}
-        <div className="mb-12 max-w-2xl">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Features</p>
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Everything your gym needs,{' '}
-            <span className="text-primary">nothing it doesn&apos;t.</span>
-          </h2>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            From day one, {BRAND_NAME} covers every operational need so you can focus on what matters — your members.
-          </p>
-        </div>
+    <section id="features" aria-labelledby="features-heading" className="bg-white py-20 sm:py-24">
+      <Container className="flex flex-col gap-11">
+        <SectionHeader
+          id="features-heading"
+          eyebrow="For you and your staff"
+          title="One dashboard for the whole front desk."
+          subtitle="A web dashboard for owners and staff, on a laptop or a tablet."
+        />
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
-          {/* Row 1: large feature cards */}
-          <AiCoachingCard />
-          <LeaderboardCard />
+        <ul className="flex flex-wrap gap-5">
+          {HIGHLIGHTS.map((item, index) => (
+            <HighlightCard key={item.title} icon={item.icon} title={item.title} step={index}>
+              <p className="text-[15px] leading-relaxed text-ink-on-navy">{item.text}</p>
+            </HighlightCard>
+          ))}
+          <HighlightCard icon={GridIcon} title="Analytics and insights" step={HIGHLIGHTS.length}>
+            <p className="text-[15px] leading-relaxed text-ink-on-navy">
+              Revenue trends, peak hours and retention rates in one clean dashboard.
+            </p>
+            <WeeklyCheckInsChart />
+          </HighlightCard>
+        </ul>
 
-          {/* Row 2: medium feature cards */}
-          <BadgesCard />
-          <CheckInsCard />
-          <AnalyticsCard />
-
-          {/* Row 3: compact utility cards */}
-          <SmallFeatureCard
-            title="Member Management"
-            description="Full profiles, photo ID, membership cards, and renewal tracking — all in one place."
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            }
-          />
-          <SmallFeatureCard
-            title="Staff Portal (Web)"
-            description="Full-featured web dashboard for owners and staff. Manage plans, renewals, announcements, and reports."
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" />
-              </svg>
-            }
-          />
-          <SmallFeatureCard
-            title="Multi-Gym & Multi-Tenant"
-            description="One organization, multiple locations. Role-based access for owners, managers, and staff across all gyms."
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            }
-          />
-          <SmallFeatureCard
-            title="Announcements"
-            description="Push targeted announcements to members by gym or across all locations. Keep everyone in the loop."
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8h1a4 4 0 0 1 0 8h-1" /><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                <line x1="6" y1="1" x2="6" y2="4" /><line x1="10" y1="1" x2="10" y2="4" /><line x1="14" y1="1" x2="14" y2="4" />
-              </svg>
-            }
-          />
-        </div>
-      </div>
+        <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-x-8 gap-y-7">
+          {MORE_FEATURES.map(({ icon: Icon, title, text }, index) => (
+            <li key={title} style={motionDelay(index)} className="reveal flex items-start gap-3">
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-[10px] bg-tint text-code">
+                <Icon size={20} />
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <h3 className="text-base font-semibold text-ink">{title}</h3>
+                <p className="text-sm leading-normal text-ink-secondary">{text}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Container>
     </section>
   );
 }

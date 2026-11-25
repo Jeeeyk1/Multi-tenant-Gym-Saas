@@ -4,7 +4,7 @@ import { BRAND_NAME } from '@/lib/brand';
 
 export const metadata: Metadata = {
   title: `Privacy Policy — ${BRAND_NAME}`,
-  description: `How Noetech collects, uses, and protects your data on the ${BRAND_NAME} platform.`,
+  description: `How VerSolutions collects, uses, and protects your data on the ${BRAND_NAME} platform.`,
 };
 
 const EFFECTIVE_DATE = 'July 22, 2026';
@@ -15,7 +15,7 @@ export default function PrivacyPolicyPage() {
       <section>
         <p>
           {BRAND_NAME} (the &ldquo;Service&rdquo;) is a gym management platform operated by{' '}
-          <strong>Noetech</strong>, based in Biñan City, Laguna, Philippines (&ldquo;Noetech,&rdquo;
+          <strong>VerSolutions</strong>, based in Biñan City, Laguna, Philippines (&ldquo;VerSolutions,&rdquo;
           &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). This Privacy Policy explains how we
           collect, use, disclose, and protect personal data when a gym, its staff, or its members use our
           web dashboard, admin console, or mobile app. It is written to comply with the Philippine Data
@@ -56,7 +56,7 @@ export default function PrivacyPolicyPage() {
         <h2>3. Who can see your data</h2>
         <p>
           The Service is multi-tenant: a gym&rsquo;s staff can only see data belonging to members of that
-          specific gym. Noetech staff may access data as needed to operate, support, and secure the
+          specific gym. VerSolutions staff may access data as needed to operate, support, and secure the
           platform, or when manually verifying a payment.
         </p>
       </section>
@@ -130,7 +130,7 @@ export default function PrivacyPolicyPage() {
         <h2>10. Contact us</h2>
         <p>
           For privacy questions or to exercise your rights, contact us at{' '}
-          <a href="mailto:privacy@noetecha.com">privacy@noetecha.com</a>, or write to us in Biñan City,
+          <a href="mailto:hello@getversolutions.com">hello@getversolutions.com</a>, or write to us in Biñan City,
           Laguna, Philippines.
         </p>
       </section>

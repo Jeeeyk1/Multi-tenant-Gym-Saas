@@ -1,30 +1,39 @@
-import { BRAND_NAME } from '@/lib/brand';
+import Link from 'next/link';
+import { CONTACT_EMAIL, FACEBOOK_URL } from '@/lib/brand';
+import { Container } from './ui/Container';
+import { Logo } from './ui/Logo';
+
+const LINK_CLASS = 'text-ink-on-navy underline-offset-4 transition hover:text-white hover:underline';
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 py-10 px-6">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-              <path d="M6.5 6.5h11" /><path d="M6.5 17.5h11" />
-              <path d="M3 9.5h2v5H3z" /><path d="M19 9.5h2v5h-2z" />
-              <path d="M1 11h2v2H1z" /><path d="M21 11h2v2h-2z" />
-            </svg>
-          </div>
-          <span className="font-semibold text-foreground">{BRAND_NAME}</span>
+    <footer className="bg-navy-deep py-12">
+      <Container className="flex flex-wrap items-start justify-between gap-7">
+        <div className="flex flex-col gap-2.5">
+          <Logo size="sm" />
+          <span className="font-mono text-[13px] text-ink-muted">a VerSolutions product</span>
         </div>
 
-        <p className="text-sm text-muted-foreground text-center">
-          © {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.
-        </p>
-
-        <div className="flex items-center gap-5 text-sm text-muted-foreground">
-          <a href="mailto:hello@lifthub.app" className="hover:text-foreground transition">Contact</a>
-          <a href="/privacy" className="hover:text-foreground transition">Privacy</a>
-          <a href="/terms" className="hover:text-foreground transition">Terms</a>
+        <div className="flex flex-col gap-1.5 text-sm">
+          <span className="font-semibold text-white">Contact</span>
+          <a href={`mailto:${CONTACT_EMAIL}`} className={LINK_CLASS}>
+            {CONTACT_EMAIL}
+          </a>
         </div>
-      </div>
+
+        <nav aria-label="Footer" className="flex flex-col gap-1.5 text-sm">
+          <span className="font-semibold text-white">Company</span>
+          <Link href="/privacy" className={LINK_CLASS}>
+            Privacy
+          </Link>
+          <Link href="/terms" className={LINK_CLASS}>
+            Terms
+          </Link>
+          <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+            Facebook
+          </a>
+        </nav>
+      </Container>
     </footer>
   );
 }

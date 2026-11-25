@@ -1,175 +1,187 @@
-'use client';
+import clsx from 'clsx';
+import { CONTACT_EMAIL } from '@/lib/brand';
+import { formatPeso, sharedFeatures, yearlySaving, type PublicPlan } from '@/lib/plans';
+import { ButtonLink } from './ui/ButtonLink';
+import { Container } from './ui/Container';
+import { CheckIcon, UsersIcon } from './ui/icons';
+import { SectionHeader } from './ui/SectionHeader';
+import { TrustList } from './ui/TrustList';
+import { motionDelay } from '@/lib/motion';
 
-import { useState } from 'react';
-import { SubscribeModal } from './SubscribeModal';
-
-interface SaasPlan {
-  id: string;
-  name: string;
-  description: string | null;
-  priceMonthly: number;
-  priceYearly: number | null;
-  features: string[];
-  isPopular: boolean;
-}
-
-// Mirrors the live "Standard" row in saas_plans (db/migrations/0045_seed_saas_plan.sql) —
-// used only if that table is unreachable, so it must stay in sync with the real plan.
-const FALLBACK_PLANS: SaasPlan[] = [
-  {
-    id: 'standard',
-    name: 'Standard',
-    description: 'Everything you need to run your gym — one plan, no tiers to compare.',
-    priceMonthly: 3499,
-    priceYearly: 34990,
-    isPopular: true,
-    features: [
-      'Up to 150 active members',
-      'Member mobile app (iOS & Android)',
-      'Smart check-in system',
-      'Staff & owner web dashboard',
-      'Membership plans, renewals & billing',
-      'Announcements & community chat',
-      'Leaderboard & badges',
-      'AI Coach — workout & meal plans for members',
-      'AI Insights — ask questions about your gym data',
-      'Email support',
-    ],
-  },
+const TRUST_ITEMS = [
+  'Free trial',
+  'No credit card required',
+  'Free setup assistance',
+  'Cancel anytime',
 ];
+const CUSTOM_PLAN_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Custom plan')}`;
 
-function formatPhp(amount: number) {
-  return `₱${Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-export function PricingSection({ plans }: { plans: SaasPlan[] }) {
-  const [yearly, setYearly] = useState(false);
-  const [subscribingPlan, setSubscribingPlan] = useState<string | null>(null);
-
-  // There's one real plan — everything included, no tiers to compare or upsell into.
-  const plan = plans[0] ?? FALLBACK_PLANS[0];
-  const monthlyAmount = yearly && plan.priceYearly ? plan.priceYearly / 12 : Number(plan.priceMonthly);
+function PlanCard({ plan, step }: { plan: PublicPlan; step: number }) {
+  const popular = plan.isPopular;
+  const saving = yearlySaving(plan);
 
   return (
-    <section id="pricing" className="py-24 px-6 border-t border-border/50">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Pricing</p>
-          <h2 className="text-4xl font-bold text-foreground mb-4">One plan. Everything included.</h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-            No tiers to compare, no features locked behind an upgrade. Just one price for
-            everything your gym needs.
+    // Reveal on the li, hover lift on the card: both use transform.
+    <li style={motionDelay(step)} className="reveal flex flex-[1_1_280px]">
+      <div
+        className={clsx(
+          'lift-card flex w-full flex-col gap-3.5 rounded-[20px] p-8',
+          popular
+            ? 'lift-card-popular bg-plan-popular border border-navy-line'
+            : 'border border-line bg-white',
+        )}
+      >
+        {popular ? (
+          <span className="self-start rounded-full bg-volt px-3 py-1 text-xs font-semibold text-navy">
+            Most popular
+          </span>
+        ) : (
+          <span aria-hidden="true" className="hidden h-6 md:block" />
+        )}
+        <h3
+          className={clsx(
+            'font-display text-[22px] font-extrabold',
+            popular ? 'text-white' : 'text-ink',
+          )}
+        >
+          {plan.name}
+        </h3>
+        {plan.description && (
+          <p className={clsx('text-[15px]', popular ? 'text-ink-on-navy' : 'text-ink-secondary')}>
+            {plan.description}
           </p>
+        )}
+        <p className="flex items-baseline gap-1.5">
+          <span
+            className={clsx(
+              'font-display text-[46px] font-extrabold tracking-[-0.04em]',
+              popular ? 'text-white' : 'text-ink',
+            )}
+          >
+            {formatPeso(Number(plan.priceMonthly))}
+          </span>
+          <span
+            className={clsx('text-[15px]', popular ? 'text-ink-on-navy' : 'text-ink-secondary')}
+          >
+            / month
+          </span>
+        </p>
+        {plan.priceYearly != null && (
+          <p className={clsx('text-sm', popular ? 'text-ink-on-navy' : 'text-ink-secondary')}>
+            or {formatPeso(Number(plan.priceYearly))} / year
+            {saving && (
+              <>
+                {' · '}
+                <b className={popular ? 'text-volt' : 'text-success'}>save {formatPeso(saving)}</b>
+              </>
+            )}
+          </p>
+        )}
+        {plan.memberLimit != null && (
+          <p
+            className={clsx(
+              'flex items-center gap-2 rounded-xl px-3.5 py-3 text-[15px] font-semibold',
+              popular ? 'bg-white/5 text-white' : 'bg-cloud text-ink',
+            )}
+          >
+            <UsersIcon size={18} className={popular ? 'text-volt' : 'text-code'} />
+            Up to {plan.memberLimit.toLocaleString('en-PH')} active members
+          </p>
+        )}
+        <ButtonLink
+          href="#trial"
+          variant={popular ? 'volt' : 'primary'}
+          className="mt-auto h-[52px]"
+        >
+          Start free trial
+        </ButtonLink>
+      </div>
+    </li>
+  );
+}
 
-          {/* Billing toggle */}
-          <div className="inline-flex items-center bg-surface border border-border rounded-full p-1 gap-1">
-            <button
-              onClick={() => setYearly(false)}
-              className={`px-5 py-1.5 rounded-full text-sm font-medium transition ${
-                !yearly ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setYearly(true)}
-              className={`px-5 py-1.5 rounded-full text-sm font-medium transition flex items-center gap-2 ${
-                yearly ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Yearly
-              <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                yearly ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-success/10 text-success'
-              }`}>
-                2 months free
-              </span>
-            </button>
-          </div>
-        </div>
+function PricingUnavailable() {
+  return (
+    <p className="rounded-[20px] border border-line p-8 text-center text-[15px] text-ink-secondary">
+      Pricing is temporarily unavailable. Email{' '}
+      <a
+        href={`mailto:${CONTACT_EMAIL}`}
+        className="font-semibold text-code underline-offset-4 hover:underline"
+      >
+        {CONTACT_EMAIL}
+      </a>{' '}
+      and we&apos;ll send it to you.
+    </p>
+  );
+}
 
-        {/* Single plan card — split layout instead of a comparison grid, since there's nothing to compare */}
-        <div className="rounded-3xl border border-border bg-surface overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-5">
-            {/* Left: price + CTA */}
-            <div className="md:col-span-2 p-8 md:p-10 flex flex-col justify-center bg-primary/5 border-b md:border-b-0 md:border-r border-border">
-              <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-              {plan.description && (
-                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{plan.description}</p>
-              )}
+export function PricingSection({ plans }: { plans: PublicPlan[] }) {
+  const included = sharedFeatures(plans);
 
-              <div className="mt-6">
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-extrabold text-foreground tracking-tight">
-                    {formatPhp(monthlyAmount)}
-                  </span>
-                  <span className="text-muted-foreground text-sm mb-1.5">/mo</span>
-                </div>
-                {yearly && plan.priceYearly && (
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Billed {formatPhp(plan.priceYearly)} yearly · Save {formatPhp(Number(plan.priceMonthly) * 12 - plan.priceYearly)}
-                  </p>
-                )}
-              </div>
+  return (
+    <section id="pricing" aria-labelledby="pricing-heading" className="bg-white py-20 sm:py-24">
+      <Container className="flex flex-col gap-11">
+        <SectionHeader
+          id="pricing-heading"
+          align="center"
+          eyebrow="Pricing"
+          title="Every feature, on every plan."
+          subtitle="Plans differ only by gym size. Prices include VAT."
+        />
 
-              <button
-                onClick={() => setSubscribingPlan(plan.name)}
-                className="mt-8 w-full text-center py-3.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition"
-              >
-                Get started
-              </button>
-            </div>
+        {plans.length === 0 ? (
+          <PricingUnavailable />
+        ) : (
+          <ul className="flex flex-wrap items-stretch gap-5">
+            {plans.map((plan, index) => (
+              <PlanCard key={plan.id} plan={plan} step={index} />
+            ))}
+          </ul>
+        )}
 
-            {/* Right: what's included */}
-            <div className="md:col-span-3 p-8 md:p-10">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                What&apos;s included
-              </p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/90">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-primary flex-shrink-0 mt-0.5"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {feature}
+        <div className="reveal flex flex-wrap gap-5">
+          {included.length > 0 && (
+            <div className="flex flex-[2_1_460px] flex-col gap-4 rounded-[20px] border border-line px-6 py-7 sm:px-8">
+              <h3 className="text-xs font-semibold tracking-[0.1em] text-ink-secondary">
+                INCLUDED IN EVERY PLAN
+              </h3>
+              <ul className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-6 gap-y-3 text-[15px] text-ink">
+                {included.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2.5">
+                    <CheckIcon size={18} className="mt-0.5 flex-none text-code" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
+          )}
+          <div className="flex flex-[1_1_280px] flex-col gap-4">
+            <p className="rounded-[20px] bg-navy p-[22px] text-[15px] leading-normal text-white">
+              <b className="text-volt">Pays for itself:</b> if your members pay {formatPeso(2000)} a
+              month, keeping just 2 of them from leaving covers Standard.
+            </p>
+            <p className="rounded-[20px] border-[1.5px] border-founding-border bg-founding-tint p-[22px] text-[15px] leading-normal text-ink">
+              <b>Founding gyms:</b> 50% off monthly for your first year.{' '}
+              <a href="#founding" className="font-semibold text-code underline underline-offset-2">
+                10 spots only.
+              </a>
+            </p>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground">
-          {['Free trial', 'No credit card required', 'Cancel anytime', 'Free setup assistance'].map((item) => (
-            <div key={item} className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              {item}
-            </div>
-          ))}
+        <div className="flex flex-col items-center gap-3 text-center">
+          <TrustList items={TRUST_ITEMS} tone="light" className="justify-center" />
+          <p className="text-[15px] text-ink-secondary">
+            Extra branches +{formatPeso(2499)}/month each. More than 500 members?{' '}
+            <a
+              href={CUSTOM_PLAN_HREF}
+              className="font-semibold text-code underline-offset-4 hover:underline"
+            >
+              Talk to us about a custom plan
+            </a>
+          </p>
         </div>
-
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Have more than 150 members or multiple branches?{' '}
-          <a href="mailto:hello@lifthub.app" className="text-primary font-medium hover:underline">
-            Talk to us
-          </a>
-        </p>
-      </div>
-
-      {subscribingPlan && (
-        <SubscribeModal plan={subscribingPlan} onClose={() => setSubscribingPlan(null)} />
-      )}
+      </Container>
     </section>
   );
 }

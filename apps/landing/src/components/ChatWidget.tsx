@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { BRAND_NAME } from '@/lib/brand';
+import { BRAND_NAME, CONTACT_EMAIL } from '@/lib/brand';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+const HINT_MIN_WIDTH_QUERY = '(min-width: 768px)';
 
 const SUGGESTIONS = [
   'What features are included?',
@@ -26,7 +28,8 @@ export function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (hintDismissed) return;
+    // The pop-up hint covers content on phones, so it only appears on wider screens.
+    if (hintDismissed || !window.matchMedia(HINT_MIN_WIDTH_QUERY).matches) return;
     const t = setTimeout(() => setShowHint(true), 4000);
     return () => clearTimeout(t);
   }, [hintDismissed]);
@@ -64,7 +67,7 @@ export function ChatWidget() {
       const data: { reply: string } = await res.json();
       setMessages([...next, { role: 'assistant', content: data.reply }]);
     } catch {
-      setMessages([...next, { role: 'assistant', content: "Sorry, something went wrong. Email us at hello@lifthub.app." }]);
+      setMessages([...next, { role: 'assistant', content: `Sorry, something went wrong. Email us at ${CONTACT_EMAIL}.` }]);
     } finally {
       setLoading(false);
     }
@@ -74,11 +77,11 @@ export function ChatWidget() {
     <>
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] flex flex-col rounded-2xl border border-border bg-background shadow-2xl shadow-foreground/10 overflow-hidden">
+        <div className="fixed bottom-24 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] flex flex-col rounded-2xl border border-line bg-white shadow-2xl shadow-navy/20 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-primary text-primary-foreground">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-navy text-white">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 rounded-full bg-volt text-navy flex items-center justify-center text-sm font-bold">
                 M
               </div>
               <div>
@@ -88,7 +91,8 @@ export function ChatWidget() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg opacity-80 hover:opacity-100 hover:bg-primary-foreground/10 transition"
+              aria-label="Close chat"
+              className="w-7 h-7 flex items-center justify-center rounded-lg opacity-80 hover:opacity-100 hover:bg-white/10 transition"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -102,11 +106,11 @@ export function ChatWidget() {
             {messages.length === 0 && (
               <div className="space-y-3">
                 <div className="flex gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center text-xs font-bold text-volt flex-shrink-0 mt-0.5">
                     M
                   </div>
-                  <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm text-foreground max-w-[80%]">
-                    Hi! I&apos;m Maya 👋 I can answer any questions about {BRAND_NAME} — features, pricing, or how to get started.
+                  <div className="bg-cloud border border-line rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm text-ink max-w-[80%]">
+                    Hi! I&apos;m Maya. I can answer any questions about {BRAND_NAME} — features, pricing, or how to get started.
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pl-9">
@@ -114,7 +118,7 @@ export function ChatWidget() {
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}
-                      className="text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition"
+                      className="text-xs px-3 py-1.5 rounded-full border border-code/30 text-code bg-tint/40 hover:bg-tint transition"
                     >
                       {s}
                     </button>
@@ -126,15 +130,15 @@ export function ChatWidget() {
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 {msg.role === 'assistant' && (
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center text-xs font-bold text-volt flex-shrink-0 mt-0.5">
                     M
                   </div>
                 )}
                 <div
                   className={`rounded-2xl px-3.5 py-2.5 text-sm max-w-[80%] whitespace-pre-wrap leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                      : 'bg-surface border border-border text-foreground rounded-tl-sm'
+                      ? 'bg-code text-white rounded-tr-sm'
+                      : 'bg-cloud border border-line text-ink rounded-tl-sm'
                   }`}
                 >
                   {msg.content}
@@ -144,13 +148,13 @@ export function ChatWidget() {
 
             {loading && (
               <div className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
+                <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center text-xs font-bold text-volt flex-shrink-0">
                   M
                 </div>
-                <div className="bg-surface border border-border rounded-2xl rounded-tl-sm px-3.5 py-3 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:300ms]" />
+                <div className="bg-cloud border border-line rounded-2xl rounded-tl-sm px-3.5 py-3 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-ink-muted rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 bg-ink-muted rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 bg-ink-muted rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             )}
@@ -159,7 +163,7 @@ export function ChatWidget() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-border bg-surface">
+          <div className="px-3 py-3 border-t border-line bg-cloud">
             <form
               onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}
               className="flex items-center gap-2"
@@ -170,12 +174,13 @@ export function ChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything..."
                 disabled={loading}
-                className="flex-1 bg-background border border-border rounded-xl px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
+                className="flex-1 bg-white border border-line rounded-xl px-3.5 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-signal disabled:opacity-60"
               />
               <button
                 type="submit"
+                aria-label="Send message"
                 disabled={!input.trim() || loading}
-                className="w-9 h-9 flex items-center justify-center bg-primary text-primary-foreground rounded-xl disabled:opacity-40 hover:bg-primary/90 transition flex-shrink-0"
+                className="w-9 h-9 flex items-center justify-center bg-code text-white rounded-xl disabled:opacity-40 hover:bg-code-hover transition flex-shrink-0"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -189,11 +194,11 @@ export function ChatWidget() {
       {/* Hint bubble */}
       {showHint && !isOpen && (
         <div
-          className="fixed bottom-24 right-[4.5rem] z-50 bg-foreground text-background text-xs font-medium px-3 py-2 rounded-xl rounded-br-sm shadow-lg animate-fade-up cursor-pointer whitespace-nowrap"
+          className="fixed bottom-24 right-[4.5rem] z-50 bg-navy text-white text-xs font-medium px-3 py-2 rounded-xl rounded-br-sm shadow-lg animate-fade-up cursor-pointer whitespace-nowrap"
           onClick={() => { setIsOpen(true); setShowHint(false); }}
         >
-          Need help? Ask Maya ✨
-          <div className="absolute -bottom-1.5 right-3 w-3 h-3 bg-foreground rotate-45" />
+          Need help? Ask Maya
+          <div className="absolute -bottom-1.5 right-3 w-3 h-3 bg-navy rotate-45" />
         </div>
       )}
 
@@ -201,12 +206,13 @@ export function ChatWidget() {
       <div className="fixed bottom-5 right-5 z-50">
         <button
           onClick={() => setIsOpen((o) => !o)}
-          aria-label="Open chat"
-          className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center"
+          aria-label={isOpen ? 'Close chat' : 'Open chat'}
+          aria-expanded={isOpen}
+          className="relative w-14 h-14 rounded-full bg-navy text-volt ring-1 ring-sky/30 shadow-lg shadow-navy/40 hover:bg-navy-raised hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center"
         >
           {/* Pulse ring when hint is showing */}
           {showHint && (
-            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-30" />
+            <span className="absolute inset-0 rounded-full bg-signal animate-ping opacity-30" />
           )}
 
           {isOpen ? (
@@ -219,12 +225,6 @@ export function ChatWidget() {
             </svg>
           )}
 
-          {/* Notification dot */}
-          {!isOpen && messages.length === 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-success rounded-full border-2 border-background flex items-center justify-center">
-              <span className="text-[8px] font-bold text-white">1</span>
-            </span>
-          )}
         </button>
       </div>
     </>

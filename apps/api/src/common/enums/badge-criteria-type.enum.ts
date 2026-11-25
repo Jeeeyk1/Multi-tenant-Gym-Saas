@@ -6,5 +6,7 @@ export enum BadgeCriteriaType {
   NIGHT_OWL           = 'NIGHT_OWL',
   WEEKLY_CONSISTENT   = 'WEEKLY_CONSISTENT',
   FOUNDING_MEMBER     = 'FOUNDING_MEMBER',
+  /** Months with an active membership (gaps between renewals don't count). */
+  MEMBERSHIP_MONTHS   = 'MEMBERSHIP_MONTHS',
   MANUAL              = 'MANUAL',
 }

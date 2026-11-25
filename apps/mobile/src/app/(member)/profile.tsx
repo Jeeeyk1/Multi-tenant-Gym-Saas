@@ -8,14 +8,15 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import {
-  useEquipBadge,
   useMyBadges,
   useMyMember,
   useMyProfile,
   useUpdateMyProfile,
 } from '../../hooks/members';
-import type { EquippedBadgeDisplay, GymMember, MemberBadge, MemberProfile } from '../../types';
-import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
+import type { EquippedBadge, GymMember, MemberBadge, MemberProfile } from '../../types';
+import { BadgeMedal } from '../../components/badges/BadgeMedal';
+import { BadgeStack } from '../../components/badges/BadgeStack';
+import { CATEGORY_LABEL, CATEGORY_ORDER, memberBadgeView } from '../../components/badges/badge-labels';
 import {
   ActivityLevel,
   DietType,
@@ -133,68 +134,52 @@ function NavRow({ icon, label, onPress, C }: { icon: string; label: string; onPr
   );
 }
 
-// ─── Badge helpers ────────────────────────────────────────────────────────────
+// ─── Badges ───────────────────────────────────────────────────────────────────
 
-const BADGE_SOURCE_LABELS: Record<string, string> = {
-  AUTO_SYSTEM: 'Consistency',
-  AUTO_CYCLE: 'Leaderboard',
-  AUTO_MILESTONE: 'Milestone',
-  STAFF_AWARD: 'Staff Award',
-};
-
-function badgeName(b: MemberBadge): string {
-  return b.badgeCatalog?.name ?? b.customBadge?.name ?? b.milestoneBadge?.badgeName ?? 'Badge';
-}
-function badgeColor(b: MemberBadge): string {
-  return b.badgeCatalog?.color ?? b.customBadge?.color ?? b.milestoneBadge?.color ?? '#6B7280';
-}
-function badgeRankIcon(rank: MemberBadge['badgeRank']): keyof typeof Ionicons.glyphMap {
-  if (rank === 'GOLD' || rank === 'SILVER' || rank === 'BRONZE') return 'medal';
-  return 'diamond';
-}
-function toEquippedDisplay(b: MemberBadge): EquippedBadgeDisplay {
-  return {
-    name: badgeName(b),
-    color: badgeColor(b),
-    icon: b.badgeCatalog?.icon ?? b.customBadge?.icon ?? b.milestoneBadge?.icon ?? 'ribbon',
-    rank: b.badgeRank,
-  };
+function equippedBadges(badges: MemberBadge[]): EquippedBadge[] {
+  const now = new Date();
+  return badges
+    .filter((b) => b.isEquipped && !(b.expiresAt && new Date(b.expiresAt) < now))
+    .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
+    .map((b) => ({ memberBadgeId: b.id, awardedAt: b.awardedAt, ...memberBadgeView(b) }));
 }
 
-function BadgeItem({ badge }: { badge: MemberBadge }) {
+function EquippedSlots({ equipped, hasBadges, onPress }: { equipped: EquippedBadge[]; hasBadges: boolean; onPress: () => void }) {
   const { theme } = useTheme();
   const C = theme.colors;
-  const color = badgeColor(badge);
-  const isExpired = badge.expiresAt ? new Date(badge.expiresAt) < new Date() : false;
-  const equipMutation = useEquipBadge();
-
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: 6 }, isExpired && { opacity: 0.5 }]}>
-      <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: color + '33', borderColor: color }}>
-        <Ionicons name={badgeRankIcon(badge.badgeRank)} size={15} color={color} />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${equipped.length > 0 ? `Equipped: ${equipped.map((b) => b.name).join(', ')}. ` : ''}See all badges`}
+      style={({ pressed }) => pressed && { opacity: 0.85 }}
+    >
+      <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
+        {CATEGORY_ORDER.map((category) => {
+          const badge = equipped.find((b) => b.category === category);
+          return (
+            <View key={category} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
+              {badge ? (
+                <BadgeMedal category={category} tier={badge.tier} color={badge.color} icon={badge.icon} size={44} />
+              ) : (
+                <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderStyle: 'dashed', borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="add" size={18} color={C.textMuted} />
+                </View>
+              )}
+              <Text style={{ color: badge ? C.text : C.textMuted, fontSize: 12, textAlign: 'center' }} numberOfLines={2}>
+                {badge?.name ?? CATEGORY_LABEL[category]}
+              </Text>
+            </View>
+          );
+        })}
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: C.text, fontSize: 14, ...FONT.medium }}>{badgeName(badge)}</Text>
-        <Text style={{ color: C.textMuted, fontSize: 12, marginTop: 1 }}>
-          {BADGE_SOURCE_LABELS[badge.source] ?? badge.source}{isExpired ? ' · Expired' : ''}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: SPACING.md }}>
+        <Text style={{ color: theme.primary, fontSize: 14, ...FONT.medium }}>
+          {hasBadges ? 'See all badges' : 'See badges you can earn'}
         </Text>
+        <Ionicons name="chevron-forward" size={14} color={theme.primary} />
       </View>
-      <Pressable
-        onPress={() => {
-          if (!isExpired && !equipMutation.isPending)
-            equipMutation.mutate({ badgeId: badge.id, equipped: !badge.isEquipped });
-        }}
-        disabled={isExpired || equipMutation.isPending}
-        style={({ pressed }) => [{ padding: 4, flexShrink: 0 }, pressed && { opacity: 0.6 }]}
-        hitSlop={8}
-      >
-        <Ionicons
-          name={badge.isEquipped ? 'star' : 'star-outline'}
-          size={20}
-          color={badge.isEquipped ? '#F59E0B' : C.textMuted}
-        />
-      </Pressable>
-    </View>
+    </Pressable>
   );
 }
 
@@ -465,7 +450,7 @@ export default function ProfileScreen() {
   const member: GymMember | null = memberQ.data ?? null;
   const profile: MemberProfile | null = profileQ.data ?? null;
   const badges: MemberBadge[] = badgesQ.data ?? [];
-  const equippedBadge = badges.find((b) => b.isEquipped) ?? null;
+  const equipped = useMemo(() => equippedBadges(badgesQ.data ?? []), [badgesQ.data]);
   const loading = memberQ.isLoading || profileQ.isLoading || badgesQ.isLoading;
 
   async function handleSignOut() {
@@ -538,7 +523,7 @@ export default function ProfileScreen() {
           </View>
           <View style={s.fullNameRow}>
             <Text style={s.fullName}>{member.user.fullName}</Text>
-            {equippedBadge && <EquippedBadgeChip badge={toEquippedDisplay(equippedBadge)} size={20} />}
+            <BadgeStack badges={equipped} size={22} onPress={() => router.push('/(member)/badges')} />
           </View>
           <Text style={s.email}>{member.user.email}</Text>
           <StatusBadge status={member.status} />
@@ -588,10 +573,7 @@ export default function ProfileScreen() {
         {/* Badges */}
         <View style={s.card}>
           <Text style={s.sectionTitle}>Badges</Text>
-          {badges.length === 0
-            ? <Text style={s.emptyText}>No badges earned yet.</Text>
-            : badges.map((b) => <BadgeItem key={b.id} badge={b} />)
-          }
+          <EquippedSlots equipped={equipped} hasBadges={badges.length > 0} onPress={() => router.push('/(member)/badges')} />
         </View>
 
         {/* QR Code */}

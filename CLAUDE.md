@@ -349,6 +349,13 @@ A task is not complete unless all relevant items below are satisfied:
 
 ---
 
+## Project agents
+
+`.claude/agents/frontend-engineer.md` is a senior front-end engineer for redesign and migration work in
+`apps/web`, `apps/admin`, `apps/landing` and `apps/mobile`. Use it for UI tasks.
+
+---
+
 ## When context is unclear
 
 If the repository does not provide enough information to safely implement something:

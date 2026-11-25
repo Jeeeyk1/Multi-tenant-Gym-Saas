@@ -1,3 +1,4 @@
+import type { BadgeCategory, BadgeTier } from '../constants/enums';
 // Auth
 export interface ResolveCodeResponse {
   type: 'GYM' | 'ORG';
@@ -524,6 +525,7 @@ export interface WorkoutSessionsPage {
 // Badges
 export interface CustomBadge {
   id: string;
+  category: BadgeCategory;
   name: string;
   description: string | null;
   icon: string;
@@ -531,37 +533,78 @@ export interface CustomBadge {
   isActive: boolean;
 }
 
+// A member equips one badge per category.
+export type { BadgeCategory, BadgeTier } from '../constants/enums';
+
 export interface MemberBadge {
   id: string;
+  category: BadgeCategory;
   source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';
-  badgeRank: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+  badgeRank: BadgeTier | null;
   proofNotes: string | null;
   awardedAt: string;
   expiresAt: string | null;
+  seenAt: string | null;
   cycleId: string | null;
   isEquipped: boolean;
-  badgeCatalog: { id: string; key: string; name: string; icon: string; color: string } | null;
+  badgeCatalog: { id: string; key: string; name: string; description: string | null; icon: string; color: string } | null;
   customBadge: { id: string; name: string; icon: string; color: string; description: string | null } | null;
   milestoneBadge: {
     id: string;
     badgeName: string;
+    description: string | null;
     icon: string;
     color: string;
+    tier: BadgeTier | null;
     weightKg: number;
     exercise: { name: string };
   } | null;
 }
 
-export interface EquippedBadgeDisplay {
+/** A badge as shown next to a member's name (chat, leaderboard, Who's Here). */
+export interface EquippedBadge {
+  memberBadgeId: string;
+  category: BadgeCategory;
   name: string;
+  description: string | null;
   icon: string;
   color: string;
-  rank: 'GOLD' | 'SILVER' | 'BRONZE' | null;
+  tier: BadgeTier | null;
+  awardedAt: string;
 }
 
 export interface EquippedBadgeRow {
   userId: string;
-  badge: EquippedBadgeDisplay;
+  /** Up to three, in category order. */
+  badges: EquippedBadge[];
+}
+
+export interface CollectionBadge {
+  key: string;
+  category: BadgeCategory;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  tier: BadgeTier | null;
+  exercise: { id: string; name: string } | null;
+  earned: {
+    memberBadgeId: string;
+    awardedAt: string;
+    expiresAt: string | null;
+    expired: boolean;
+    isEquipped: boolean;
+    seenAt: string | null;
+  } | null;
+  timesEarned: number;
+  progress: { current: number; target: number; unit: string } | null;
+  rarityPct: number | null;
+}
+
+export interface BadgeCollection {
+  earnedCount: number;
+  totalCount: number;
+  categories: { category: BadgeCategory; equipped: CollectionBadge | null; badges: CollectionBadge[] }[];
 }
 
 // API errors

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
+import { BadgeNotifier } from '../badge-notifier';
 import { BadgeRank } from '../../../../common/enums';
 
 const RANKS = [BadgeRank.GOLD, BadgeRank.SILVER, BadgeRank.BRONZE] as const;
@@ -14,7 +15,10 @@ const CYCLE_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export class CloseCycleUseCase {
   private readonly logger = new Logger(CloseCycleUseCase.name);
 
-  constructor(private readonly repo: BadgesRepository) {}
+  constructor(
+    private readonly repo: BadgesRepository,
+    private readonly notifier: BadgeNotifier,
+  ) {}
 
   async execute(cycleId: string, gymId: string, startedAt: Date): Promise<void> {
     const [, exercises, catalogEntries] = await Promise.all([
@@ -34,6 +38,7 @@ export class CloseCycleUseCase {
     const expiresAt = new Date(endedAt.getTime() + CYCLE_EXPIRY_MS);
     const exerciseLabel = startedAt.toLocaleString('en-US', { month: 'short', year: 'numeric' });
 
+    const winners: { memberId: string; badge: string }[] = [];
     for (const le of exercises) {
       const topMembers = await this.repo.getTopMembersForExercise(
         gymId,
@@ -56,10 +61,13 @@ export class CloseCycleUseCase {
           expiresAt,
           proofNotes: `${exerciseLabel} · ${le.exercise.name}`,
         });
+        winners.push({ memberId: topMembers[i].memberId, badge: `Cycle Champion ${rank.toLowerCase()} · ${le.exercise.name}` });
       }
     }
 
     await this.repo.createCycle(gymId);
+    // Notify after the next cycle exists, without holding up the job.
+    for (const w of winners) void this.notifier.notify(w.memberId, [w.badge]);
     this.logger.log(`Closed cycle ${cycleId} for gym ${gymId}, awarded top-3 for ${exercises.length} exercises`);
   }
 }

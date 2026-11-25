@@ -9,9 +9,10 @@ import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { useEquippedBadgesMap } from '../../hooks/members';
-import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
+import { BadgeStack } from '../../components/badges/BadgeStack';
+import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
-import type { ChatMessage, EquippedBadgeDisplay } from '../../types';
+import type { ChatMessage, EquippedBadge } from '../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
 const WS_BASE_URL = (() => {
@@ -22,11 +23,13 @@ const WS_BASE_URL = (() => {
 function MessageBubble({
   msg,
   currentUserId,
-  senderBadge,
+  senderBadges,
+  onBadgesPress,
 }: {
   msg: ChatMessage;
   currentUserId: string;
-  senderBadge: EquippedBadgeDisplay | undefined;
+  senderBadges: EquippedBadge[];
+  onBadgesPress: () => void;
 }) {
   const { theme } = useTheme();
   const C = theme.colors;
@@ -50,7 +53,7 @@ function MessageBubble({
       {!isMine && (
         <View style={styles.senderRow}>
           <Text style={styles.senderName}>{msg.sender.fullName}</Text>
-          {senderBadge && <EquippedBadgeChip badge={senderBadge} size={14} />}
+          <BadgeStack badges={senderBadges} size={16} onPress={onBadgesPress} />
         </View>
       )}
       <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs, isMine && { backgroundColor: theme.primary }]}>
@@ -76,6 +79,7 @@ export default function ChatScreen() {
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C), [C]);
   const equippedBadgesQ = useEquippedBadgesMap();
+  const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -267,7 +271,10 @@ export default function ChatScreen() {
           <MessageBubble
             msg={item}
             currentUserId={user?.id ?? ''}
-            senderBadge={equippedBadgesQ.data?.get(item.sender.id)}
+            senderBadges={equippedBadgesQ.data?.get(item.sender.id) ?? []}
+            onBadgesPress={() =>
+              setBadgeOwner({ name: item.sender.fullName, badges: equippedBadgesQ.data?.get(item.sender.id) ?? [] })
+            }
           />
         )}
         contentContainerStyle={styles.messageList}
@@ -311,6 +318,12 @@ export default function ChatScreen() {
           <Text style={styles.sendIcon}>↑</Text>
         </TouchableOpacity>
       </View>
+
+      <EquippedBadgesSheet
+        ownerName={badgeOwner?.name ?? null}
+        badges={badgeOwner?.badges ?? []}
+        onClose={() => setBadgeOwner(null)}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -969,6 +969,7 @@ model BadgeCatalog {
   criteriaType   String   @map("criteria_type") @db.VarChar(30)
   criteriaValue  Int?     @map("criteria_value")
   isAutoAwarded  Boolean  @default(true) @map("is_auto_awarded")
+  category       String   @default("CONSISTENCY")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   gymSettings    GymBadgeSetting[]
@@ -997,6 +998,7 @@ model GymCustomBadge {
   description       String?  @db.Text
   icon              String   @default("trophy") @db.VarChar(50)
   color             String   @default("#F59E0B") @db.VarChar(7)
+  category          String   @default("LOYALTY")
   createdByUserId   String   @map("created_by_user_id") @db.Uuid
   isActive          Boolean  @default(true) @map("is_active")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -1017,16 +1019,17 @@ model ExerciseMilestoneBadge {
   badgeName         String          @map("badge_name") @db.VarChar(100)
   description       String?         @db.Text
   weightKg          Decimal         @map("weight_kg") @db.Decimal(6, 2)
+  tier              String?
   icon              String          @default("barbell") @db.VarChar(50)
   color             String          @default("#F59E0B") @db.VarChar(7)
   isActive          Boolean         @default(true) @map("is_active")
-  createdByUserId   String          @map("created_by_user_id") @db.Uuid
+  createdByUserId   String?         @map("created_by_user_id") @db.Uuid
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime        @default(now()) @map("updated_at") @db.Timestamptz
 
   gym             Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
   exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  createdByUser   User     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdByUser   User?    @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
   memberBadges    MemberBadge[]
 
   @@index([gymId])
@@ -1065,6 +1068,8 @@ model MemberBadge {
   proofNotes         String?   @map("proof_notes") @db.Text
   expiresAt          DateTime? @map("expires_at") @db.Timestamptz
   isEquipped         Boolean   @default(false) @map("is_equipped")
+  category           String
+  seenAt             DateTime? @map("seen_at") @db.Timestamptz
   awardedAt          DateTime  @default(now()) @map("awarded_at") @db.Timestamptz
 
   member          GymMember              @relation(fields: [memberId], references: [id], onDelete: Cascade)

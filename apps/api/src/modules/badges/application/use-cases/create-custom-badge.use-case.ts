@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError } from '../../../../common/errors';
+import { BadgeCategory } from '../../../../common/enums';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
@@ -8,6 +9,7 @@ export interface CreateCustomBadgeInput {
   description?: string;
   icon: string;
   color: string;
+  category?: BadgeCategory;
 }
 
 @Injectable()
@@ -20,6 +22,7 @@ export class CreateCustomBadgeUseCase {
 
     return this.repo.createCustomBadge(gymId, {
       ...input,
+      category: input.category ?? BadgeCategory.LOYALTY,
       createdByUserId: caller.sub,
     });
   }

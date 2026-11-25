@@ -28,17 +28,18 @@ describe('EquipBadgeUseCase', () => {
       id: 'badge-1',
       isEquipped: false,
       expiresAt: null,
+      category: 'CONSISTENCY',
     } as any);
   });
 
   it('equips the badge when equipped=true', async () => {
     await useCase.execute('gym-1', 'badge-1', true, memberCaller);
-    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith('badge-1', 'member-1', 'gym-1', true);
+    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith(expect.objectContaining({ id: 'badge-1', category: 'CONSISTENCY' }), 'member-1', 'gym-1', true);
   });
 
   it('unequips the badge when equipped=false', async () => {
     await useCase.execute('gym-1', 'badge-1', false, memberCaller);
-    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith('badge-1', 'member-1', 'gym-1', false);
+    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith(expect.objectContaining({ id: 'badge-1' }), 'member-1', 'gym-1', false);
   });
 
   it('throws ForbiddenError when caller is in a different gym', async () => {
@@ -81,6 +82,6 @@ describe('EquipBadgeUseCase', () => {
       expiresAt: new Date('2020-01-01'),
     } as any);
     await useCase.execute('gym-1', 'badge-1', false, memberCaller);
-    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith('badge-1', 'member-1', 'gym-1', false);
+    expect(mockRepo.setBadgeEquipped).toHaveBeenCalledWith(expect.objectContaining({ id: 'badge-1' }), 'member-1', 'gym-1', false);
   });
 });

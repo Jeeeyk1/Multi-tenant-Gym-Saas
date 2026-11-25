@@ -1,14 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy, useEquippedBadgesMap } from '../../hooks/members';
-import { EquippedBadgeChip } from '../../components/EquippedBadgeChip';
+import { BadgeStack } from '../../components/badges/BadgeStack';
+import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
-import type { PublicActiveCheckin } from '../../types';
+import type { EquippedBadge, PublicActiveCheckin } from '../../types';
 
 function relativeFromNow(iso: string): string {
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000));
@@ -100,6 +101,7 @@ export default function WhosHereScreen() {
   const activeQ = useActivePublicCheckins();
   const equippedBadgesQ = useEquippedBadgesMap();
   const privacyMutation = useUpdateMyPrivacy();
+  const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
 
   const isHidden = memberQ.data?.privacy?.hideCheckinVisibility ?? true;
   const total = activeQ.data?.totalCount ?? 0;
@@ -200,7 +202,8 @@ export default function WhosHereScreen() {
               <PersonRow
                 key={row.memberId}
                 row={row}
-                badge={equippedBadgesQ.data?.get(row.userId)}
+                badges={equippedBadgesQ.data?.get(row.userId) ?? []}
+                onBadgesPress={(badges) => setBadgeOwner({ name: row.fullName, badges })}
                 withBorder={idx > 0}
                 styles={styles}
               />
@@ -215,6 +218,12 @@ export default function WhosHereScreen() {
           <Text style={[styles.backBtnText, { color: theme.primary }]}>← Back</Text>
         </Pressable>
       </ScrollView>
+
+      <EquippedBadgesSheet
+        ownerName={badgeOwner?.name ?? null}
+        badges={badgeOwner?.badges ?? []}
+        onClose={() => setBadgeOwner(null)}
+      />
     </>
   );
 }
@@ -223,12 +232,14 @@ type WhosHereStyles = ReturnType<typeof StyleSheet.create<Record<string, object>
 
 function PersonRow({
   row,
-  badge,
+  badges,
+  onBadgesPress,
   withBorder,
   styles,
 }: {
   row: PublicActiveCheckin;
-  badge: ReturnType<typeof useEquippedBadgesMap>['data'] extends Map<string, infer V> | undefined ? V | undefined : never;
+  badges: EquippedBadge[];
+  onBadgesPress: (badges: EquippedBadge[]) => void;
   withBorder: boolean;
   styles: WhosHereStyles;
 }) {
@@ -240,7 +251,7 @@ function PersonRow({
       <View style={{ flex: 1 }}>
         <View style={styles.personNameRow}>
           <Text style={styles.personName}>{row.fullName}</Text>
-          {badge && <EquippedBadgeChip badge={badge} size={14} />}
+          <BadgeStack badges={badges} size={16} onPress={() => onBadgesPress(badges)} />
         </View>
         <Text style={styles.personTime}>{relativeFromNow(row.checkedInAt)}</Text>
       </View>

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { useCustomBadges, useAwardBadge } from '../../hooks/badges';
+import { BadgeMedal } from '../../components/badges/BadgeMedal';
 import { useStaffMembers } from '../../hooks/staff';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { CustomBadge, MemberListItem } from '../../types';
@@ -179,9 +180,7 @@ export default function StaffBadgesScreen() {
           }
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.badgeCard} onPress={() => setAwarding(item)} activeOpacity={0.7}>
-              <View style={[styles.badgeIcon, { backgroundColor: item.color + '22', borderColor: item.color + '55' }]}>
-                <Text style={styles.badgeIconText}>{item.icon}</Text>
-              </View>
+              <BadgeMedal category={item.category} tier={null} color={item.color} icon={item.icon} size={44} />
               <View style={styles.badgeInfo}>
                 <Text style={styles.badgeName}>{item.name}</Text>
                 {item.description ? (
@@ -236,15 +235,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     padding: SPACING.md,
   },
-  badgeIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeIconText: { fontSize: 20 },
   badgeInfo: { flex: 1, gap: 2 },
   badgeName: { fontSize: 15, color: COLORS.text, ...FONT.semibold },
   badgeDesc: { fontSize: 13, color: COLORS.textSecondary, ...FONT.regular },

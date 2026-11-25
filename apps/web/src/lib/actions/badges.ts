@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import type { BadgeCategory } from '@gym-saas/contracts';
 import { api } from '@/lib/api';
+import { formatApiError } from '@/lib/format-error';
 import type { LadderWeights } from '@/types/api';
 
 export async function createCustomBadge(
@@ -14,8 +15,7 @@ export async function createCustomBadge(
     revalidatePath('/dashboard/badges');
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Failed to create custom badge.' };
+    return { error: formatApiError(err, 'Failed to create custom badge.') };
   }
 }
 
@@ -33,8 +33,7 @@ export async function saveLadder(
     revalidatePath('/dashboard/badges');
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Failed to save the ladder.' };
+    return { error: formatApiError(err, 'Failed to save the ladder.') };
   }
 }
 
@@ -48,7 +47,6 @@ export async function awardBadge(
     revalidatePath(`/dashboard/members/${memberId}`);
     return {};
   } catch (err: unknown) {
-    const e = err as { message?: string };
-    return { error: e.message ?? 'Failed to award badge.' };
+    return { error: formatApiError(err, 'Failed to award badge.') };
   }
 }

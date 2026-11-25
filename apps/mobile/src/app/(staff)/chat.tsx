@@ -11,7 +11,7 @@ import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import { formatApiError } from '../../lib/format-error';
-import { useEquippedBadgesMap } from '../../hooks/members';
+import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
 import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import type { ChatMessage, EquippedBadge } from '../../types';

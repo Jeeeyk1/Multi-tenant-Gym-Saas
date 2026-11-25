@@ -64,7 +64,7 @@ export class UpdateLeaderboardConfigUseCase {
   }
 
   private logError(step: string, gymId: string, err: unknown) {
-    this.logger.error(`leaderboard ${step} setup failed for gym ${gymId}`, err instanceof Error ? err.message : String(err));
+    this.logger.error(`leaderboard ${step} setup failed gym=${gymId}`, err instanceof Error ? err.stack : String(err));
   }
 }
 

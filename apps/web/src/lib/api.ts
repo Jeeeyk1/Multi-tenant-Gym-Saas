@@ -93,6 +93,23 @@ export const api = {
   },
 };
 
+/**
+ * GET for server components that render without this data when the API fails. The failure
+ * is logged server-side with its request id, so a missing panel can be traced instead of
+ * silently showing as empty.
+ */
+export async function getOr<T, F = T>(endpoint: string, fallback: F): Promise<T | F> {
+  try {
+    return await api.get<T>(endpoint);
+  } catch (err) {
+    const e = err as Partial<ApiError>;
+    console.warn(
+      `[api] GET ${endpoint} failed status=${e.statusCode ?? 'none'} code=${e.code ?? 'none'} ref=${e.requestId ?? 'none'}: ${e.message}`,
+    );
+    return fallback;
+  }
+}
+
 /** Unauthenticated axios instance for auth-related calls (login, resolve-code, logout). */
 export const authClient = axios.create({
   baseURL: BASE_URL,

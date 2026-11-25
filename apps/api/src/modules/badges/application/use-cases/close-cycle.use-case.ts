@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
+import { BadgesRepository, type CycleAward } from '../../infrastructure/persistence/badges.repository';
 import { BadgeNotifier } from '../badge-notifier';
 import { BadgeRank } from '../../../../common/enums';
 
@@ -21,53 +21,38 @@ export class CloseCycleUseCase {
   ) {}
 
   async execute(cycleId: string, gymId: string, startedAt: Date): Promise<void> {
-    const [, exercises, catalogEntries] = await Promise.all([
-      this.repo.closeCycle(cycleId),
+    const [exercises, catalogEntries] = await Promise.all([
       this.repo.getLeaderboardExercises(gymId),
       Promise.all(RANKS.map((r) => this.repo.findBadgeCatalogByKey(CYCLE_BADGE_KEYS[r]))),
     ]);
-
-    const catalogByRank: Partial<Record<BadgeRank, string>> = {};
-    for (let i = 0; i < RANKS.length; i++) {
-      if (catalogEntries[i]) {
-        catalogByRank[RANKS[i]] = catalogEntries[i]!.id;
-      }
-    }
+    const catalogByRank = new Map(RANKS.map((rank, i) => [rank, catalogEntries[i]?.id]));
 
     const endedAt = new Date();
     const expiresAt = new Date(endedAt.getTime() + CYCLE_EXPIRY_MS);
-    const exerciseLabel = startedAt.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    const cycleLabel = startedAt.toLocaleString('en-US', { month: 'short', year: 'numeric' });
 
+    const awards: CycleAward[] = [];
     const winners: { memberId: string; badge: string }[] = [];
     for (const le of exercises) {
-      const topMembers = await this.repo.getTopMembersForExercise(
-        gymId,
-        le.exercise.id,
-        startedAt,
-        endedAt,
-      );
-
-      for (let i = 0; i < topMembers.length; i++) {
+      const topMembers = await this.repo.getTopMembersForExercise(gymId, le.exercise.id, startedAt, endedAt);
+      topMembers.forEach((member, i) => {
         const rank = RANKS[i];
-        const catalogId = catalogByRank[rank];
-        if (!catalogId) continue;
-
-        await this.repo.awardCycleBadge({
-          memberId: topMembers[i].memberId,
-          gymId,
-          badgeCatalogId: catalogId,
-          cycleId,
-          rank,
-          expiresAt,
-          proofNotes: `${exerciseLabel} · ${le.exercise.name}`,
-        });
-        winners.push({ memberId: topMembers[i].memberId, badge: `Cycle Champion ${rank.toLowerCase()} · ${le.exercise.name}` });
-      }
+        const badgeCatalogId = catalogByRank.get(rank);
+        if (!badgeCatalogId) return;
+        awards.push({ memberId: member.memberId, badgeCatalogId, rank, expiresAt, proofNotes: `${cycleLabel} · ${le.exercise.name}` });
+        winners.push({ memberId: member.memberId, badge: `Cycle Champion ${rank.toLowerCase()} · ${le.exercise.name}` });
+      });
     }
 
-    await this.repo.createCycle(gymId);
-    // Notify after the next cycle exists, without holding up the job.
+    // Close, award and open the next cycle together, so a failure can be retried safely.
+    if (!(await this.repo.completeCycle(cycleId, gymId, endedAt, awards))) {
+      this.logger.warn(`cycle already closed, skipped cycle=${cycleId} gym=${gymId}`);
+      return;
+    }
+    this.logger.log(
+      `cycle closed cycle=${cycleId} gym=${gymId} lifts=${exercises.length} awards=${awards.length} ` +
+        `members=[${awards.map((a) => `${a.memberId}:${a.rank}`).join(',')}]`,
+    );
     for (const w of winners) void this.notifier.notify(w.memberId, [w.badge]);
-    this.logger.log(`Closed cycle ${cycleId} for gym ${gymId}, awarded top-3 for ${exercises.length} exercises`);
   }
 }

@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { BadgeCategory, BadgeSource, BadgeRank, MemberStatus, PrSubmissionStatus } from '../../../../common/enums';
+import {
+  BadgeCategory,
+  BadgeSource,
+  BadgeRank,
+  LeaderboardCycleStatus,
+  MemberStatus,
+  PrSubmissionStatus,
+} from '../../../../common/enums';
 import type { LadderTier, LadderWeights } from '../../domain/lift-ladder';
 import type { MembershipHistory } from '../../domain/badge-stats';
 
@@ -42,6 +49,14 @@ function badgeDefinition(r: BadgeDefinitionRow) {
   };
 }
 
+export interface CycleAward {
+  memberId: string;
+  badgeCatalogId: string;
+  rank: BadgeRank;
+  expiresAt: Date;
+  proofNotes: string;
+}
+
 @Injectable()
 export class BadgesRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -63,6 +78,15 @@ export class BadgesRepository {
       where: { gymSettings: { none: { gymId, isEnabled: false } } },
       orderBy: [{ category: 'asc' }, { criteriaType: 'asc' }, { criteriaValue: 'asc' }],
     });
+  }
+
+  /** Catalog badges the member already holds (cycle wins excluded: they repeat). */
+  async listOwnedCatalogBadgeIds(memberId: string): Promise<Set<string>> {
+    const rows = await this.prisma.memberBadge.findMany({
+      where: { memberId, badgeCatalogId: { not: null }, source: { not: BadgeSource.AUTO_CYCLE } },
+      select: { badgeCatalogId: true },
+    });
+    return new Set(rows.map((r) => r.badgeCatalogId!));
   }
 
   findBadgeCatalogByKey(key: string) {
@@ -158,6 +182,11 @@ export class BadgesRepository {
   }
 
   // ── Milestone Badges ───────────────────────────────────────────────────────
+
+  async isLeaderboardLift(gymId: string, exerciseId: string): Promise<boolean> {
+    const count = await this.prisma.gymLeaderboardExercise.count({ where: { gymId, exerciseId, isActive: true } });
+    return count > 0;
+  }
 
   getMilestoneBadgesForExercise(gymId: string, exerciseId: string) {
     return this.prisma.exerciseMilestoneBadge.findMany({
@@ -410,55 +439,54 @@ export class BadgesRepository {
     });
   }
 
-  awardCycleBadge(input: {
-    memberId: string;
-    gymId: string;
-    badgeCatalogId: string;
-    cycleId: string;
-    rank: BadgeRank;
-    expiresAt: Date;
-    proofNotes?: string;
-  }) {
-    return this.prisma.memberBadge.create({
-      data: {
-        memberId: input.memberId,
-        gymId: input.gymId,
-        badgeCatalogId: input.badgeCatalogId,
-        cycleId: input.cycleId,
-        category: BadgeCategory.STRENGTH,
-        source: BadgeSource.AUTO_CYCLE,
-        badgeRank: input.rank,
-        expiresAt: input.expiresAt,
-        proofNotes: input.proofNotes,
-      },
-    });
-  }
-
   // ── Leaderboard Cycles ─────────────────────────────────────────────────────
 
   getActiveCycle(gymId: string) {
     return this.prisma.leaderboardCycle.findFirst({
-      where: { gymId, status: 'ACTIVE' },
+      where: { gymId, status: LeaderboardCycleStatus.ACTIVE },
     });
   }
 
   getOldActiveCycles(olderThanDays: number) {
     const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
     return this.prisma.leaderboardCycle.findMany({
-      where: { status: 'ACTIVE', startedAt: { lte: cutoff } },
+      where: { status: LeaderboardCycleStatus.ACTIVE, startedAt: { lte: cutoff } },
     });
   }
 
   createCycle(gymId: string) {
     return this.prisma.leaderboardCycle.create({
-      data: { gymId, status: 'ACTIVE' },
+      data: { gymId, status: LeaderboardCycleStatus.ACTIVE },
     });
   }
 
-  closeCycle(cycleId: string) {
-    return this.prisma.leaderboardCycle.update({
-      where: { id: cycleId },
-      data: { status: 'COMPLETED', endedAt: new Date() },
+  /**
+   * Closes a cycle, awards its winners and opens the next cycle, all or nothing. A failure
+   * leaves the cycle active, so the next cron run retries it without duplicate awards.
+   * Returns false when the cycle was already closed (e.g. a second run), and changes nothing.
+   */
+  async completeCycle(cycleId: string, gymId: string, endedAt: Date, awards: CycleAward[]): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const closed = await tx.leaderboardCycle.updateMany({
+        where: { id: cycleId, status: LeaderboardCycleStatus.ACTIVE },
+        data: { status: LeaderboardCycleStatus.COMPLETED, endedAt },
+      });
+      if (closed.count === 0) return false;
+      await tx.memberBadge.createMany({
+        data: awards.map((a) => ({
+          memberId: a.memberId,
+          gymId,
+          badgeCatalogId: a.badgeCatalogId,
+          cycleId,
+          category: BadgeCategory.STRENGTH,
+          source: BadgeSource.AUTO_CYCLE,
+          badgeRank: a.rank,
+          expiresAt: a.expiresAt,
+          proofNotes: a.proofNotes,
+        })),
+      });
+      await tx.leaderboardCycle.create({ data: { gymId, status: LeaderboardCycleStatus.ACTIVE } });
+      return true;
     });
   }
 
@@ -481,7 +509,7 @@ export class BadgesRepository {
       FROM member_pr_submissions
       WHERE gym_id      = ${gymId}::uuid
         AND exercise_id = ${exerciseId}::uuid
-        AND status      = 'APPROVED'
+        AND status      = ${PrSubmissionStatus.APPROVED}
         AND reviewed_at >= ${cycleStart}
         AND reviewed_at <= ${cycleEnd}
       GROUP BY member_id

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { Text } from '../Text';
 import { useTheme } from '../../context/ThemeContext';
-import { useEquipBadge } from '../../hooks/members';
+import { useEquipBadge } from '../../hooks/badges';
 import { Notice, PrimaryButton, TextButton } from '../onboarding/controls';
 import { formatApiError } from '../../lib/format-error';
 import type { CollectionBadge } from '../../types';

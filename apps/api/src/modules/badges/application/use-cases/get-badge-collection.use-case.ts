@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { BadgeCategory, BadgeCriteriaType } from '../../../../common/enums';
 import { CacheService } from '../../../../common/cache/cache.service';
@@ -66,6 +66,8 @@ const UNIT: Partial<Record<BadgeCriteriaType, string>> = {
  */
 @Injectable()
 export class GetBadgeCollectionUseCase {
+  private readonly logger = new Logger(GetBadgeCollectionUseCase.name);
+
   constructor(
     private readonly repo: BadgesRepository,
     private readonly ladders: LadderService,
@@ -96,7 +98,14 @@ export class GetBadgeCollectionUseCase {
     // Badges are normally awarded after check-ins and workouts. When members open their own
     // collection, award what they already qualify for (e.g. a new month of membership) so
     // it never shows 1/1 as locked. Staff viewing a member don't trigger awards.
-    if (isSelf) await this.checkAuto.awardFromStats(memberId, gymId, catalog, stats);
+    if (isSelf) {
+      // Showing the collection matters more than this award pass; it runs again on the next check-in.
+      try {
+        await this.checkAuto.awardFromStats(memberId, gymId, catalog, stats);
+      } catch (err) {
+        this.logger.warn(`collection award pass failed gym=${gymId} member=${memberId}`, err instanceof Error ? err.stack : String(err));
+      }
+    }
 
     const owned = await this.repo.listMemberBadges(memberId, gymId);
     const ownedIds = (pick: (r: (typeof owned)[number]) => string | null) =>

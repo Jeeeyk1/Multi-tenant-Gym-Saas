@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CacheService } from '../../../common/cache/cache.service';
 import { BadgesRepository } from '../infrastructure/persistence/badges.repository';
 import { defaultLadderRows } from '../domain/ladder-rows';
@@ -8,6 +8,8 @@ const ENSURED_TTL_SECONDS = 300;
 /** Keeps every leaderboard lift on a ladder and credits rungs that past lifts already reached. */
 @Injectable()
 export class LadderService {
+  private readonly logger = new Logger(LadderService.name);
+
   constructor(
     private readonly repo: BadgesRepository,
     private readonly cache: CacheService,
@@ -23,6 +25,9 @@ export class LadderService {
 
   async ensureDefaultLadders(gymId: string): Promise<void> {
     const rungs = await this.repo.createMissingLadders(gymId, (exercise) => defaultLadderRows(gymId, exercise));
-    for (const rung of rungs) await this.repo.awardRungForExistingLifts(gymId, rung);
+    if (rungs.length === 0) return;
+    let credited = 0;
+    for (const rung of rungs) credited += await this.repo.awardRungForExistingLifts(gymId, rung);
+    this.logger.log(`default ladders created gym=${gymId} rungs=${rungs.length} credited=${credited}`);
   }
 }

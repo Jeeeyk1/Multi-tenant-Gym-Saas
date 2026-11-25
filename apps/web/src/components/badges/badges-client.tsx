@@ -19,7 +19,7 @@ const LADDER_COLOR = '#1F2937';
 
 interface Props {
   gymId: string;
-  customBadges: GymCustomBadge[];
+  customBadges: GymCustomBadge[] | null;
   ladders: BadgeLadder[] | null;
   olderMilestones: ExerciseMilestoneBadge[];
 }
@@ -34,7 +34,7 @@ export function BadgesClient({ gymId, customBadges, ladders, olderMilestones }: 
   );
 }
 
-function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCustomBadge[] }) {
+function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCustomBadge[] | null }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,9 @@ function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCust
 
       {/* List */}
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
-        {badges.length === 0 ? (
+        {badges === null ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Could not load custom badges. Refresh to try again.</p>
+        ) : badges.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">No custom badges yet.</p>
         ) : (
           <ul className="divide-y divide-border">

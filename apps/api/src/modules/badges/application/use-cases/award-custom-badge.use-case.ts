@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { BadgeNotifier } from '../badge-notifier';
@@ -13,6 +13,8 @@ export interface AwardCustomBadgeInput {
 
 @Injectable()
 export class AwardCustomBadgeUseCase {
+  private readonly logger = new Logger(AwardCustomBadgeUseCase.name);
+
   constructor(
     private readonly repo: BadgesRepository,
     private readonly notifier: BadgeNotifier,
@@ -37,6 +39,7 @@ export class AwardCustomBadgeUseCase {
       input.proofUrl,
       input.proofNotes,
     );
+    this.logger.log(`badge awarded gym=${gymId} member=${input.memberId} source=STAFF_AWARD custom=${badge.id} by=${caller.sub}`);
     void this.notifier.notify(input.memberId, [badge.name]);
     return awarded;
   }

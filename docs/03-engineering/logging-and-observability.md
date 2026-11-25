@@ -96,6 +96,14 @@ Adopting the helper elsewhere is a mechanical, low-risk follow-up (swap the manu
   bodies. Log ids (`user.sub`, `gymId`) and the domain error `code`, not the sensitive payload.
 - Prefer `logger.debug(...)` for detail that's useful when tracing a specific request (it won't spam
   production unless the log level is raised) and `logger.warn/error` for things that need attention.
+- **Log business events at `log` level as `event key=value …`**, with the ids needed to answer a support
+  question: `badges awarded gym=… member=… source=… keys=[…]`, `ladder saved gym=… exercise=… by=… credited=…`,
+  `cycle closed cycle=… gym=… awards=…`. Errors carry the same ids and pass `err.stack` as the second
+  argument. Background work (crons, fire-and-forget badge checks) catches per item, so one failure doesn't
+  stop the rest.
+- **Web server components:** read optional data with `getOr(endpoint, fallback)` from `lib/api.ts`, not
+  `api.get(...).catch(() => [])`. It logs the endpoint, status, code and request ref to the Next server log.
+  When the data is the point of the page, pass `null` as the fallback and render a "Could not load" state.
 
 ---
 

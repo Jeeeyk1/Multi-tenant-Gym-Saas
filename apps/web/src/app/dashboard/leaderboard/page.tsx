@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { getOr } from '@/lib/api';
 import { BadgeStack } from '@/components/badges/badge-stack';
 import { equippedByUser } from '@/components/badges/equipped';
 import type { EquippedBadgeRow, LeaderboardExerciseResult } from '@/types/api';
@@ -29,14 +29,11 @@ export default async function LeaderboardPage() {
   if (!user) return null;
 
   const [leaderboard, equippedRows, pendingCount] = await Promise.all([
-    api
-      .get<LeaderboardExerciseResult[]>(`/gyms/${user.gymId}/leaderboard`)
-      .catch(() => [] as LeaderboardExerciseResult[]),
-    api.get<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`).catch(() => [] as EquippedBadgeRow[]),
-    api
-      .get<{ length: number }>(`/gyms/${user.gymId}/leaderboard/submissions/pending`)
-      .then((r) => (Array.isArray(r) ? r.length : 0))
-      .catch(() => 0),
+    getOr<LeaderboardExerciseResult[], null>(`/gyms/${user.gymId}/leaderboard`, null),
+    getOr<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`, []),
+    getOr<unknown[]>(`/gyms/${user.gymId}/leaderboard/submissions/pending`, []).then((r) =>
+      Array.isArray(r) ? r.length : 0,
+    ),
   ]);
   const equipped = equippedByUser(equippedRows);
 
@@ -70,7 +67,11 @@ export default async function LeaderboardPage() {
         </div>
       </div>
 
-      {leaderboard.length === 0 ? (
+      {leaderboard === null ? (
+        <div className="bg-surface border border-border rounded-xl p-12 text-center">
+          <p className="text-sm text-muted-foreground">Could not load the leaderboard. Refresh to try again.</p>
+        </div>
+      ) : leaderboard.length === 0 ? (
         <div className="bg-surface border border-border rounded-xl p-12 text-center space-y-3">
           <p className="text-sm text-muted-foreground">No exercises are enabled for the leaderboard yet.</p>
           <Link

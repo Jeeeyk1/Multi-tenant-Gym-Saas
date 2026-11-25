@@ -8,11 +8,11 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import {
-  useMyBadges,
   useMyMember,
   useMyProfile,
   useUpdateMyProfile,
 } from '../../hooks/members';
+import { useMyBadges } from '../../hooks/badges';
 import type { EquippedBadge, GymMember, MemberBadge, MemberProfile } from '../../types';
 import { BadgeMedal } from '../../components/badges/BadgeMedal';
 import { BadgeStack } from '../../components/badges/BadgeStack';

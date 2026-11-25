@@ -4,6 +4,8 @@ import type { ExpoPushMessage } from 'expo-server-sdk';
 import { BadgesRepository } from '../infrastructure/persistence/badges.repository';
 
 const NOTIFICATION_TYPE = 'BADGE_EARNED';
+// Expo's error messages can quote the device token; it must never reach the logs.
+const PUSH_TOKEN_PATTERN = /Expo(nent)?PushToken\[[^\]]*\]/g;
 
 /**
  * Push notification when a member earns badges. Never throws (badges are already saved),
@@ -42,11 +44,19 @@ export class BadgeNotifier {
         body,
         data: { type: NOTIFICATION_TYPE },
       }));
+      let rejected = 0;
       for (const chunk of expo.chunkPushNotifications(messages)) {
-        await expo.sendPushNotificationsAsync(chunk);
+        const tickets = await expo.sendPushNotificationsAsync(chunk);
+        for (const ticket of tickets) {
+          if (ticket.status !== 'error') continue;
+          rejected++;
+          const msg = ticket.message.replace(PUSH_TOKEN_PATTERN, '[token]');
+          this.logger.warn(`badge push rejected member=${memberId} error=${ticket.details?.error ?? 'unknown'} msg=${msg}`);
+        }
       }
+      this.logger.debug(`badge push sent member=${memberId} devices=${tokens.length} rejected=${rejected}`);
     } catch (err) {
-      this.logger.error(`Badge push failed for member ${memberId}`, err instanceof Error ? err.message : String(err));
+      this.logger.error(`badge push failed member=${memberId}`, err instanceof Error ? err.stack : String(err));
     }
   }
 }

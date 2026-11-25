@@ -12,6 +12,8 @@ import { BadgeCategory, BadgeCriteriaType } from '../../../../common/enums';
 
 const repo = {
   getEnabledBadgeCatalog: jest.fn(),
+  listOwnedCatalogBadgeIds: jest.fn(),
+  isLeaderboardLift: jest.fn(),
   listCatalogForGym: jest.fn(),
   awardCatalogBadge: jest.fn(),
   awardMilestoneBadge: jest.fn(),
@@ -62,17 +64,41 @@ describe('CheckAutoBadgesUseCase', () => {
   it('awards badges the member qualifies for and notifies only for new ones', async () => {
     quietStats();
     repo.getEnabledBadgeCatalog.mockResolvedValue([
-      { id: 'b1', name: 'First Step', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 1, isAutoAwarded: true },
-      { id: 'b5', name: 'Getting Started', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 5, isAutoAwarded: true },
-      { id: 'b10', name: 'Getting Serious', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 10, isAutoAwarded: true },
+      { id: 'b1', key: 'FIRST_STEP', name: 'First Step', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 1, isAutoAwarded: true },
+      { id: 'b5', key: 'SESSIONS_5', name: 'Getting Started', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 5, isAutoAwarded: true },
+      { id: 'b10', key: 'SESSIONS_10', name: 'Getting Serious', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 10, isAutoAwarded: true },
     ] as never);
-    // b1 was already held (award returns false), b5 is new.
-    repo.awardCatalogBadge.mockImplementation(async (_m, _g, b) => b.id === 'b5');
+    // b1 is already held, so it is skipped; b5 is reached; b10 isn't.
+    repo.listOwnedCatalogBadgeIds.mockResolvedValue(new Set(['b1']));
+    repo.awardCatalogBadge.mockResolvedValue(true);
 
     await new CheckAutoBadgesUseCase(repo, notifier).execute('member-1', 'gym-1');
 
-    expect(repo.awardCatalogBadge).toHaveBeenCalledTimes(2);
+    expect(repo.awardCatalogBadge).toHaveBeenCalledTimes(1);
     expect(notifier.notify).toHaveBeenCalledWith('member-1', ['Getting Started']);
+  });
+
+  it("doesn't notify when another request awarded the badge first", async () => {
+    quietStats();
+    repo.getEnabledBadgeCatalog.mockResolvedValue([
+      { id: 'b5', key: 'SESSIONS_5', name: 'Getting Started', category: 'CONSISTENCY', criteriaType: BadgeCriteriaType.SESSION_COUNT, criteriaValue: 5, isAutoAwarded: true },
+    ] as never);
+    repo.listOwnedCatalogBadgeIds.mockResolvedValue(new Set());
+    repo.awardCatalogBadge.mockResolvedValue(false);
+
+    await new CheckAutoBadgesUseCase(repo, notifier).execute('member-1', 'gym-1');
+    expect(notifier.notify).not.toHaveBeenCalled();
+  });
+
+  it('skips loading stats when the member already holds every auto badge', async () => {
+    repo.getEnabledBadgeCatalog.mockResolvedValue([{ id: 'b1', key: 'FIRST_STEP', isAutoAwarded: true }] as never);
+    repo.listOwnedCatalogBadgeIds.mockResolvedValue(new Set(['b1']));
+
+    await new CheckAutoBadgesUseCase(repo, notifier).execute('member-1', 'gym-1');
+
+    expect(repo.getSessionCount).not.toHaveBeenCalled();
+    expect(repo.awardCatalogBadge).not.toHaveBeenCalled();
+    expect(notifier.notify).not.toHaveBeenCalled();
   });
 });
 
@@ -122,6 +148,16 @@ describe('AwardCustomBadgeUseCase', () => {
 describe('SaveLadderUseCase', () => {
   beforeEach(() => {
     repo.findExerciseForGym.mockResolvedValue({ id: 'squat', name: 'Back Squat', category: 'LEGS' } as never);
+    repo.isLeaderboardLift.mockResolvedValue(true);
+    repo.awardRungForExistingLifts.mockResolvedValue(0);
+  });
+
+  it('only gives leaderboard lifts a ladder', async () => {
+    repo.isLeaderboardLift.mockResolvedValue(false);
+    await expect(
+      new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: true, weights: { BRONZE: 50, SILVER: 70, GOLD: 90 } }, staff(['badges.manage'])),
+    ).rejects.toMatchObject({ code: 'NOT_A_LEADERBOARD_LIFT' });
+    expect(repo.saveLadder).not.toHaveBeenCalled();
   });
 
   it('requires weights that go up from bronze to gold', async () => {
@@ -149,6 +185,8 @@ describe('SaveLadderUseCase', () => {
     await new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: false }, staff(['badges.manage']));
     expect(repo.disableLadder).toHaveBeenCalledWith('gym-1', 'squat');
     expect(repo.saveLadder).not.toHaveBeenCalled();
+    // A lift removed from the leaderboard can still have its ladder switched off.
+    expect(repo.isLeaderboardLift).not.toHaveBeenCalled();
   });
 
   it('needs badges.manage', async () => {

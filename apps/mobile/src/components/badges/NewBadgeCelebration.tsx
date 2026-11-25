@@ -3,8 +3,7 @@ import { AccessibilityInfo, Animated, Easing, Modal, StyleSheet, View } from 're
 import { useFocusEffect } from 'expo-router';
 import { Text } from '../Text';
 import { useTheme } from '../../context/ThemeContext';
-import { useEquipBadge, useMyBadges } from '../../hooks/members';
-import { useMarkBadgesSeen } from '../../hooks/badges';
+import { useEquipBadge, useMarkBadgesSeen, useMyBadges } from '../../hooks/badges';
 import { Notice, PrimaryButton, TextButton } from '../onboarding/controls';
 import { formatApiError } from '../../lib/format-error';
 import { useReduceMotion } from '../onboarding/use-reduce-motion';

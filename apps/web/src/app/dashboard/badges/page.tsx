@@ -1,5 +1,5 @@
 import { getSessionUser } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { getOr } from '@/lib/api';
 import { BadgesClient } from '@/components/badges/badges-client';
 import type { BadgeLadder, ExerciseMilestoneBadge, GymCustomBadge } from '@/types/api';
 
@@ -8,9 +8,9 @@ export default async function BadgesPage() {
   if (!user) return null;
 
   const [customBadges, milestoneBadges, ladders] = await Promise.all([
-    api.get<GymCustomBadge[]>(`/gyms/${user.gymId}/badges/custom`).catch(() => [] as GymCustomBadge[]),
-    api.get<ExerciseMilestoneBadge[]>(`/gyms/${user.gymId}/badges/milestone`).catch(() => [] as ExerciseMilestoneBadge[]),
-    api.get<BadgeLadder[]>(`/gyms/${user.gymId}/badges/ladders`).catch(() => null),
+    getOr<GymCustomBadge[], null>(`/gyms/${user.gymId}/badges/custom`, null),
+    getOr<ExerciseMilestoneBadge[]>(`/gyms/${user.gymId}/badges/milestone`, []),
+    getOr<BadgeLadder[], null>(`/gyms/${user.gymId}/badges/ladders`, null),
   ]);
 
   return (

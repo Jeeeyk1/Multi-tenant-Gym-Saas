@@ -24,20 +24,37 @@ export class LeaderboardCycleJob {
       this.logger.log('started');
       const start = Date.now();
       let closed = 0;
+      let failed = 0;
 
+      let oldCycles: Awaited<ReturnType<BadgesService['getOldActiveCycles']>> = [];
       try {
-        const oldCycles = await this.badgesService.getOldActiveCycles(CYCLE_DURATION_DAYS);
-
-        for (const cycle of oldCycles) {
+        oldCycles = await this.badgesService.getOldActiveCycles(CYCLE_DURATION_DAYS);
+      } catch (err) {
+        this.logger.error('loading cycles to close failed', err instanceof Error ? err.stack : String(err));
+      }
+      // One gym failing must not stop the others; its cycle stays active and is retried next run.
+      for (const cycle of oldCycles) {
+        try {
           await this.closeCycleUseCase.execute(cycle.id, cycle.gymId, cycle.startedAt);
           closed++;
+        } catch (err) {
+          failed++;
+          this.logger.error(
+            `cycle close failed cycle=${cycle.id} gym=${cycle.gymId}`,
+            err instanceof Error ? err.stack : String(err),
+          );
         }
-
-        const unequipped = await this.badgesService.unequipExpiredBadges();
-        this.logger.log(`closed ${closed} cycles, unequipped ${unequipped} expired badges in ${Date.now() - start}ms`);
-      } catch (err) {
-        this.logger.error('failed', err instanceof Error ? err.message : String(err));
       }
+
+      let unequipped = 0;
+      try {
+        unequipped = await this.badgesService.unequipExpiredBadges();
+      } catch (err) {
+        this.logger.error('unequip expired badges failed', err instanceof Error ? err.stack : String(err));
+      }
+      this.logger.log(
+        `closed ${closed}/${oldCycles.length} cycles (${failed} failed), unequipped ${unequipped} expired badges in ${Date.now() - start}ms`,
+      );
 
       this.logger.log('completed');
     });

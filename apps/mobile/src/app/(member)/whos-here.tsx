@@ -3,7 +3,8 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 
 import { Text } from '../../components/Text';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy, useEquippedBadgesMap } from '../../hooks/members';
+import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy } from '../../hooks/members';
+import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
 import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import { useTheme } from '../../context/ThemeContext';

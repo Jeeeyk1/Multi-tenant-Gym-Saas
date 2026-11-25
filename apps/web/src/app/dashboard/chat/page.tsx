@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { getOr } from '@/lib/api';
 import { ChatFeed } from '@/components/chat/chat-feed';
 import { equippedByUser } from '@/components/badges/equipped';
 import type { ChatMessage, Conversation, EquippedBadgeRow } from '@/types/api';
@@ -13,17 +13,13 @@ export default async function CommunityChatPage() {
   const token = cookieStore.get('access_token')?.value ?? '';
 
   const [conversation, equippedRows] = await Promise.all([
-    api.get<Conversation>(`/gyms/${user.gymId}/conversations/default`).catch(() => null),
-    api.get<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`).catch(() => [] as EquippedBadgeRow[]),
+    getOr<Conversation, null>(`/gyms/${user.gymId}/conversations/default`, null),
+    getOr<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`, []),
   ]);
   const equipped = equippedByUser(equippedRows);
 
   const messages = conversation
-    ? await api
-        .get<ChatMessage[]>(
-          `/gyms/${user.gymId}/conversations/${conversation.id}/messages?limit=100`,
-        )
-        .catch(() => [] as ChatMessage[])
+    ? await getOr<ChatMessage[]>(`/gyms/${user.gymId}/conversations/${conversation.id}/messages?limit=100`, [])
     : [];
 
   return (

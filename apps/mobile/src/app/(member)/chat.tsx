@@ -8,7 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
-import { useEquippedBadgesMap } from '../../hooks/members';
+import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
 import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';

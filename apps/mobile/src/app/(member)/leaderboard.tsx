@@ -11,7 +11,7 @@ import {
   useSubmitPr,
   useUploadLeaderboardPhoto,
 } from '../../hooks/leaderboard';
-import { useEquippedBadgesMap } from '../../hooks/members';
+import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
 import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
 import type { EquippedBadge, Exercise, LeaderboardEntry, PrSubmission } from '../../types';

@@ -10,7 +10,7 @@ export default async function NotStaffPage({ params }: Props) {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-surface border border-border mb-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-surface border border-border mb-6">
           <span className="text-3xl">🏋️</span>
         </div>
         <h1 className="text-xl font-bold text-foreground mb-2">Members use the mobile app</h1>

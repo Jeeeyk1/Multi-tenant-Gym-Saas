@@ -3,10 +3,9 @@ import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Platform 
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { useGymPlans } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 import type { MembershipPlan } from '../../types';
 
 function formatMoney(n: number): string {
@@ -20,13 +19,12 @@ function formatDuration(days: number): string {
 }
 
 function PlanCard({ item }: { item: MembershipPlan }) {
-  const { theme } = useTheme();
   const inactive = item.isActive === false;
   return (
     <View style={[styles.card, inactive && styles.cardInactive]}>
       <View style={styles.cardTop}>
         <Text style={styles.planName} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.price, { color: theme.primary }]}>{formatMoney(item.price)}</Text>
+        <Text style={[styles.price, { color: COLORS.primary }]}>{formatMoney(item.price)}</Text>
       </View>
       <View style={styles.metaRow}>
         <View style={styles.typePill}>
@@ -44,7 +42,6 @@ function PlanCard({ item }: { item: MembershipPlan }) {
 
 export default function StaffPlansScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const plansQ = useGymPlans();
   const plans = plansQ.data ?? [];
 
@@ -68,7 +65,7 @@ export default function StaffPlansScreen() {
           contentContainerStyle={plans.length === 0 ? styles.listEmpty : styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
-            <RefreshControl refreshing={plansQ.isRefetching} onRefresh={() => plansQ.refetch()} tintColor={theme.primary} />
+            <RefreshControl refreshing={plansQ.isRefetching} onRefresh={() => plansQ.refetch()} tintColor={COLORS.primary} />
           }
           renderItem={({ item }) => <PlanCard item={item} />}
           ListHeaderComponent={
@@ -109,7 +106,7 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.md,
@@ -121,14 +118,14 @@ const styles = StyleSheet.create({
   price: { fontSize: 16, ...FONT.bold },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   typePill: {
-    backgroundColor: COLORS.background,
+    backgroundColor: STAFF_SURFACE_RAISED,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  typePillText: { fontSize: 11, color: COLORS.textMuted, ...FONT.medium },
+  typePillText: { fontSize: 11, color: COLORS.textSecondary, ...FONT.semibold },
   duration: { fontSize: 13, color: COLORS.textSecondary, ...FONT.regular },
   inactiveTag: { fontSize: 11, color: COLORS.textMuted, ...FONT.medium },
   description: { fontSize: 13, color: COLORS.textSecondary, ...FONT.regular },

@@ -44,23 +44,34 @@ Tokens are stored as httpOnly cookies. The web app never exposes tokens to clien
 
 ## Theming
 
-Theme is driven by CSS variables on `:root`. The default palette is a dark theme matching the mobile app. When a gym has a configured `primaryColor`, it is applied server-side via an inline CSS variable on the layout wrapper — no client-side flash.
+The staff web app uses the FitOps design tokens only. Gym colors are **not** applied anywhere in the staff
+app; a gym's identity appears only through its logo (or initial) in the sidebar badge and on the gym login
+page. The branding settings preview is the one place that renders the gym's colors, because it previews the
+member app.
 
-### Default CSS variables
+Tokens live as HSL triples in `src/app/globals.css` (`:root` for light, `.dark` for the Navy dark mode) and
+are mapped to Tailwind names in `tailwind.config.ts`, so classes like `bg-primary` or `bg-nav-active/…`
+keep working with opacity modifiers.
 
-```css
---background: 0 0% 4%;         /* #0A0A0A */
---surface:    0 0% 8%;          /* #141414 */
---border:     0 0% 16%;         /* #2A2A2A */
---primary:    156 72% 67%;      /* #6EE7B7 mint (default, overridden per gym) */
---primary-fg: 0 0% 0%;          /* #000000 */
---text:       0 0% 100%;        /* #FFFFFF */
---muted:      0 0% 53%;         /* #888888 */
---warning:    16 100% 60%;      /* #FF6B35 burn orange */
---destructive: 0 84% 60%;       /* red */
-```
+| Role | Light | Dark |
+|---|---|---|
+| `--background` | `#F5F7FA` | `#071A2E` |
+| `--surface` | `#FFFFFF` | `#0A2540` |
+| `--border` | `#E2E8F0` | `#1E3A5F` |
+| `--text` | `#0A2540` | `#F5F7FA` |
+| `--muted` | `#475569` | `#CBD5E1` |
+| `--primary` / `--primary-fg` | `#1D4ED8` / white | `#93C5FD` / `#0A2540` |
+| `--nav-active` / `--nav-active-fg` | `#DBEAFE` / `#1D4ED8` | `#12304F` / `#93C5FD` |
+| `--focus-ring` | `#3B82F6` | `#93C5FD` |
+| `--chart-primary` / `--chart-highlight` | `#0A2540` / `#3B82F6` | `#93C5FD` / `#3B82F6` |
+| `--scrim` (dialog backdrop, used at 60%) | `#0A2540` | black |
 
-The `--primary` variable is overridden per gym using the `primaryColor` value from `resolve-code`. The conversion from hex → HSL happens in `lib/utils.ts`.
+Status colors (`--success`, `--warning`, `--destructive` and their `-bg` / `-text` variants) are fixed and
+never take the gym color. Volt (`#CCFF00`) is never used in the staff app. Fonts: Manrope for headings and
+large numbers (`font-heading`), Inter for everything else. Text sizes keep the app's original scale.
+
+`onAccent()` in `src/lib/accent.ts` picks dark or white text for a background color; the web app uses it
+only in the branding preview.
 
 ---
 

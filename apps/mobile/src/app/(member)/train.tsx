@@ -96,7 +96,7 @@ export default function TrainScreen() {
       alignItems: 'center',
       gap: SPACING.sm,
       backgroundColor: C.surface,
-      borderRadius: RADIUS.lg,
+      borderRadius: RADIUS.xl,
       borderWidth: 1,
       borderColor: C.success + '50',
       paddingHorizontal: SPACING.md,
@@ -123,18 +123,18 @@ export default function TrainScreen() {
     startCardContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     startEyebrow: {
       fontSize: 12,
-      color: 'rgba(0,0,0,0.6)',
-      ...FONT.medium,
+      color: theme.onPrimary,
+      ...FONT.semibold,
       textTransform: 'uppercase',
       letterSpacing: 0.6,
       marginBottom: 4,
     },
-    startTitle: { fontSize: 22, color: '#000', ...FONT.bold },
+    startTitle: { fontSize: 22, color: theme.onPrimary, ...FONT.bold },
     startIconBubble: {
       width: 56,
       height: 56,
       borderRadius: 28,
-      backgroundColor: 'rgba(0,0,0,0.12)',
+      backgroundColor: theme.onPrimary + '1F',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -208,7 +208,7 @@ export default function TrainScreen() {
     allTimeRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
     allTimeLabel: { fontSize: 14, color: C.textSecondary, ...FONT.regular },
     allTimeValue: { fontSize: 14, color: C.text, ...FONT.semibold },
-  }), [C]);
+  }), [C, theme.onPrimary]);
 
   if (isLoading) {
     return (
@@ -275,7 +275,7 @@ export default function TrainScreen() {
                 <Text style={s.startTitle}>Start Workout</Text>
               </View>
               <View style={s.startIconBubble}>
-                <Ionicons name="barbell" size={28} color="rgba(0,0,0,0.7)" />
+                <Ionicons name="barbell" size={28} color={theme.onPrimary} />
               </View>
             </View>
           </LinearGradient>

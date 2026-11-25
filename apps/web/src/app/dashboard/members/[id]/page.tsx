@@ -11,9 +11,9 @@ import { CATEGORY_LABEL, TIER_LABEL } from '@/components/badges/badge-labels';
 import type { BadgeCollection, CollectionBadge, EquippedBadge, MemberDetail, RenewalRecord, MembershipPlan, GymCustomBadge } from '@/types/api';
 
 const STATUS_STYLES: Record<string, string> = {
-  ACTIVE: 'text-success border-success/40 bg-success/10',
-  EXPIRED: 'text-destructive border-destructive/40 bg-destructive/10',
-  SUSPENDED: 'text-warning border-warning/40 bg-warning/10',
+  ACTIVE: 'text-success border-success/40 bg-success-bg',
+  EXPIRED: 'text-destructive-text border-destructive/40 bg-destructive-bg',
+  SUSPENDED: 'text-warning border-warning/40 bg-warning-bg',
 };
 
 function getInitials(name: string): string {
@@ -118,7 +118,7 @@ export default async function MemberDetailPage({ params }: Props) {
           </div>
           <p className="text-sm text-muted-foreground font-mono mt-0.5">{member.membershipNumber}</p>
         </div>
-        <span className={cn('ml-auto text-xs font-semibold px-3 py-1 rounded-full border', statusStyle)}>
+        <span className={cn('ml-auto text-xs font-semibold px-3 py-1 rounded-pill border', statusStyle)}>
           {member.status}
         </span>
       </div>

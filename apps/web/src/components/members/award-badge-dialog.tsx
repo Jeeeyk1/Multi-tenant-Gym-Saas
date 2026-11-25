@@ -66,7 +66,7 @@ export function AwardBadgeDialog({ gymId, memberId, customBadges }: Props) {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60">
           <div className="bg-surface border border-border rounded-xl w-full max-w-sm mx-4 p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground">Award Badge</h2>
@@ -87,7 +87,7 @@ export function AwardBadgeDialog({ gymId, memberId, customBadges }: Props) {
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
                   required
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                 >
                   <option value="">Select a badge…</option>
                   {customBadges.map((b) => (
@@ -107,7 +107,7 @@ export function AwardBadgeDialog({ gymId, memberId, customBadges }: Props) {
                   onChange={(e) => setProofNotes(e.target.value)}
                   rows={3}
                   placeholder="Describe what the member achieved…"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  className="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring resize-none focus:border-focus-ring"
                 />
               </div>
 
@@ -117,14 +117,14 @@ export function AwardBadgeDialog({ gymId, memberId, customBadges }: Props) {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition"
+                  className="bg-surface flex-1 py-2 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={pending || !selectedId}
-                  className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 transition"
+                  className="flex-1 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   {pending ? 'Awarding…' : 'Award'}
                 </button>

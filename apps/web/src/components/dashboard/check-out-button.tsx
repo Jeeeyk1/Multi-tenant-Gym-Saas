@@ -24,7 +24,7 @@ export function CheckOutButton({ gymId, checkinId }: Props) {
     <button
       onClick={handleClick}
       disabled={loading}
-      className="text-xs font-medium px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition disabled:opacity-40"
+      className="bg-surface text-xs font-semibold px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition disabled:opacity-40 hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
     >
       {loading ? '…' : 'Check Out'}
     </button>

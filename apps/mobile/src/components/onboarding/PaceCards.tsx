@@ -68,7 +68,7 @@ export function PaceCards({
               </Text>
               {recommended === option.pace && option.available && (
                 <View style={[styles.tag, { backgroundColor: theme.primary }]}>
-                  <Text variant="caption" style={{ color: theme.colors.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
+                  <Text variant="caption" style={{ color: theme.onPrimary, fontFamily: 'Inter_600SemiBold' }}>
                     Recommended
                   </Text>
                 </View>

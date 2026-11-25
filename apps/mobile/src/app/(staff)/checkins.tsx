@@ -3,7 +3,6 @@ import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Touchabl
 import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { StaffHeader } from '../../components/StaffHeader';
 import {
@@ -13,7 +12,7 @@ import {
   useCheckOut,
   useStaffMembers,
 } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { StaffCheckIn, MemberListItem } from '../../types';
 
 function getInitials(name: string): string {
@@ -51,11 +50,10 @@ function CheckInRow({
   onCheckOut: (id: string) => void;
   checkingOut: boolean;
 }) {
-  const { theme } = useTheme();
   return (
     <View style={styles.row}>
       <View style={styles.avatar}>
-        <Text style={[styles.avatarText, { color: theme.primary }]}>{getInitials(item.member.user.fullName)}</Text>
+        <Text style={[styles.avatarText, { color: COLORS.primary }]}>{getInitials(item.member.user.fullName)}</Text>
       </View>
       <View style={styles.rowInfo}>
         <Text style={styles.rowName} numberOfLines={1}>{item.member.user.fullName}</Text>
@@ -93,7 +91,6 @@ function MemberRow({
   onCheckIn: (id: string) => void;
   isLoading: boolean;
 }) {
-  const { theme } = useTheme();
   return (
     <TouchableOpacity
       style={styles.memberRow}
@@ -102,7 +99,7 @@ function MemberRow({
       activeOpacity={0.7}
     >
       <View style={styles.memberAvatar}>
-        <Text style={[styles.memberAvatarText, { color: theme.primary }]}>{getInitials(item.user.fullName)}</Text>
+        <Text style={[styles.memberAvatarText, { color: COLORS.primary }]}>{getInitials(item.user.fullName)}</Text>
       </View>
       <View style={styles.memberInfo}>
         <Text style={styles.memberName} numberOfLines={1}>{item.user.fullName}</Text>
@@ -110,9 +107,9 @@ function MemberRow({
       </View>
       <View style={[styles.statusDot, { backgroundColor: statusColor(item.status) }]} />
       {isLoading ? (
-        <ActivityIndicator size="small" color={theme.primary} style={{ marginLeft: 8 }} />
+        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />
       ) : (
-        <Ionicons name="add-circle-outline" size={22} color={theme.primary} />
+        <Ionicons name="add-circle-outline" size={22} color={COLORS.primary} />
       )}
     </TouchableOpacity>
   );
@@ -127,7 +124,6 @@ function QrScannerTab({
   onSuccess: () => void;
   onError: (msg: string) => void;
 }) {
-  const { theme } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const scannedRef = useRef(false);
@@ -156,14 +152,14 @@ function QrScannerTab({
     [qrScanMutation, onSuccess, onError, scanning],
   );
 
-  if (!permission) return <ActivityIndicator color={theme.primary} style={{ marginTop: SPACING.xl }} />;
+  if (!permission) return <ActivityIndicator color={COLORS.primary} style={{ marginTop: SPACING.xl }} />;
 
   if (!permission.granted) {
     return (
       <View style={styles.cameraPermission}>
         <Ionicons name="camera-outline" size={40} color={COLORS.textMuted} />
         <Text style={styles.cameraPermissionText}>Camera access is needed to scan QR codes</Text>
-        <TouchableOpacity style={[styles.permissionBtn, { backgroundColor: theme.primary }]} onPress={requestPermission}>
+        <TouchableOpacity style={[styles.permissionBtn, { backgroundColor: COLORS.primary }]} onPress={requestPermission}>
           <Text style={styles.permissionBtnText}>Allow Camera</Text>
         </TouchableOpacity>
       </View>
@@ -180,15 +176,15 @@ function QrScannerTab({
       />
       <View style={styles.scannerOverlay}>
         <View style={styles.scannerFrame}>
-          <View style={[styles.corner, styles.cornerTL, { borderColor: theme.primary }]} />
-          <View style={[styles.corner, styles.cornerTR, { borderColor: theme.primary }]} />
-          <View style={[styles.corner, styles.cornerBL, { borderColor: theme.primary }]} />
-          <View style={[styles.corner, styles.cornerBR, { borderColor: theme.primary }]} />
+          <View style={[styles.corner, styles.cornerTL, { borderColor: COLORS.primary }]} />
+          <View style={[styles.corner, styles.cornerTR, { borderColor: COLORS.primary }]} />
+          <View style={[styles.corner, styles.cornerBL, { borderColor: COLORS.primary }]} />
+          <View style={[styles.corner, styles.cornerBR, { borderColor: COLORS.primary }]} />
         </View>
       </View>
       {scanning && (
         <View style={styles.scanningIndicator}>
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={COLORS.text} size="small" />
           <Text style={styles.scanningText}>Checking in…</Text>
         </View>
       )}
@@ -200,7 +196,6 @@ function QrScannerTab({
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function CheckInsScreen() {
-  const { theme } = useTheme();
 
   const activeListQ = useActiveCheckIns();
   const membersQ = useStaffMembers();
@@ -295,8 +290,8 @@ export default function CheckInsScreen() {
         subtitle={`${activeList.length} active`}
         borderBottom
         right={
-          <TouchableOpacity style={[styles.checkInFab, { backgroundColor: theme.primary }]} onPress={openModal} activeOpacity={0.8}>
-            <Ionicons name="person-add-outline" size={18} color="#000" />
+          <TouchableOpacity style={[styles.checkInFab, { backgroundColor: COLORS.primary }]} onPress={openModal} activeOpacity={0.8}>
+            <Ionicons name="person-add-outline" size={18} color={COLORS.onPrimary} />
             <Text style={styles.checkInFabText}>Check In</Text>
           </TouchableOpacity>
         }
@@ -311,7 +306,7 @@ export default function CheckInsScreen() {
         <View style={styles.centered}>
           <Text style={styles.errorText}>{listError}</Text>
           <TouchableOpacity onPress={() => activeListQ.refetch()} style={styles.retryBtn}>
-            <Text style={[styles.retryText, { color: theme.primary }]}>Retry</Text>
+            <Text style={[styles.retryText, { color: COLORS.primary }]}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -322,7 +317,7 @@ export default function CheckInsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => activeListQ.refetch()}
-              tintColor={theme.primary}
+              tintColor={COLORS.primary}
             />
           }
           contentContainerStyle={activeList.length === 0 ? styles.listEmpty : styles.listContent}
@@ -372,18 +367,18 @@ export default function CheckInsScreen() {
             {/* Tab switcher */}
             <View style={styles.modalTabs}>
               <TouchableOpacity
-                style={[styles.modalTab, modalTab === 'scan' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
+                style={[styles.modalTab, modalTab === 'scan' && { borderBottomColor: COLORS.primary, borderBottomWidth: 2 }]}
                 onPress={() => { setModalTab('scan'); setCheckInError(null); }}
               >
-                <Ionicons name="qr-code-outline" size={16} color={modalTab === 'scan' ? theme.primary : COLORS.textMuted} />
-                <Text style={[styles.modalTabText, modalTab === 'scan' && { color: theme.primary }]}>Scan QR</Text>
+                <Ionicons name="qr-code-outline" size={16} color={modalTab === 'scan' ? COLORS.primary : COLORS.textMuted} />
+                <Text style={[styles.modalTabText, modalTab === 'scan' && { color: COLORS.primary }]}>Scan QR</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalTab, modalTab === 'search' && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
+                style={[styles.modalTab, modalTab === 'search' && { borderBottomColor: COLORS.primary, borderBottomWidth: 2 }]}
                 onPress={() => { setModalTab('search'); setCheckInError(null); loadMembersIfNeeded(); }}
               >
-                <Ionicons name="search-outline" size={16} color={modalTab === 'search' ? theme.primary : COLORS.textMuted} />
-                <Text style={[styles.modalTabText, modalTab === 'search' && { color: theme.primary }]}>Search</Text>
+                <Ionicons name="search-outline" size={16} color={modalTab === 'search' ? COLORS.primary : COLORS.textMuted} />
+                <Text style={[styles.modalTabText, modalTab === 'search' && { color: COLORS.primary }]}>Search</Text>
               </TouchableOpacity>
             </View>
 
@@ -423,7 +418,7 @@ export default function CheckInsScreen() {
 
                 {membersLoading ? (
                   <View style={styles.modalLoading}>
-                    <ActivityIndicator color={theme.primary} />
+                    <ActivityIndicator color={COLORS.primary} />
                   </View>
                 ) : (
                   <FlatList
@@ -465,11 +460,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.button,
+    borderRadius: RADIUS.control,
     paddingHorizontal: 14,
     paddingVertical: 9,
+    justifyContent: 'center',
   },
-  checkInFabText: { fontSize: 14, color: '#000', ...FONT.semibold },
+  checkInFabText: { fontSize: 14, color: COLORS.onPrimary, ...FONT.semibold },
 
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.sm },
   errorText: { color: COLORS.error, fontSize: 14, textAlign: 'center' },
@@ -509,7 +505,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.control,
     paddingHorizontal: 10,
     paddingVertical: 6,
     minWidth: 52,
@@ -532,7 +528,7 @@ const styles = StyleSheet.create({
   modalWrap: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(7, 26, 46, 0.6)',
   },
   modalSheet: {
     backgroundColor: COLORS.surface,
@@ -569,7 +565,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     marginHorizontal: SPACING.lg,
     marginVertical: SPACING.sm,
     paddingHorizontal: SPACING.sm,
@@ -661,7 +657,7 @@ const styles = StyleSheet.create({
     margin: SPACING.lg,
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    backgroundColor: '#000',
+    backgroundColor: COLORS.background,
     position: 'relative',
   },
   camera: { flex: 1 },
@@ -679,7 +675,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 24,
     height: 24,
-    borderColor: '#fff',
+    borderColor: COLORS.text,
     borderWidth: 3,
   },
   cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 4 },
@@ -696,14 +692,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  scanningText: { color: '#fff', fontSize: 14, ...FONT.medium },
+  scanningText: { color: COLORS.text, fontSize: 14, ...FONT.medium },
   scanHint: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.7)',
+    color: COLORS.textSecondary,
     fontSize: 12,
     ...FONT.regular,
     paddingBottom: 10,
@@ -725,7 +721,9 @@ const styles = StyleSheet.create({
   permissionBtn: {
     paddingVertical: 10,
     paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.button,
+    borderRadius: RADIUS.control,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  permissionBtnText: { fontSize: 14, color: '#000', ...FONT.semibold },
+  permissionBtnText: { fontSize: 14, color: COLORS.onPrimary, ...FONT.semibold },
 });

@@ -40,7 +40,7 @@ export function LoginForm({ code, type }: Props) {
           autoComplete="email"
           autoCapitalize="none"
           placeholder="you@example.com"
-          className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+          className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
           disabled={isPending}
         />
       </div>
@@ -56,7 +56,7 @@ export function LoginForm({ code, type }: Props) {
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             placeholder="••••••••"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 pr-16 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+            className="w-full bg-surface py-2.5 border border-border rounded-md px-3 pr-16 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
             disabled={isPending}
           />
           <button
@@ -71,7 +71,7 @@ export function LoginForm({ code, type }: Props) {
       </div>
 
       {error && (
-        <div className="bg-red-950/60 border border-destructive rounded-lg px-3 py-2">
+        <div className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
@@ -79,7 +79,7 @@ export function LoginForm({ code, type }: Props) {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:cursor-not-allowed mt-2 disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {isPending ? 'Signing in…' : 'Sign In'}
       </button>

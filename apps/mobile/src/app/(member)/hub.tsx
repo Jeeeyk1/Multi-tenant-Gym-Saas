@@ -14,7 +14,6 @@ interface HubItem {
   label: string;
   description: string;
   route: string;
-  color: string;
 }
 
 const HUB_ITEMS: HubItem[] = [
@@ -23,21 +22,18 @@ const HUB_ITEMS: HubItem[] = [
     label: 'Announcements',
     description: 'Gym news, updates & pinned posts',
     route: '/(member)/announcements',
-    color: '#F59E0B',
   },
   {
     icon: 'chatbubbles-outline',
     label: 'Community Chat',
     description: 'Talk with other members',
     route: '/(member)/chat',
-    color: '#0891B2',
   },
   {
     icon: 'trophy-outline',
     label: 'Leaderboard',
     description: 'See the top lifters in your gym',
     route: '/(member)/leaderboard',
-    color: '#8B5CF6',
   },
 ];
 
@@ -71,7 +67,9 @@ export default function HubScreen() {
     iconBubble: {
       width: 48,
       height: 48,
-      borderRadius: 14,
+      borderRadius: RADIUS.lg,
+      backgroundColor: C.background,
+      borderColor: C.border,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
@@ -101,8 +99,8 @@ export default function HubScreen() {
             ]}
             onPress={() => router.push(item.route as never)}
           >
-            <View style={[s.iconBubble, { backgroundColor: item.color + '22' }]}>
-              <Ionicons name={item.icon} size={24} color={item.color} />
+            <View style={s.iconBubble}>
+              <Ionicons name={item.icon} size={24} color={C.textSecondary} />
             </View>
             <View style={s.cardText}>
               <Text style={s.cardLabel}>{item.label}</Text>

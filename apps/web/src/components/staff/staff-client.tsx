@@ -7,8 +7,8 @@ import type { StaffMember, GymRole } from '@/types/api';
 
 const ROLE_COLORS: Record<string, string> = {
   MANAGER: 'text-primary border-primary/40 bg-primary/10',
-  FRONT_DESK: 'text-success border-success/40 bg-success/10',
-  TRAINER: 'text-warning border-warning/40 bg-warning/10',
+  FRONT_DESK: 'text-success border-success/40 bg-success-bg',
+  TRAINER: 'text-warning border-warning/40 bg-warning-bg',
 };
 
 interface Props {
@@ -28,7 +28,7 @@ export function StaffClient({ gymId, staff, roles }: Props) {
         </p>
         <button
           onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <span className="text-base leading-none">+</span>
           Invite Staff
@@ -117,7 +117,7 @@ function StaffRow({
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-foreground">{member.user.fullName}</p>
             {!member.isActive && (
-              <span className="text-xs text-muted-foreground border border-border rounded-full px-2 py-0.5">Inactive</span>
+              <span className="text-xs text-muted-foreground border border-border rounded-pill px-2 py-0.5 font-semibold">Inactive</span>
             )}
           </div>
           <p className="text-xs text-muted-foreground">{member.user.email}</p>
@@ -128,7 +128,7 @@ function StaffRow({
               <span
                 key={r.id}
                 className={cn(
-                  'inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border',
+                  'inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-pill border',
                   ROLE_COLORS[r.role.name] ?? 'text-muted-foreground border-border',
                 )}
               >
@@ -152,7 +152,7 @@ function StaffRow({
               <select
                 value={selectedRoleId}
                 onChange={(e) => setSelectedRoleId(e.target.value)}
-                className="text-xs bg-background border border-border rounded-md px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="text-xs bg-surface border border-border rounded-md px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
               >
                 <option value="">+ Assign role…</option>
                 {unassignedRoles.map((r) => (
@@ -210,8 +210,8 @@ function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6">
+      <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-foreground">Invite Staff Member</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition text-lg px-1">✕</button>
@@ -231,7 +231,7 @@ function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void })
             </div>
             <button
               onClick={onClose}
-              className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition"
+              className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Done
             </button>
@@ -243,34 +243,34 @@ function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void })
                 Full Name <span className="text-destructive">*</span>
               </label>
               <input name="fullName" type="text" required placeholder="Jane Doe" disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition" />
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                 Email <span className="text-destructive">*</span>
               </label>
               <input name="email" type="email" required placeholder="jane@example.com" disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition" />
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
             </div>
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                 Phone <span className="text-muted-foreground font-normal normal-case">(optional)</span>
               </label>
               <input name="phone" type="tel" placeholder="+63 912 345 6789" disabled={isPending}
-                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition" />
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
             </div>
             {error && (
-              <div className="bg-red-950/60 border border-destructive rounded-lg px-3 py-2">
+              <div className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={onClose} disabled={isPending}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition disabled:opacity-50">
+                className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition disabled:opacity-50 font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                 Cancel
               </button>
               <button type="submit" disabled={isPending}
-                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50">
+                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                 {isPending ? 'Inviting…' : 'Send Invite'}
               </button>
             </div>

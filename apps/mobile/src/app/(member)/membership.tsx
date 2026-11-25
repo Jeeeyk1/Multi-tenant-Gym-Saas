@@ -59,7 +59,7 @@ export default function MembershipScreen() {
 
         card: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.md,
@@ -122,7 +122,7 @@ export default function MembershipScreen() {
 
         emptyCard: {
           backgroundColor: C.surface,
-          borderRadius: RADIUS.lg,
+          borderRadius: RADIUS.xl,
           borderWidth: 1,
           borderColor: C.border,
           padding: SPACING.xl,

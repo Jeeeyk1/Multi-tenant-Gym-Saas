@@ -3,12 +3,11 @@ import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Touchabl
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { useCustomBadges, useAwardBadge } from '../../hooks/badges';
 import { BadgeMedal } from '../../components/badges/BadgeMedal';
 import { useStaffMembers } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { CustomBadge, MemberListItem } from '../../types';
 
 function AwardModal({
@@ -18,7 +17,6 @@ function AwardModal({
   badge: CustomBadge | null;
   onClose: () => void;
 }) {
-  const { theme } = useTheme();
   const membersQ = useStaffMembers();
   const awardMutation = useAwardBadge();
 
@@ -69,11 +67,11 @@ function AwardModal({
           <View style={styles.handle} />
           {done ? (
             <View style={styles.doneWrap}>
-              <Ionicons name="checkmark-circle" size={48} color={theme.primary} />
+              <Ionicons name="checkmark-circle" size={48} color={COLORS.primary} />
               <Text style={styles.doneText}>
                 Awarded {badge?.name} to {selected?.user.fullName}
               </Text>
-              <TouchableOpacity style={[styles.awardBtn, { backgroundColor: theme.primary }]} onPress={handleClose}>
+              <TouchableOpacity style={[styles.awardBtn, { backgroundColor: COLORS.primary }]} onPress={handleClose}>
                 <Text style={styles.awardBtnText}>Done</Text>
               </TouchableOpacity>
             </View>
@@ -126,14 +124,14 @@ function AwardModal({
               <TouchableOpacity
                 style={[
                   styles.awardBtn,
-                  { backgroundColor: theme.primary },
+                  { backgroundColor: COLORS.primary },
                   (!selected || awardMutation.isPending) && styles.awardBtnDisabled,
                 ]}
                 onPress={handleAward}
                 disabled={!selected || awardMutation.isPending}
               >
                 {awardMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#000" />
+                  <ActivityIndicator size="small" color={COLORS.onPrimary} />
                 ) : (
                   <Text style={styles.awardBtnText}>Award Badge</Text>
                 )}
@@ -148,7 +146,6 @@ function AwardModal({
 
 export default function StaffBadgesScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const badgesQ = useCustomBadges();
   const badges = badgesQ.data ?? [];
   const [awarding, setAwarding] = useState<CustomBadge | null>(null);
@@ -173,7 +170,7 @@ export default function StaffBadgesScreen() {
           contentContainerStyle={badges.length === 0 ? styles.listEmpty : styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
-            <RefreshControl refreshing={badgesQ.isRefetching} onRefresh={() => badgesQ.refetch()} tintColor={theme.primary} />
+            <RefreshControl refreshing={badgesQ.isRefetching} onRefresh={() => badgesQ.refetch()} tintColor={COLORS.primary} />
           }
           ListHeaderComponent={
             <Text style={styles.hint}>Badge types are created on the web dashboard.</Text>
@@ -230,7 +227,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.md,
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.md,
@@ -244,7 +241,7 @@ const styles = StyleSheet.create({
 
   // Modal
   modalWrap: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(7, 26, 46, 0.6)' },
   modalSheet: {
     backgroundColor: COLORS.surface,
     borderTopLeftRadius: RADIUS.xl,
@@ -260,7 +257,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     color: COLORS.text,
@@ -296,11 +293,12 @@ const styles = StyleSheet.create({
   awardBtn: {
     marginTop: SPACING.md,
     paddingVertical: 14,
-    borderRadius: RADIUS.button,
+    borderRadius: RADIUS.control,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   awardBtnDisabled: { opacity: 0.4 },
-  awardBtnText: { fontSize: 15, color: '#000', ...FONT.semibold },
+  awardBtnText: { fontSize: 15, color: COLORS.onPrimary, ...FONT.semibold },
   doneWrap: { alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.lg },
   doneText: { fontSize: 15, color: COLORS.text, ...FONT.medium, textAlign: 'center' },
 });

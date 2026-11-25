@@ -1,34 +1,37 @@
+// Accent used when a gym has no theme color.
+export const DEFAULT_ACCENT = '#CCFF00';
+
 export const DARK_COLORS = {
   // Core backgrounds
-  background: '#09090F',
-  surface: '#111119',
-  card: '#111119',
-  border: '#1F1F2E',
+  background: '#0E1116',
+  surface: '#171B22',
+  card: '#171B22',
+  border: '#23272F',
 
   // Accents (defaults — overridden by tenant theme at runtime)
-  primary: '#0D9488',
-  primaryDark: '#0F766E',
-  primaryLight: '#2DD4BF',
-  secondary: '#0891B2',
-  secondaryDark: '#0E7490',
-  alert: '#F59E0B',
+  primary: DEFAULT_ACCENT,
+  primaryDark: DEFAULT_ACCENT,
+  primaryLight: DEFAULT_ACCENT,
+  secondary: DEFAULT_ACCENT,
+  secondaryDark: DEFAULT_ACCENT,
+  alert: '#FB923C',
 
   // Text
-  text: '#F8F8FF',
-  textSecondary: '#9B9BAA',
-  textMuted: '#6B6B80',
-  onPrimary: '#FFFFFF',
+  text: '#FFFFFF',
+  textSecondary: '#C9CDD6',
+  textMuted: '#93A4BA',
+  onPrimary: '#0E1116',
 
   // Status
-  success: '#22c55e',
-  successBg: '#0A2618',
-  error: '#ef4444',
-  errorBg: '#2A0808',
-  warning: '#F59E0B',
-  warningBg: '#1A1200',
-  expired: '#ef4444',
-  suspended: '#F59E0B',
-  active: '#0D9488',
+  success: '#4ADE80',
+  successBg: '#0F2E22',
+  error: '#F87171',
+  errorBg: '#3A1414',
+  warning: '#FB923C',
+  warningBg: '#3A1D0E',
+  expired: '#F87171',
+  suspended: '#FB923C',
+  active: '#4ADE80',
 };
 
 export const LIGHT_COLORS = {
@@ -66,14 +69,46 @@ export const LIGHT_COLORS = {
 
 export type ColorPalette = typeof DARK_COLORS;
 
+// Staff screens never use the gym's theme color.
+export const STAFF_COLORS: ColorPalette = {
+  background: '#071A2E',
+  surface: '#0A2540',
+  card: '#0A2540',
+  border: '#1E3A5F',
+
+  primary: '#93C5FD',
+  primaryDark: '#1D4ED8',
+  primaryLight: '#BFDBFE',
+  secondary: '#3B82F6',
+  secondaryDark: '#1E40AF',
+  alert: '#FB923C',
+
+  text: '#F5F7FA',
+  textSecondary: '#CBD5E1',
+  textMuted: '#93A4BA',
+  onPrimary: '#0A2540',
+
+  success: '#4ADE80',
+  successBg: '#0F2E22',
+  error: '#F87171',
+  errorBg: '#3A1414',
+  warning: '#FB923C',
+  warningBg: '#3A1D0E',
+  expired: '#F87171',
+  suspended: '#FB923C',
+  active: '#4ADE80',
+};
+
+export const STAFF_SURFACE_RAISED = '#12304F';
+
 // Backwards-compat alias — existing code that imports COLORS keeps working in dark mode.
 // Screens should migrate to `theme.colors` to get light/dark support.
 export const COLORS = DARK_COLORS;
 
 // Gradient presets — pass directly to LinearGradient colors prop
 export const GRADIENTS = {
-  primary: ['#0D9488', '#0891B2'] as [string, string],
-  accentCard: ['#042F2E', '#083344'] as [string, string],
+  primary: [DEFAULT_ACCENT, DEFAULT_ACCENT] as [string, string],
+  accentCard: ['#171B22', '#0E1116'] as [string, string],
 };
 
 export interface ThemePreset {
@@ -105,21 +140,42 @@ export const SPACING = {
 
 export const RADIUS = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  button: 10,
-  xl: 24,
+  md: 10,
+  lg: 12,
+  xl: 16,
+  button: 14,
+  control: 10,
+  pill: 999,
   full: 9999,
 };
 
-// Two-font system: Plus Jakarta Sans for headings only (bold/display), Inter for
-// everything else (body, UI, labels, numbers). Spread into styles as `...FONT.xxx`.
+export const SIZE = {
+  buttonMember: 52,
+  buttonStaff: 44,
+  input: 44,
+  navItem: 40,
+  tile: 48,
+  icon: { table: 16, nav: 20, standalone: 24 },
+};
+
+// Menus, dialogs and toasts only.
+export const SHADOW_1 = {
+  shadowColor: '#0A2540',
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.12,
+  shadowRadius: 24,
+  elevation: 8,
+};
+
+// Two-font system: Manrope for headings and large numbers, Inter for everything else.
+// Spread into styles as `...FONT.xxx`.
 export const FONT = {
   regular: { fontFamily: 'Inter_400Regular', fontWeight: '400' as const },
   medium: { fontFamily: 'Inter_500Medium', fontWeight: '500' as const },
   semibold: { fontFamily: 'Inter_600SemiBold', fontWeight: '600' as const },
-  bold: { fontFamily: 'PlusJakartaSans_700Bold', fontWeight: '700' as const },
-  display: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontWeight: '800' as const },
+  bold: { fontFamily: 'Manrope_700Bold', fontWeight: '700' as const },
+  display: { fontFamily: 'Manrope_800ExtraBold', fontWeight: '800' as const },
+  wordmarkLight: { fontFamily: 'Manrope_500Medium', fontWeight: '500' as const },
 };
 
 /** Badge medal rims by tier; iron for untiered badges. Fixed across tenants and themes. */

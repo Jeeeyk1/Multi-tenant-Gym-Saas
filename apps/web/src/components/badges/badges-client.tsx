@@ -78,7 +78,7 @@ function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCust
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 transition"
+          className="px-4 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           + New Badge
         </button>
@@ -110,7 +110,7 @@ function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCust
 
       {/* Create dialog */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60">
           <div className="bg-surface border border-border rounded-xl w-full max-w-md mx-4 p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-foreground">New Custom Badge</h3>
@@ -315,7 +315,7 @@ function LadderRow({ gymId, ladder }: { gymId: string; ladder: BadgeLadder }) {
           type="button"
           onClick={() => save(true)}
           disabled={pending || !valid || !dirty}
-          className="ml-auto px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 transition disabled:opacity-40"
+          className="ml-auto px-4 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           {pending ? 'Saving…' : ladder.enabled ? 'Save' : 'Switch on'}
         </button>
@@ -364,8 +364,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  'w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary';
+  'w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring';
 const cancelBtn =
-  'flex-1 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition';
+  'flex-1 py-2 rounded-md bg-surface border border-border text-sm font-semibold text-foreground hover:bg-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 const submitBtn =
-  'flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 transition';
+  'flex-1 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary-hover disabled:bg-disabled disabled:text-disabled-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';

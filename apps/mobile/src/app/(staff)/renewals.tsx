@@ -3,11 +3,10 @@ import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { StaffHeader } from '../../components/StaffHeader';
 import { useGymRenewals } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { GymRenewal } from '../../types';
 
 const METHOD_LABEL: Record<string, string> = {
@@ -26,12 +25,11 @@ function formatDate(iso: string): string {
 }
 
 function RenewalRow({ item }: { item: GymRenewal }) {
-  const { theme } = useTheme();
   return (
     <View style={styles.row}>
       <View style={styles.rowTop}>
         <Text style={styles.name} numberOfLines={1}>{item.member.user.fullName}</Text>
-        <Text style={[styles.amount, { color: theme.primary }]}>{formatMoney(item.amountPaid)}</Text>
+        <Text style={[styles.amount, { color: COLORS.primary }]}>{formatMoney(item.amountPaid)}</Text>
       </View>
       <View style={styles.rowMeta}>
         <Text style={styles.metaText} numberOfLines={1}>
@@ -50,7 +48,6 @@ function RenewalRow({ item }: { item: GymRenewal }) {
 
 export default function StaffRenewalsScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const renewalsQ = useGymRenewals();
   const renewals = renewalsQ.data ?? [];
 
@@ -72,7 +69,7 @@ export default function StaffRenewalsScreen() {
             <RefreshControl
               refreshing={renewalsQ.isRefetching}
               onRefresh={() => renewalsQ.refetch()}
-              tintColor={theme.primary}
+              tintColor={COLORS.primary}
             />
           }
           renderItem={({ item }) => <RenewalRow item={item} />}
@@ -99,7 +96,7 @@ const styles = StyleSheet.create({
 
   row: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: SPACING.md,

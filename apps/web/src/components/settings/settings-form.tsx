@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { updateGymProfile, uploadGymLogo } from '@/lib/actions/settings';
 import { formatApiError } from '@/lib/format-error';
 import type { GymDetail } from '@/types/api';
+import { onAccent } from '@/lib/accent';
 
 const THEME_PRESETS = [
   { id: 'mint',    name: 'Mint',    primary: '#6EE7B7', secondary: '#3B82F6' },
@@ -168,7 +169,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                 <button
                   type="button"
                   onClick={() => { setLogoUrl(null); setLogoPreview(null); setPendingFile(null); }}
-                  className="block text-xs text-muted-foreground hover:text-destructive transition"
+                  className="block text-xs text-muted-foreground hover:text-destructive-text transition"
                 >
                   Remove
                 </button>
@@ -184,7 +185,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
             onChange={handleFileSelect}
           />
           {pendingFile && (
-            <p className="text-xs text-amber-400">New logo ready — will upload when you save.</p>
+            <p className="text-xs text-warning">New logo ready — will upload when you save.</p>
           )}
         </div>
 
@@ -203,7 +204,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                   onClick={() => selectPreset(preset.id)}
                   className={cn(
                     'rounded-lg overflow-hidden border-2 transition-all text-left',
-                    isActive ? 'border-foreground shadow-md scale-[1.03]' : 'border-transparent hover:border-border',
+                    isActive ? 'border-foreground scale-[1.03]' : 'border-transparent hover:border-border',
                   )}
                 >
                   <div
@@ -226,7 +227,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
               onClick={() => selectPreset('custom')}
               className={cn(
                 'rounded-lg overflow-hidden border-2 transition-all text-left',
-                selected === 'custom' ? 'border-foreground shadow-md scale-[1.03]' : 'border-transparent hover:border-border',
+                selected === 'custom' ? 'border-foreground scale-[1.03]' : 'border-transparent hover:border-border',
               )}
             >
               <div
@@ -260,7 +261,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                     onChange={(e) => handlePrimaryHex(e.target.value)}
                     placeholder="#6EE7B7"
                     maxLength={7}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 font-mono text-foreground uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                   />
                 </div>
               </div>
@@ -279,7 +280,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                     onChange={(e) => handleSecondaryHex(e.target.value)}
                     placeholder="#3B82F6"
                     maxLength={7}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 font-mono text-foreground uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
                   />
                 </div>
               </div>
@@ -290,8 +291,8 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
           <div>
             <p className="text-xs text-muted-foreground mb-2">Preview</p>
             <div
-              className="rounded-lg px-6 py-3 inline-flex items-center gap-2 text-sm font-semibold text-black"
-              style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})` }}
+              className="rounded-lg px-6 py-3 inline-flex items-center gap-2 text-sm font-semibold"
+              style={{ background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`, color: onAccent(primaryColor) }}
             >
               <span>Check In</span>
               <span>⚡</span>
@@ -311,7 +312,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
               placeholder="hello@yourgym.com"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
             />
           </div>
           <div className="space-y-1.5">
@@ -321,7 +322,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
               placeholder="+63 912 345 6789"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
             />
           </div>
         </div>
@@ -332,7 +333,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="A short description of your gym…"
             rows={3}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground resize-none"
+            className="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground resize-none focus:border-focus-ring"
           />
         </div>
       </section>
@@ -348,7 +349,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
               value={facebookUrl}
               onChange={(e) => setFbUrl(e.target.value)}
               placeholder="https://facebook.com/yourgym"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
             />
           </div>
           <div className="space-y-1.5">
@@ -358,7 +359,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
               value={instagramUrl}
               onChange={(e) => setIgUrl(e.target.value)}
               placeholder="https://instagram.com/yourgym"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
             />
           </div>
         </div>
@@ -370,11 +371,11 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-5 py-2.5 bg-primary text-black text-sm font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+          className="px-5 py-2.5 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           {uploadingLogo ? 'Uploading logo…' : saving ? 'Saving…' : 'Save Changes'}
         </button>
-        {success && <span className="text-sm text-emerald-400 font-medium">✓ Saved</span>}
+        {success && <span className="text-sm text-success font-medium">✓ Saved</span>}
         {error && <span className="text-sm text-destructive">{error}</span>}
       </div>
     </div>

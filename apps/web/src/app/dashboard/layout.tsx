@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { getSessionUser } from '@/lib/auth';
 import { getGymDetail } from '@/lib/actions/settings';
-import { hexToHsl } from '@/lib/utils';
 import { SubscriptionPanel } from '@/components/billing/subscription-panel';
 import { SubscriptionInactiveNotice } from '@/components/billing/subscription-inactive-notice';
 
@@ -37,23 +36,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     );
   }
 
-  const primaryHsl = gymDetail?.profile?.primaryColor
-    ? hexToHsl(gymDetail.profile.primaryColor)
-    : null;
-  const secondaryHsl = gymDetail?.profile?.secondaryColor
-    ? hexToHsl(gymDetail.profile.secondaryColor)
-    : null;
-
-  const cssVars = [
-    primaryHsl && `--primary: ${primaryHsl};`,
-    secondaryHsl && `--secondary: ${secondaryHsl};`,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
     <>
-      {cssVars && <style>{`:root { ${cssVars} }`}</style>}
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar
           permissions={user.permissions}

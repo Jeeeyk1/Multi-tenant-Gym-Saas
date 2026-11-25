@@ -3,10 +3,9 @@ import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndica
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { useInsightsQuery } from '../../hooks/insights';
 import { InsightsToolResultView } from '../../components/InsightsToolResultView';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { InsightsHistoryTurn, InsightsStep } from '../../types';
 
 const STEP_REVEAL_MS = 450;
@@ -34,7 +33,6 @@ const SUGGESTIONS = [
 
 export default function StaffInsightsScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const mutation = useInsightsQuery();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -109,22 +107,22 @@ export default function StaffInsightsScreen() {
       </View>
 
       {isEmpty ? (
-        <EmptyState primary={theme.primary} onSuggest={send} />
+        <EmptyState primary={COLORS.primary} onSuggest={send} />
       ) : (
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => <Bubble message={item} primary={theme.primary} />}
+          renderItem={({ item }) => <Bubble message={item} primary={COLORS.primary} />}
           ListFooterComponent={
             mutation.isPending && !reveal ? (
-              <TraceBubble completed={[]} active="Thinking" primary={theme.primary} />
+              <TraceBubble completed={[]} active="Thinking" primary={COLORS.primary} />
             ) : reveal ? (
               <TraceBubble
                 completed={['Thinking', ...reveal.steps.slice(0, reveal.revealedCount).map((s) => s.label)]}
                 active={reveal.revealedCount < reveal.steps.length ? reveal.steps[reveal.revealedCount].label : null}
-                primary={theme.primary}
+                primary={COLORS.primary}
               />
             ) : null
           }
@@ -147,12 +145,12 @@ export default function StaffInsightsScreen() {
           returnKeyType="send"
         />
         <TouchableOpacity
-          style={[styles.sendBtn, { backgroundColor: theme.primary }, (!input.trim() || mutation.isPending) && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, { backgroundColor: COLORS.primary }, (!input.trim() || mutation.isPending) && styles.sendBtnDisabled]}
           onPress={() => send(input)}
           disabled={!input.trim() || mutation.isPending}
           activeOpacity={0.8}
         >
-          <Ionicons name="arrow-up" size={20} color="#000" />
+          <Ionicons name="arrow-up" size={20} color={COLORS.onPrimary} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -292,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingTop: 10,
     paddingBottom: 10,

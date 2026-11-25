@@ -46,7 +46,7 @@ export function PlansClient({ gymId, plans }: Props) {
         </p>
         <button
           onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <span className="text-base leading-none">+</span>
           New Plan
@@ -121,11 +121,11 @@ function PlanCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{plan.name}</p>
-          <span className="inline-block text-xs text-muted-foreground border border-border rounded-full px-2 py-0.5 mt-1">
+          <span className="inline-block text-xs text-muted-foreground border border-border rounded-pill px-2 py-0.5 mt-1 font-semibold">
             {TYPE_LABELS[plan.type] ?? plan.type}
           </span>
         </div>
-        <p className="text-lg font-bold text-primary shrink-0">₱{plan.price.toLocaleString()}</p>
+        <p className="text-lg font-heading font-extrabold text-primary shrink-0">₱{plan.price.toLocaleString()}</p>
       </div>
 
       <p className="text-sm text-muted-foreground">{plan.durationDays} day{plan.durationDays !== 1 ? 's' : ''}</p>
@@ -137,7 +137,7 @@ function PlanCard({
       <div className="flex gap-2 mt-auto pt-1">
         <button
           onClick={onEdit}
-          className="flex-1 text-xs font-medium px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition"
+          className="bg-surface flex-1 text-xs font-semibold px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Edit
         </button>

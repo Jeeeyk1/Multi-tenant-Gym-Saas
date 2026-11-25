@@ -5,11 +5,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import { formatApiError } from '../../lib/format-error';
 import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
@@ -34,7 +33,6 @@ function MessageBubble({
   onBadgesPress: () => void;
   onDelete: (msg: ChatMessage) => void;
 }) {
-  const { theme } = useTheme();
   const isMine = msg.sender.id === currentUserId;
   const time = new Date(msg.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
@@ -57,7 +55,7 @@ function MessageBubble({
       <TouchableOpacity
         activeOpacity={0.8}
         onLongPress={() => onDelete(msg)}
-        style={[styles.bubble, isMine ? [styles.bubbleMine, { backgroundColor: theme.primary }] : styles.bubbleTheirs]}
+        style={[styles.bubble, isMine ? [styles.bubbleMine, { backgroundColor: COLORS.primary }] : styles.bubbleTheirs]}
       >
         <Text style={[styles.messageText, isMine && styles.messageTextMine]}>{msg.content}</Text>
         <Text style={[styles.timeText, isMine && styles.timeTextMine]}>{time}</Text>
@@ -69,7 +67,6 @@ function MessageBubble({
 export default function StaffChatScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { theme } = useTheme();
 
   const equippedBadgesQ = useEquippedBadgesMap();
   const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
@@ -223,11 +220,11 @@ export default function StaffChatScreen() {
           multiline
         />
         <TouchableOpacity
-          style={[styles.sendBtn, { backgroundColor: theme.primary }, (!input.trim() || !isConnected) && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, { backgroundColor: COLORS.primary }, (!input.trim() || !isConnected) && styles.sendBtnDisabled]}
           onPress={sendMessage}
           disabled={!input.trim() || !isConnected}
         >
-          <Ionicons name="arrow-up" size={20} color="#000" />
+          <Ionicons name="arrow-up" size={20} color={COLORS.onPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -272,9 +269,9 @@ const styles = StyleSheet.create({
   bubbleMine: {},
   bubbleDeleted: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, opacity: 0.6 },
   messageText: { fontSize: 14, color: COLORS.text, ...FONT.regular },
-  messageTextMine: { color: '#000' },
+  messageTextMine: { color: COLORS.onPrimary },
   timeText: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, alignSelf: 'flex-end' },
-  timeTextMine: { color: 'rgba(0,0,0,0.5)' },
+  timeTextMine: { color: COLORS.onPrimary + '99' },
   deletedText: { fontSize: 13, color: COLORS.textMuted, fontStyle: 'italic' },
 
   inputBar: {
@@ -294,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 10,
     color: COLORS.text,

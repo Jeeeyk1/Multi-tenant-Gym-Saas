@@ -17,10 +17,10 @@ const TABS: { label: string; value: StatusFilter }[] = [
 ];
 
 const STATUS_STYLES: Record<string, string> = {
-  PUBLISHED: 'text-success border-success/40 bg-success/10',
+  PUBLISHED: 'text-success border-success/40 bg-success-bg',
   SCHEDULED: 'text-primary border-primary/40 bg-primary/10',
   DRAFT: 'text-muted-foreground border-border bg-background',
-  EXPIRED: 'text-destructive border-destructive/40 bg-destructive/10',
+  EXPIRED: 'text-destructive-text border-destructive/40 bg-destructive-bg',
   ARCHIVED: 'text-muted-foreground border-border/40 bg-background',
 };
 
@@ -73,7 +73,7 @@ export function AnnouncementsClient({ gymId, announcements }: Props) {
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-sm font-medium transition',
                   tab === t.value
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -88,7 +88,7 @@ export function AnnouncementsClient({ gymId, announcements }: Props) {
 
         <button
           onClick={() => setCreateOpen(true)}
-          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <span className="text-base leading-none">+</span>
           New Announcement
@@ -122,7 +122,7 @@ export function AnnouncementsClient({ gymId, announcements }: Props) {
                     <h3 className="text-sm font-semibold text-foreground">{a.title}</h3>
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full border', STATUS_STYLES[a.status] ?? 'text-muted-foreground border-border')}>
+                    <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-pill border', STATUS_STYLES[a.status] ?? 'text-muted-foreground border-border')}>
                       {a.status}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -136,7 +136,7 @@ export function AnnouncementsClient({ gymId, announcements }: Props) {
                   {a.status !== 'ARCHIVED' && a.status !== 'EXPIRED' && (
                     <button
                       onClick={() => setEditAnnouncement(a)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition"
+                      className="bg-surface text-xs font-semibold px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                     >
                       Edit
                     </button>

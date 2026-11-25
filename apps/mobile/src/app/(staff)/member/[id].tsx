@@ -3,7 +3,6 @@ import { View, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Moda
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../context/ThemeContext';
 import { AppLoader } from '../../../components/AppLoader';
 import {
   useReactivateMember,
@@ -12,7 +11,7 @@ import {
   useStaffRenewals,
   useSuspendMember,
 } from '../../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
 import { formatApiError } from '../../../lib/format-error';
 import type { RenewalRecord } from '../../../types';
 
@@ -64,7 +63,6 @@ interface RenewModalProps {
 }
 
 function RenewModal({ visible, onClose, onSubmit, submitting }: RenewModalProps) {
-  const { theme } = useTheme();
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
@@ -151,7 +149,7 @@ function RenewModal({ visible, onClose, onSubmit, submitting }: RenewModalProps)
           />
 
           <TouchableOpacity
-            style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.submitBtnDisabled]}
+            style={[styles.submitBtn, { backgroundColor: COLORS.primary }, submitting && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
             activeOpacity={0.8}
@@ -199,7 +197,6 @@ function RenewalRow({ record }: { record: RenewalRecord }) {
 
 export default function MemberDetailScreen() {
   const router = useRouter();
-  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const memberQ = useStaffMember(id);
@@ -282,7 +279,7 @@ export default function MemberDetailScreen() {
         <Ionicons name="alert-circle-outline" size={40} color={COLORS.error} />
         <Text style={styles.errorMsg}>{error ?? 'Member not found'}</Text>
         <TouchableOpacity onPress={() => router.back()} style={styles.backLink}>
-          <Text style={[styles.backLinkText, { color: theme.primary }]}>Go back</Text>
+          <Text style={[styles.backLinkText, { color: COLORS.primary }]}>Go back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -310,8 +307,8 @@ export default function MemberDetailScreen() {
 
         {/* Profile header */}
         <View style={styles.profileSection}>
-          <View style={[styles.bigAvatar, { borderColor: theme.primary }]}>
-            <Text style={[styles.bigAvatarText, { color: theme.primary }]}>{getInitials(member.user.fullName)}</Text>
+          <View style={[styles.bigAvatar, { borderColor: COLORS.primary }]}>
+            <Text style={[styles.bigAvatarText, { color: COLORS.primary }]}>{getInitials(member.user.fullName)}</Text>
           </View>
           <Text style={styles.fullName}>{member.user.fullName}</Text>
           <Text style={styles.profileEmail}>{member.user.email}</Text>
@@ -370,7 +367,7 @@ export default function MemberDetailScreen() {
             activeOpacity={0.75}
           >
             <View style={styles.actionIconWrap}>
-              <Ionicons name="refresh-outline" size={18} color={theme.primary} />
+              <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
             </View>
             <Text style={styles.actionText}>Renew Membership</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
@@ -406,9 +403,9 @@ export default function MemberDetailScreen() {
             >
               <View style={[styles.actionIconWrap, styles.actionIconActive]}>
                 {actionLoading ? (
-                  <ActivityIndicator size="small" color={theme.primary} />
+                  <ActivityIndicator size="small" color={COLORS.primary} />
                 ) : (
-                  <Ionicons name="play-circle-outline" size={18} color={theme.primary} />
+                  <Ionicons name="play-circle-outline" size={18} color={COLORS.primary} />
                 )}
               </View>
               <Text style={styles.actionText}>Reactivate Member</Text>
@@ -510,7 +507,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
     overflow: 'hidden',
@@ -531,7 +528,7 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     borderWidth: 1,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
@@ -566,7 +563,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.lg,
     overflow: 'hidden',
@@ -596,7 +593,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     marginHorizontal: SPACING.lg,
     overflow: 'hidden',
     padding: SPACING.md,
@@ -619,7 +616,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     marginHorizontal: SPACING.lg,
     padding: SPACING.xl,
     alignItems: 'center',
@@ -634,7 +631,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(7, 26, 46, 0.6)',
   },
   modalSheet: {
     backgroundColor: COLORS.surface,
@@ -681,7 +678,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 11,
     fontSize: 14,
@@ -696,10 +693,11 @@ const styles = StyleSheet.create({
 
   submitBtn: {
     backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: SPACING.lg,
+    justifyContent: 'center',
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { fontSize: 15, color: COLORS.onPrimary, ...FONT.semibold },

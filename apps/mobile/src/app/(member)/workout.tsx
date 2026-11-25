@@ -9,7 +9,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLogWorkoutSession } from '../../hooks/workouts';
 import { healthKitService } from '../../services/healthkit.service';
-import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
+import { SPACING, RADIUS, FONT, SHADOW_1, type ColorPalette } from '../../constants/theme';
+import { onAccent } from '../../theme/accent';
 import { WORKOUT_TYPES, DEFAULT_WORKOUT_ICON } from '../../constants/workout-types';
 import type { WorkoutType } from '../../types';
 
@@ -37,7 +38,7 @@ export default function WorkoutScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const C = theme.colors;
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const { activeSession, showIdlePrompt, startSession, endSession, confirmStillWorking } = useWorkout();
 
   const [stage, setStage] = useState<Stage>(activeSession ? 'active' : 'select');
@@ -211,7 +212,7 @@ export default function WorkoutScreen() {
             style={({ pressed }) => [styles.stopBtn, pressed && { opacity: 0.8 }]}
             onPress={handleStop}
           >
-            <Ionicons name="stop-circle" size={22} color={C.error} />
+            <Ionicons name="stop-circle" size={22} color={onAccent(C.error)} />
             <Text style={styles.stopBtnText}>End Workout</Text>
           </Pressable>
         </View>
@@ -241,7 +242,7 @@ export default function WorkoutScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.doneCircle}
             >
-              <Ionicons name="checkmark" size={40} color="#000" />
+              <Ionicons name="checkmark" size={40} color={theme.onPrimary} />
             </LinearGradient>
             <Text style={styles.doneTitle}>Workout Complete!</Text>
             <Text style={styles.doneSub}>{statusText}</Text>
@@ -343,7 +344,7 @@ export default function WorkoutScreen() {
   return null;
 }
 
-const makeStyles = (C: ColorPalette) => StyleSheet.create({
+const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.background },
 
   header: {
@@ -419,19 +420,21 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
   stopBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: SPACING.sm,
     borderWidth: 1.5,
-    borderColor: C.error + '60',
+    borderColor: C.error,
+    backgroundColor: C.error,
     borderRadius: RADIUS.button,
     paddingVertical: 14,
     paddingHorizontal: SPACING.xl,
   },
-  stopBtnText: { fontSize: 15, color: C.error, ...FONT.semibold },
+  stopBtnText: { fontSize: 15, color: onAccent(C.error), ...FONT.semibold },
 
   // MODAL
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: C.background + 'B3',
     alignItems: 'center',
     justifyContent: 'center',
     padding: SPACING.lg,
@@ -444,6 +447,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     padding: SPACING.xl,
     width: '100%',
     alignItems: 'center',
+    ...SHADOW_1,
   },
   modalIcon: { marginBottom: SPACING.sm },
   modalTitle: { fontSize: 20, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
@@ -459,10 +463,11 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     width: '100%',
     borderRadius: RADIUS.button,
     paddingVertical: 14,
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  modalPrimaryBtnText: { fontSize: 15, color: '#000', ...FONT.bold },
+  modalPrimaryBtnText: { fontSize: 15, color: onPrimary, ...FONT.semibold },
   modalGhostBtn: { paddingVertical: 12 },
   modalGhostBtnText: { fontSize: 14, color: C.textMuted, ...FONT.medium },
 
@@ -503,18 +508,19 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     fontSize: 10,
     color: C.error,
     ...FONT.semibold,
-    backgroundColor: C.error + '18',
-    borderRadius: 4,
+    backgroundColor: C.errorBg,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 4,
     paddingVertical: 1,
   },
   primaryBtn: {
     borderRadius: RADIUS.button,
     paddingVertical: 15,
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.sm,
   },
-  primaryBtnText: { fontSize: 15, color: '#000', ...FONT.bold },
+  primaryBtnText: { fontSize: 15, color: onPrimary, ...FONT.semibold },
   ghostBtn: { paddingVertical: 12, alignItems: 'center' },
   ghostBtnText: { fontSize: 14, color: C.textSecondary, ...FONT.medium },
 });

@@ -108,7 +108,7 @@ export default async function CheckInsPage({ searchParams }: Props) {
                         {c.isOutOfHours && <span className="ml-2 text-warning">· out-of-hours</span>}
                       </p>
                     </div>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground hidden sm:inline shrink-0">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-pill border border-border text-muted-foreground hidden sm:inline shrink-0">
                       {METHOD_LABELS[c.method] ?? c.method}
                     </span>
                     <p className="text-sm text-muted-foreground hidden sm:block shrink-0">{formatTime(c.checkedInAt)}</p>
@@ -157,7 +157,7 @@ export default async function CheckInsPage({ searchParams }: Props) {
                       {c.isOutOfHours && <span className="ml-2 text-warning">· out-of-hours</span>}
                     </p>
                   </div>
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground hidden sm:inline shrink-0">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-pill border border-border text-muted-foreground hidden sm:inline shrink-0">
                     {METHOD_LABELS[c.method] ?? c.method}
                   </span>
                   <p className="text-sm text-muted-foreground hidden sm:block shrink-0 whitespace-nowrap">
@@ -167,11 +167,11 @@ export default async function CheckInsPage({ searchParams }: Props) {
                     {formatDuration(c.checkedInAt, c.checkedOutAt)}
                   </p>
                   <span className={cn(
-                    'text-xs font-medium px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline',
+                    'text-xs font-semibold px-2 py-0.5 rounded-pill border shrink-0 hidden sm:inline',
                     c.checkedOutAt
                       ? c.isAutoCheckout
                         ? 'text-muted-foreground border-border'
-                        : 'text-success border-success/40 bg-success/10'
+                        : 'text-success border-success/40 bg-success-bg'
                       : 'text-primary border-primary/40 bg-primary/10',
                   )}>
                     {c.checkedOutAt ? (c.isAutoCheckout ? 'Auto' : 'Out') : 'Active'}
@@ -189,12 +189,12 @@ export default async function CheckInsPage({ searchParams }: Props) {
             </p>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={`/dashboard/check-ins?page=${page - 1}`} className="text-sm px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition">
+                <Link href={`/dashboard/check-ins?page=${page - 1}`} className="bg-surface text-sm px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                   ← Prev
                 </Link>
               )}
               {page < meta.totalPages && (
-                <Link href={`/dashboard/check-ins?page=${page + 1}`} className="text-sm px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition">
+                <Link href={`/dashboard/check-ins?page=${page + 1}`} className="bg-surface text-sm px-3 py-1.5 rounded-md border border-border text-foreground hover:text-foreground hover:border-foreground/30 transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
                   Next →
                 </Link>
               )}

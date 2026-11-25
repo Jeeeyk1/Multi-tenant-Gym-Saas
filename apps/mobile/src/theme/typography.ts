@@ -1,11 +1,12 @@
 import type { TextStyle } from 'react-native';
 
-// Two-font system: Plus Jakarta Sans for headings, Inter for body/UI/labels/numbers.
+// Two-font system: Manrope for headings and large numbers, Inter for body/UI/labels.
 // Mirrors the equivalent scale in apps/web (tailwind.config.ts fontSize) and the
 // weight mapping in constants/theme.ts's `FONT` (used by existing StyleSheet objects).
 export const fonts = {
-  headingBold: 'PlusJakartaSans_700Bold',
-  headingExtra: 'PlusJakartaSans_800ExtraBold',
+  headingMedium: 'Manrope_500Medium',
+  headingBold: 'Manrope_700Bold',
+  headingExtra: 'Manrope_800ExtraBold',
   bodyRegular: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemibold: 'Inter_600SemiBold',
@@ -20,5 +21,5 @@ export const type: Record<string, TextStyle> = {
   bodyMed: { fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 24 },
   label: { fontFamily: fonts.bodyMedium, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: fonts.bodyRegular, fontSize: 12, lineHeight: 16 },
-  metric: { fontFamily: fonts.bodySemibold, fontSize: 24, lineHeight: 28, fontVariant: ['tabular-nums'] },
+  metric: { fontFamily: fonts.headingExtra, fontSize: 24, lineHeight: 28, fontVariant: ['tabular-nums'] },
 };

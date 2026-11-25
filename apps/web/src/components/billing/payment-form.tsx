@@ -20,7 +20,7 @@ export function PaymentForm({ gymId, invoiceId }: { gymId: string; invoiceId: st
           placeholder="e.g. GCash reference number"
           required
           disabled={pending}
-          className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
         />
       </div>
 
@@ -35,7 +35,7 @@ export function PaymentForm({ gymId, invoiceId }: { gymId: string; invoiceId: st
           maxLength={40}
           placeholder="GCash, bank transfer, etc."
           disabled={pending}
-          className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
         />
       </div>
 
@@ -44,7 +44,7 @@ export function PaymentForm({ gymId, invoiceId }: { gymId: string; invoiceId: st
       <button
         type="submit"
         disabled={pending}
-        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50 text-sm"
+        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 text-sm rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {pending ? 'Submitting…' : "I've paid — submit reference"}
       </button>

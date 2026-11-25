@@ -141,11 +141,13 @@ export default function WorkoutHistoryScreen() {
         emptyBtn: {
           borderRadius: RADIUS.button,
           paddingVertical: 14,
+          justifyContent: 'center',
+          alignItems: 'center',
           paddingHorizontal: SPACING.xl,
         },
-        emptyBtnText: { fontSize: 15, color: '#000', ...FONT.bold },
+        emptyBtnText: { fontSize: 15, color: theme.onPrimary, ...FONT.semibold },
       }),
-    [C],
+    [C, theme.onPrimary],
   );
 
   const sessionsQ = useWorkoutSessions();

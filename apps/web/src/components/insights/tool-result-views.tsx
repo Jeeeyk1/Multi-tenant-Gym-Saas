@@ -112,7 +112,7 @@ function Card({ children }: { children: React.ReactNode }) {
 const STATUS_DOT: Record<string, string> = {
   ACTIVE: 'bg-success',
   EXPIRED: 'bg-destructive',
-  SUSPENDED: 'bg-yellow-500',
+  SUSPENDED: 'bg-warning-solid',
 };
 
 function MemberListCard({ rows }: { rows: MemberRow[] }) {
@@ -149,8 +149,8 @@ function CheckinStatusCard({ status }: { status: CheckinStatus }) {
         </div>
         <span
           className={cn(
-            'text-xs font-semibold px-2.5 py-1 rounded-full',
-            status.checkedIn ? 'bg-success/10 text-success' : 'bg-foreground/5 text-muted-foreground',
+            'text-xs font-semibold px-2.5 py-1 rounded-pill',
+            status.checkedIn ? 'bg-success-bg text-success' : 'bg-hover text-muted-foreground',
           )}
         >
           {status.checkedIn ? `Checked in · ${status.count}` : 'Not checked in'}
@@ -164,7 +164,7 @@ function MetricCard({ metric }: { metric: { value: number } | { groupedBy: strin
   if ('value' in metric) {
     return (
       <Card>
-        <p className="text-2xl font-bold text-foreground tabular-nums">{metric.value.toLocaleString()}</p>
+        <p className="text-2xl font-heading font-extrabold text-foreground tabular-nums">{metric.value.toLocaleString()}</p>
       </Card>
     );
   }
@@ -223,22 +223,22 @@ function TrendCard({ rows }: { rows: { period: string; value: number }[] }) {
     <Card>
       {latest && (
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-lg font-bold text-foreground tabular-nums">{latest.value.toLocaleString()}</span>
+          <span className="text-lg font-heading font-extrabold text-foreground tabular-nums">{latest.value.toLocaleString()}</span>
           <span className="text-[11px] text-muted-foreground">latest</span>
         </div>
       )}
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full" style={{ height: H }}>
         <defs>
           <linearGradient id="insights-trend-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+            <stop offset="0%" stopColor="hsl(var(--chart-highlight))" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="hsl(var(--chart-highlight))" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={area} fill="url(#insights-trend-grad)" />
         <path
           d={line}
           fill="none"
-          stroke="hsl(var(--primary))"
+          stroke="hsl(var(--chart-primary))"
           strokeWidth="2"
           strokeLinejoin="round"
           strokeLinecap="round"

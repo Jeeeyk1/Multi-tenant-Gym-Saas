@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
 import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { StaffHeader } from '../../components/StaffHeader';
 import {
@@ -10,7 +9,7 @@ import {
   useCreateStaffAnnouncement,
   useStaffAnnouncements,
 } from '../../hooks/staff';
-import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import { formatApiError } from '../../lib/format-error';
 import type { StaffAnnouncement } from '../../types';
 
@@ -82,7 +81,6 @@ interface CreateModalProps {
 }
 
 function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProps) {
-  const { theme } = useTheme();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
@@ -191,7 +189,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
               onPress={() => setIsPinned((v) => !v)}
               activeOpacity={0.75}
             >
-              <View style={[styles.checkbox, isPinned && styles.checkboxActive, isPinned && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
+              <View style={[styles.checkbox, isPinned && styles.checkboxActive, isPinned && { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}>
                 {isPinned && <Ionicons name="checkmark" size={13} color={COLORS.onPrimary} />}
               </View>
               <View>
@@ -206,7 +204,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
               onPress={() => setScheduleMode((v) => !v)}
               activeOpacity={0.75}
             >
-              <View style={[styles.checkbox, scheduleMode && styles.checkboxActive, scheduleMode && { backgroundColor: theme.primary, borderColor: theme.primary }]}>
+              <View style={[styles.checkbox, scheduleMode && styles.checkboxActive, scheduleMode && { backgroundColor: COLORS.primary, borderColor: COLORS.primary }]}>
                 {scheduleMode && <Ionicons name="checkmark" size={13} color={COLORS.onPrimary} />}
               </View>
               <View>
@@ -246,7 +244,7 @@ function CreateModal({ visible, onClose, onSubmit, submitting }: CreateModalProp
             <Text style={styles.fieldHint}>Leave empty for no expiry</Text>
 
             <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: theme.primary }, submitting && styles.submitBtnDisabled]}
+              style={[styles.submitBtn, { backgroundColor: COLORS.primary }, submitting && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               disabled={submitting}
               activeOpacity={0.8}
@@ -287,7 +285,6 @@ function AnnouncementCard({
 }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
   const canArchive = item.status === 'PUBLISHED' || item.status === 'SCHEDULED';
-  const { theme } = useTheme();
 
   return (
     <View style={styles.card}>
@@ -298,7 +295,7 @@ function AnnouncementCard({
             <Ionicons
               name="pin"
               size={13}
-              color={theme.primary}
+              color={COLORS.primary}
               style={styles.pinIcon}
             />
           )}
@@ -356,7 +353,6 @@ function AnnouncementCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AnnouncementsScreen() {
-  const { theme } = useTheme();
   const announcementsQ = useStaffAnnouncements();
   const createMutation = useCreateStaffAnnouncement();
   const archiveMutation = useArchiveStaffAnnouncement();
@@ -434,7 +430,7 @@ export default function AnnouncementsScreen() {
           subtitle={`${announcements.length} total`}
           right={
             <TouchableOpacity
-              style={[styles.newBtn, { backgroundColor: theme.primary }]}
+              style={[styles.newBtn, { backgroundColor: COLORS.primary }]}
               onPress={() => setCreateOpen(true)}
               activeOpacity={0.8}
             >
@@ -456,11 +452,11 @@ export default function AnnouncementsScreen() {
             return (
               <TouchableOpacity
                 key={tab.label}
-                style={[styles.tab, isActive && styles.tabActive, isActive && { borderColor: theme.primary }]}
+                style={[styles.tab, isActive && styles.tabActive, isActive && { borderColor: COLORS.primary }]}
                 onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.tabText, isActive && styles.tabTextActive, isActive && { color: theme.primary }]}>
+                <Text style={[styles.tabText, isActive && styles.tabTextActive, isActive && { color: COLORS.primary }]}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -489,7 +485,7 @@ export default function AnnouncementsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => announcementsQ.refetch()}
-              tintColor={theme.primary}
+              tintColor={COLORS.primary}
             />
           }
           ListEmptyComponent={
@@ -504,7 +500,7 @@ export default function AnnouncementsScreen() {
                   onPress={() => setCreateOpen(true)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.emptyActionText, { color: theme.primary }]}>Create your first one</Text>
+                  <Text style={[styles.emptyActionText, { color: COLORS.primary }]}>Create your first one</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -539,11 +535,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 8,
     gap: 5,
     marginBottom: 4,
+    justifyContent: 'center',
   },
   newBtnText: { fontSize: 14, color: COLORS.onPrimary, ...FONT.semibold },
 
@@ -557,7 +554,7 @@ const styles = StyleSheet.create({
   tab: {
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 14,
     paddingVertical: 6,
     backgroundColor: COLORS.surface,
@@ -591,7 +588,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     padding: SPACING.md,
     gap: SPACING.sm,
   },
@@ -611,7 +608,7 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1, fontSize: 15, color: COLORS.text, ...FONT.semibold },
   statusBadge: {
     borderWidth: 1,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 8,
     paddingVertical: 2,
     flexShrink: 0,
@@ -638,7 +635,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.control,
   },
   archiveBtnText: { fontSize: 12, color: COLORS.textMuted, ...FONT.medium },
 
@@ -656,7 +653,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(7, 26, 46, 0.6)',
   },
   modalSheet: {
     backgroundColor: COLORS.surface,
@@ -699,7 +696,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingHorizontal: SPACING.md,
     paddingVertical: 11,
     fontSize: 14,
@@ -744,10 +741,11 @@ const styles = StyleSheet.create({
 
   submitBtn: {
     backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.control,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: SPACING.lg,
+    justifyContent: 'center',
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { fontSize: 15, color: COLORS.onPrimary, ...FONT.semibold },

@@ -1,15 +1,19 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSegments } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { STAFF_COLORS } from '../constants/theme';
 
 /**
  * General-purpose themed loading spinner: weight plates orbiting a dumbbell.
- * Fully theme-aware (colors come from the tenant's primary), no image assets.
+ * Member screens use the gym's accent; staff screens use FitOps staff colors only.
  * Use anywhere a page or section is loading.
  */
 export function AppLoader({ size = 52 }: { size?: number }) {
   const { theme } = useTheme();
+  const segments = useSegments();
+  const color = segments[0] === '(staff)' ? STAFF_COLORS.primary : theme.primary;
   const spin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -38,14 +42,14 @@ export function AppLoader({ size = 52 }: { size?: number }) {
                 width: dot,
                 height: dot,
                 borderRadius: dot / 2,
-                backgroundColor: theme.primary,
+                backgroundColor: color,
                 opacity: opacities[i],
               }}
             />
           </View>
         ))}
       </Animated.View>
-      <Ionicons name="barbell" size={iconSize} color={theme.primary} />
+      <Ionicons name="barbell" size={iconSize} color={color} />
     </View>
   );
 }

@@ -33,21 +33,21 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
       </div>
 
       {subscription.status === 'PENDING_PAYMENT' && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+        <div className="bg-destructive-bg border border-destructive/30 rounded-xl p-4">
           <p className="text-sm text-destructive font-medium">
             Your gym is locked until the first payment is verified.
           </p>
         </div>
       )}
       {subscription.status === 'SUSPENDED' && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+        <div className="bg-destructive-bg border border-destructive/30 rounded-xl p-4">
           <p className="text-sm text-destructive font-medium">
             Your subscription was suspended for non-payment. Submit a payment reference below to reactivate.
           </p>
         </div>
       )}
       {subscription.status === 'PAST_DUE' && (
-        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
+        <div className="bg-warning-bg border border-warning/30 rounded-xl p-4">
           <p className="text-sm text-foreground">
             Your renewal payment is past due. Please pay soon to avoid suspension.
           </p>
@@ -63,7 +63,7 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
                 <p className="text-xs text-muted-foreground mt-0.5">Due {formatDate(invoice.dueAt)}</p>
               )}
             </div>
-            <p className="text-lg font-bold text-foreground">{formatPhp(invoice.amount)}</p>
+            <p className="text-lg font-heading font-extrabold text-foreground">{formatPhp(invoice.amount)}</p>
           </div>
 
           {invoice.rejectionReason && (
@@ -73,7 +73,7 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
           )}
 
           {awaitingVerification ? (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+            <div className="bg-warning-bg border border-warning/30 rounded-lg p-4">
               <p className="text-sm text-foreground">
                 Reference <span className="font-mono">{invoice.paymentReference}</span> submitted —
                 awaiting admin verification.
@@ -100,7 +100,7 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
       )}
 
       {!invoice && subscription.status === 'ACTIVE' && (
-        <div className="bg-success/10 border border-success/30 rounded-xl p-6">
+        <div className="bg-success-bg border border-success/30 rounded-xl p-6">
           <p className="text-sm text-foreground">
             You&apos;re all set — subscription is active. Next renewal: {formatDate(subscription.currentPeriodEnd)}.
           </p>

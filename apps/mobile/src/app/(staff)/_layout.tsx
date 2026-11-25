@@ -1,9 +1,8 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
-import { COLORS } from '../../constants/theme';
+import { STAFF_COLORS as COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -18,19 +17,17 @@ function TabIcon({
   focused: boolean;
   size?: number;
 }) {
-  const { theme } = useTheme();
   return (
     <Ionicons
       name={focused ? iconFocused : iconUnfocused}
       size={size}
-      color={focused ? theme.primary : COLORS.textMuted}
+      color={focused ? COLORS.primary : COLORS.textMuted}
     />
   );
 }
 
 export default function StaffLayout() {
   const { isAuthenticated, isLoading, isStaff } = useAuth();
-  const { theme } = useTheme();
 
   if (!isLoading && !isAuthenticated) {
     return <Redirect href="/(auth)/entry" />;
@@ -46,7 +43,7 @@ export default function StaffLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: theme.primary,
+        tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
@@ -146,17 +143,13 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 80 : 64,
     paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     paddingTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 10,
   },
   tabItem: {
     paddingTop: 4,
   },
   tabLabel: {
     fontSize: 10,
+    fontFamily: 'Inter_500Medium',
     marginBottom: 2,
   },
 });

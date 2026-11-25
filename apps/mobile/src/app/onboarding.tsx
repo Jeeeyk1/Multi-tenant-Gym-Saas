@@ -510,7 +510,7 @@ export default function OnboardingScreen() {
                     },
                   ]}
                 >
-                  <Text variant="bodyMed" style={{ color: selected ? colors.onPrimary : colors.text }}>
+                  <Text variant="bodyMed" style={{ color: selected ? theme.onPrimary : colors.text }}>
                     {d.label}
                   </Text>
                 </Pressable>

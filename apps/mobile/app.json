@@ -6,8 +6,9 @@
     "orientation": "portrait",
     "scheme": "gymSaasMobile",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#0f0f0f"
+      "backgroundColor": "#0E1116"
     },
     "ios": {
       "supportsTablet": false,
@@ -24,7 +25,7 @@
     "android": {
       "package": "com.gymSaas.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#0f0f0f"
+        "backgroundColor": "#0A2540"
       }
     },
     "plugins": [

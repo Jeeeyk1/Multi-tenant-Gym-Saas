@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils';
 import type { MemberListItem } from '@/types/api';
 
 const STATUS_STYLES: Record<string, string> = {
-  ACTIVE: 'text-success border-success/40 bg-success/10',
-  EXPIRED: 'text-destructive border-destructive/40 bg-destructive/10',
-  SUSPENDED: 'text-warning border-warning/40 bg-warning/10',
+  ACTIVE: 'text-success border-success/40 bg-success-bg',
+  EXPIRED: 'text-destructive-text border-destructive/40 bg-destructive-bg',
+  SUSPENDED: 'text-warning border-warning/40 bg-warning-bg',
 };
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full border', STATUS_STYLES[status] ?? 'text-muted-foreground border-border')}>
+    <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-pill border', STATUS_STYLES[status] ?? 'text-muted-foreground border-border')}>
       {status}
     </span>
   );
@@ -44,7 +44,7 @@ export function MembersTable({ members }: Props) {
         placeholder="Search name, email, or membership #…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-sm bg-surface border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+        className="w-full max-w-sm bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
       />
 
       <div className="bg-surface border border-border rounded-xl overflow-hidden">

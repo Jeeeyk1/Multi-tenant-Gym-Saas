@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getCheckinsTrend } from '@/lib/actions/reports';
 import { cn } from '@/lib/utils';
 import type { CheckinsTrendPoint } from '@/types/api';
@@ -43,16 +43,16 @@ export function CheckinsTrendChart({
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           Check-ins Trend
         </h2>
-        <div className="flex items-center gap-1 bg-background border border-border rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-segment-track border border-transparent rounded-lg p-1">
           {([7, 30] as const).map((option) => (
             <button
               key={option}
               type="button"
               onClick={() => handleRangeChange(option)}
               className={cn(
-                'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                'px-3 py-1 text-xs font-semibold rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 range === option
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-surface text-foreground'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -67,18 +67,32 @@ export function CheckinsTrendChart({
           <BarChart data={chartData}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted))' }}
               axisLine={false}
               tickLine={false}
               interval={range === 30 ? 4 : 0}
             />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={28} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted))' }} axisLine={false} tickLine={false} width={28} />
             <Tooltip
-              cursor={{ fill: 'hsl(var(--border))' }}
-              contentStyle={{ fontSize: 12 }}
+              cursor={{ fill: 'hsl(var(--hover))' }}
+              contentStyle={{
+                fontSize: 12,
+                background: 'hsl(var(--surface))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: 12,
+                boxShadow: 'var(--shadow-1)',
+                color: 'hsl(var(--text))',
+              }}
               formatter={(value) => [value, 'Check-ins']}
             />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="hsl(var(--primary))" />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-primary))">
+              {chartData.map((_, i) => (
+                <Cell
+                  key={i}
+                  fill={i === chartData.length - 1 ? 'hsl(var(--chart-highlight))' : 'hsl(var(--chart-primary))'}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

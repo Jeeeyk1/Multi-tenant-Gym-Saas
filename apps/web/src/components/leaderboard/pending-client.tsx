@@ -67,7 +67,7 @@ function SubmissionCard({
                 {submission.member.membershipNumber}
               </p>
             </div>
-            <span className="text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded-full font-semibold">
+            <span className="text-xs bg-warning-bg text-warning border border-warning/20 px-2 py-0.5 rounded-pill font-semibold">
               PENDING
             </span>
           </div>
@@ -112,7 +112,7 @@ function SubmissionCard({
           {rejecting ? (
             <div className="space-y-2">
               <textarea
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-primary/40"
+                className="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-focus-ring focus:ring-1 focus:ring-focus-ring"
                 rows={2}
                 placeholder="Reason for rejection…"
                 value={reason}
@@ -122,7 +122,7 @@ function SubmissionCard({
                 <button
                   onClick={handleReject}
                   disabled={busy}
-                  className="px-4 py-1.5 bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-lg hover:bg-destructive/20 transition disabled:opacity-50"
+                  className="px-4 py-1.5 bg-destructive text-destructive-foreground text-sm font-semibold rounded-md hover:opacity-90 transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 >
                   {busy ? 'Rejecting…' : 'Confirm Reject'}
                 </button>
@@ -139,14 +139,14 @@ function SubmissionCard({
               <button
                 onClick={handleApprove}
                 disabled={busy}
-                className="px-5 py-2 bg-primary text-black text-sm font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
+                className="px-5 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 {busy ? 'Approving…' : 'Approve'}
               </button>
               <button
                 onClick={() => setRejecting(true)}
                 disabled={busy}
-                className="px-5 py-2 bg-background border border-border text-sm text-muted-foreground rounded-lg hover:text-foreground hover:border-destructive/40 transition disabled:opacity-50"
+                className="px-5 py-2 text-sm bg-surface border border-border text-foreground rounded-md hover:text-foreground hover:border-destructive/40 transition disabled:opacity-50 font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 Reject
               </button>

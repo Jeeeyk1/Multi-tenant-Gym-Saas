@@ -14,7 +14,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-5">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
-      <p className="text-3xl font-bold text-foreground">{value}</p>
+      <p className="text-3xl font-heading font-extrabold text-foreground tabular">{value}</p>
     </div>
   );
 }

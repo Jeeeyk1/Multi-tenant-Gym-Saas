@@ -49,7 +49,7 @@ export function ActivateForm({ token }: Props) {
           placeholder="Min. 8 characters"
           required
           minLength={8}
-          className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
           disabled={pending}
         />
       </div>
@@ -64,7 +64,7 @@ export function ActivateForm({ token }: Props) {
           onChange={(e) => { setConfirm(e.target.value); setClientError(null); }}
           placeholder="Repeat password"
           required
-          className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
           disabled={pending}
         />
       </div>
@@ -76,7 +76,7 @@ export function ActivateForm({ token }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+        className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {pending ? 'Activating…' : 'Activate Account'}
       </button>

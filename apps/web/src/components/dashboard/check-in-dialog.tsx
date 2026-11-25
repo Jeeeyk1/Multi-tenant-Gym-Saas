@@ -87,7 +87,7 @@ export function CheckInDialog({ gymId }: Props) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition"
+        className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         <span className="text-base leading-none">+</span>
         Check In Member
@@ -97,12 +97,12 @@ export function CheckInDialog({ gymId }: Props) {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-scrim/60 backdrop-blur-sm"
             onClick={handleClose}
           />
 
           {/* Sheet */}
-          <div className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+          <div className="relative w-full max-w-md bg-surface border border-border rounded-xl shadow-1 flex flex-col max-h-[80vh]">
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">Check In Member</h2>
@@ -122,13 +122,13 @@ export function CheckInDialog({ gymId }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+                className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
               />
             </div>
 
             {/* Error */}
             {error && (
-              <div className="mx-4 mt-3 px-3 py-2 bg-red-950/60 border border-destructive rounded-lg">
+              <div className="mx-4 mt-3 px-3 py-2 bg-destructive-bg border border-destructive rounded-md">
                 <p className="text-xs text-destructive">{error}</p>
               </div>
             )}
@@ -152,8 +152,8 @@ export function CheckInDialog({ gymId }: Props) {
                       onClick={() => handleCheckIn(member)}
                       disabled={isChecking || !!successId}
                       className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition hover:bg-foreground/5 disabled:opacity-60',
-                        isSuccess && 'bg-success/10',
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition hover:bg-hover disabled:opacity-60',
+                        isSuccess && 'bg-success-bg',
                       )}
                     >
                       {/* Avatar */}
@@ -178,7 +178,7 @@ export function CheckInDialog({ gymId }: Props) {
                         ) : (
                           <span
                             className={cn(
-                              'text-xs font-medium px-2 py-0.5 rounded-full border',
+                              'text-xs font-semibold px-2 py-0.5 rounded-pill border',
                               statusClass,
                             )}
                           >

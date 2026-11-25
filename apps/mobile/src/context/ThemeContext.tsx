@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DARK_COLORS, LIGHT_COLORS, type ColorPalette } from '../constants/theme';
+import { onAccent } from '../theme/accent';
 
 export interface GymTheme {
   primary: string;
@@ -8,6 +9,8 @@ export interface GymTheme {
   gradient: [string, string];
   /** primary at ~12% opacity — tinted card/badge backgrounds */
   primaryMuted: string;
+  /** Readable text color on `primary`. */
+  onPrimary: string;
   logoUrl: string | null;
   colorScheme: 'light' | 'dark';
   /** Full color palette for the current mode — use this in screens instead of importing COLORS */
@@ -37,6 +40,7 @@ function buildTheme(
     secondary,
     gradient: [primary, secondary],
     primaryMuted: `${primary}20`,
+    onPrimary: onAccent(primary),
     logoUrl,
     colorScheme,
     colors: colorScheme === 'light' ? LIGHT_COLORS : DARK_COLORS,

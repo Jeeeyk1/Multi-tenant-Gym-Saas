@@ -11,7 +11,10 @@ import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import { formatApiError } from '../../lib/format-error';
-import type { ChatMessage } from '../../types';
+import { useEquippedBadgesMap } from '../../hooks/members';
+import { BadgeStack } from '../../components/badges/BadgeStack';
+import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
+import type { ChatMessage, EquippedBadge } from '../../types';
 
 const WS_BASE_URL = (() => {
   const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:9001/api/v1';
@@ -21,10 +24,14 @@ const WS_BASE_URL = (() => {
 function MessageBubble({
   msg,
   currentUserId,
+  senderBadges,
+  onBadgesPress,
   onDelete,
 }: {
   msg: ChatMessage;
   currentUserId: string;
+  senderBadges: EquippedBadge[];
+  onBadgesPress: () => void;
   onDelete: (msg: ChatMessage) => void;
 }) {
   const { theme } = useTheme();
@@ -43,7 +50,10 @@ function MessageBubble({
 
   return (
     <View style={[styles.bubbleWrap, isMine && styles.bubbleWrapMine]}>
-      {!isMine && <Text style={styles.senderName}>{msg.sender.fullName}</Text>}
+      <View style={[styles.senderRow, isMine && styles.senderRowMine]}>
+        {!isMine && <Text style={styles.senderName}>{msg.sender.fullName}</Text>}
+        <BadgeStack badges={senderBadges} size={16} onPress={onBadgesPress} />
+      </View>
       <TouchableOpacity
         activeOpacity={0.8}
         onLongPress={() => onDelete(msg)}
@@ -61,6 +71,8 @@ export default function StaffChatScreen() {
   const { user } = useAuth();
   const { theme } = useTheme();
 
+  const equippedBadgesQ = useEquippedBadgesMap();
+  const [badgeOwner, setBadgeOwner] = useState<{ name: string; badges: EquippedBadge[] } | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -186,7 +198,15 @@ export default function StaffChatScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <MessageBubble msg={item} currentUserId={user?.id ?? ''} onDelete={confirmDelete} />
+            <MessageBubble
+              msg={item}
+              currentUserId={user?.id ?? ''}
+              senderBadges={equippedBadgesQ.data?.get(item.sender.id) ?? []}
+              onBadgesPress={() =>
+                setBadgeOwner({ name: item.sender.fullName, badges: equippedBadgesQ.data?.get(item.sender.id) ?? [] })
+              }
+              onDelete={confirmDelete}
+            />
           )}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={<Text style={styles.hint}>Long-press a message to delete it.</Text>}
@@ -210,6 +230,12 @@ export default function StaffChatScreen() {
           <Ionicons name="arrow-up" size={20} color="#000" />
         </TouchableOpacity>
       </View>
+
+      <EquippedBadgesSheet
+        ownerName={badgeOwner?.name ?? null}
+        badges={badgeOwner?.badges ?? []}
+        onClose={() => setBadgeOwner(null)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -238,7 +264,9 @@ const styles = StyleSheet.create({
 
   bubbleWrap: { maxWidth: '82%', alignSelf: 'flex-start', gap: 2 },
   bubbleWrapMine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
-  senderName: { fontSize: 12, color: COLORS.textMuted, ...FONT.medium, marginLeft: SPACING.sm },
+  senderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: SPACING.sm },
+  senderRowMine: { justifyContent: 'flex-end' },
+  senderName: { fontSize: 12, color: COLORS.textMuted, ...FONT.medium },
   bubble: { borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md, paddingVertical: 8 },
   bubbleTheirs: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
   bubbleMine: {},

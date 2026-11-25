@@ -50,7 +50,13 @@ function MessageBubble({
 
   return (
     <View style={[styles.bubbleWrap, isMine && styles.bubbleWrapMine]}>
-      {!isMine && (
+      {isMine ? (
+        senderBadges.length > 0 && (
+          <View style={[styles.senderRow, styles.senderRowMine]}>
+            <BadgeStack badges={senderBadges} size={16} onPress={onBadgesPress} />
+          </View>
+        )
+      ) : (
         <View style={styles.senderRow}>
           <Text style={styles.senderName}>{msg.sender.fullName}</Text>
           <BadgeStack badges={senderBadges} size={16} onPress={onBadgesPress} />
@@ -371,6 +377,7 @@ const makeStyles = (C: ColorPalette) => StyleSheet.create({
     marginBottom: 2,
     marginLeft: 4,
   },
+  senderRowMine: { marginLeft: 0, marginRight: 4 },
   senderName: {
     fontSize: 11,
     color: C.textMuted,

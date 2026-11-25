@@ -240,6 +240,16 @@ When ready: integrate **PayMongo or Xendit** (both do GCash + QR Ph + cards in P
 - **Tests**: 10 new (leads use-cases + rate-limit behavior). 274/274 API tests pass total.
   Typecheck clean on api/web/admin/landing/mobile.
 
+## FitOps landing redesign (2026-11-26)
+
+- **Trial form** replaces `SubscribeModal`: name, gym name, mobile and email, all required (lead conversion
+  provisions the owner account, which needs an email). A `website` honeypot drops bot submissions silently.
+  `POST /public/signup-requests` always answers `201 { received: true }`.
+- **Lead notification**: plain-text email to `LEADS_NOTIFY_EMAIL` (skipped if unset; never fails the request).
+- **Pricing** (migration `0050`): Starter / Standard / Pro (75 / 200 / 500 members, ₱2,499 / ₱3,999 / ₱6,999 a
+  month), every feature on every tier, in both `saas_plans` (new `member_limit`) and `plans` (new `PRO` tier).
+  Supersedes the single-plan decision in `0044`.
+
 ## 9. Open items to decide during build
 - Grace-period length for PAST_DUE → SUSPENDED (e.g. 7 days).
 - Invoice due window for the first invoice (e.g. 7 days).

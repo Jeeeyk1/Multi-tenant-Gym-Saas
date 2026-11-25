@@ -947,6 +947,7 @@ model SaasPlan {
   description  String?
   priceMonthly Decimal  @map("price_monthly") @db.Decimal(10, 2)
   priceYearly  Decimal? @map("price_yearly") @db.Decimal(10, 2)
+  memberLimit  Int?     @map("member_limit")
   features     Json     @default("[]")
   isPopular    Boolean  @default(false) @map("is_popular")
   isActive     Boolean  @default(true) @map("is_active")

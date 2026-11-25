@@ -200,6 +200,34 @@ export class EmailService {
     });
   }
 
+  // Plain text so visitor input can't inject HTML into the inbox.
+  async sendLeadNotification(opts: {
+    to: string;
+    lead: { ownerName: string; gymName: string; phone: string; email: string; planInterest?: string };
+  }) {
+    const { lead } = opts;
+    try {
+      // Resend reports API failures in `error` rather than throwing.
+      const { error } = await this.resend.emails.send({
+        from: this.from,
+        to: opts.to,
+        replyTo: lead.email,
+        subject: `New free trial request: ${lead.gymName}`,
+        text: [
+          `Name: ${lead.ownerName}`,
+          `Gym: ${lead.gymName}`,
+          `Mobile: ${lead.phone}`,
+          `Email: ${lead.email}`,
+          `Plan interest: ${lead.planInterest ?? '—'}`,
+        ].join('\n'),
+      });
+      if (error) this.logger.error(`Failed to send lead notification: ${error.name}`);
+    } catch (err) {
+      // The lead is already saved; a failed notification must not fail the request.
+      this.logger.error(`Failed to send lead notification: ${(err as Error).name}`);
+    }
+  }
+
   private async send(opts: { to: string; subject: string; html: string }) {
     try {
       await this.resend.emails.send({

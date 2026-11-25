@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { aiService } from '../services/ai.service';
 import { useMyMember } from './members';
 import { fitnessPlanKeys } from './fitness-plan';
-import type { MealAnalysis, MealPlan } from '../types';
+import type { FoodLog, MealAnalysis, MealPlan, MealStyle } from '../types';
 
 export const nutritionKeys = {
   all: ['nutrition'] as const,
@@ -11,6 +11,8 @@ export const nutritionKeys = {
     [...nutritionKeys.all, 'food-logs', gymId, memberId, date ?? 'today'] as const,
   aiUsage: (gymId: string | undefined, memberId: string | undefined) =>
     [...nutritionKeys.all, 'ai-usage', gymId, memberId] as const,
+  recent: (gymId: string | undefined, memberId: string | undefined) =>
+    [...nutritionKeys.all, 'food-logs', 'recent', gymId, memberId] as const,
 };
 
 function useIds() {
@@ -26,6 +28,27 @@ export function useFoodLogs(date: string | undefined) {
     queryKey: nutritionKeys.foodLogs(gymId, memberId, date),
     queryFn: () => aiService.listFoodLogs(gymId!, memberId!, 100, date),
     enabled: Boolean(gymId && memberId && date),
+  });
+}
+
+/** Distinct recent meals (newest first) for one-tap re-logging. No AI involved. */
+export function useRecentFoods(max = 6) {
+  const { gymId, memberId } = useIds();
+  return useQuery({
+    queryKey: nutritionKeys.recent(gymId, memberId),
+    queryFn: () => aiService.listFoodLogs(gymId!, memberId!, 40),
+    enabled: Boolean(gymId && memberId),
+    select: (logs: FoodLog[]) => {
+      const seen = new Set<string>();
+      return logs
+        .filter((l) => {
+          const key = l.description.trim().toLowerCase();
+          if (seen.has(key) || l.calories === null) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, max);
+    },
   });
 }
 
@@ -54,13 +77,26 @@ export function useAnalyseMeal() {
   });
 }
 
+/** AI estimate of a meal photo (upload, then analyse). Counts toward the monthly photo limit. */
+export function useAnalyseMealPhoto() {
+  const { gymId, memberId } = useIds();
+  const refreshUsage = useRefreshAfterAi();
+  return useMutation({
+    mutationFn: async (photoUri: string): Promise<MealAnalysis> => {
+      const { url } = await aiService.uploadFoodPhoto(gymId!, memberId!, photoUri);
+      return aiService.analyseMeal(gymId!, memberId!, { photoUrl: url });
+    },
+    onSettled: refreshUsage,
+  });
+}
+
 /** One meal that fits what is left of today's plan. Counts toward the meal-suggestion limit. */
 export function useMealIdea() {
   const { gymId, memberId } = useIds();
   const refreshUsage = useRefreshAfterAi();
   return useMutation({
-    mutationFn: async (): Promise<MealPlan> => {
-      const res = await aiService.getMealSuggestion(gymId!, memberId!, { mode: 'SINGLE_MEAL' });
+    mutationFn: async (style?: MealStyle): Promise<MealPlan> => {
+      const res = await aiService.getMealSuggestion(gymId!, memberId!, { mode: 'SINGLE_MEAL', style });
       return JSON.parse(res.suggestion) as MealPlan;
     },
     onSettled: refreshUsage,

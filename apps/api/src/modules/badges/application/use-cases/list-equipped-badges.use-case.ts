@@ -12,6 +12,12 @@ export class ListEquippedBadgesUseCase {
       throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
     }
 
-    return this.repo.listEquippedBadgesByGym(gymId);
+    const rows = await this.repo.listEquippedBadgesByGym(gymId);
+    return rows.map(({ userId, badges }) => ({
+      userId,
+      badges,
+      // Shape used by app versions before Badges v2.
+      badge: { name: badges[0].name, icon: badges[0].icon, color: badges[0].color, rank: badges[0].rank },
+    }));
   }
 }

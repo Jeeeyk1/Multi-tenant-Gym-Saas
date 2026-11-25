@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
+import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
@@ -19,6 +19,10 @@ export class CreateMilestoneBadgeUseCase {
   async execute(gymId: string, input: CreateMilestoneBadgeInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
     assertPermission(caller, 'badges.manage');
+
+    // A global lift or one of this gym's own.
+    const exercise = await this.repo.findExerciseForGym(gymId, input.exerciseId);
+    if (!exercise) throw new NotFoundError('Exercise not found', 'EXERCISE_NOT_FOUND');
 
     return this.repo.createMilestoneBadge(gymId, {
       ...input,

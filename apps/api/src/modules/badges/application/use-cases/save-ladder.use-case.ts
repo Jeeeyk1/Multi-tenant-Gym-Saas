@@ -1,0 +1,43 @@
+import { Injectable } from '@nestjs/common';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../../../common/errors';
+import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
+import { isValidLadder, ladderBadgeDescription, ladderBadgeName, type LadderWeights } from '../../domain/lift-ladder';
+import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+
+export interface SaveLadderInput {
+  enabled: boolean;
+  weights?: LadderWeights;
+}
+
+/** Staff set a lift's bronze/silver/gold weights, or switch its ladder off. */
+@Injectable()
+export class SaveLadderUseCase {
+  constructor(private readonly repo: BadgesRepository) {}
+
+  async execute(gymId: string, exerciseId: string, input: SaveLadderInput, caller: AuthenticatedUser): Promise<void> {
+    if (caller.type === 'gym' && caller.gymId !== gymId) {
+      throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
+    }
+    if (caller.type === 'gym' && !caller.permissions.includes('badges.manage')) {
+      throw new ForbiddenError('Missing permission: badges.manage', 'PERMISSION_DENIED');
+    }
+
+    const exercise = await this.repo.findExerciseForGym(gymId, exerciseId);
+    if (!exercise) throw new NotFoundError('Exercise not found', 'EXERCISE_NOT_FOUND');
+
+    if (!input.enabled) {
+      await this.repo.disableLadder(gymId, exerciseId);
+      return;
+    }
+    if (!input.weights || !isValidLadder(input.weights)) {
+      throw new ValidationError('Weights must go up from bronze to silver to gold', 'INVALID_LADDER');
+    }
+
+    const rungs = await this.repo.saveLadder(gymId, exercise, input.weights, caller.sub, {
+      name: (tier) => ladderBadgeName(exercise.name, tier),
+      description: (weightKg) => ladderBadgeDescription(exercise.name, weightKg),
+    });
+    // A lowered weight may already be reached by past lifts.
+    for (const rung of rungs) await this.repo.awardRungForExistingLifts(gymId, rung);
+  }
+}

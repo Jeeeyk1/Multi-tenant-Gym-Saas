@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import { BadgesService } from '../../../badges/badges.service';
@@ -14,6 +14,8 @@ interface ConfigItem {
 
 @Injectable()
 export class UpdateLeaderboardConfigUseCase {
+  private readonly logger = new Logger(UpdateLeaderboardConfigUseCase.name);
+
   constructor(
     private readonly repo: LeaderboardRepository,
     private readonly badges: BadgesService,
@@ -52,10 +54,17 @@ export class UpdateLeaderboardConfigUseCase {
 
     const hasActiveItem = items.some((i) => i.isActive);
     if (hasActiveItem) {
-      void this.badges.ensureCycleExists(gymId);
+      // The config is already saved; a failure here is logged and retried on next use.
+      await this.badges.ensureCycleExists(gymId).catch((err) => this.logError('cycle', gymId, err));
+      // Newly enabled lifts get a default bronze/silver/gold ladder.
+      await this.badges.ensureDefaultLadders(gymId).catch((err) => this.logError('ladders', gymId, err));
     }
 
     return this.repo.getLeaderboardConfig(gymId);
+  }
+
+  private logError(step: string, gymId: string, err: unknown) {
+    this.logger.error(`leaderboard ${step} setup failed for gym ${gymId}`, err instanceof Error ? err.message : String(err));
   }
 }
 

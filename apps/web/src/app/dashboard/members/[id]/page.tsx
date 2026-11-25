@@ -5,25 +5,15 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { MemberActions } from '@/components/members/member-actions';
 import { AwardBadgeDialog } from '@/components/members/award-badge-dialog';
-import type { MemberDetail, RenewalRecord, MembershipPlan, MemberBadge, GymCustomBadge } from '@/types/api';
+import { BadgeMedal } from '@/components/badges/badge-medal';
+import { BadgeStack } from '@/components/badges/badge-stack';
+import { CATEGORY_LABEL, TIER_LABEL } from '@/components/badges/badge-labels';
+import type { BadgeCollection, CollectionBadge, EquippedBadge, MemberDetail, RenewalRecord, MembershipPlan, GymCustomBadge } from '@/types/api';
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'text-success border-success/40 bg-success/10',
   EXPIRED: 'text-destructive border-destructive/40 bg-destructive/10',
   SUSPENDED: 'text-warning border-warning/40 bg-warning/10',
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  AUTO_SYSTEM:    'Consistency',
-  AUTO_CYCLE:     'Leaderboard',
-  AUTO_MILESTONE: 'Milestone',
-  STAFF_AWARD:    'Staff Award',
-};
-
-const RANK_LABELS: Record<string, string> = {
-  GOLD:   '🥇',
-  SILVER: '🥈',
-  BRONZE: '🥉',
 };
 
 function getInitials(name: string): string {
@@ -41,18 +31,34 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function BadgeName(badge: MemberBadge): string {
-  if (badge.badgeCatalog) return badge.badgeCatalog.name;
-  if (badge.customBadge) return badge.customBadge.name;
-  if (badge.milestoneBadge) return badge.milestoneBadge.badgeName;
-  return 'Badge';
-}
-
-function BadgeColor(badge: MemberBadge): string {
-  if (badge.badgeCatalog) return badge.badgeCatalog.color;
-  if (badge.customBadge) return badge.customBadge.color;
-  if (badge.milestoneBadge) return badge.milestoneBadge.color;
-  return '#6B7280';
+function EarnedBadgeRow({ badge }: { badge: CollectionBadge }) {
+  const earned = badge.earned!;
+  return (
+    <li className={cn('px-5 py-3 flex items-center gap-4', earned.expired && 'opacity-50')}>
+      <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={36} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">
+          {badge.name}
+          {earned.isEquipped && !earned.expired && (
+            <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-primary">Equipped</span>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {[
+            badge.tier && TIER_LABEL[badge.tier],
+            badge.description,
+            badge.timesEarned > 1 && `Earned ${badge.timesEarned} times`,
+            earned.expired && 'Expired',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      </div>
+      <p className="text-xs text-muted-foreground shrink-0">
+        {new Date(earned.awardedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </p>
+    </li>
+  );
 }
 
 interface Props {
@@ -65,11 +71,11 @@ export default async function MemberDetailPage({ params }: Props) {
 
   const canAward = user.permissions?.includes('badges.award') ?? false;
 
-  const [member, renewals, plans, badges, customBadges] = await Promise.all([
+  const [member, renewals, plans, collection, customBadges] = await Promise.all([
     api.get<MemberDetail>(`/gyms/${user.gymId}/members/${memberId}`).catch(() => null),
     api.get<RenewalRecord[]>(`/gyms/${user.gymId}/members/${memberId}/renewals`).catch(() => []),
     api.get<MembershipPlan[]>(`/gyms/${user.gymId}/plans`).catch(() => [] as MembershipPlan[]),
-    api.get<MemberBadge[]>(`/gyms/${user.gymId}/members/${memberId}/badges`).catch(() => [] as MemberBadge[]),
+    api.get<BadgeCollection>(`/gyms/${user.gymId}/members/${memberId}/badges/collection`).catch(() => null),
     canAward
       ? api.get<GymCustomBadge[]>(`/gyms/${user.gymId}/badges/custom`).catch(() => [] as GymCustomBadge[])
       : Promise.resolve([] as GymCustomBadge[]),
@@ -78,6 +84,20 @@ export default async function MemberDetailPage({ params }: Props) {
   if (!member) notFound();
 
   const statusStyle = STATUS_STYLES[member.status] ?? 'text-muted-foreground border-border';
+  const equipped: EquippedBadge[] = (collection?.categories ?? []).flatMap(({ equipped: b }) =>
+    b?.earned
+      ? [{
+          memberBadgeId: b.earned.memberBadgeId,
+          awardedAt: b.earned.awardedAt,
+          category: b.category,
+          name: b.name,
+          description: b.description,
+          icon: b.icon,
+          color: b.color,
+          tier: b.tier,
+        }]
+      : [],
+  );
 
   return (
     <div className="p-8 max-w-2xl space-y-6">
@@ -92,7 +112,10 @@ export default async function MemberDetailPage({ params }: Props) {
           <span className="text-xl font-bold text-primary">{getInitials(member.user.fullName)}</span>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{member.user.fullName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">{member.user.fullName}</h1>
+            <BadgeStack badges={equipped} size={24} />
+          </div>
           <p className="text-sm text-muted-foreground font-mono mt-0.5">{member.membershipNumber}</p>
         </div>
         <span className={cn('ml-auto text-xs font-semibold px-3 py-1 rounded-full border', statusStyle)}>
@@ -135,47 +158,35 @@ export default async function MemberDetailPage({ params }: Props) {
             <AwardBadgeDialog gymId={user.gymId} memberId={memberId} customBadges={customBadges} />
           )}
         </div>
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
-          {badges.length === 0 ? (
+        {collection === null ? (
+          <div className="bg-surface border border-border rounded-xl">
+            <p className="text-sm text-muted-foreground py-8 text-center">Could not load this member&apos;s badges.</p>
+          </div>
+        ) : collection.earnedCount === 0 ? (
+          <div className="bg-surface border border-border rounded-xl">
             <p className="text-sm text-muted-foreground py-8 text-center">No badges earned yet.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {badges.map((b) => {
-                const isExpired = b.expiresAt ? new Date(b.expiresAt) < new Date() : false;
-                return (
-                  <li key={b.id} className={cn('px-5 py-3 flex items-center gap-4', isExpired && 'opacity-50')}>
-                    {/* Color dot */}
-                    <div
-                      className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
-                      style={{ backgroundColor: BadgeColor(b) + '22', border: `2px solid ${BadgeColor(b)}` }}
-                    >
-                      <span className="text-xs font-bold" style={{ color: BadgeColor(b) }}>
-                        {b.badgeRank ? RANK_LABELS[b.badgeRank] ?? '◆' : '◆'}
-                      </span>
-                    </div>
-
-                    {/* Name + meta */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{BadgeName(b)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {SOURCE_LABELS[b.source] ?? b.source}
-                        {b.proofNotes && ` · ${b.proofNotes}`}
-                        {isExpired && ' · Expired'}
-                      </p>
-                    </div>
-
-                    {/* Date */}
-                    <p className="text-xs text-muted-foreground shrink-0">
-                      {new Date(b.awardedAt).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric',
-                      })}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              {collection.earnedCount} of {collection.totalCount} badges earned
+            </p>
+            {collection.categories.map(({ category, badges }) => {
+              const earned = badges.filter((b) => b.earned);
+              if (earned.length === 0) return null;
+              return (
+                <div key={category} className="bg-surface border border-border rounded-xl overflow-hidden">
+                  <p className="px-5 pt-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {CATEGORY_LABEL[category]}
+                  </p>
+                  <ul className="divide-y divide-border">
+                    {earned.map((b) => <EarnedBadgeRow key={b.key} badge={b} />)}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Renewal history */}

@@ -78,6 +78,8 @@ const next = isActive ? GymStatus.SUSPENDED : GymStatus.ACTIVE;
 | `MemberStatus` | `ACTIVE`, `INACTIVE`, `EXPIRED`, `SUSPENDED` |
 | `StaffRole` | `OWNER`, `MANAGER`, `STAFF` |
 | `MembershipPlanStatus` | `ACTIVE`, `INACTIVE` |
+| `BadgeCategory` | `CONSISTENCY`, `LOYALTY`, `STRENGTH` |
+| `BadgeTier` | `GOLD`, `SILVER`, `BRONZE` |
 
 Add new enums to `packages/contracts/src/enums.ts` and run `pnpm --filter @gym-saas/contracts build` when the backend adds new domain constants.
 

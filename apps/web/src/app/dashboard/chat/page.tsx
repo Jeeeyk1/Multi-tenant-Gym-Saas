@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { ChatFeed } from '@/components/chat/chat-feed';
-import type { ChatMessage, Conversation } from '@/types/api';
+import { equippedByUser } from '@/components/badges/equipped';
+import type { ChatMessage, Conversation, EquippedBadgeRow } from '@/types/api';
 
 export default async function CommunityChatPage() {
   const user = await getSessionUser();
@@ -11,9 +12,11 @@ export default async function CommunityChatPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('access_token')?.value ?? '';
 
-  const conversation = await api
-    .get<Conversation>(`/gyms/${user.gymId}/conversations/default`)
-    .catch(() => null);
+  const [conversation, equippedRows] = await Promise.all([
+    api.get<Conversation>(`/gyms/${user.gymId}/conversations/default`).catch(() => null),
+    api.get<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`).catch(() => [] as EquippedBadgeRow[]),
+  ]);
+  const equipped = equippedByUser(equippedRows);
 
   const messages = conversation
     ? await api
@@ -47,6 +50,7 @@ export default async function CommunityChatPage() {
             conversationId={conversation.id}
             initialMessages={messages}
             currentUserId={user.id}
+            equippedBadges={equipped}
           />
         </div>
       )}

@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
-import type { LeaderboardExerciseResult } from '@/types/api';
+import { BadgeStack } from '@/components/badges/badge-stack';
+import { equippedByUser } from '@/components/badges/equipped';
+import type { EquippedBadgeRow, LeaderboardExerciseResult } from '@/types/api';
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -26,14 +28,17 @@ export default async function LeaderboardPage() {
   const user = await getSessionUser();
   if (!user) return null;
 
-  const leaderboard = await api
-    .get<LeaderboardExerciseResult[]>(`/gyms/${user.gymId}/leaderboard`)
-    .catch(() => [] as LeaderboardExerciseResult[]);
-
-  const pendingCount = await api
-    .get<{ length: number }>(`/gyms/${user.gymId}/leaderboard/submissions/pending`)
-    .then((r) => (Array.isArray(r) ? r.length : 0))
-    .catch(() => 0);
+  const [leaderboard, equippedRows, pendingCount] = await Promise.all([
+    api
+      .get<LeaderboardExerciseResult[]>(`/gyms/${user.gymId}/leaderboard`)
+      .catch(() => [] as LeaderboardExerciseResult[]),
+    api.get<EquippedBadgeRow[]>(`/gyms/${user.gymId}/badges/equipped`).catch(() => [] as EquippedBadgeRow[]),
+    api
+      .get<{ length: number }>(`/gyms/${user.gymId}/leaderboard/submissions/pending`)
+      .then((r) => (Array.isArray(r) ? r.length : 0))
+      .catch(() => 0),
+  ]);
+  const equipped = equippedByUser(equippedRows);
 
   return (
     <div className="p-8 space-y-6">
@@ -120,7 +125,10 @@ export default async function LeaderboardPage() {
                           )}
                         </td>
                         <td className="px-5 py-3 font-medium text-foreground">
-                          {entry.member.user.fullName}
+                          <span className="inline-flex items-center gap-2">
+                            {entry.member.user.fullName}
+                            <BadgeStack badges={equipped[entry.member.user.id] ?? []} />
+                          </span>
                         </td>
                         <td className="px-5 py-3 text-right font-bold text-primary">
                           {Number(entry.estimated1rm).toFixed(1)} kg

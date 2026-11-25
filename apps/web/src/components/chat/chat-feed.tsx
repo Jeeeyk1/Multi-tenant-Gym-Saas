@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { deleteMessage } from '@/lib/actions/chat';
-import type { ChatMessage } from '@/types/api';
+import { BadgeStack } from '@/components/badges/badge-stack';
+import type { ChatMessage, EquippedBadge } from '@/types/api';
 
 const WS_URL = process.env.NEXT_PUBLIC_API_URL
   ? process.env.NEXT_PUBLIC_API_URL.replace('/api/v1', '').replace('/api', '')
@@ -35,9 +36,10 @@ interface Props {
   conversationId: string;
   initialMessages: ChatMessage[];
   currentUserId: string;
+  equippedBadges: Record<string, EquippedBadge[]>;
 }
 
-export function ChatFeed({ token, gymId, conversationId, initialMessages, currentUserId }: Props) {
+export function ChatFeed({ token, gymId, conversationId, initialMessages, currentUserId, equippedBadges }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([...initialMessages].reverse());
   const [connected, setConnected] = useState(false);
   const [input, setInput] = useState('');
@@ -173,9 +175,10 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
 
                   <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
                     {/* Sender name */}
-                    {!isOwn && (
-                      <p className="text-xs text-muted-foreground font-medium px-1">{msg.sender.fullName}</p>
-                    )}
+                    <div className="flex items-center gap-1.5 px-1">
+                      {!isOwn && <p className="text-xs text-muted-foreground font-medium">{msg.sender.fullName}</p>}
+                      <BadgeStack badges={equippedBadges[msg.senderId] ?? []} size={16} />
+                    </div>
 
                     {/* Reply preview */}
                     {msg.replyTo && (

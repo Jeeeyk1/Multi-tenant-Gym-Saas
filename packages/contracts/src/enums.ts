@@ -21,3 +21,15 @@ export enum MembershipPlanStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
 }
+
+export enum BadgeCategory {
+  CONSISTENCY = 'CONSISTENCY',
+  LOYALTY = 'LOYALTY',
+  STRENGTH = 'STRENGTH',
+}
+
+export enum BadgeTier {
+  GOLD = 'GOLD',
+  SILVER = 'SILVER',
+  BRONZE = 'BRONZE',
+}

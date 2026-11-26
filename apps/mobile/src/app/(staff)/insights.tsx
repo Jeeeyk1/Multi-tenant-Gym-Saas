@@ -3,11 +3,12 @@ import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndica
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAiUsage, useInsightsQuery } from '../../hooks/insights';
+import { useAiUsage, useInsightsActions, useInsightsQuery } from '../../hooks/insights';
 import { formatApiError } from '../../lib/format-error';
 import { InsightsToolResultView } from '../../components/InsightsToolResultView';
+import { InsightsActionCard, isExpired, type ActionStatus } from '../../components/InsightsActionCard';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { AiUsageView, InsightsHistoryTurn, InsightsStep } from '../../types';
+import type { AiUsageView, InsightsHistoryTurn, InsightsPendingAction, InsightsStep } from '../../types';
 
 const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
@@ -18,13 +19,25 @@ interface Message {
   content: string;
   steps?: InsightsStep[];
   error?: boolean;
+  pendingAction?: InsightsPendingAction | null;
 }
 
 interface RevealState {
   answer: string;
   steps: InsightsStep[];
+  pendingAction: InsightsPendingAction | null;
   revealedCount: number;
 }
+
+// What the assistant reads back about an action card, so it knows what was proposed and what happened.
+const STATUS_FOR_HISTORY: Record<ActionStatus, string> = {
+  waiting: 'not confirmed yet',
+  running: 'not confirmed yet',
+  expired: 'expired, not done',
+  done: 'confirmed and done',
+  cancelled: 'cancelled by the user',
+  failed: 'failed',
+};
 
 const SUGGESTIONS = [
   'How many active members do we have?',
@@ -67,6 +80,7 @@ function usageMessage(usage: AiUsageView): string | null {
 export default function StaffInsightsScreen() {
   const router = useRouter();
   const mutation = useInsightsQuery();
+  const actions = useInsightsActions();
   const usageQ = useAiUsage();
   const state = usageState(usageQ.data);
   // Set by a limit error, so the input pauses even if usage couldn't be loaded. Fresh usage replaces it.
@@ -78,6 +92,9 @@ export default function StaffInsightsScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [reveal, setReveal] = useState<RevealState | null>(null);
+  const [actionStatus, setActionStatus] = useState<Record<string, ActionStatus>>({});
+  // Ids already confirmed or cancelled. A ref, not state, so a fast double tap is caught before the re-render.
+  const handledActions = useRef(new Set<string>());
   const listRef = useRef<FlatList>(null);
 
   // Steps are known all at once (the API isn't streaming yet), but we reveal them in sequence
@@ -94,7 +111,10 @@ export default function StaffInsightsScreen() {
     }
 
     const t = setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'assistant', content: reveal.answer, steps: reveal.steps }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: reveal.answer, steps: reveal.steps, pendingAction: reveal.pendingAction },
+      ]);
       setReveal(null);
     }, REVEAL_SETTLE_MS);
     return () => clearTimeout(t);
@@ -108,7 +128,12 @@ export default function StaffInsightsScreen() {
     const history: InsightsHistoryTurn[] = messages
       .filter((m) => !m.error)
       .slice(-HISTORY_TURNS)
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({
+        role: m.role,
+        content: m.pendingAction
+          ? `${m.content}\nProposed: ${m.pendingAction.summary} (${STATUS_FOR_HISTORY[actionStatus[m.pendingAction.id] ?? 'waiting']})`
+          : m.content,
+      }));
 
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
     setInput('');
@@ -119,9 +144,12 @@ export default function StaffInsightsScreen() {
         onSuccess: (data) => {
           if (data.steps.length === 0) {
             // Pure conversational turn — nothing was looked up, so there's nothing to trace.
-            setMessages((prev) => [...prev, { role: 'assistant', content: data.answer, steps: data.steps }]);
+            setMessages((prev) => [
+              ...prev,
+              { role: 'assistant', content: data.answer, steps: data.steps, pendingAction: data.pendingAction },
+            ]);
           } else {
-            setReveal({ answer: data.answer, steps: data.steps, revealedCount: 0 });
+            setReveal({ answer: data.answer, steps: data.steps, pendingAction: data.pendingAction, revealedCount: 0 });
           }
         },
         onError: (err) => {
@@ -132,6 +160,34 @@ export default function StaffInsightsScreen() {
         },
       },
     );
+  };
+
+  const confirmAction = (action: InsightsPendingAction) => {
+    if (handledActions.current.has(action.id)) return;
+    handledActions.current.add(action.id);
+    if (isExpired(action.expiresAt)) {
+      setActionStatus((prev) => ({ ...prev, [action.id]: 'expired' }));
+      return;
+    }
+    setActionStatus((prev) => ({ ...prev, [action.id]: 'running' }));
+    actions.confirm.mutate(action.id, {
+      onSuccess: (result) => {
+        setActionStatus((prev) => ({ ...prev, [action.id]: 'done' }));
+        setMessages((prev) => [...prev, { role: 'assistant', content: result.message }]);
+      },
+      onError: (err) => {
+        setActionStatus((prev) => ({ ...prev, [action.id]: 'failed' }));
+        const message = formatApiError(err, 'That action could not be completed. Please try again.');
+        setMessages((prev) => [...prev, { role: 'assistant', content: message, error: true }]);
+      },
+    });
+  };
+
+  const cancelAction = (action: InsightsPendingAction) => {
+    if (handledActions.current.has(action.id)) return;
+    handledActions.current.add(action.id);
+    setActionStatus((prev) => ({ ...prev, [action.id]: 'cancelled' }));
+    actions.cancel(action.id);
   };
 
   const isEmpty = messages.length === 0 && !mutation.isPending && !reveal;
@@ -158,7 +214,16 @@ export default function StaffInsightsScreen() {
           data={messages}
           keyExtractor={(_, i) => String(i)}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => <Bubble message={item} primary={COLORS.primary} />}
+          extraData={actionStatus}
+          renderItem={({ item }) => (
+            <Bubble
+              message={item}
+              primary={COLORS.primary}
+              actionStatus={item.pendingAction ? (actionStatus[item.pendingAction.id] ?? 'waiting') : undefined}
+              onConfirm={confirmAction}
+              onCancel={cancelAction}
+            />
+          )}
           ListFooterComponent={
             mutation.isPending && !reveal ? (
               <TraceBubble completed={[]} active="Thinking" primary={COLORS.primary} />
@@ -212,7 +277,20 @@ export default function StaffInsightsScreen() {
   );
 }
 
-function Bubble({ message, primary }: { message: Message; primary: string }) {
+function Bubble({
+  message,
+  primary,
+  actionStatus,
+  onConfirm,
+  onCancel,
+}: {
+  message: Message;
+  primary: string;
+  actionStatus?: ActionStatus;
+  onConfirm: (action: InsightsPendingAction) => void;
+  onCancel: (action: InsightsPendingAction) => void;
+}) {
+  const action = message.pendingAction;
   const isUser = message.role === 'user';
   const dataSteps = (message.steps ?? []).filter((s) => s.data != null);
 
@@ -233,6 +311,14 @@ function Bubble({ message, primary }: { message: Message; primary: string }) {
       {!isUser && dataSteps.map((step, i) => (
         <InsightsToolResultView key={i} tool={step.tool} data={step.data} />
       ))}
+      {action && actionStatus && (
+        <InsightsActionCard
+          action={action}
+          status={actionStatus}
+          onConfirm={() => onConfirm(action)}
+          onCancel={() => onCancel(action)}
+        />
+      )}
     </View>
   );
 }
@@ -280,7 +366,7 @@ function EmptyState({
       <Text style={styles.emptySub}>
         {canAskRevenue ? 'Members, attendance, revenue and trends.' : 'Members, attendance and trends. Revenue is for the owner.'}
       </Text>
-      <Text style={styles.emptySub}>I can also register, renew or suspend a member. I always ask first.</Text>
+      <Text style={styles.emptySub}>I can also register, renew or suspend a member. Nothing happens until you tap confirm.</Text>
       <View style={styles.suggestions}>
         {suggestions.map((q) => (
           <TouchableOpacity key={q} style={styles.suggestion} onPress={() => onSuggest(q)} disabled={disabled} activeOpacity={0.7}>

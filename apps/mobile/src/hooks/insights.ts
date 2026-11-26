@@ -33,3 +33,20 @@ export function useInsightsQuery() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: insightsKeys.usage(gymId) }),
   });
 }
+
+/** Confirms or cancels an action the assistant proposed. Neither calls the AI. */
+export function useInsightsActions() {
+  const { user } = useAuth();
+  const gymId = user?.gymId;
+  const confirm = useMutation({
+    mutationFn: (actionId: string) => {
+      if (!gymId) throw new Error('Not authenticated');
+      return insightsService.confirmAction(gymId, actionId);
+    },
+  });
+  // Best effort: an action that isn't confirmed expires on its own anyway.
+  const cancel = (actionId: string) => {
+    if (gymId) insightsService.cancelAction(gymId, actionId).catch(() => undefined);
+  };
+  return { confirm, cancel };
+}

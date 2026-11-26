@@ -5,6 +5,10 @@ import { LLM_PORT } from './application/ports/llm.port';
 import { AnthropicLlmAdapter } from './infrastructure/llm/anthropic-llm.adapter';
 import { InsightsRepository } from './infrastructure/persistence/insights.repository';
 import { ToolRegistry } from './application/tools/tool-registry';
+import { ActionTools } from './application/tools/action-tools';
+import { PendingActionStore } from './infrastructure/persistence/pending-action.store';
+import { ConfirmActionUseCase } from './application/use-cases/confirm-action.use-case';
+import { CancelActionUseCase } from './application/use-cases/cancel-action.use-case';
 import { RateLimiterService } from '../../common/rate-limiter/rate-limiter.service';
 import { AnswerQueryUseCase } from './application/use-cases/answer-query.use-case';
 import { GetAiUsageUseCase } from './application/use-cases/get-ai-usage.use-case';
@@ -20,6 +24,10 @@ import { AiUsageModule } from '../ai-usage/ai-usage.module';
   providers: [
     InsightsRepository,
     ToolRegistry,
+    ActionTools,
+    PendingActionStore,
+    ConfirmActionUseCase,
+    CancelActionUseCase,
     RateLimiterService,
     AnswerQueryUseCase,
     GetAiUsageUseCase,

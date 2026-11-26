@@ -1338,6 +1338,30 @@ Credentials:
 Errors: `403 FEATURE_NOT_AVAILABLE`, `429 AI_ALLOWANCE_EXCEEDED` (monthly pool, message gives the reset date),
 `429 AI_DAILY_LIMIT_REACHED` (Owner 40 / Staff 15 per day), `429 RATE_LIMITED`. Revenue tools need `reports.view`.
 
+Returns `{ answer, toolsUsed, steps, pendingAction }`. `pendingAction` is null unless the assistant proposed an action
+(register, renew, suspend or reactivate a member). Proposed actions never run on their own:
+```json
+{
+  "id": "6f1c…",
+  "action": "suspend_member",
+  "summary": "Suspend Juan Cruz (MBR-0001). They won't be able to check in until reactivated.",
+  "confirmLabel": "Suspend",
+  "expiresAt": "2026-11-27T10:10:00.000Z"
+}
+```
+
+#### POST /gyms/:gymId/insights/actions/:actionId/confirm
+Runs a proposed action. It works only for the person it was proposed to, within 10 minutes, and only once. The
+action's own permission (`members.create`, `members.renew`, `members.suspend` or `members.edit`) is checked when it is
+proposed and again when it runs. No AI call, so it doesn't count toward the allowance.
+Returns `{ "ok": true, "message": "Suspended Juan Cruz." }`. `404 ACTION_NOT_FOUND` when it expired, was already
+handled, or isn't yours. Errors from the action itself (e.g. `403 PERMISSION_DENIED`) pass through.
+A confirm that fails still uses up the action, so the user asks the assistant again. Cases that would certainly
+fail (already suspended, already active, renewing with no plan) are refused when proposed instead.
+
+#### POST /gyms/:gymId/insights/actions/:actionId/cancel
+Drops a proposed action. `204`, also when there was nothing to cancel.
+
 #### GET /gyms/:gymId/insights/usage
 ```json
 {

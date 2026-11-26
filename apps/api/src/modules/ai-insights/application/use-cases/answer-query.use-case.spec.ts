@@ -2,6 +2,11 @@ import { Logger } from '@nestjs/common';
 import { AnswerQueryUseCase } from './answer-query.use-case';
 import type { LlmPort } from '../ports/llm.port';
 import type { ToolRegistry } from '../tools/tool-registry';
+import type { ActionTools } from '../tools/action-tools';
+import { ToolInputError } from '../tools/tool-input';
+import type { PendingActionStore } from '../../infrastructure/persistence/pending-action.store';
+import type { PendingAction } from '../../domain/pending-action';
+import { AssistantAction } from '../../../../common/enums';
 import type { AiAllowanceService } from '../../../ai-usage/application/ai-allowance.service';
 import type { GymAiPlan } from '../../../ai-usage/infrastructure/ai-usage.repository';
 import type { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter.service';
@@ -15,6 +20,19 @@ const tools = {
   execute: jest.fn(),
   stepLabel: jest.fn(() => 'Calculating metric'),
 } as unknown as jest.Mocked<ToolRegistry>;
+const actions = { schemas: jest.fn(() => []), propose: jest.fn(), run: jest.fn() } as unknown as jest.Mocked<ActionTools>;
+const pendingActions = { save: jest.fn(), take: jest.fn() } as unknown as jest.Mocked<PendingActionStore>;
+const proposal: PendingAction = {
+  id: 'a1b2c3d4-0000-4000-8000-000000000001',
+  gymId: 'gym-1',
+  userId: 'staff-1',
+  action: AssistantAction.SUSPEND_MEMBER,
+  input: { memberId: 'm-1' },
+  summary: 'Suspend Juan Cruz (MBR-0001).',
+  confirmLabel: 'Suspend',
+  doneMessage: 'Suspended Juan Cruz.',
+  expiresAt: '2026-11-27T10:10:00.000Z',
+};
 const allowance = { assertAssistantAvailable: jest.fn(), recordAssistant: jest.fn() } as unknown as jest.Mocked<AiAllowanceService>;
 const rateLimiter = { hit: jest.fn() } as unknown as jest.Mocked<RateLimiterService>;
 const plan: GymAiPlan = {
@@ -47,7 +65,7 @@ describe('AnswerQueryUseCase', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new AnswerQueryUseCase(llm, tools, allowance, rateLimiter);
+    useCase = new AnswerQueryUseCase(llm, tools, actions, pendingActions, allowance, rateLimiter);
     rateLimiter.hit.mockResolvedValue(true);
     allowance.assertAssistantAvailable.mockResolvedValue(plan);
     tools.execute.mockResolvedValue({
@@ -73,6 +91,7 @@ describe('AnswerQueryUseCase', () => {
       answer: 'There were 5 check-ins today.',
       toolsUsed: ['query_metric'],
       steps: [{ tool: 'query_metric', label: 'Calculating metric', data: { value: 5 } }],
+      pendingAction: null,
     });
     expect(allowance.recordAssistant).toHaveBeenCalledWith(plan, 'gym-1', 'staff-1', {
       model: 'claude-haiku-4-5',
@@ -161,5 +180,83 @@ describe('AnswerQueryUseCase', () => {
     await useCase.execute('gym-1', { message: 'latest', history }, manager);
     const sent = llm.complete.mock.calls[0][0].messages;
     expect(sent[0]).toMatchObject({ role: 'user', content: [{ type: 'text', text: 'turn 2' }] });
+  });
+
+  describe('proposed actions', () => {
+    const suspendCall: LlmContent = { type: 'tool_use', id: 'a1', name: 'suspend_member', input: { member_id: 'm-1' } };
+
+    it('saves an action as pending and ends the turn without running it', async () => {
+      actions.propose.mockResolvedValue(proposal);
+      llm.complete.mockResolvedValueOnce(step([{ type: 'text', text: 'Done, I suspended Juan.' }, suspendCall], 10, 2));
+
+      const result = await useCase.execute('gym-1', { message: 'suspend Juan' }, manager);
+
+      expect(pendingActions.save).toHaveBeenCalledWith(proposal);
+      expect(actions.run).not.toHaveBeenCalled();
+      expect(llm.complete).toHaveBeenCalledTimes(1);
+      // The model's own text is not used: it can't claim the action already happened.
+      expect(result.answer).toBe("Here's what I'll do. Nothing changes until you confirm.");
+      expect(result.pendingAction).toEqual({
+        id: proposal.id,
+        action: 'suspend_member',
+        summary: proposal.summary,
+        confirmLabel: 'Suspend',
+        expiresAt: proposal.expiresAt,
+      });
+    });
+
+    it('feeds an invalid proposal back to the model and keeps going', async () => {
+      actions.propose.mockRejectedValue(new ToolInputError('No member with that id in this gym.'));
+      llm.complete
+        .mockResolvedValueOnce(step([suspendCall], 10, 2))
+        .mockResolvedValueOnce(step([{ type: 'text', text: 'Which member did you mean?' }], 6, 2));
+
+      const result = await useCase.execute('gym-1', { message: 'suspend Juan' }, manager);
+
+      // The array is shared and the final reply is appended after the call, so the tool results are second to last.
+      const fedBack = llm.complete.mock.calls[1][0].messages.at(-2)!.content[0];
+      expect(fedBack).toMatchObject({ type: 'tool_result', toolUseId: 'a1', isError: true });
+      expect(pendingActions.save).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ answer: 'Which member did you mean?', pendingAction: null });
+    });
+
+    it('logs an unexpected failure and keeps its details away from the model', async () => {
+      const logError = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      actions.propose.mockRejectedValue(new Error('PrismaClientKnownRequestError: connection refused at 10.0.0.5'));
+      llm.complete
+        .mockResolvedValueOnce(step([suspendCall], 10, 2))
+        .mockResolvedValueOnce(step([{ type: 'text', text: 'Please try again.' }], 6, 2));
+
+      await useCase.execute('gym-1', { message: 'suspend Juan' }, manager);
+
+      const fedBack = llm.complete.mock.calls[1][0].messages.at(-2)!.content[0] as { content: string };
+      expect(fedBack.content).not.toContain('10.0.0.5');
+      expect(logError).toHaveBeenCalledWith(expect.stringContaining('action proposal failed'), expect.any(String));
+    });
+
+    it('proposes only the first of two actions in one step', async () => {
+      actions.propose.mockResolvedValue(proposal);
+      const second: LlmContent = { type: 'tool_use', id: 'a2', name: 'suspend_member', input: { member_id: 'm-2' } };
+      llm.complete.mockResolvedValueOnce(step([suspendCall, second], 10, 2));
+
+      await useCase.execute('gym-1', { message: 'suspend both' }, manager);
+
+      expect(actions.propose).toHaveBeenCalledTimes(1);
+      expect(actions.propose).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }), expect.anything());
+    });
+
+    it("tells the model actions are unavailable when the pending action can't be saved", async () => {
+      jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      actions.propose.mockResolvedValue(proposal);
+      pendingActions.save.mockRejectedValueOnce(new Error('redis down'));
+      llm.complete
+        .mockResolvedValueOnce(step([suspendCall], 10, 2))
+        .mockResolvedValueOnce(step([{ type: 'text', text: 'Please try again shortly.' }], 6, 2));
+
+      const result = await useCase.execute('gym-1', { message: 'suspend Juan' }, manager);
+
+      expect(result.pendingAction).toBeNull();
+      expect(llm.complete.mock.calls[1][0].messages.at(-2)!.content[0]).toMatchObject({ isError: true });
+    });
   });
 });

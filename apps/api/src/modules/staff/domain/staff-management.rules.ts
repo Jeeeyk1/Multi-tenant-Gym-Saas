@@ -16,6 +16,14 @@ interface TargetStaff {
  *
  * Org-level callers are not restricted — they own the gym.
  */
+/** Only an owner may make someone else an owner. */
+export function assertCanGrantRole(caller: AuthenticatedUser, roleName: string): void {
+  if (caller.type !== 'gym' || roleName !== StaffRole.OWNER) return;
+  if (!caller.roles.includes(StaffRole.OWNER)) {
+    throw new ForbiddenError('Only a gym owner can manage the owner role', 'OWNER_ROLE_PROTECTED');
+  }
+}
+
 export function assertCanManageStaff(
   caller: AuthenticatedUser,
   target: TargetStaff,
@@ -27,11 +35,11 @@ export function assertCanManageStaff(
     throw new ForbiddenError('You cannot change your own staff access', 'CANNOT_MANAGE_SELF');
   }
 
-  const callerIsOwner = caller.roles.includes(StaffRole.GYM_OWNER);
+  const callerIsOwner = caller.roles.includes(StaffRole.OWNER);
   if (callerIsOwner) return;
 
-  const targetIsOwner = target.roles.some((r) => r.role.name === StaffRole.GYM_OWNER);
-  if (targetIsOwner || roleName === StaffRole.GYM_OWNER) {
+  const targetIsOwner = target.roles.some((r) => r.role.name === StaffRole.OWNER);
+  if (targetIsOwner || roleName === StaffRole.OWNER) {
     throw new ForbiddenError('Only a gym owner can manage the owner role', 'OWNER_ROLE_PROTECTED');
   }
 }

@@ -13,8 +13,8 @@ export enum MemberStatus {
 
 export enum StaffRole {
   OWNER = 'OWNER',
-  MANAGER = 'MANAGER',
   STAFF = 'STAFF',
+  TRAINER = 'TRAINER',
 }
 
 export enum MembershipPlanStatus {

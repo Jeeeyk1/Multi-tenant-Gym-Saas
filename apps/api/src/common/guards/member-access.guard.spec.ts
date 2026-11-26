@@ -48,8 +48,8 @@ describe('MemberAccessGuard', () => {
     await expect(guard.canActivate(ctx(other, 'POST'))).rejects.toBeInstanceOf(ForbiddenError);
   });
 
-  it('lets staff with members.view read but not write', async () => {
-    const staff = gymUser('u-staff', ['members.view']);
+  it('lets staff with members.details read but not write', async () => {
+    const staff = gymUser('u-staff', ['members.details']);
     await expect(guard.canActivate(ctx(staff, 'GET'))).resolves.toBe(true);
     await expect(guard.canActivate(ctx(staff, 'POST'))).rejects.toBeInstanceOf(ForbiddenError);
   });

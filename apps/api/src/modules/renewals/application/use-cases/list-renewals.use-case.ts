@@ -11,7 +11,7 @@ export class ListRenewalsUseCase {
 
   async execute(gymId: string, memberId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.MEMBERS_VIEW);
+    assertPermission(caller, Permission.MEMBERS_DETAILS);
 
     const member = await this.repo.findMemberForRenewal(memberId, gymId);
     if (!member) {

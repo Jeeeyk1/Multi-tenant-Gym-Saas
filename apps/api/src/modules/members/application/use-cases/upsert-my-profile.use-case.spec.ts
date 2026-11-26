@@ -127,7 +127,7 @@ describe('staff access to member profiles', () => {
     const result = await new GetMemberProfileUseCase(mockRepo).execute(
       'gym-1',
       'member-1',
-      caller(['members.view']),
+      caller(['members.details']),
     );
     expect(result).toEqual({ memberId: 'member-1', age: 30 });
   });

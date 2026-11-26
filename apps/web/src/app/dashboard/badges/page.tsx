@@ -27,6 +27,7 @@ export default async function BadgesPage() {
         customBadges={customBadges}
         ladders={ladders}
         olderMilestones={milestoneBadges.filter((m) => m.tier === null && m.isActive)}
+        canCreateBadges={user.permissions?.includes('badges.manage') ?? false}
       />
     </div>
   );

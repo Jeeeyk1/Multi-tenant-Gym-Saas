@@ -66,6 +66,9 @@ export class StaffRepository {
     fullName: string;
     phone?: string;
     existingUserId?: string;
+    /** Given in the same transaction, so an invite never ends up with no role. */
+    roleName?: string;
+    invitedBy?: string;
   }): Promise<{ staffId: string; userId: string; inviteToken: string }> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + INVITE_TOKEN_EXPIRY_DAYS);
@@ -89,6 +92,11 @@ export class StaffRepository {
         data: { gymId: input.gymId, userId },
         select: { id: true },
       });
+
+      if (input.roleName) {
+        const role = await tx.role.findUniqueOrThrow({ where: { name: input.roleName }, select: { id: true } });
+        await tx.gymStaffRole.create({ data: { gymStaffId: staff.id, roleId: role.id, assignedBy: input.invitedBy } });
+      }
 
       const rawToken = randomBytes(32).toString('hex');
 

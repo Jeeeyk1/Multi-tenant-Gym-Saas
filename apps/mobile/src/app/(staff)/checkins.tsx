@@ -276,7 +276,8 @@ export default function CheckInsScreen() {
     return members.filter(
       (m) =>
         m.user.fullName.toLowerCase().includes(q) ||
-        m.membershipNumber.toLowerCase().includes(q),
+        // Trainers only receive name and status.
+        Boolean(m.membershipNumber?.toLowerCase().includes(q)),
     );
   }, [members, searchQuery]);
 

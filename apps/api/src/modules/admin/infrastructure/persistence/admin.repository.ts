@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { BillingCycle, InvoiceStatus, MemberStatus, SubscriptionStatus } from '../../../../common/enums';
+import { BillingCycle, InvoiceStatus, MemberStatus, StaffRole, SubscriptionStatus } from '../../../../common/enums';
 import {
   addBillingPeriod,
   addDays,
@@ -255,7 +255,7 @@ export class AdminRepository {
       // Add owner as gym staff with the GYM_OWNER role so they can log in
       // to the gym portal and have full permissions from day one.
       const gymOwnerRole = await tx.role.findFirstOrThrow({
-        where: { name: 'GYM_OWNER' },
+        where: { name: StaffRole.OWNER },
         select: { id: true },
       });
 

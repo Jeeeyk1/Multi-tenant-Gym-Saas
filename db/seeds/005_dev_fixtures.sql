@@ -1,10 +1,12 @@
 -- Seed    : 005_dev_fixtures
--- Description: Local development fixtures — one org, one gym, one staff (MANAGER), one member
+-- Description: Local development fixtures — one org, one gym, an owner, a staff member, a trainer and a member
 -- Environment: local development only
 -- Idempotent: uses INSERT ... ON CONFLICT DO NOTHING / WHERE NOT EXISTS
 --
 -- Fixed credentials
---   Staff  : manager@devgym.com  / Password123!
+--   Owner  : manager@devgym.com  / Password123!   (OWNER, so every screen works locally)
+--   Staff  : staff@devgym.com    / Password123!   (STAFF)
+--   Trainer: trainer@devgym.com  / Password123!   (TRAINER: app only, members' name and status only)
 --   Member : member@devgym.com   / Password123!
 --
 -- Fixed IDs (stable across re-seedings so Postman collection stays valid)
@@ -70,7 +72,7 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Staff User (MANAGER) ─────────────────────────────────────────────────────
+-- ─── Owner User ───────────────────────────────────────────────────────────────
 -- Password: Password123!  (bcrypt hash, cost 10)
 INSERT INTO users (id, email, password_hash, full_name, is_active, email_verified_at)
 VALUES (
@@ -93,13 +95,35 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- ─── Assign MANAGER role to staff ─────────────────────────────────────────────
+-- ─── Assign OWNER role ────────────────────────────────────────────────────────
 INSERT INTO gym_staff_roles (gym_staff_id, role_id)
 SELECT
   '00000000-0000-0000-0000-000000000005',
   r.id
 FROM roles r
-WHERE r.name = 'MANAGER'
+WHERE r.name = 'OWNER'
+ON CONFLICT (gym_staff_id, role_id) DO NOTHING;
+
+-- ─── Staff and Trainer users ─────────────────────────────────────────────────
+-- Password: Password123!  (bcrypt hash, cost 10)
+INSERT INTO users (id, email, password_hash, full_name, is_active, email_verified_at)
+VALUES
+  ('00000000-0000-0000-0000-00000000000a', 'staff@devgym.com',
+   '$2b$10$VHVFBarsFNURbTrSh88jlO1VqsRTZLx5kZgTkQUajdhj4YzxGVaDW', 'Dev Staff', true, NOW()),
+  ('00000000-0000-0000-0000-00000000000b', 'trainer@devgym.com',
+   '$2b$10$VHVFBarsFNURbTrSh88jlO1VqsRTZLx5kZgTkQUajdhj4YzxGVaDW', 'Dev Trainer', true, NOW())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO gym_staff (id, gym_id, user_id, is_active)
+VALUES
+  ('00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-00000000000a', true),
+  ('00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-00000000000b', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO gym_staff_roles (gym_staff_id, role_id)
+SELECT s.staff_id::uuid, r.id
+FROM (VALUES ('00000000-0000-0000-0000-00000000000c', 'STAFF'), ('00000000-0000-0000-0000-00000000000d', 'TRAINER')) AS s (staff_id, role)
+JOIN roles r ON r.name = s.role
 ON CONFLICT (gym_staff_id, role_id) DO NOTHING;
 
 -- ─── Membership Plan ──────────────────────────────────────────────────────────

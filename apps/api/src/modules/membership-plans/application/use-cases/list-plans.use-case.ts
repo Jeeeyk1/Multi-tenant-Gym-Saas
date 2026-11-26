@@ -15,7 +15,7 @@ export class ListPlansUseCase {
 
   async execute(gymId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.MEMBERS_VIEW);
+    assertPermission(caller, Permission.PLANS_VIEW);
     return this.cache.wrap(plansCacheKey(gymId), PLANS_TTL_SECONDS, () => this.repo.listByGym(gymId));
   }
 }

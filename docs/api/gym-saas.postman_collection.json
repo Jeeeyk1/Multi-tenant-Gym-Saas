@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Gym SaaS API",
-    "description": "Full API collection for the Gym SaaS platform.\n\n## Quick start\n1. Run the dev seed: `pnpm db:seed`\n2. Start the API: `pnpm dev` (runs on port 9001)\n3. Run **Auth → Gym Login (Staff)** — the token is auto-saved to `accessToken`\n4. All other requests use `{{accessToken}}` automatically\n\n## Dev credentials\n- Staff (MANAGER): `manager@devgym.com` / `Password123!`\n- Member: `member@devgym.com` / `Password123!`\n- Gym code: `DEVGYM`\n- Gym ID: `00000000-0000-0000-0000-000000000002`\n- Community Conversation ID: `00000000-0000-0000-0000-000000000008`\n\n## WebSocket (Chat)\nPostman supports Socket.IO natively:\n1. Click **New → Socket.IO**\n2. URL: `http://localhost:9001/chat`\n3. Under **Connection → Headers**, add: `Authorization: Bearer {{accessToken}}`\n   OR under **Connection → Auth**, add key `token` = the JWT value\n4. Connect, then emit the events documented in `docs/04-api/api-reference.md`\n\nEvents to test:\n- Emit `join` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\"}`\n- Emit `message.send` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\",\"content\":\"Hello!\"}`\n- Listen for `message.new` → fires for every new message in the room",
+    "description": "Full API collection for the Gym SaaS platform.\n\n## Quick start\n1. Run the dev seed: `pnpm db:seed`\n2. Start the API: `pnpm dev` (runs on port 9001)\n3. Run **Auth → Gym Login (Staff)** — the token is auto-saved to `accessToken`\n4. All other requests use `{{accessToken}}` automatically\n\n## Dev credentials\n- Owner: `manager@devgym.com` / `Password123!`\n- Staff: `staff@devgym.com` / `Password123!`\n- Trainer: `trainer@devgym.com` / `Password123!`\n- Member: `member@devgym.com` / `Password123!`\n- Gym code: `DEVGYM`\n- Gym ID: `00000000-0000-0000-0000-000000000002`\n- Community Conversation ID: `00000000-0000-0000-0000-000000000008`\n\n## WebSocket (Chat)\nPostman supports Socket.IO natively:\n1. Click **New → Socket.IO**\n2. URL: `http://localhost:9001/chat`\n3. Under **Connection → Headers**, add: `Authorization: Bearer {{accessToken}}`\n   OR under **Connection → Auth**, add key `token` = the JWT value\n4. Connect, then emit the events documented in `docs/04-api/api-reference.md`\n\nEvents to test:\n- Emit `join` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\"}`\n- Emit `message.send` → `{\"conversationId\":\"00000000-0000-0000-0000-000000000008\",\"content\":\"Hello!\"}`\n- Listen for `message.new` → fires for every new message in the room",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -32,7 +32,7 @@
           }
         },
         {
-          "name": "Gym Login (Staff — MANAGER)",
+          "name": "Gym Login (Owner)",
           "event": [
             {
               "listen": "test",

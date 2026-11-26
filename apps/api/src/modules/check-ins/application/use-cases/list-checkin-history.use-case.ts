@@ -3,6 +3,7 @@ import { CheckInsRepository } from '../../infrastructure/persistence/check-ins.r
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 import { Permission } from '../../../../common/enums';
+import { withoutMemberDetails } from '../../../../common/auth/member-details';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -29,7 +30,7 @@ export class ListCheckinHistoryUseCase {
     ]);
 
     return {
-      data,
+      data: withoutMemberDetails(data, caller),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

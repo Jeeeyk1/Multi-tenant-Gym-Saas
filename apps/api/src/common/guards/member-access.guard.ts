@@ -3,9 +3,10 @@ import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenError, NotFoundError } from '../errors';
 import type { AuthenticatedUser } from '../types/auth.types';
+import { Permission } from '../enums';
 
-const READ_PERMISSION = 'members.view';
-const WRITE_PERMISSION = 'members.edit';
+const READ_PERMISSION = Permission.MEMBERS_DETAILS;
+const WRITE_PERMISSION = Permission.MEMBERS_EDIT;
 
 /**
  * Guards routes shaped `/gyms/:gymId/members/:memberId/...`. Must run after
@@ -14,7 +15,7 @@ const WRITE_PERMISSION = 'members.edit';
  * 1. The member must belong to `:gymId` — otherwise 404, so a member id from
  *    another gym can never be acted on through the caller's own gym.
  * 2. A gym-token caller must either be that member, or be staff holding
- *    `members.view` (GET) / `members.edit` (anything else).
+ *    `members.details` (GET) / `members.edit` (anything else).
  *
  * Org and system-admin tokens pass: GymAccessGuard has already confirmed they
  * may act on `:gymId`.

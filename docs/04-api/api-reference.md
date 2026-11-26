@@ -39,10 +39,12 @@ Authorization: Bearer <token>
   "sub": "<userId>",
   "type": "gym",
   "gymId": "<gymId>",
-  "roles": ["MANAGER"],
-  "permissions": ["members.view", "members.manage", "announcements.manage", "..."]
+  "roles": ["STAFF"],
+  "permissions": ["members.view", "members.details", "announcements.manage", "..."]
 }
 ```
+Roles are `OWNER`, `STAFF` and `TRAINER`. A user who is also a member of the gym also gets `MEMBER` and the member
+permissions (`checkins.self`, `announcements.view`). See `docs/02-domains/staff-and-rbac.md`.
 
 **Org JWT**:
 ```json
@@ -339,7 +341,7 @@ Response `200`:
     "id": "<gymStaffId>",
     "isActive": true,
     "user": { "id": "<userId>", "email": "...", "fullName": "..." },
-    "roles": ["MANAGER"]
+    "roles": ["STAFF"]
   }
 ]
 ```
@@ -356,9 +358,12 @@ Request:
 {
   "email": "newstaff@example.com",
   "fullName": "New Staff",
-  "roleId": "<roleId>"
+  "phone": "+63…",
+  "role": "STAFF"
 }
 ```
+`role` (`OWNER`, `STAFF` or `TRAINER`) is optional and given in the same transaction. Only an owner can invite
+an owner (`403 OWNER_ROLE_PROTECTED`).
 
 Response `201`:
 ```json
@@ -1225,8 +1230,9 @@ socket.on('message.reaction', ({ messageId, conversationId, userId, action, emoj
 
 | Permission | Grants access to |
 |------------|-----------------|
-| `members.view` | List and view members |
-| `members.manage` | Register, suspend, reactivate, renew members |
+| `members.view` | Member list and detail: name and status only |
+| `members.details` | Contact details, plan, prices, renewals, fitness profile, QR, weight logs |
+| `members.create` / `members.edit` / `members.renew` / `members.suspend` / `members.delete` | Member operations |
 | `staff.manage` | Invite, deactivate, assign roles to staff |
 | `plans.manage` | Create and update membership plans |
 | `checkins.view` | View check-in history and active list |
@@ -1235,8 +1241,9 @@ socket.on('message.reaction', ({ messageId, conversationId, userId, action, emoj
 | `chat.manage` | Delete any message in community chat |
 | `gym.manage` | Update gym profile and schedules |
 
-Permissions are derived from roles at login time and embedded in the JWT.
-Staff with `MANAGER` role receive all permissions above.
+Permissions are derived from roles at login and refresh, and embedded in the JWT. `OWNER` has every permission;
+the Staff and Trainer sets are in `docs/02-domains/staff-and-rbac.md`. The full key list is the `Permission` enum.
+Lift ladders (`GET/PUT badges/ladders`) need `leaderboard.manage`.
 
 ---
 
@@ -1248,7 +1255,9 @@ Stable across re-seedings. Safe to use in Postman collections and tests.
 |--------|----|
 | Organization | `00000000-0000-0000-0000-000000000001` |
 | Gym | `00000000-0000-0000-0000-000000000002` |
-| Staff user (manager@devgym.com) | `00000000-0000-0000-0000-000000000003` |
+| Owner user (manager@devgym.com) | `00000000-0000-0000-0000-000000000003` |
+| Staff user (staff@devgym.com) | `00000000-0000-0000-0000-00000000000a` |
+| Trainer user (trainer@devgym.com) | `00000000-0000-0000-0000-00000000000b` |
 | Member user (member@devgym.com) | `00000000-0000-0000-0000-000000000004` |
 | gym_staff record | `00000000-0000-0000-0000-000000000005` |
 | gym_members record | `00000000-0000-0000-0000-000000000006` |
@@ -1256,7 +1265,9 @@ Stable across re-seedings. Safe to use in Postman collections and tests.
 | Community conversation | `00000000-0000-0000-0000-000000000008` |
 
 Credentials:
-- `manager@devgym.com` / `Password123!` — MANAGER role, all permissions
+- `manager@devgym.com` / `Password123!` — OWNER, all permissions
+- `staff@devgym.com` / `Password123!` — STAFF
+- `trainer@devgym.com` / `Password123!` — TRAINER (members' name and status only)
 - `member@devgym.com` / `Password123!` — ACTIVE member
 
 ### Badges v2

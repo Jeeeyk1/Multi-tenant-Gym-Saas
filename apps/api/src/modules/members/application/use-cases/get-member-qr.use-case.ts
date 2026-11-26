@@ -21,7 +21,7 @@ export class GetMemberQrUseCase {
     // A gym-level member can access their own QR only.
     if (caller.type === 'gym') {
       const isOwnRecord = member.user.id === caller.sub;
-      const hasStaffAccess = hasPermission(caller, Permission.MEMBERS_VIEW);
+      const hasStaffAccess = hasPermission(caller, Permission.MEMBERS_DETAILS);
       if (!isOwnRecord && !hasStaffAccess) {
         throw new ForbiddenError('Missing permission: members.view', 'PERMISSION_DENIED');
       }

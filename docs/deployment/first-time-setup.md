@@ -347,7 +347,7 @@ curl -I https://your-domain.com   # should return 200
 ```
 
 Then test the full flow manually:
-1. Go to `https://your-domain.com` → enter a gym code → login as MANAGER
+1. Go to `https://your-domain.com` → enter a gym code → login as the gym owner
 2. Verify the dashboard loads and shows active check-ins
 3. Run the AI assistant — test one question (needs `ANTHROPIC_API_KEY` set)
 

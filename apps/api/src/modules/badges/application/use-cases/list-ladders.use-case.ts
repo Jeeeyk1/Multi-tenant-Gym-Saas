@@ -24,7 +24,7 @@ export class ListLaddersUseCase {
 
   async execute(gymId: string, caller: AuthenticatedUser): Promise<LadderView[]> {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.BADGES_MANAGE);
+    assertPermission(caller, Permission.LEADERBOARD_MANAGE);
 
     await this.ladders.ensureDefaultLadders(gymId);
     const lifts = await this.repo.listLadders(gymId);

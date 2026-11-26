@@ -106,3 +106,19 @@ export enum Permission {
 
 /** Not a stored role: in the token of anyone with a membership at the gym. */
 export const MEMBER_ROLE = 'MEMBER';
+
+export enum MemberStatus {
+  ACTIVE    = 'ACTIVE',
+  INACTIVE  = 'INACTIVE',
+  EXPIRED   = 'EXPIRED',
+  SUSPENDED = 'SUSPENDED',
+  DELETED   = 'DELETED',
+}
+
+// Error codes the check-in endpoint returns (apps/api/src/modules/check-ins/application/use-cases/check-in.use-case.ts)
+export enum CheckInErrorCode {
+  ALREADY_CHECKED_IN = 'ALREADY_CHECKED_IN',
+  MEMBERSHIP_EXPIRED = 'MEMBERSHIP_EXPIRED',
+  MEMBER_NOT_ACTIVE  = 'MEMBER_NOT_ACTIVE',
+  MEMBER_NOT_FOUND   = 'MEMBER_NOT_FOUND',
+}

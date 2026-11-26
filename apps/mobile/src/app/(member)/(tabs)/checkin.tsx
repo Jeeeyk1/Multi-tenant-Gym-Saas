@@ -1,266 +1,240 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Pressable, StyleSheet, ActivityIndicator, Animated } from 'react-native';
-import { Text } from '../../../components/Text';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { useFocusEffect, useRouter } from 'expo-router';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { Text } from '../../../components/Text';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
-import { useSelfCheckIn } from '../../../hooks/members';
-import { AnimatedMascot } from '../../../components/AnimatedMascot';
-import { SPACING, RADIUS, FONT } from '../../../constants/theme';
-import type { CheckIn } from '../../../types';
-import { onAccent } from '../../../theme/accent';
+import {
+  useActivePublicCheckins,
+  useMyCheckIns,
+  useMyMember,
+  useSelfCheckIn,
+  useSelfCheckOut,
+} from '../../../hooks/members';
+import { Button, EmptyState, HoldButton, ScreenHeader, Skeleton, SlideToConfirm, useToast } from '../../../components/ui';
+import { CheckinQrSheet } from '../../../components/checkin/CheckinQrSheet';
+import { ElapsedTime } from '../../../components/checkin/ElapsedTime';
+import { computeStreak } from '../../../lib/checkin-streak';
+import { formatApiError } from '../../../lib/format-error';
+import { haptic } from '../../../lib/haptics';
+import { CheckInErrorCode, MemberStatus } from '../../../constants/enums';
+import { FONT, RADIUS, SPACING } from '../../../constants/theme';
+import { fonts } from '../../../theme/typography';
 
-type Status = 'idle' | 'loading' | 'checked_in' | 'already_in' | 'error';
+// Same limit as Home so both screens share one cached query.
+const RECENT_CHECKINS = 7;
 
-const BUTTON_SIZE = 190;
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function minutesSince(iso: string) {
+  return Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+}
 
 export default function CheckInScreen() {
-  const { user } = useAuth();
-  // Tab screens hide the header, so keep content clear of the notch / status bar.
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { gymInfo } = useAuth();
   const { theme } = useTheme();
   const C = theme.colors;
+  const toast = useToast();
+
+  const checkInsQ = useMyCheckIns(RECENT_CHECKINS);
+  const memberQ = useMyMember();
+  const hereQ = useActivePublicCheckins();
   const selfCheckIn = useSelfCheckIn();
-  const [status, setStatus] = useState<Status>('idle');
-  const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const selfCheckOut = useSelfCheckOut();
+  const [qrOpen, setQrOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  // Set when the API refuses a check-in for the membership, before the member record refetches.
+  const [blockedBy, setBlockedBy] = useState<CheckInErrorCode | null>(null);
 
-  const buttonScale = useRef(new Animated.Value(1)).current;
-  const pulseScale = useRef(new Animated.Value(1)).current;
-  const pulseOpacity = useRef(new Animated.Value(0.5)).current;
-  const mascotOpacity = useRef(new Animated.Value(0)).current;
+  const { refetch: refetchCheckIns } = checkInsQ;
+  // Staff check-outs and auto check-out happen elsewhere; refresh whenever the tab is shown.
+  useFocusEffect(
+    useCallback(() => {
+      refetchCheckIns();
+    }, [refetchCheckIns]),
+  );
 
-  useEffect(() => {
-    if (status !== 'idle') {
-      pulseScale.setValue(1);
-      pulseOpacity.setValue(0);
-      return;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(pulseScale, { toValue: 1.45, duration: 1100, useNativeDriver: true }),
-          Animated.timing(pulseOpacity, { toValue: 0, duration: 1100, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(pulseScale, { toValue: 1, duration: 0, useNativeDriver: true }),
-          Animated.timing(pulseOpacity, { toValue: 0.5, duration: 0, useNativeDriver: true }),
-        ]),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [status]);
+  const checkIns = checkInsQ.data ?? [];
+  const latest = checkIns[0];
+  const active = latest && latest.checkedOutAt === null ? latest : null;
+  const { streak } = computeStreak(checkIns);
+  const member = memberQ.data;
+  const membershipBlocked = blockedBy !== null || (member !== undefined && member.status !== MemberStatus.ACTIVE);
+  const hereCount = hereQ.data?.totalCount;
 
-  useEffect(() => {
-    if (status === 'checked_in') {
-      Animated.timing(mascotOpacity, { toValue: 1, duration: 350, useNativeDriver: true }).start();
-    } else {
-      mascotOpacity.setValue(0);
-    }
-  }, [status]);
-
-  const animateButtonBounce = () => {
-    Animated.sequence([
-      Animated.spring(buttonScale, { toValue: 1.1, damping: 5, useNativeDriver: true }),
-      Animated.spring(buttonScale, { toValue: 1, damping: 12, useNativeDriver: true }),
-    ]).start();
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setBlockedBy(null);
+    await Promise.all([checkInsQ.refetch(), memberQ.refetch(), hereQ.refetch()]);
+    setRefreshing(false);
   };
 
-  const handleCheckIn = async () => {
-    if (!user) return;
-    setStatus('loading');
-    try {
-      const res = await selfCheckIn.mutateAsync();
-      setCheckIn(res);
-      setStatus('checked_in');
-      animateButtonBounce();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: unknown) {
-      const e = err as { code?: string; message?: string };
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      if (e.code === 'ALREADY_CHECKED_IN') {
-        setStatus('already_in');
-        setErrorMsg("You're already checked in today.");
-      } else if (e.code === 'MEMBERSHIP_EXPIRED') {
-        setStatus('error');
-        setErrorMsg('Your membership has expired. Please renew at the front desk.');
-      } else if (e.code === 'MEMBER_NOT_ACTIVE') {
-        setStatus('error');
-        setErrorMsg('Your account is not active. Please contact the gym.');
-      } else if (e.code === 'MEMBER_NOT_FOUND') {
-        setStatus('error');
-        setErrorMsg('Member record not found. Please contact the gym.');
-      } else {
-        setStatus('error');
-        setErrorMsg(e.message ?? 'Check-in failed. Please try again.');
-      }
-    }
+  const handleCheckIn = () => {
+    selfCheckIn.mutate(undefined, {
+      onSuccess: (res) => {
+        haptic.success();
+        toast.show(`Checked in at ${formatTime(res.checkedInAt)}`);
+      },
+      onError: (err) => {
+        const code = (err as { code?: string }).code;
+        if (code === CheckInErrorCode.ALREADY_CHECKED_IN) {
+          toast.show("You're already checked in.", { tone: 'info' });
+          checkInsQ.refetch();
+        } else if (code === CheckInErrorCode.MEMBERSHIP_EXPIRED || code === CheckInErrorCode.MEMBER_NOT_ACTIVE) {
+          setBlockedBy(code);
+          memberQ.refetch();
+          haptic.error();
+        } else {
+          toast.show(formatApiError(err, "Couldn't check you in. Try again."), { tone: 'error' });
+        }
+      },
+    });
   };
 
-  const reset = () => {
-    setStatus('idle');
-    setCheckIn(null);
-    setErrorMsg('');
+  const handleCheckOut = () => {
+    if (!active) return;
+    const minutes = minutesSince(active.checkedInAt);
+    selfCheckOut.mutate(active.id, {
+      onSuccess: () => toast.show(`Checked out · ${minutes} min in the gym`),
+      onError: (err) => toast.show(formatApiError(err, "Couldn't check you out. Try again."), { tone: 'error' }),
+    });
   };
 
-  const isIdle = status === 'idle';
-  const isSuccess = status === 'checked_in';
-  const isError = status === 'error' || status === 'already_in';
-  const isWarn = status === 'already_in';
-
-  const buttonColors: [string, string] = isSuccess
-    ? [C.success, C.success]
-    : isError
-    ? isWarn
-      ? [C.warning, C.warning]
-      : [C.error, C.error]
-    : theme.gradient;
-  const buttonFg = isIdle ? theme.onPrimary : onAccent(buttonColors[0]);
-
-  const s = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: C.background,
-      paddingHorizontal: SPACING.lg,
-      alignItems: 'center',
-    },
-    heading: {
-      fontSize: 26,
-      ...FONT.bold,
-      color: C.text,
-      marginTop: SPACING.lg,
-      marginBottom: 4,
-      alignSelf: 'flex-start',
-    },
-    subheading: {
-      fontSize: 14,
-      color: C.textSecondary,
-      alignSelf: 'flex-start',
-      marginBottom: SPACING.lg,
-    },
-    successBox: { alignItems: 'center', gap: SPACING.xs, marginBottom: SPACING.sm },
-    successTitle: { fontSize: 20, ...FONT.bold, color: C.success },
-    successTime: { fontSize: 14, color: C.textSecondary },
-    statusBox: {
-      borderWidth: 1,
-      borderRadius: RADIUS.xl,
-      padding: SPACING.md,
-      width: '100%',
-      marginBottom: SPACING.md,
-      alignItems: 'center',
-    },
-    errorBox: { backgroundColor: C.errorBg, borderColor: C.error },
-    warnBox: { backgroundColor: C.warningBg, borderColor: C.warning },
-    statusText: { fontSize: 14, ...FONT.regular, textAlign: 'center' },
-    buttonArea: {
-      marginTop: SPACING.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
-    },
-    pulseRing: {
-      position: 'absolute',
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
-      borderRadius: BUTTON_SIZE / 2,
-    },
-    buttonPressable: {
-      borderRadius: BUTTON_SIZE / 2,
-      overflow: 'hidden',
-    },
-    bigButton: {
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
-      borderRadius: BUTTON_SIZE / 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: SPACING.xs,
-    },
-    bigButtonLabel: { fontSize: 15, ...FONT.semibold },
-    hint: {
-      marginTop: SPACING.xxl,
-      color: C.textMuted,
-      fontSize: 13,
-      textAlign: 'center',
-      paddingHorizontal: SPACING.xl,
-      lineHeight: 20,
-    },
-  }), [C]);
+  const loading = (checkInsQ.isLoading || memberQ.isLoading) && !checkInsQ.data;
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
-      <Text style={s.heading}>Check In</Text>
-      <Text style={s.subheading}>Tap to record your visit</Text>
-
-      {isSuccess && checkIn && (
-        <Animated.View style={[s.successBox, { opacity: mascotOpacity }]}>
-          <AnimatedMascot size="md" />
-          <Text style={s.successTitle}>You&apos;re in!</Text>
-          <Text style={s.successTime}>
-            {new Date(checkIn.checkedInAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </Animated.View>
-      )}
-
-      {isError && (
-        <View style={[s.statusBox, isWarn ? s.warnBox : s.errorBox]}>
-          <Text style={[s.statusText, { color: isWarn ? C.warning : C.error }]}>
-            {errorMsg}
-          </Text>
-        </View>
-      )}
-
-      <View style={s.buttonArea}>
-        <Animated.View
-          style={[
-            s.pulseRing,
-            { transform: [{ scale: pulseScale }], opacity: pulseOpacity, backgroundColor: theme.primary },
-          ]}
-        />
-        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-          <Pressable
-            onPress={isIdle ? handleCheckIn : reset}
-            disabled={status === 'loading'}
-            style={s.buttonPressable}
-          >
-            <LinearGradient
-              colors={buttonColors}
-              start={{ x: 0.2, y: 0 }}
-              end={{ x: 0.8, y: 1 }}
-              style={s.bigButton}
-            >
-              {status === 'loading' ? (
-                <ActivityIndicator color={buttonFg} size="large" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={isSuccess ? 'checkmark' : isError ? 'refresh' : 'flash'}
-                    size={44}
-                    color={buttonFg}
-                  />
-                  <Text style={[s.bigButtonLabel, { color: buttonFg }]}>
-                    {isSuccess ? 'Tap to reset' : isError ? 'Try again' : 'Check In'}
+    <View style={[styles.root, { backgroundColor: C.background }]}>
+      <ScreenHeader title="Check in" subtitle={gymInfo?.gymName || undefined} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+      >
+        {loading ? (
+          <View style={styles.stack}>
+            <Skeleton height={96} />
+            <Skeleton height={60} radius={18} />
+            <Skeleton height={52} radius={RADIUS.button} />
+          </View>
+        ) : checkInsQ.isError && !checkInsQ.data ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            tone="error"
+            title="Couldn't load your check-ins"
+            message="Check your connection and try again."
+            action={{ label: 'Try again', onPress: onRefresh }}
+          />
+        ) : active ? (
+          <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.stack}>
+            <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.border }]}>
+              <View style={styles.row}>
+                <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.tick, { backgroundColor: theme.primary }]}>
+                  <Ionicons name="checkmark" size={28} color={theme.onPrimary} />
+                </Animated.View>
+                <View style={styles.flex}>
+                  <Text variant="h3" style={{ color: C.text }}>
+                    Checked in at {formatTime(active.checkedInAt)}
                   </Text>
-                </>
-              )}
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
-      </View>
+                  <View style={styles.row}>
+                    <Text variant="label" style={{ color: C.textMuted }}>
+                      In the gym ·{' '}
+                    </Text>
+                    <ElapsedTime since={active.checkedInAt} style={[styles.mono, { color: C.textSecondary }]} />
+                  </View>
+                </View>
+              </View>
+              <View style={[styles.stats, { borderTopColor: C.border }]}>
+                <Stat label="Streak" value={streak} unit={streak === 1 ? 'day' : 'days'} />
+                <Stat label="Here now" value={hereCount} />
+              </View>
+            </View>
+            <HoldButton label="Hold to check out" onConfirm={handleCheckOut} loading={selfCheckOut.isPending} />
+            <Button label="Show my QR" icon="qr-code-outline" variant="secondary" onPress={() => setQrOpen(true)} />
+          </Animated.View>
+        ) : membershipBlocked ? (
+          <Animated.View entering={FadeIn} style={styles.stack}>
+            <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.warning }]} accessibilityRole="alert">
+              <Text style={[styles.eyebrow, { color: C.warning }]}>Can&apos;t check in</Text>
+              <Text variant="h3" style={{ color: C.text }}>
+                {blockedBy === CheckInErrorCode.MEMBERSHIP_EXPIRED || member?.status === MemberStatus.EXPIRED
+                  ? 'Your membership has ended'
+                  : "Your membership isn't active"}
+              </Text>
+              <Text variant="label" style={{ color: C.textSecondary }}>
+                Renew or ask about your membership at the front desk, then check in again.
+              </Text>
+            </View>
+            <Button label="View membership" onPress={() => router.push('/(member)/membership')} />
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeIn} style={styles.stack}>
+            <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.border }]}>
+              <View style={[styles.row, styles.between]}>
+                <Text style={[styles.eyebrow, { color: C.textMuted }]}>Not checked in</Text>
+                {hereCount !== undefined ? (
+                  <View style={styles.row}>
+                    <View style={[styles.dot, { backgroundColor: C.success }]} />
+                    <Text variant="caption" style={{ color: C.textSecondary }}>
+                      {hereCount} here now
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text variant="label" style={{ color: C.textSecondary }}>
+                {streak > 0
+                  ? `You're on a ${streak}-day streak. Check in to keep it going.`
+                  : 'Check in when you arrive to start a streak.'}
+              </Text>
+            </View>
+            <SlideToConfirm label="Slide to check in" onConfirm={handleCheckIn} loading={selfCheckIn.isPending} />
+            <Button label="Show my QR instead" icon="qr-code-outline" variant="secondary" onPress={() => setQrOpen(true)} />
+            <Text variant="caption" style={[styles.hint, { color: C.textMuted }]}>
+              Staff can also scan your QR at the desk.
+            </Text>
+          </Animated.View>
+        )}
+      </ScrollView>
 
-      {isIdle && (
-        <Text style={s.hint}>
-          Your visit will be recorded and your streak updated automatically.
-        </Text>
-      )}
+      <CheckinQrSheet
+        visible={qrOpen}
+        onClose={() => setQrOpen(false)}
+        qrCodeToken={member?.qrCodeToken}
+        membershipNumber={member?.membershipNumber}
+      />
     </View>
   );
 }
+
+function Stat({ label, value, unit }: { label: string; value: number | undefined; unit?: string }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
+  return (
+    <View style={styles.flex}>
+      <Text style={[styles.eyebrow, { color: C.textMuted }]}>{label}</Text>
+      <Text variant="metric" style={{ color: C.text }}>
+        {value ?? '–'}
+        {unit && value !== undefined ? <Text variant="label" style={{ color: C.textMuted }}>{` ${unit}`}</Text> : null}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  content: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.xl },
+  stack: { gap: SPACING.md - 4 },
+  card: { borderWidth: 1, borderRadius: RADIUS.xl, padding: SPACING.md, gap: SPACING.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  between: { justifyContent: 'space-between' },
+  flex: { flex: 1, minWidth: 0 },
+  tick: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  stats: { flexDirection: 'row', borderTopWidth: 1, paddingTop: SPACING.sm + 4, marginTop: SPACING.xs },
+  eyebrow: { fontFamily: fonts.bodyMedium, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' },
+  mono: { ...FONT.mono, fontSize: 13 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  hint: { textAlign: 'center' },
+});

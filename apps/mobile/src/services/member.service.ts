@@ -21,6 +21,10 @@ export const memberService = {
   selfCheckIn: (gymId: string) =>
     api.post<CheckIn>(`/gyms/${gymId}/checkins`, { method: 'APP_SELF_CHECKIN' }),
 
+  /** Members may close their own active check-in; the API checks ownership. */
+  selfCheckOut: (gymId: string, checkinId: string) =>
+    api.patch<Pick<CheckIn, 'id' | 'checkedOutAt'>>(`/gyms/${gymId}/checkins/${checkinId}/checkout`),
+
   getMyProfile: (gymId: string) =>
     api.get<MemberProfile>(`/gyms/${gymId}/members/me/profile`),
 

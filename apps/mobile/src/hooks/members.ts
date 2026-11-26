@@ -76,10 +76,35 @@ export function useSelfCheckIn() {
       if (!gymId) throw new Error('Not authenticated');
       return memberService.selfCheckIn(gymId);
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      // Show the new check-in at once (the Check In screen and tab dot read it), then confirm with a refetch.
+      queryClient.setQueriesData<CheckIn[]>({ queryKey: [...memberKeys.all, 'me', 'checkins'] }, (prev) =>
+        prev ? [created, ...prev] : prev,
+      );
       queryClient.invalidateQueries({
         queryKey: [...memberKeys.all, 'me', 'checkins'],
       });
+      // Who's here should include the member straight away.
+      queryClient.invalidateQueries({ queryKey: memberKeys.activePublicCheckins(gymId) });
+    },
+  });
+}
+
+export function useSelfCheckOut() {
+  const { user } = useAuth();
+  const gymId = user?.gymId;
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (checkinId: string) => {
+      if (!gymId) throw new Error('Not authenticated');
+      return memberService.selfCheckOut(gymId, checkinId);
+    },
+    onSuccess: (closed) => {
+      queryClient.setQueriesData<CheckIn[]>({ queryKey: [...memberKeys.all, 'me', 'checkins'] }, (prev) =>
+        prev?.map((c) => (c.id === closed.id ? { ...c, checkedOutAt: closed.checkedOutAt } : c)),
+      );
+      queryClient.invalidateQueries({ queryKey: [...memberKeys.all, 'me', 'checkins'] });
+      queryClient.invalidateQueries({ queryKey: memberKeys.activePublicCheckins(gymId) });
     },
   });
 }

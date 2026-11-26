@@ -340,6 +340,9 @@ model Plan {
   maxGyms              Int       @default(1) @map("max_gyms")
   maxMembersPerGym     Int       @default(100) @map("max_members_per_gym")
   aiTokenQuotaMonthly  Int       @default(0) @map("ai_token_quota_monthly")
+  /// Monthly AI allowance per gym, in US micro-dollars (migration 0053).
+  assistantAiCapUsdMicros Int    @default(2500000) @map("assistant_ai_cap_usd_micros")
+  memberAiCapUsdMicros    Int    @default(3500000) @map("member_ai_cap_usd_micros")
   priceMonthly         Decimal   @map("price_monthly") @db.Decimal(10, 2)
   priceYearly          Decimal?  @map("price_yearly") @db.Decimal(10, 2)
   isActive             Boolean   @default(true) @map("is_active")
@@ -858,6 +861,11 @@ model AiUsageLog {
   userId         String?  @map("user_id") @db.Uuid
   featureKey     String   @map("feature_key")
   tokensUsed     Int      @map("tokens_used")
+  model          String?  @map("model") @db.VarChar(100)
+  inputTokens    Int      @default(0) @map("input_tokens")
+  outputTokens   Int      @default(0) @map("output_tokens")
+  /// What the call cost us in US micro-dollars (apps/api/src/common/adapters/ai/ai-pricing.ts).
+  costUsdMicros  Int      @default(0) @map("cost_usd_micros")
   metadata       Json     @default("{}")
   usedAt         DateTime @default(now()) @map("used_at") @db.Timestamptz
 

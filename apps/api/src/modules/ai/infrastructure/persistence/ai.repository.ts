@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 import { localDayBounds } from '../../../../common/prisma/local-day-bounds';
 import { localDate } from '../../../../common/time/local-date';
+import { costUsdMicros } from '../../../../common/adapters/ai/ai-pricing';
 
 export interface MemberContext {
   memberId: string;
@@ -157,9 +158,19 @@ export class AiRepository {
     });
   }
 
-  /** Records the tokens a reserved call actually used. */
-  async completeUsage(id: string, tokensUsed: number): Promise<void> {
-    await this.prisma.aiUsageLog.update({ where: { id }, data: { tokensUsed, metadata: {} } });
+  /** Records what a reserved call actually used and cost. */
+  async completeUsage(id: string, usage: { model: string; inputTokens: number; outputTokens: number }): Promise<void> {
+    await this.prisma.aiUsageLog.update({
+      where: { id },
+      data: {
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        tokensUsed: usage.inputTokens + usage.outputTokens,
+        costUsdMicros: costUsdMicros(usage.model, usage.inputTokens, usage.outputTokens),
+        metadata: {},
+      },
+    });
   }
 
   /** Drops a reservation whose provider call failed (nothing was billed). */

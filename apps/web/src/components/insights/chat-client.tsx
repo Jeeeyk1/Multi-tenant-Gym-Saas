@@ -6,6 +6,7 @@ import { queryInsights, type HistoryTurn } from '@/lib/actions/insights';
 import { ToolResultView } from './tool-result-views';
 import type { InsightsStep } from '@/types/api';
 
+const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
 const REVEAL_SETTLE_MS = 350;
 
@@ -61,9 +62,11 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
     return () => clearTimeout(t);
   }, [reveal]);
 
+  // The assistant only reads the last few turns; sending more just fails validation on long chats.
   function buildHistory(): HistoryTurn[] {
     return messages
       .filter((m) => !m.error)
+      .slice(-HISTORY_TURNS)
       .map((m) => ({ role: m.role, content: m.content }));
   }
 

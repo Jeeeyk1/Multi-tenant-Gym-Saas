@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { LlmPort } from '../../application/ports/llm.port';
 import type { LlmContent, LlmMessage, LlmRequest, LlmResult } from '../../domain/llm.types';
 
-const MAX_TOKENS = 1024;
+// Per model step. Answers are short summaries of tool results; this caps cost per question.
+const MAX_TOKENS = 800;
 
 export class AnthropicLlmAdapter implements LlmPort {
   constructor(
@@ -26,7 +27,9 @@ export class AnthropicLlmAdapter implements LlmPort {
     return {
       message: { role: 'assistant', content: response.content.map(fromAnthropicBlock) },
       stopReason: response.stop_reason ?? 'end_turn',
-      tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model: this.model,
     };
   }
 }

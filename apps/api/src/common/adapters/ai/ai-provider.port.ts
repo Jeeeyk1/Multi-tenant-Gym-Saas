@@ -1,6 +1,11 @@
 export interface AiResponse {
   text: string;
+  /** inputTokens + outputTokens. */
   tokensUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  /** The model that answered, for pricing (see ai-pricing.ts). */
+  model: string;
 }
 
 export interface AiProviderPort {

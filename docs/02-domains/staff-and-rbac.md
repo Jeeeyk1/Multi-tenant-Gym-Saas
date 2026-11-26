@@ -47,7 +47,8 @@ Three predefined system roles (`roles`, `is_system_role = true`), mirrored by `S
 | Badges: award | ✓ | ✓ | ✓ |
 | Badges: create custom badges (`badges.manage`) | ✓ | — | — |
 | Plans (`plans.view`) | ✓ | ✓ | — |
-| Reports, staff management, gym settings, billing, AI assistant | ✓ | — | — |
+| AI assistant (`insights.query`) | ✓ | ✓ (no revenue questions) | — |
+| Reports and revenue, staff management, gym settings, billing | ✓ | — | — |
 
 - **Several people can be Owner.** That's the answer for a manager who needs everything.
 - **Roles combine.** Permissions are the union of a person's roles, so a staff member who also coaches can hold

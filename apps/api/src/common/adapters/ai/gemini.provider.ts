@@ -30,8 +30,9 @@ export class GeminiProvider implements VisionProviderPort {
 
     const text = result.response.text();
     const usage = result.response.usageMetadata;
-    const tokensUsed = (usage?.promptTokenCount ?? 0) + (usage?.candidatesTokenCount ?? 0);
+    const inputTokens = usage?.promptTokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount ?? 0;
 
-    return { text, tokensUsed };
+    return { text, tokensUsed: inputTokens + outputTokens, inputTokens, outputTokens, model: this.model };
   }
 }

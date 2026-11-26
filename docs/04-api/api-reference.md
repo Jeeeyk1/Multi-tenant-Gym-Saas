@@ -1295,6 +1295,29 @@ Credentials:
 - `trainer@devgym.com` / `Password123!` — TRAINER (members' name and status only)
 - `member@devgym.com` / `Password123!` — ACTIVE member
 
+### AI assistant & usage
+
+#### POST /gyms/:gymId/insights/query
+`{ "message": "…", "history": [{ "role": "user" | "assistant", "content": "…" }] }`. Owner and Staff
+(`insights.query`). Only the last 6 history turns are used.
+Errors: `403 FEATURE_NOT_AVAILABLE`, `429 AI_ALLOWANCE_EXCEEDED` (monthly pool, message gives the reset date),
+`429 AI_DAILY_LIMIT_REACHED` (Owner 40 / Staff 15 per day), `429 RATE_LIMITED`. Revenue tools need `reports.view`.
+
+#### GET /gyms/:gymId/insights/usage
+```json
+{
+  "assistant": {
+    "pool": { "usedUsdMicros": 625000, "capUsdMicros": 2500000, "usedPct": 25, "resetsAt": "2026-12-01T00:00:00.000Z" },
+    "today": { "used": 3, "limit": 15 }
+  },
+  "members": { "usedUsdMicros": 0, "capUsdMicros": 3500000, "usedPct": 0, "resetsAt": "…" },
+  "canAskRevenue": false
+}
+```
+`assistant` is null without an active subscription. `members` is returned to owners only.
+Member AI endpoints also return `429 GYM_AI_ALLOWANCE_EXCEEDED` when the gym's member pool is used up. See
+`docs/02-domains/ai-usage.md`.
+
 ### Badges v2
 
 Badges belong to one of three categories: `CONSISTENCY`, `LOYALTY` or `STRENGTH`. A member can equip

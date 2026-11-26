@@ -34,6 +34,9 @@ export class GroqProvider implements AiProviderPort {
     return {
       text: response.choices[0]?.message?.content ?? '',
       tokensUsed: response.usage?.total_tokens ?? 0,
+      inputTokens: response.usage?.prompt_tokens ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
+      model: this.model,
     };
   }
 }

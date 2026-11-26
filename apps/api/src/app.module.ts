@@ -66,7 +66,7 @@ import { GymAccessGuard } from './common/guards/gym-access.guard';
         AI_REASONING_EFFORT: Joi.string().valid('low', 'medium', 'high').default('low'),
         // Vision AI — "Log a Meal" photo analysis runs on Claude (Anthropic).
         // Reuses ANTHROPIC_API_KEY; model overridable without a code change.
-        ANTHROPIC_VISION_MODEL: Joi.string().default('claude-opus-4-8'),
+        ANTHROPIC_VISION_MODEL: Joi.string().default('claude-haiku-4-5'),
         // Legacy Gemini vision config (no longer wired; kept for easy rollback)
         GEMINI_API_KEY: Joi.string().optional(),
         GEMINI_MODEL: Joi.string().default('gemini-2.0-flash'),

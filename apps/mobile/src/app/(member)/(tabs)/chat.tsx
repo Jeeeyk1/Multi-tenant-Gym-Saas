@@ -1,18 +1,21 @@
 /* eslint-disable no-console */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { AppLoader } from '../../components/AppLoader';
-import { chatService } from '../../services/chat.service';
-import { getAccessToken } from '../../services/api';
-import { useEquippedBadgesMap } from '../../hooks/badges';
-import { BadgeStack } from '../../components/badges/BadgeStack';
-import { EquippedBadgesSheet } from '../../components/badges/EquippedBadgesSheet';
-import { SPACING, RADIUS, FONT, type ColorPalette } from '../../constants/theme';
-import type { ChatMessage, EquippedBadge } from '../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
+import { AppLoader } from '../../../components/AppLoader';
+import { chatService } from '../../../services/chat.service';
+import { getAccessToken } from '../../../services/api';
+import { useEquippedBadgesMap } from '../../../hooks/badges';
+import { BadgeStack } from '../../../components/badges/BadgeStack';
+import { EquippedBadgesSheet } from '../../../components/badges/EquippedBadgesSheet';
+import { PressableScale, ScreenHeader } from '../../../components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { SPACING, RADIUS, FONT, type ColorPalette } from '../../../constants/theme';
+import type { ChatMessage, EquippedBadge } from '../../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
 const WS_BASE_URL = (() => {
@@ -81,6 +84,7 @@ function MessageBubble({
 
 export default function ChatScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const { theme } = useTheme();
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
@@ -262,11 +266,22 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}
     >
+      {/* One gym-wide conversation for now; channels come later (see docs/progress/2026-11-27). */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Community Chat</Text>
-        <Text style={[styles.headerStatus, isConnected ? styles.online : styles.offline]}>
-          {isConnected ? '● Online' : '○ Connecting…'}
-        </Text>
+        <ScreenHeader
+          title="Chat"
+          subtitle={isConnected ? 'Community · online' : 'Community · connecting…'}
+          right={
+            <PressableScale
+              onPress={() => router.push('/(member)/announcements')}
+              style={styles.headerAction}
+              accessibilityRole="button"
+              accessibilityLabel="Announcements"
+            >
+              <Ionicons name="megaphone-outline" size={22} color={theme.colors.text} />
+            </PressableScale>
+          }
+        />
       </View>
 
       <FlatList
@@ -345,17 +360,11 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
   },
   errorText: { color: C.error, fontSize: 14, textAlign: 'center' },
   header: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
     backgroundColor: C.surface,
   },
-  headerTitle: { fontSize: 18, ...FONT.semibold, color: C.text },
-  headerStatus: { fontSize: 11, marginTop: 2, ...FONT.regular },
-  online: { color: C.success },
-  offline: { color: C.textMuted },
+  headerAction: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   messageList: { padding: SPACING.md, gap: SPACING.sm, flexGrow: 1 },
   emptyChat: {
     flex: 1,

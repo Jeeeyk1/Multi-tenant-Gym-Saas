@@ -261,7 +261,7 @@ export default function OnboardingScreen() {
   async function skipForNow() {
     try {
       await updateProfile.mutateAsync({ onboardingDone: true });
-      router.replace('/(member)/dashboard');
+      router.replace('/(member)/(tabs)/dashboard');
     } catch (err) {
       setError(formatApiError(err, 'Could not save. Please try again.'));
     }
@@ -324,7 +324,7 @@ export default function OnboardingScreen() {
   async function finish() {
     try {
       await updateProfile.mutateAsync({ onboardingDone: true });
-      router.replace('/(member)/dashboard');
+      router.replace('/(member)/(tabs)/dashboard');
     } catch (err) {
       setError(formatApiError(err, 'Something went wrong. Please try again.'));
     }

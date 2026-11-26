@@ -29,6 +29,15 @@ Expo reads variables prefixed with `EXPO_PUBLIC_` at build time.
 `metro.config.js` extends Expo's default Metro config to watch the workspace root,
 enabling Metro to resolve `workspace:*` packages like `@gym-saas/contracts`.
 
+## Member navigation
+
+- `src/app/(member)/_layout.tsx` is a **stack**. Detail screens (announcements, leaderboard, membership, workout,
+  nutrition, badges, …) are pushed on it, so they slide in, support swipe-back and `router.back()` returns to the
+  previous screen.
+- `src/app/(member)/(tabs)/_layout.tsx` holds the five tabs: Home, Train, Check In, Chat, Me. The tab bar is
+  `components/navigation/DockTabBar.tsx` (floating dock; icons come from each screen's `tabBarIcon`).
+- Link to tabs with the group in the path, e.g. `/(member)/(tabs)/chat`; detail screens stay `/(member)/leaderboard`.
+
 ## UI kit and motion
 
 Shared building blocks live in `src/components/ui` (import from `components/ui`):

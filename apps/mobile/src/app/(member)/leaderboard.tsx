@@ -3,6 +3,8 @@ import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform,
 import { Text } from '../../components/Text';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import {
   useExercises,
@@ -340,6 +342,8 @@ function SubmitPrModal({
 export default function LeaderboardScreen() {
   const { theme } = useTheme();
   const C = theme.colors;
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const leaderboardQ = useLeaderboard();
   const exercisesQ = useExercises();
@@ -366,15 +370,16 @@ export default function LeaderboardScreen() {
         centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: C.background },
 
         header: {
-          paddingTop: 60,
           paddingHorizontal: SPACING.md,
           paddingBottom: 0,
         },
+        titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md },
+        // 44pt tap area, pulled left so the chevron lines up with the content edge.
+        backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 },
         pageTitle: {
           fontSize: 24,
           ...FONT.bold,
           color: C.text,
-          marginBottom: SPACING.md,
         },
         tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.border },
         tab: {
@@ -498,8 +503,13 @@ export default function LeaderboardScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.primary} />}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.pageTitle}>Leaderboard</Text>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+          <View style={styles.titleRow}>
+            <Pressable onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back" hitSlop={4}>
+              <Ionicons name="chevron-back" size={26} color={C.text} />
+            </Pressable>
+            <Text style={styles.pageTitle}>Leaderboard</Text>
+          </View>
           <View style={styles.tabRow}>
             {(['board', 'mine'] as const).map((t) => (
               <Pressable

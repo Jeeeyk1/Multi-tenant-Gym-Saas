@@ -1,25 +1,25 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { AppLoader } from '../../components/AppLoader';
-import { useActivePublicCheckins, useMyMember, useMyCheckIns, useMyProfile } from '../../hooks/members';
-import { useCurrentFitnessPlan, useDailyNutrition } from '../../hooks/fitness-plan';
-import { TodayCard } from '../../components/dashboard/TodayCard';
-import { SetupPlanCard } from '../../components/dashboard/SetupPlanCard';
-import { WeightCard } from '../../components/dashboard/WeightCard';
-import { UnitSystem } from '../../constants/enums';
-import { GreetingBanner } from '../../components/GreetingBanner';
-import { NewBadgeCelebration } from '../../components/badges/NewBadgeCelebration';
-import { MembershipCard } from '../../components/MembershipCard';
-import { useWorkout } from '../../context/WorkoutContext';
-import { SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { CheckIn } from '../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
+import { AppLoader } from '../../../components/AppLoader';
+import { useActivePublicCheckins, useMyMember, useMyCheckIns, useMyProfile } from '../../../hooks/members';
+import { useCurrentFitnessPlan, useDailyNutrition } from '../../../hooks/fitness-plan';
+import { TodayCard } from '../../../components/dashboard/TodayCard';
+import { SetupPlanCard } from '../../../components/dashboard/SetupPlanCard';
+import { WeightCard } from '../../../components/dashboard/WeightCard';
+import { UnitSystem } from '../../../constants/enums';
+import { GreetingBanner } from '../../../components/GreetingBanner';
+import { NewBadgeCelebration } from '../../../components/badges/NewBadgeCelebration';
+import { MembershipCard } from '../../../components/MembershipCard';
+import { useWorkout } from '../../../context/WorkoutContext';
+import { SPACING, RADIUS, FONT } from '../../../constants/theme';
+import type { CheckIn } from '../../../types';
 
 function computeStreak(checkIns: CheckIn[]): { streak: number; lastCheckInToday: boolean } {
   if (!checkIns.length) return { streak: 0, lastCheckInToday: false };
@@ -308,7 +308,7 @@ export default function DashboardScreen() {
       <View style={s.quickActions}>
         <Pressable
           style={({ pressed }) => [s.quickActionBtn, pressed && { opacity: 0.8 }]}
-          onPress={() => router.push('/(member)/checkin')}
+          onPress={() => router.push('/(member)/(tabs)/checkin')}
         >
           <Ionicons name="scan-outline" size={24} color={theme.primary} />
           <Text style={s.quickActionLabel}>Check In</Text>

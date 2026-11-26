@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -72,6 +72,7 @@ interface Props {
 export default async function MemberDetailPage({ params }: Props) {
   const [user, { id: memberId }] = await Promise.all([getSessionUser(), params]);
   if (!user) return null;
+  if (!user.permissions.includes('members.view')) redirect('/dashboard');
 
   const canAward = user.permissions?.includes('badges.award') ?? false;
 

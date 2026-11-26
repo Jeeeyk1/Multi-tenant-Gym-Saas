@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -30,6 +31,7 @@ function CategoryBadge({ category }: { category: string }) {
 export default async function LeaderboardPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('leaderboard.view')) redirect('/dashboard');
 
   const [leaderboard, equippedRows, pendingCount] = await Promise.all([
     getOr<LeaderboardExerciseResult[], null>(`/gyms/${user.gymId}/leaderboard`, null),

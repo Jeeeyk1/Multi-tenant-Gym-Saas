@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: 'Announcements' };
 export default async function AnnouncementsPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('announcements.manage')) redirect('/dashboard');
 
   const announcements = await api
     .get<StaffAnnouncement[]>(`/gyms/${user.gymId}/announcements`)

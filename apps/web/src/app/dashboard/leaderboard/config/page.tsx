@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: 'Leaderboard settings' };
 export default async function LeaderboardConfigPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('leaderboard.manage')) redirect('/dashboard');
 
   const [allExercises, config] = await Promise.all([
     api.get<Exercise[]>(`/gyms/${user.gymId}/exercises`).catch(() => [] as Exercise[]),

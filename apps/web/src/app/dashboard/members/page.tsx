@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -17,6 +18,7 @@ interface Props {
 export default async function MembersPage({ searchParams }: Props) {
   const [user, { page: pageParam }] = await Promise.all([getSessionUser(), searchParams]);
   if (!user) return null;
+  if (!user.permissions.includes('members.view')) redirect('/dashboard');
 
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
 

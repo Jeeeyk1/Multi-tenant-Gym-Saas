@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: 'Pending lifts' };
 export default async function PendingApprovalsPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('leaderboard.review')) redirect('/dashboard');
 
   const submissions = await api
     .get<PrSubmission[]>(`/gyms/${user.gymId}/leaderboard/submissions/pending`)

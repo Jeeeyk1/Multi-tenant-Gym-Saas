@@ -48,6 +48,8 @@ Shared building blocks live in `src/components/ui` (import from `components/ui`)
 | `PressableScale` | Any custom tappable card or row that should shrink slightly when pressed. |
 | `Sheet` | Bottom sheets (drag down, backdrop tap or back to close). Use `BottomSheetTextInput` inside. |
 | `useToast()` | Results and errors (`show('Saved')`, `{ tone: 'error' }`, `{ action: { label: 'Undo', … } }`). Keep `Alert.alert` for questions that need an answer. |
+| `SlideToConfirm` | Actions an accidental tap shouldn't trigger (check-in). Screen readers confirm with a double-tap. |
+| `HoldButton` | Press-and-hold to confirm ending or destructive actions (check out). |
 | `Skeleton` | Loading placeholders shaped like the content, instead of a centred spinner. |
 | `EmptyState` | Empty lists, and failed loads with a "Try again" action (`tone="error"`). |
 | `ScreenHeader` | Member screen headers with a 44pt back button and safe-area padding. Staff screens keep `StaffHeader`. |

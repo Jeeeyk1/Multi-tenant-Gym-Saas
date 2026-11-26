@@ -15,7 +15,8 @@ const DOCK_HEIGHT = 58;
 
 /**
  * Floating tab bar. The active tab widens and shows its label; the others show only the icon.
- * Icons come from each screen's `tabBarIcon` option, labels from `title`.
+ * Icons come from each screen's `tabBarIcon` option, labels from `title`. `tabBarBadge` shows a count;
+ * an empty string shows a small status dot in `tabBarBadgeStyle.backgroundColor`.
  */
 export function DockTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { theme } = useTheme();
@@ -50,6 +51,7 @@ export function DockTabBar({ state, descriptors, navigation }: BottomTabBarProps
               onPress={onPress}
               onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
               badge={options.tabBarBadge}
+              badgeColor={StyleSheet.flatten(options.tabBarBadgeStyle)?.backgroundColor as string | undefined}
               icon={options.tabBarIcon?.({
                 focused,
                 color: focused ? theme.primary : C.textMuted,
@@ -83,6 +85,7 @@ function DockItem({
   focused,
   icon,
   badge,
+  badgeColor,
   onPress,
   onLongPress,
   accessibilityLabel,
@@ -91,6 +94,7 @@ function DockItem({
   focused: boolean;
   icon: React.ReactNode;
   badge?: string | number;
+  badgeColor?: string;
   onPress: () => void;
   onLongPress: () => void;
   accessibilityLabel: string;
@@ -124,8 +128,10 @@ function DockItem({
       >
         <View>
           {icon}
-          {badge != null ? (
-            <View style={[styles.badge, { backgroundColor: C.error, borderColor: C.surface }]}>
+          {badge === '' ? (
+            <Animated.View entering={FadeIn} style={[styles.dot, { backgroundColor: badgeColor ?? C.error, borderColor: C.surface }]} />
+          ) : badge != null ? (
+            <View style={[styles.badge, { backgroundColor: badgeColor ?? C.error, borderColor: C.surface }]}>
               <Text style={[styles.badgeText, { color: C.background }]}>{badge}</Text>
             </View>
           ) : null}
@@ -166,4 +172,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: { fontFamily: fonts.bodySemibold, fontSize: 9.5 },
+  dot: { position: 'absolute', top: -2, right: -4, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

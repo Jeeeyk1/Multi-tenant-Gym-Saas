@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
+import { MemberStatus } from '../../../../common/enums';
 
 const INVITE_TOKEN_EXPIRY_DAYS = 7;
 const MEMBERSHIP_NUMBER_PREFIX = 'MBR';
@@ -15,6 +16,26 @@ function generateMembershipNumber(): string {
 
 function generateQrToken(): string {
   return randomBytes(32).toString('hex');
+}
+
+// Anonymised accounts keep a unique, undeliverable email (.invalid is reserved and never resolves).
+const DELETED_NAME = 'Deleted member';
+const deletedEmail = (kind: 'member' | 'user', id: string) => `deleted-${kind}-${id}@deleted.invalid`;
+
+export interface MemberForDeletion {
+  memberId: string;
+  status: string;
+  passwordHash: string | null;
+  /** Other reasons the login must stay: staff or org roles, or membership at another gym. */
+  keepsLogin: boolean;
+  /** Staff at this gym chat under the same login, so their chat here stays. */
+  isStaffHere: boolean;
+}
+
+export interface AnonymiseOptions {
+  gymId: string;
+  anonymiseLogin: boolean;
+  isStaffHere: boolean;
 }
 
 export interface ProfileUpdateData {
@@ -142,7 +163,7 @@ export class MembersRepository {
 
   listMembers(gymId: string, skip: number, take: number) {
     return this.prisma.gymMember.findMany({
-      where: { gymId },
+      where: { gymId, status: { not: MemberStatus.DELETED } },
       skip,
       take,
       select: {
@@ -163,7 +184,133 @@ export class MembersRepository {
   }
 
   countMembers(gymId: string) {
-    return this.prisma.gymMember.count({ where: { gymId } });
+    return this.prisma.gymMember.count({ where: { gymId, status: { not: MemberStatus.DELETED } } });
+  }
+
+  async findMemberForDeletion(gymId: string, userId: string): Promise<MemberForDeletion | null> {
+    const member = await this.prisma.gymMember.findUnique({
+      where: { gymId_userId: { gymId, userId } },
+      select: { id: true, status: true, user: { select: { passwordHash: true } } },
+    });
+    if (!member) return null;
+    const [otherMemberships, staffRoles, staffHere, orgRoles] = await Promise.all([
+      this.prisma.gymMember.count({ where: { userId, id: { not: member.id }, status: { not: MemberStatus.DELETED } } }),
+      this.prisma.gymStaff.count({ where: { userId } }),
+      this.prisma.gymStaff.count({ where: { userId, gymId } }),
+      this.prisma.organizationMember.count({ where: { userId } }),
+    ]);
+    return {
+      memberId: member.id,
+      status: member.status,
+      passwordHash: member.user.passwordHash,
+      keepsLogin: otherMemberships + staffRoles + orgRoles > 0,
+      isStaffHere: staffHere > 0,
+    };
+  }
+
+  /**
+   * Deletes a member's personal, health and progress data and detaches the membership from the
+   * person, in one transaction. Renewals and check-ins stay, on a placeholder "Deleted member", so
+   * the gym's records still add up. Their chat in this gym is removed unless they are staff here.
+   * With `anonymiseLogin`, the login itself is anonymised too: sessions, devices and all chat.
+   *
+   * Returns the photo URLs to remove from storage once the transaction has committed (PR photos
+   * that no other submission uses), or null when the member was already deleted (e.g. a double tap).
+   */
+  async anonymiseMember(memberId: string, userId: string, opts: AnonymiseOptions): Promise<{ photoUrls: string[] } | null> {
+    const now = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      // Claims the row first: a second, concurrent deletion waits on this row lock and then finds nothing.
+      const claimed = await tx.gymMember.updateMany({
+        where: { id: memberId, status: { not: MemberStatus.DELETED } },
+        data: { status: MemberStatus.DELETED, deletedAt: now, updatedAt: now },
+      });
+      if (claimed.count === 0) return null;
+
+      const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
+      const [prPhotos, foodPhotos] = await Promise.all([
+        tx.memberPrSubmission.findMany({ where: { memberId }, select: { photoUrl: true } }),
+        tx.memberFoodLog.findMany({ where: { memberId, photoUrl: { not: null } }, select: { photoUrl: true } }),
+      ]);
+      // Photo URLs come from clients, so one may be shared with (or copied from) another member's submission.
+      const prUrls = prPhotos.map((row) => row.photoUrl);
+      const sharedPr = await tx.memberPrSubmission.findMany({
+        where: { photoUrl: { in: prUrls }, memberId: { not: memberId } },
+        select: { photoUrl: true },
+      });
+      const shared = new Set(sharedPr.map((row) => row.photoUrl));
+
+      const byMember = { where: { memberId } };
+      await tx.memberProfile.deleteMany(byMember);
+      await tx.memberPrivacy.deleteMany(byMember);
+      await tx.memberWeightLog.deleteMany(byMember);
+      await tx.memberFoodLog.deleteMany(byMember);
+      await tx.memberFitnessPlan.deleteMany(byMember);
+      await tx.memberWorkoutPlan.deleteMany(byMember);
+      await tx.memberMealPlan.deleteMany(byMember);
+      await tx.workoutSession.deleteMany(byMember);
+      await tx.memberPrSubmission.deleteMany(byMember);
+      await tx.memberBadge.deleteMany(byMember);
+      await tx.checkIn.updateMany({ where: { memberId, checkedOutAt: null }, data: { checkedOutAt: now } });
+
+      const placeholder = await tx.user.create({
+        data: { email: deletedEmail('member', memberId), fullName: DELETED_NAME, isActive: false, deletedAt: now },
+        select: { id: true },
+      });
+      await tx.gymMember.update({
+        where: { id: memberId },
+        data: {
+          userId: placeholder.id,
+          qrCodeToken: generateQrToken(),
+          promoId: null,
+          updatedAt: now,
+        },
+      });
+
+      // Bulk-invite rows hold the email and name the gym typed in.
+      await tx.memberInviteOutbox.deleteMany({ where: { gymId: opts.gymId, email: user.email } });
+
+      if (!opts.anonymiseLogin && !opts.isStaffHere) {
+        // The login stays for another gym or role, but their chat here was part of the member side.
+        const inThisGym = { conversation: { gymId: opts.gymId } };
+        await tx.message.updateMany({ where: { senderId: userId, ...inThisGym }, data: { content: null, metadata: {}, isDeleted: true } });
+        await tx.messageReaction.deleteMany({ where: { userId, message: inThisGym } });
+        await tx.messageRead.deleteMany({ where: { userId, message: inThisGym } });
+        await tx.conversationMember.deleteMany({ where: { userId, ...inThisGym } });
+      }
+
+      if (opts.anonymiseLogin) {
+        const byUser = { where: { userId } };
+        await tx.refreshToken.deleteMany(byUser);
+        await tx.userToken.deleteMany(byUser);
+        await tx.deviceToken.deleteMany(byUser);
+        await tx.notificationLog.deleteMany(byUser);
+        await tx.conversationMember.deleteMany(byUser);
+        await tx.messageReaction.deleteMany(byUser);
+        await tx.messageRead.deleteMany(byUser);
+        await tx.announcementRead.deleteMany(byUser);
+        await tx.message.updateMany({ where: { senderId: userId }, data: { content: null, metadata: {}, isDeleted: true } });
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            email: deletedEmail('user', userId),
+            fullName: DELETED_NAME,
+            phone: null,
+            passwordHash: null,
+            isActive: false,
+            emailVerifiedAt: null,
+            deletedAt: now,
+            updatedAt: now,
+          },
+        });
+      }
+
+      const photoUrls = [
+        ...prUrls.filter((url) => !shared.has(url)),
+        ...foodPhotos.map((row) => row.photoUrl).filter((url): url is string => Boolean(url)),
+      ];
+      return { photoUrls };
+    });
   }
 
   updateStatus(memberId: string, status: string) {

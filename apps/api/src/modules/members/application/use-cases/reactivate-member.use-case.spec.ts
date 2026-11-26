@@ -65,4 +65,10 @@ describe('ReactivateMemberUseCase', () => {
       code: 'GYM_ACCESS_DENIED',
     });
   });
+
+  it('refuses a member who deleted their account', async () => {
+    mockRepo.findMemberById.mockResolvedValue({ ...suspendedMember, status: 'DELETED' } as never);
+    await expect(useCase.execute('gym-1', 'member-1', gymCaller)).rejects.toMatchObject({ code: 'MEMBER_DELETED' });
+    expect(mockRepo.updateStatus).not.toHaveBeenCalled();
+  });
 });

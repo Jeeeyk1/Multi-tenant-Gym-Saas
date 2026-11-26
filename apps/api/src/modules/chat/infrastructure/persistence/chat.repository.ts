@@ -76,11 +76,12 @@ export class ChatRepository {
     });
   }
 
-  listMessages(conversationId: string, opts: { limit: number; before?: Date }) {
+  listMessages(conversationId: string, opts: { limit: number; before?: Date; excludeSenderIds?: string[] }) {
     return this.prisma.message.findMany({
       where: {
         conversationId,
         ...(opts.before ? { sentAt: { lt: opts.before } } : {}),
+        ...(opts.excludeSenderIds?.length ? { senderId: { notIn: opts.excludeSenderIds } } : {}),
       },
       select: MESSAGE_SELECT,
       orderBy: { sentAt: 'desc' },

@@ -3,7 +3,7 @@ import { ConflictError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
-import { Permission } from '../../../../common/enums';
+import { MemberStatus, Permission } from '../../../../common/enums';
 
 @Injectable()
 export class SuspendMemberUseCase {
@@ -16,6 +16,10 @@ export class SuspendMemberUseCase {
     const member = await this.repo.findMemberById(memberId, gymId);
     if (!member) {
       throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+    }
+
+    if (member.status === MemberStatus.DELETED) {
+      throw new ConflictError('This member deleted their account', 'MEMBER_DELETED');
     }
 
     if (member.status === 'SUSPENDED') {

@@ -42,6 +42,10 @@ model User {
   emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  /// Set when this login was anonymised because the person deleted their account.
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+  /// Version of the community chat rules this person accepted (null: never).
+  communityRulesVersion Int? @map("community_rules_version") @db.SmallInt
 
   // Relations
   userTokens                UserToken[]
@@ -68,6 +72,10 @@ model User {
   createdCustomBadges         GymCustomBadge[]
   createdMilestoneBadges      ExerciseMilestoneBadge[]
   awardedMemberBadges         MemberBadge[]
+  messageReports              MessageReport[]        @relation("ReportedBy")
+  reviewedMessageReports      MessageReport[]        @relation("ReportReviewedBy")
+  blocksMade                  UserBlock[]            @relation("Blocker")
+  blocksReceived              UserBlock[]            @relation("Blocked")
 
   @@map("users")
 }
@@ -164,6 +172,7 @@ model Gym {
   features             GymFeature[]
   staff                GymStaff[]
   members              GymMember[]
+  messageReports       MessageReport[]
   membershipPlans      MembershipPlan[]
   checkIns             CheckIn[]
   conversations        Conversation[]
@@ -486,6 +495,8 @@ model GymMember {
   expiryDate       DateTime @map("expiry_date") @db.Date
   joinedAt         DateTime @default(now()) @map("joined_at") @db.Timestamptz
   updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  /// Set with status DELETED when the member deleted their account (the row is anonymised, not removed).
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz
 
   gym            Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -780,6 +791,7 @@ model Message {
   replies      Message[]       @relation("ReplyTo")
   reads        MessageRead[]
   reactions    MessageReaction[]
+  reports      MessageReport[]
 
   @@map("messages")
 }
@@ -1116,3 +1128,42 @@ model MemberBadge {
   @@index([gymId])
   @@map("member_badges")
 }
+
+/// A report on a chat message, reviewed by staff with chat.manage (App Store guideline 1.2).
+model MessageReport {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gymId            String    @map("gym_id") @db.Uuid
+  messageId        String    @map("message_id") @db.Uuid
+  reporterUserId   String    @map("reporter_user_id") @db.Uuid
+  reason           String    @db.VarChar(30)
+  note             String?   @db.VarChar(500)
+  status           String    @default("OPEN") @db.VarChar(20)
+  reviewedByUserId String?   @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt       DateTime? @map("reviewed_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  gym        Gym     @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter   User    @relation("ReportedBy", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  reviewedBy User?   @relation("ReportReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([messageId, reporterUserId], map: "message_reports_once")
+  @@index([gymId, status, createdAt(sort: Desc)], map: "idx_message_reports_queue")
+  @@map("message_reports")
+}
+
+/// One person stops seeing another's chat messages. One-way and FitOps-wide.
+model UserBlock {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blockerUserId String   @map("blocker_user_id") @db.Uuid
+  blockedUserId String   @map("blocked_user_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  blocker User @relation("Blocker", fields: [blockerUserId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerUserId, blockedUserId], map: "user_blocks_once")
+  @@index([blockedUserId], map: "idx_user_blocks_blocked")
+  @@map("user_blocks")
+}
+

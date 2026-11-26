@@ -1,12 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { ChatRepository } from '../../infrastructure/persistence/chat.repository';
+import { ChatSafetyRepository } from '../../infrastructure/persistence/chat-safety.repository';
+import { COMMUNITY_RULES_VERSION } from '../../domain/community-rules';
+import { CommunityRulesPolicy } from '../community-rules.policy';
 import { NotFoundError } from '../../../../common/errors/not-found.error';
 import { ForbiddenError } from '../../../../common/errors/forbidden.error';
 import type { GymAuthUser } from '../../../../common/types/auth.types';
+import { MEMBER_ROLE } from '../../../../common/enums';
+
+/** A member token with no staff role. */
+const isMemberOnly = (caller: GymAuthUser) => caller.roles.length > 0 && caller.roles.every((role) => role === MEMBER_ROLE);
 
 @Injectable()
 export class SendMessageUseCase {
-  constructor(private readonly repo: ChatRepository) {}
+  constructor(
+    private readonly repo: ChatRepository,
+    private readonly safety: ChatSafetyRepository,
+    private readonly rulesPolicy: CommunityRulesPolicy,
+  ) {}
 
   async execute(
     gymId: string,
@@ -33,10 +44,19 @@ export class SendMessageUseCase {
     }
 
     // If the caller has a gym_members record, their membership must be ACTIVE to chat.
-    // Staff have no gym_members record so this check is skipped for them.
+    // Staff have no gym_members record so this check is skipped for them. A token that says
+    // "member" with no record left (the account was deleted) is refused, not treated as staff.
     const gymMember = await this.repo.findGymMemberStatus(gymId, caller.sub);
-    if (gymMember && gymMember.status !== 'ACTIVE') {
+    if (gymMember ? gymMember.status !== 'ACTIVE' : isMemberOnly(caller)) {
       throw new ForbiddenError('Membership is not active', 'MEMBERSHIP_NOT_ACTIVE');
+    }
+
+    // Members accept the community rules before their first post (App Store guideline 1.2).
+    if (conversation.type === 'COMMUNITY' && isMemberOnly(caller) && this.rulesPolicy.isEnforced()) {
+      const accepted = await this.safety.rulesVersion(caller.sub);
+      if (accepted !== COMMUNITY_RULES_VERSION) {
+        throw new ForbiddenError('Please accept the community rules first', 'COMMUNITY_RULES_NOT_ACCEPTED');
+      }
     }
 
     // A reply may only point at a message in this conversation — the stored

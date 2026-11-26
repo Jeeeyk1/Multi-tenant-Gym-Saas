@@ -177,9 +177,10 @@ export class BadgesRepository {
     });
   }
 
+  /** Members who deleted their account are left out: nothing new is written onto them. */
   findMemberInGym(gymId: string, memberId: string) {
     return this.prisma.gymMember.findFirst({
-      where: { id: memberId, gymId },
+      where: { id: memberId, gymId, status: { not: MemberStatus.DELETED } },
       select: { id: true },
     });
   }

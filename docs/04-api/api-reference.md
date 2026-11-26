@@ -611,6 +611,20 @@ Response `200`:
 
 ---
 
+#### POST /gyms/:gymId/members/me/delete-account
+The caller deletes their own member account. Body: `{ "password": "…" }`.
+Personal, health and progress data is deleted, and so is their chat in this gym (unless they are staff here).
+Renewals and check-ins stay, anonymised. A staff, owner or other-gym login stays (member side only). See
+`docs/02-domains/member.md`.
+Staff writes to a deleted member (`PATCH …/profile`, weight logs, badges, PRs on their behalf, renew, suspend,
+reactivate) return `409 MEMBER_DELETED`; reads still work.
+
+Response `200`: `{ "loginDeleted": true }` (`false` when the login stays because the person is also staff).
+Errors: `403 INVALID_PASSWORD`, `404 MEMBER_NOT_FOUND` (not a member here, or already deleted), `429 RATE_LIMITED`
+(5 attempts per 15 minutes).
+
+---
+
 #### PATCH /gyms/:gymId/members/me/profile
 Save the caller's fitness profile. Every field is optional so onboarding can save one step at a time.
 `PATCH /gyms/:gymId/members/:memberId/profile` is the staff version (`members.edit`); it ignores
@@ -1071,6 +1085,27 @@ or
 
 ---
 
+#### Chat safety: report, block, community rules, moderation
+See `docs/02-domains/community-chat.md` → Safety. All need auth; staff routes need `chat.manage`.
+
+| Route | Body / response |
+|---|---|
+| `GET /gyms/:gymId/chat/rules` | `{ "version": 1, "rules": ["…"], "accepted": false, "required": false }` (`required` follows `COMMUNITY_RULES_ENFORCED`) |
+| `POST /gyms/:gymId/chat/rules/accept` | `{ "version": 1 }` → the same shape with `accepted: true`. `422 RULES_OUTDATED` for an old version |
+| `POST /gyms/:gymId/chat/messages/:messageId/report` | `{ "reason": "SPAM" \| "HARASSMENT" \| "HATE" \| "SEXUAL" \| "VIOLENCE" \| "OTHER", "note"?: "…" }` → `{ "ok": true }` |
+| `GET /gyms/:gymId/chat/blocks` | `[{ "userId", "fullName", "blockedAt" }]` |
+| `POST /gyms/:gymId/chat/blocks` | `{ "userId": "…" }` → `{ "ok": true }` |
+| `DELETE /gyms/:gymId/chat/blocks/:userId` | `204` |
+| `GET /gyms/:gymId/chat/reports?page=1&limit=20` | `chat.manage`. `{ "data": [{ "messageId", "conversation", "content", "sender", "sentAt", "reportCount", "latestReportAt", "reports": [{ "reason", "note", "reporter", "createdAt" }] }], "meta": { "total", "page", "limit", "totalPages" } }` |
+| `POST /gyms/:gymId/chat/reports/:messageId/dismiss` | `chat.manage`. Keeps the message → `{ "ok": true, "status": "DISMISSED", "reportsClosed": 2 }` |
+| `POST /gyms/:gymId/chat/reports/:messageId/remove` | `chat.manage`. Removes the message and sends `message.deleted` → `status: "REMOVED"` |
+
+`GET …/messages` leaves out messages from people the caller blocked and hides their text quoted in replies. Live
+`message.new` events skip people who blocked the sender. With `COMMUNITY_RULES_ENFORCED=true`, members get
+`403 COMMUNITY_RULES_NOT_ACCEPTED` when posting before accepting the rules.
+
+---
+
 #### POST /gyms/:gymId/conversations/:conversationId/read
 Update `last_read_at` to now. Used to track unread count.
 
@@ -1302,6 +1337,30 @@ Credentials:
 (`insights.query`). Only the last 6 history turns are used.
 Errors: `403 FEATURE_NOT_AVAILABLE`, `429 AI_ALLOWANCE_EXCEEDED` (monthly pool, message gives the reset date),
 `429 AI_DAILY_LIMIT_REACHED` (Owner 40 / Staff 15 per day), `429 RATE_LIMITED`. Revenue tools need `reports.view`.
+
+Returns `{ answer, toolsUsed, steps, pendingAction }`. `pendingAction` is null unless the assistant proposed an action
+(register, renew, suspend or reactivate a member). Proposed actions never run on their own:
+```json
+{
+  "id": "6f1c…",
+  "action": "suspend_member",
+  "summary": "Suspend Juan Cruz (MBR-0001). They won't be able to check in until reactivated.",
+  "confirmLabel": "Suspend",
+  "expiresAt": "2026-11-27T10:10:00.000Z"
+}
+```
+
+#### POST /gyms/:gymId/insights/actions/:actionId/confirm
+Runs a proposed action. It works only for the person it was proposed to, within 10 minutes, and only once. The
+action's own permission (`members.create`, `members.renew`, `members.suspend` or `members.edit`) is checked when it is
+proposed and again when it runs. No AI call, so it doesn't count toward the allowance.
+Returns `{ "ok": true, "message": "Suspended Juan Cruz." }`. `404 ACTION_NOT_FOUND` when it expired, was already
+handled, or isn't yours. Errors from the action itself (e.g. `403 PERMISSION_DENIED`) pass through.
+A confirm that fails still uses up the action, so the user asks the assistant again. Cases that would certainly
+fail (already suspended, already active, renewing with no plan) are refused when proposed instead.
+
+#### POST /gyms/:gymId/insights/actions/:actionId/cancel
+Drops a proposed action. `204`, also when there was nothing to cancel.
 
 #### GET /gyms/:gymId/insights/usage
 ```json

@@ -73,6 +73,8 @@ import { GymAccessGuard } from './common/guards/gym-access.guard';
         // Email (Resend)
         RESEND_API_KEY: Joi.string().required(),
         EMAIL_FROM: Joi.string().default('noreply@gym.noetecha.com'),
+        // Members must accept the community rules before posting. Off until apps that show the rules ship.
+        COMMUNITY_RULES_ENFORCED: Joi.boolean().default(false),
         WEB_URL: Joi.string().uri().default('http://localhost:9002'),
       }),
     }),

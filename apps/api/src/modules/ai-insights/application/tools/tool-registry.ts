@@ -9,6 +9,8 @@ import type { LlmContent, LlmToolSchema } from '../../domain/llm.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { METRIC_ENTITIES, validateMetricQuery, describeFilterValues, type MetricEntity } from './metric.whitelist';
 import { validateTrendQuery } from './trend.whitelist';
+import { hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 interface ToolCall {
   id: string;
@@ -30,6 +32,13 @@ export interface ToolExecutionResult {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Staff get the assistant for day-to-day questions; money totals stay with the owner (reports.view).
+const REVENUE_DENIED = 'Revenue figures are only available to the gym owner.';
+
+function assertCanSeeRevenue(caller: AuthenticatedUser): void {
+  if (!hasPermission(caller, Permission.REPORTS_VIEW)) throw new Error(REVENUE_DENIED);
+}
 
 const STEP_LABELS: Record<string, string> = {
   find_member: 'Looking up member',
@@ -130,10 +139,16 @@ export class ToolRegistry {
           requireString(input.member_id, 'member_id'),
           optionalString(input.date),
         );
-      case 'query_metric':
-        return this.repo.runMetric(gymId, validateMetricQuery(input));
-      case 'get_trend':
-        return this.repo.runTrend(gymId, validateTrendQuery(input));
+      case 'query_metric': {
+        const query = validateMetricQuery(input);
+        if (query.entity === 'renewals' && query.aggregate !== 'count') assertCanSeeRevenue(caller);
+        return this.repo.runMetric(gymId, query);
+      }
+      case 'get_trend': {
+        const query = validateTrendQuery(input);
+        if (query.field === 'amount') assertCanSeeRevenue(caller);
+        return this.repo.runTrend(gymId, query);
+      }
 
       case 'list_membership_plans': {
         const plans = await this.plansRepo.listByGym(gymId);

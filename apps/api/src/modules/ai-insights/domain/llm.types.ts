@@ -23,5 +23,8 @@ export interface LlmRequest {
 export interface LlmResult {
   message: LlmMessage;
   stopReason: string;
-  tokensUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  /** The model that answered, for pricing. */
+  model: string;
 }

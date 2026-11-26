@@ -17,7 +17,8 @@ JOIN permissions p ON (
   OR
 
   -- STAFF: front desk, members and renewals, the community, leaderboard (the owner can switch
-  -- leaderboard.manage off per gym). No staff management, reports, settings, billing or AI.
+  -- leaderboard.manage off per gym), and the AI assistant without revenue tools (migration 0053).
+  -- No staff management, reports, settings or billing.
   (r.name = 'STAFF' AND p.key IN (
     'members.view', 'members.details', 'members.create', 'members.edit', 'members.renew', 'members.suspend',
     'checkins.view', 'checkins.manage',
@@ -25,7 +26,8 @@ JOIN permissions p ON (
     'chat.manage',
     'plans.view',
     'leaderboard.view', 'leaderboard.submit', 'leaderboard.review', 'leaderboard.manage',
-    'badges.award'
+    'badges.award',
+    'insights.query'
   ))
 
   OR

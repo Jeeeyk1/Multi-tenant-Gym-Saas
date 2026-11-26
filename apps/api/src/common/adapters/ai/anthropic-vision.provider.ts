@@ -23,7 +23,7 @@ export class AnthropicVisionProvider implements VisionProviderPort {
   private readonly client: Anthropic;
   private readonly model: string;
 
-  constructor(apiKey: string, model = 'claude-opus-4-8') {
+  constructor(apiKey: string, model = 'claude-haiku-4-5') {
     this.client = new Anthropic({ apiKey });
     this.model = model;
   }
@@ -58,6 +58,9 @@ export class AnthropicVisionProvider implements VisionProviderPort {
     return {
       text,
       tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model: this.model,
     };
   }
 }

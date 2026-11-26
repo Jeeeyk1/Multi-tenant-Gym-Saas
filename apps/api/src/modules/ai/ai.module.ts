@@ -17,9 +17,10 @@ import { GetExerciseMediaUseCase } from './application/use-cases/get-exercise-me
 import { MemberAiLimitsService } from './application/member-ai-limits.service';
 import { GetMemberAiUsageUseCase } from './application/use-cases/get-member-ai-usage.use-case';
 import { AiController } from './presentation/controllers/ai.controller';
+import { AiUsageModule } from '../ai-usage/ai-usage.module';
 
 @Module({
-  imports: [AiProviderModule, VisionProviderModule, StorageModule],
+  imports: [AiProviderModule, VisionProviderModule, StorageModule, AiUsageModule],
   controllers: [AiController],
   providers: [
     AiRepository,

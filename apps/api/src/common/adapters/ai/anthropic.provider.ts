@@ -25,6 +25,9 @@ export class AnthropicProvider implements AiProviderPort {
     return {
       text,
       tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model: this.model,
     };
   }
 }

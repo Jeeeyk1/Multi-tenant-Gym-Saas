@@ -8,6 +8,7 @@ import { InsightsToolResultView } from '../../components/InsightsToolResultView'
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { InsightsHistoryTurn, InsightsStep } from '../../types';
 
+const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
 const REVEAL_SETTLE_MS = 350;
 
@@ -64,8 +65,10 @@ export default function StaffInsightsScreen() {
     const trimmed = text.trim();
     if (!trimmed || mutation.isPending) return;
 
+    // The assistant only reads the last few turns; sending more just fails validation on long chats.
     const history: InsightsHistoryTurn[] = messages
       .filter((m) => !m.error)
+      .slice(-HISTORY_TURNS)
       .map((m) => ({ role: m.role, content: m.content }));
 
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);

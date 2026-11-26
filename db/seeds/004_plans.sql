@@ -65,3 +65,11 @@ JOIN (VALUES
 ) AS f(plan_name, feature_key, is_included, limits)
   ON p.name = f.plan_name
 ON CONFLICT (plan_id, feature_key) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Monthly AI caps per gym (US micro-dollars). Same values as migration 0053, repeated
+-- here because this seed creates plans after the migrations have run on a fresh DB.
+-- ─────────────────────────────────────────────────────────────────────────────
+UPDATE plans SET assistant_ai_cap_usd_micros = 1500000, member_ai_cap_usd_micros = 2000000 WHERE tier = 'BASIC';
+UPDATE plans SET assistant_ai_cap_usd_micros = 2500000, member_ai_cap_usd_micros = 3500000 WHERE tier IN ('STANDARD', 'GROWTH');
+UPDATE plans SET assistant_ai_cap_usd_micros = 5000000, member_ai_cap_usd_micros = 7000000 WHERE tier IN ('PRO', 'ENTERPRISE');

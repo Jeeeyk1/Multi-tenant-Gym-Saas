@@ -11,6 +11,7 @@ const mockRepo = {
   findGymStaffWithPermissions: jest.fn(),
   findGymMember: jest.fn(),
   findGymRoleOverrides: jest.fn().mockResolvedValue([]),
+  findGymCode: jest.fn().mockResolvedValue('FITMNL'),
   revokeRefreshTokenById: jest.fn().mockResolvedValue(undefined),
   generateRefreshTokenPair: jest.fn().mockReturnValue({ raw: 'new-raw', hash: 'new-hash' }),
   saveRefreshToken: jest.fn().mockResolvedValue(undefined),
@@ -70,7 +71,7 @@ describe('RefreshTokenUseCase', () => {
 
     expect(mockRepo.revokeRefreshTokenById).toHaveBeenCalledWith('rt-2');
     expect(mockJwt.sign).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'gym', gymId: 'gym-1', roles: ['MANAGER'] }),
+      expect.objectContaining({ type: 'gym', gymId: 'gym-1', gymCode: 'FITMNL', roles: ['MANAGER'] }),
     );
     expect(result.refreshToken).toBe('new-raw');
   });

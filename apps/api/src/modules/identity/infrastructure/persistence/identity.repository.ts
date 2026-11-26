@@ -20,6 +20,11 @@ export class IdentityRepository {
     });
   }
 
+  async findGymCode(gymId: string): Promise<string | null> {
+    const gym = await this.prisma.gym.findUnique({ where: { id: gymId }, select: { code: true } });
+    return gym?.code ?? null;
+  }
+
   findGymByCode(code: string) {
     return this.prisma.gym.findFirst({
       where: { code: code.toUpperCase(), status: 'ACTIVE' },

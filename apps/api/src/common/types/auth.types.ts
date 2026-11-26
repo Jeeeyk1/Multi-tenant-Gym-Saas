@@ -22,6 +22,8 @@ export interface GymAuthUser {
   sub: string;
   type: 'gym';
   gymId: string;
+  /** The gym's login code (e.g. DEVGYM), for clients that link back to the gym's sign-in page. */
+  gymCode?: string;
   /** Role names — for informational purposes only. Always check permissions. */
   roles: string[];
   /**

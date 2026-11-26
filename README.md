@@ -1,4 +1,4 @@
-# Gym SaaS — Monorepo
+# FitOps — Monorepo
 
 Multi-tenant gym management platform.
 

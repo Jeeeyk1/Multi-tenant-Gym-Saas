@@ -33,7 +33,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
   const { type = 'gym', name, activated } = await searchParams;
   const loginType = type === 'org' ? 'org' : 'gym';
 
-  // Subdomain visits have no query params, so ask the API.
+  // Direct visits (e.g. a bookmark) have no query params, so ask the API.
   const gymName = name ?? (await fetchGymName(code));
 
   return (

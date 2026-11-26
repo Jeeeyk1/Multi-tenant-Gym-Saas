@@ -1,6 +1,6 @@
 # @gym-saas/web
 
-Next.js 15 web application for the Gym SaaS platform.
+Next.js 15 web application for the FitOps platform.
 
 ## Local development
 

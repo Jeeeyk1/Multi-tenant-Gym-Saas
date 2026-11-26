@@ -170,7 +170,6 @@ echo "SUPERADMIN_TOKEN=$(openssl rand -base64 32)"
 ```bash
 NEXT_PUBLIC_API_URL=https://your-domain.com/api/v1
 NEXT_PUBLIC_LANDING_URL=https://your-landing-domain.com
-APP_HOST=your-domain.com   # host only, no https://; required for gym subdomains
 ```
 
 ---

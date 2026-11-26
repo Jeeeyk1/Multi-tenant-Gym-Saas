@@ -1,6 +1,6 @@
 # Cron Job Architecture
 
-This document defines how background scheduled jobs are designed, structured, and executed in the Gym SaaS platform.
+This document defines how background scheduled jobs are designed, structured, and executed in the FitOps platform.
 
 ---
 

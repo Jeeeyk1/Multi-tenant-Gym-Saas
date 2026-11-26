@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Subdomains that are never treated as gym slugs.
-const RESERVED_SUBDOMAINS = new Set([
-  'www', 'admin', 'api', 'app', 'landing', 'mail', 'smtp', 'status',
-]);
-
 function decodeJwtPayload(token: string): Record<string, unknown> {
   try {
     const segment = token.split('.')[1];
@@ -16,23 +11,6 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
   }
 }
 
-/**
- * Returns the gym/org slug if the request is coming from a known subdomain,
- * e.g. "onefitness" from "onefitness.lifthub.app".
- * Returns null for the root domain or reserved subdomains.
- */
-function extractGymSlug(request: NextRequest): string | null {
-  const appHost = (process.env.APP_HOST ?? 'lifthub.app').toLowerCase();
-  const hostname = request.headers.get('host')?.split(':')[0]?.toLowerCase() ?? '';
-
-  if (!hostname.endsWith(`.${appHost}`)) return null;
-
-  const sub = hostname.slice(0, -(appHost.length + 1));
-  if (!sub || RESERVED_SUBDOMAINS.has(sub)) return null;
-
-  return sub.toUpperCase(); // gym codes are uppercase
-}
-
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -40,9 +18,8 @@ const COOKIE_OPTS = {
   path: '/',
 };
 
-function redirectToLogin(request: NextRequest, slug: string | null): NextResponse {
-  const target = slug ? `/${slug}/login` : '/';
-  const res = NextResponse.redirect(new URL(target, request.url));
+function redirectToLogin(request: NextRequest): NextResponse {
+  const res = NextResponse.redirect(new URL('/', request.url));
   res.cookies.delete('access_token');
   res.cookies.delete('refresh_token');
   return res;
@@ -67,23 +44,12 @@ async function tryRefresh(
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const gymSlug = extractGymSlug(request);
-
-  // ── Subdomain root redirect ──────────────────────────────────────────────
-  // onefitness.lifthub.app/ → /ONEFITNESS/login (skip code-entry screen)
-  if (gymSlug && pathname === '/') {
-    return NextResponse.rewrite(new URL(`/${gymSlug}/login`, request.url));
-  }
-
-  // ── Protected route guard ────────────────────────────────────────────────
   const isDashboard = pathname.startsWith('/dashboard');
   const isOrg = pathname.startsWith('/org');
 
-  if (!isDashboard && !isOrg) return NextResponse.next();
-
   const token = request.cookies.get('access_token')?.value;
 
-  if (!token) return redirectToLogin(request, gymSlug);
+  if (!token) return redirectToLogin(request);
 
   try {
     const payload = decodeJwtPayload(token);
@@ -122,7 +88,7 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      return redirectToLogin(request, gymSlug);
+      return redirectToLogin(request);
     }
 
     const tokenType = payload.type as string;
@@ -137,13 +103,12 @@ export async function middleware(request: NextRequest) {
 
     return NextResponse.next();
   } catch {
-    return redirectToLogin(request, gymSlug);
+    return redirectToLogin(request);
   }
 }
 
 export const config = {
   matcher: [
-    '/',
     '/dashboard/:path*',
     '/org/:path*',
   ],

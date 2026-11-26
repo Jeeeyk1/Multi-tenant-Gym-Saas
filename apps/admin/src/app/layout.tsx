@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'LiftHub Admin',
+  title: 'FitOps Admin',
   description: 'System administrator portal',
 };
 

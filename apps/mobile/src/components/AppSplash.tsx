@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
-import { Logo } from './Logo';
-import { COLORS, FONT } from '../constants/theme';
+import { Logo, Wordmark } from './Logo';
+import { BRAND, FONT } from '../constants/theme';
 
 const TAGLINE = 'Train. Connect. Grow.';
 
@@ -92,16 +92,14 @@ export function AppSplash({ onDone }: AppSplashProps) {
           ]}
         />
         <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
-          <Logo size={90} showText={false} />
+          <Logo size={90} showText={false} tile={BRAND.white} />
         </Animated.View>
       </View>
 
-      {/* Gym name (or nothing if we don't know yet) */}
-      <Animated.Text
-        style={[styles.appName, { opacity: nameOpacity, transform: [{ translateY: nameY }] }]}
-      >
-        {gymName ?? ''}
-      </Animated.Text>
+      {/* The member's gym once we know it; FitOps before that. */}
+      <Animated.View style={{ opacity: nameOpacity, transform: [{ translateY: nameY }], marginBottom: 10 }}>
+        {gymName ? <Animated.Text style={styles.appName}>{gymName}</Animated.Text> : <Wordmark size={30} />}
+      </Animated.View>
 
       {/* Tagline — character by character */}
       <View style={styles.taglineRow}>
@@ -123,7 +121,8 @@ export function AppSplash({ onDone }: AppSplashProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    // Matches the native splash, so the hand-off has no color flash.
+    backgroundColor: BRAND.navy,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -143,10 +142,9 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 28,
-    color: COLORS.text,
+    color: BRAND.white,
     ...FONT.bold,
     letterSpacing: -0.5,
-    marginBottom: 10,
     textAlign: 'center',
   },
   taglineRow: {
@@ -155,7 +153,7 @@ const styles = StyleSheet.create({
   },
   taglineChar: {
     fontSize: 15,
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.7)',
     ...FONT.regular,
     letterSpacing: 0.3,
   },
@@ -165,7 +163,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: COLORS.border,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   progressFill: {
     height: 2,

@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>FitZone</string>
+    <string>FitOps</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -50,9 +50,9 @@
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
     <key>NSHealthShareUsageDescription</key>
-    <string>FitZone reads your workout calories and heart rate so you can track your fitness progress.</string>
+    <string>FitOps reads your workout calories and heart rate so you can track your fitness progress.</string>
     <key>NSHealthUpdateUsageDescription</key>
-    <string>FitZone saves your workout sessions to Apple Health.</string>
+    <string>FitOps saves your workout sessions to Apple Health.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>

@@ -30,3 +30,6 @@ export { BadgeCategory } from './badge-category.enum';
 export { Permission } from './permission.enum';
 export { BadgeRarity } from './badge-rarity.enum';
 export { AssistantAction } from './assistant-action.enum';
+export { ReportReason } from './report-reason.enum';
+export { MessageReportStatus } from './message-report-status.enum';
+export { ReportAction } from './report-action.enum';

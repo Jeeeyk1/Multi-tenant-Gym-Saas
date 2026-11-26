@@ -146,6 +146,41 @@ This naming works for all current and future conversation types:
 
 Adding new conversation types requires no changes to the gateway.
 
+Each socket also joins `gym-user:{gymId}:{userId}` when it connects. That room is used to leave blockers out of a live
+message and to close a person's sockets (account deletion). `ChatSessionsService` reaches these rooms from REST code.
+
+---
+
+## Safety (App Store guideline 1.2)
+
+Apps with user-generated content must let people report content and block users, and must act on reports.
+
+- **Community rules.** `GET /gyms/:gymId/chat/rules` returns the rules (`modules/chat/domain/community-rules.ts`) and
+  whether the caller accepted them. Once `COMMUNITY_RULES_ENFORCED=true`, members must accept the current version
+  (`POST …/chat/rules/accept`) before posting in community chat (`403 COMMUNITY_RULES_NOT_ACCEPTED`). Staff, including
+  staff who are also members, aren't asked. `required` in the response tells the app whether to ask.
+  - **Rollout:** the switch is off by default. Turn it on only once the web and mobile builds that show the rules are
+    live, because older apps can't accept them and their members couldn't post.
+  - Changing the rules means bumping `COMMUNITY_RULES_VERSION`, and everyone accepts again.
+- **Report a message.** Anyone who can see a message can report it, with a reason (`ReportReason`) and an optional
+  note. Once per person per message; reporting again is a no-op. Your own messages can't be reported. Each new report
+  is logged at `warn`.
+- **Block a user.** One-way and FitOps-wide: the blocker stops seeing that person's messages, in the history and live.
+  The blocked person isn't told and still sees the blocker. Only people in this gym can be blocked.
+  - In the history, a reply that quotes a blocked person comes back with the quote hidden (`content: null`,
+    `isDeleted: true`).
+  - Live events go to the whole room and can't be edited per person. The apps hide blocked people's quotes and
+    reactions using `GET …/chat/blocks`.
+  - If the blockers lookup fails after a message is saved, it goes to the whole room rather than failing the send,
+    because the app would resend and post twice. This is logged at `warn`.
+- **Moderation queue** (`chat.manage`): `GET …/chat/reports?page=&limit=` lists messages with open reports, the most
+  recently reported first, 20 per page (50 at most). Reports are grouped in SQL, so the counts are always complete.
+  - Staff dismiss (keep the message) or remove it. Both close every open report on that message and record who
+    reviewed it.
+  - Removing soft-deletes the message and closes the reports in one transaction, then sends `message.deleted` to
+    open chats.
+  - Everyone with `chat.manage` sees who reported each message.
+
 ---
 
 ## Unread count
@@ -203,6 +238,12 @@ Add a `user:{userId}` room in the gateway for server-initiated events that don't
 | `MEMBERSHIP_NOT_ACTIVE` | 403 | Member's gym membership is EXPIRED or SUSPENDED |
 | `MESSAGE_NOT_FOUND` | 404 | Message does not exist or is already deleted |
 | `MESSAGE_CANNOT_DELETE` | 403 | Not the sender and no `chat.manage` permission |
+| `COMMUNITY_RULES_NOT_ACCEPTED` | 403 | A member posting in community chat before accepting the current rules |
+| `RULES_OUTDATED` | 422 | Accepting a rules version that isn't the current one |
+| `CANNOT_REPORT_OWN` | 422 | Reporting your own message |
+| `CANNOT_BLOCK_SELF` | 422 | Blocking yourself |
+| `USER_NOT_FOUND` | 404 | Blocking someone who isn't in this gym |
+| `REPORT_NOT_FOUND` | 404 | Resolving a message with no open reports |
 
 ---
 
@@ -223,4 +264,4 @@ Not in MVP:
 - Message editing
 - Per-message read receipts (schema exists, not used)
 - Push notifications
-- Moderation tools beyond soft delete
+- Moderation beyond the reports queue (e.g. muting or banning a person from chat)

@@ -12,12 +12,13 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 import { ChatRepository } from './infrastructure/persistence/chat.repository';
+import { ChatSafetyRepository } from './infrastructure/persistence/chat-safety.repository';
 import { SendMessageUseCase } from './application/use-cases/send-message.use-case';
 import { DeleteMessageUseCase } from './application/use-cases/delete-message.use-case';
 import { ReactToMessageUseCase } from './application/use-cases/react-to-message.use-case';
 import { MarkConversationReadUseCase } from './application/use-cases/mark-conversation-read.use-case';
 import type { GymAuthUser } from '../../common/types/auth.types';
-import { ChatSessionsService, gymUserRoom } from './application/chat-sessions.service';
+import { ChatSessionsService, conversationRoom, gymUserRoom } from './application/chat-sessions.service';
 
 // ─── Payload shapes ───────────────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly reactToMessageUseCase: ReactToMessageUseCase,
     private readonly markConversationReadUseCase: MarkConversationReadUseCase,
     private readonly sessions: ChatSessionsService,
+    private readonly safety: ChatSafetyRepository,
   ) {}
 
   afterInit(server: Server) {
@@ -189,7 +191,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         { content, replyToId },
         user,
       );
-      this.server.to(this.room(conversationId)).emit('message.new', message);
+      // People who blocked the sender don't get it live either (their history leaves it out too).
+      const blockers = await this.blockersOf(user.sub);
+      this.server
+        .to(this.room(conversationId))
+        .except(blockers.map((blockerId) => gymUserRoom(user.gymId, blockerId)))
+        .emit('message.new', message);
       return { ok: true, message };
     } catch (err: any) {
       return { error: err.code ?? 'SEND_FAILED', message: err.message };
@@ -288,8 +295,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   /** Canonical room name. Prefix makes it easy to add other room types later. */
+  /**
+   * The message is already saved, so a failed lookup must not turn into a "send failed" ack (the app
+   * would resend and post it twice). It falls back to everyone, as before blocking existed.
+   */
+  private async blockersOf(userId: string): Promise<string[]> {
+    try {
+      return await this.safety.blockerIds(userId);
+    } catch (err) {
+      this.logger.warn(`blockers not loaded; sending to the whole room user=${userId}: ${err instanceof Error ? err.message : String(err)}`);
+      return [];
+    }
+  }
+
   private room(conversationId: string): string {
-    return `conversation:${conversationId}`;
+    return conversationRoom(conversationId);
   }
 
   /**

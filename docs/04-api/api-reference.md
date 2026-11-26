@@ -1085,6 +1085,27 @@ or
 
 ---
 
+#### Chat safety: report, block, community rules, moderation
+See `docs/02-domains/community-chat.md` → Safety. All need auth; staff routes need `chat.manage`.
+
+| Route | Body / response |
+|---|---|
+| `GET /gyms/:gymId/chat/rules` | `{ "version": 1, "rules": ["…"], "accepted": false, "required": false }` (`required` follows `COMMUNITY_RULES_ENFORCED`) |
+| `POST /gyms/:gymId/chat/rules/accept` | `{ "version": 1 }` → the same shape with `accepted: true`. `422 RULES_OUTDATED` for an old version |
+| `POST /gyms/:gymId/chat/messages/:messageId/report` | `{ "reason": "SPAM" \| "HARASSMENT" \| "HATE" \| "SEXUAL" \| "VIOLENCE" \| "OTHER", "note"?: "…" }` → `{ "ok": true }` |
+| `GET /gyms/:gymId/chat/blocks` | `[{ "userId", "fullName", "blockedAt" }]` |
+| `POST /gyms/:gymId/chat/blocks` | `{ "userId": "…" }` → `{ "ok": true }` |
+| `DELETE /gyms/:gymId/chat/blocks/:userId` | `204` |
+| `GET /gyms/:gymId/chat/reports?page=1&limit=20` | `chat.manage`. `{ "data": [{ "messageId", "conversation", "content", "sender", "sentAt", "reportCount", "latestReportAt", "reports": [{ "reason", "note", "reporter", "createdAt" }] }], "meta": { "total", "page", "limit", "totalPages" } }` |
+| `POST /gyms/:gymId/chat/reports/:messageId/dismiss` | `chat.manage`. Keeps the message → `{ "ok": true, "status": "DISMISSED", "reportsClosed": 2 }` |
+| `POST /gyms/:gymId/chat/reports/:messageId/remove` | `chat.manage`. Removes the message and sends `message.deleted` → `status: "REMOVED"` |
+
+`GET …/messages` leaves out messages from people the caller blocked and hides their text quoted in replies. Live
+`message.new` events skip people who blocked the sender. With `COMMUNITY_RULES_ENFORCED=true`, members get
+`403 COMMUNITY_RULES_NOT_ACCEPTED` when posting before accepting the rules.
+
+---
+
 #### POST /gyms/:gymId/conversations/:conversationId/read
 Update `last_read_at` to now. Used to track unread count.
 

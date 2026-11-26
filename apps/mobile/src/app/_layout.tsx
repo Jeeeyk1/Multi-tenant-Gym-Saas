@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { Text } from '../components/Text';
 import { useFonts } from 'expo-font';
 import {
@@ -20,7 +20,8 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { WorkoutProvider } from '../context/WorkoutContext';
 import { AppSplash } from '../components/AppSplash';
-import { COLORS } from '../constants/theme';
+import { AppLoader } from '../components/AppLoader';
+import { BRAND, COLORS } from '../constants/theme';
 import { queryClient, subscribeAppStateToFocusManager } from '../lib/query-client';
 import { subscribeToNotificationTaps } from '../services/push.service';
 
@@ -30,8 +31,8 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={theme.primary} size="large" />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <AppLoader />
       </View>
     );
   }
@@ -78,9 +79,8 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
-      </View>
+      // Plain Navy while fonts load: it continues the native splash until the animated one starts.
+      <View style={{ flex: 1, backgroundColor: BRAND.navy }} />
     );
   }
 

@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import type { EquippedBadge } from '../../types';
 import { BadgeMedal } from './BadgeMedal';
 import { CATEGORY_LABEL } from './badge-labels';
-import { Sheet } from './Sheet';
+import { Sheet } from '../ui';
 
 /** What someone's equipped badges mean — opened from chat, leaderboard or Who's Here. */
 export function EquippedBadgesSheet({

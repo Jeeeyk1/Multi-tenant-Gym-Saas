@@ -17,11 +17,14 @@ import {
 import { JetBrainsMono_400Regular, JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { WorkoutProvider } from '../context/WorkoutContext';
 import { AppSplash } from '../components/AppSplash';
 import { AppLoader } from '../components/AppLoader';
+import { ToastProvider } from '../components/ui';
 import { BRAND, COLORS } from '../constants/theme';
 import { queryClient, subscribeAppStateToFocusManager } from '../lib/query-client';
 import { subscribeToNotificationTaps } from '../services/push.service';
@@ -98,18 +101,25 @@ export default function RootLayout() {
     );
   }
 
+  // Toasts sit outside the sheet provider so they show above an open sheet.
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
-            <WorkoutProvider>
-              <StatusBar style="light" />
-              <RootNavigator />
-            </WorkoutProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <AuthProvider>
+              <WorkoutProvider>
+                <ToastProvider>
+                  <BottomSheetModalProvider>
+                    <StatusBar style="light" />
+                    <RootNavigator />
+                  </BottomSheetModalProvider>
+                </ToastProvider>
+              </WorkoutProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

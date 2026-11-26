@@ -46,7 +46,7 @@ export class GymLoginUseCase {
     const claims = gymClaims(staff, Boolean(member), overrides);
     if (!claims) throw new InvalidCredentialsError();
 
-    const payload: GymAuthUser = { sub: user.id, type: 'gym', gymId: gym.id, ...claims };
+    const payload: GymAuthUser = { sub: user.id, type: 'gym', gymId: gym.id, gymCode: gym.code, ...claims };
 
     const accessToken = this.jwt.sign(payload);
 

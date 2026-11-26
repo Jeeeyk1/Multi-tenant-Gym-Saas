@@ -65,6 +65,7 @@ describe('GymLoginUseCase', () => {
       expect.objectContaining({
         type: 'gym',
         gymId: 'gym-1',
+        gymCode: 'FITMNL',
         roles: ['MANAGER'],
         permissions: expect.arrayContaining(['members.view', 'members.create']),
       }),

@@ -1,4 +1,4 @@
-import { BadgeCategory, BadgeTier } from '@gym-saas/contracts';
+import { BadgeCategory, BadgeRarity, BadgeTier } from '@gym-saas/contracts';
 
 export const CATEGORY_ORDER = [BadgeCategory.CONSISTENCY, BadgeCategory.LOYALTY, BadgeCategory.STRENGTH];
 
@@ -18,6 +18,11 @@ export const TIER_LABEL: Record<BadgeTier, string> = {
   [BadgeTier.BRONZE]: 'Bronze',
   [BadgeTier.SILVER]: 'Silver',
   [BadgeTier.GOLD]: 'Gold',
+};
+
+export const RARITY_LABEL: Record<BadgeRarity, string> = {
+  [BadgeRarity.LEGENDARY]: 'Legendary',
+  [BadgeRarity.EPIC]: 'Epic',
 };
 
 export const LADDER_TIERS = [BadgeTier.BRONZE, BadgeTier.SILVER, BadgeTier.GOLD];

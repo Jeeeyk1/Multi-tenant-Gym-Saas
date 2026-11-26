@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { BadgeRarity } from '@gym-saas/contracts';
 import type { EquippedBadge } from '@/types/api';
-import { BadgeMedal } from './badge-medal';
-import { CATEGORY_LABEL, TIER_LABEL } from './badge-labels';
+import { BadgeMedal, LegendaryFlame } from './badge-medal';
+import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from './badge-labels';
 
 const POPOVER_WIDTH = 256;
 const POPOVER_GAP = 4;
@@ -65,15 +66,20 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
         onPointerLeave={(e) => e.pointerType === 'mouse' && hide()}
         onClick={show}
         onBlur={hide}
-        aria-label={`Badges: ${badges.map((b) => b.name).join(', ')}`}
+        aria-label={`Badges: ${badges.map((b) => (b.rarity === BadgeRarity.LEGENDARY ? `${b.name} (legendary)` : b.name)).join(', ')}`}
         aria-describedby={open ? popoverId : undefined}
         className="inline-flex shrink-0 items-center rounded-full p-0.5 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary"
       >
         {badges.slice(0, 3).map((b, i) => (
           <span key={b.memberBadgeId} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: 3 - i }} className="relative">
-            <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} />
+            <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} rarity={b.rarity} />
           </span>
         ))}
+        {badges.some((b) => b.rarity === BadgeRarity.LEGENDARY) && (
+          <span className="ml-0.5 inline-flex">
+            <LegendaryFlame size={Math.round(size * 0.85)} />
+          </span>
+        )}
       </button>
 
       {position && (
@@ -85,11 +91,12 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
         >
           {badges.map((b) => (
             <div key={b.memberBadgeId} className="flex items-start gap-3">
-              <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={36} />
+              <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={36} rarity={b.rarity} />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {CATEGORY_LABEL[b.category]}
                   {b.tier && ` · ${TIER_LABEL[b.tier]}`}
+                  {b.rarity && ` · ${RARITY_LABEL[b.rarity]}`}
                 </p>
                 <p className="text-sm font-medium text-foreground">{b.name}</p>
                 {b.description && <p className="text-xs text-muted-foreground">{b.description}</p>}

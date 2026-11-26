@@ -11,12 +11,15 @@ import {
 } from '../../../../common/enums';
 import type { LadderTier, LadderWeights } from '../../domain/lift-ladder';
 import type { MembershipHistory } from '../../domain/badge-stats';
+import { badgeKey } from '../../domain/badge-rarity';
 
 const CATEGORY_ORDER = [BadgeCategory.CONSISTENCY, BadgeCategory.LOYALTY, BadgeCategory.STRENGTH];
 
 /** One badge as shown next to a member's name (chat, leaderboard, Who's Here). */
 export interface EquippedBadgeView {
   memberBadgeId: string;
+  /** The badge definition (`catalog:<id>`, `milestone:<id>` or `custom:<id>`), as in the collection. */
+  key: string;
   category: string;
   name: string;
   description: string | null;
@@ -598,6 +601,9 @@ export class BadgesRepository {
         category: true,
         badgeRank: true,
         awardedAt: true,
+        badgeCatalogId: true,
+        milestoneBadgeId: true,
+        customBadgeId: true,
         member: { select: { user: { select: { id: true } } } },
         ...BADGE_DEFINITION_SELECT,
       },
@@ -606,7 +612,14 @@ export class BadgesRepository {
     const byUser = new Map<string, EquippedBadgeView[]>();
     for (const r of rows) {
       const list = byUser.get(r.member.user.id) ?? [];
-      list.push({ memberBadgeId: r.id, category: r.category, awardedAt: r.awardedAt, rank: r.badgeRank, ...badgeDefinition(r) });
+      list.push({
+        memberBadgeId: r.id,
+        key: badgeKey(r),
+        category: r.category,
+        awardedAt: r.awardedAt,
+        rank: r.badgeRank,
+        ...badgeDefinition(r),
+      });
       byUser.set(r.member.user.id, list);
     }
     return [...byUser.entries()].map(([userId, badges]) => ({
@@ -637,8 +650,7 @@ export class BadgesRepository {
     ]);
     const holders: Record<string, number> = {};
     for (const r of rows) {
-      const key = r.catalog_id ? `catalog:${r.catalog_id}` : r.milestone_id ? `milestone:${r.milestone_id}` : `custom:${r.custom_id}`;
-      holders[key] = r.holders;
+      holders[badgeKey({ badgeCatalogId: r.catalog_id, milestoneBadgeId: r.milestone_id, customBadgeId: r.custom_id })] = r.holders;
     }
     return { activeMembers, holders };
   }

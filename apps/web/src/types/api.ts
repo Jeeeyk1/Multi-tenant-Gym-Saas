@@ -1,6 +1,6 @@
 // Shapes returned by the API — kept in sync with the backend response selects
 
-import type { BadgeCategory, BadgeTier } from '@gym-saas/contracts';
+import type { BadgeCategory, BadgeRarity, BadgeTier } from '@gym-saas/contracts';
 
 export interface MembershipPlan {
   id: string;
@@ -270,6 +270,7 @@ export interface MemberBadge {
   memberId: string;
   gymId: string;
   category: BadgeCategory;
+  rarity: BadgeRarity | null;
   source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';
   badgeRank: BadgeTier | null;
   proofNotes: string | null;
@@ -285,6 +286,9 @@ export interface MemberBadge {
 /** A badge as shown next to a member's name. */
 export interface EquippedBadge {
   memberBadgeId: string;
+  /** The badge definition, same as `CollectionBadge.key`. */
+  key: string;
+  rarity: BadgeRarity | null;
   category: BadgeCategory;
   name: string;
   description: string | null;
@@ -333,6 +337,7 @@ export interface CollectionBadge {
   timesEarned: number;
   progress: { current: number; target: number; unit: string } | null;
   rarityPct: number | null;
+  rarity: BadgeRarity | null;
 }
 
 export interface BadgeCollection {

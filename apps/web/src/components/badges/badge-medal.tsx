@@ -1,4 +1,4 @@
-import { BadgeCategory, type BadgeTier } from '@gym-saas/contracts';
+import { BadgeCategory, BadgeRarity, type BadgeTier } from '@gym-saas/contracts';
 import {
   barbell, calendar, diamond, flame, flash, footsteps, grid, heart, lockClosed, medal, moon,
   ribbon, rocket, shieldCheckmark, star, sunny, trophy,
@@ -18,6 +18,14 @@ const RIM: Record<BadgeTier | 'IRON' | 'LOCKED', string> = {
   LOCKED: '#4A4D57',
 };
 const LOCKED_FACE = '#2B2D35';
+// Rarity effects: warm flames for legendary, a violet glow for epic.
+const FLAME_CORE = '#FFB020';
+const FLAME_EDGE = '#FF5A1F';
+const EPIC_GLOW = '#A78BFA';
+// Below this size (chat, leaderboard rows) the medal gets a still glow; BadgeStack adds one
+// LegendaryFlame beside the row instead of tiny flames around each medal.
+const ANIMATE_MIN_SIZE = 40;
+const FLAME_ANGLES = [-62, -31, 0, 31, 62];
 const LOCKED_GLYPH = '#7C7F8A';
 const GLYPH = '#FFFFFF';
 
@@ -45,6 +53,7 @@ export function BadgeMedal({
   icon,
   size = 32,
   locked = false,
+  rarity = null,
 }: {
   category: BadgeCategory;
   tier: BadgeTier | null;
@@ -52,6 +61,8 @@ export function BadgeMedal({
   icon: string;
   size?: number;
   locked?: boolean;
+  /** Rare badges glow; legendary ones burn. Never shown while locked. */
+  rarity?: BadgeRarity | null;
 }) {
   const rim = locked ? RIM.LOCKED : RIM[tier ?? 'IRON'];
   const face = locked ? LOCKED_FACE : color;
@@ -63,6 +74,7 @@ export function BadgeMedal({
 
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-hidden>
+      {rarity && !locked && <RarityAura rarity={rarity} size={size} />}
       <svg width={size} height={size} viewBox="0 0 100 100" className="absolute inset-0">
         {category === BadgeCategory.CONSISTENCY ? (
           <>
@@ -89,6 +101,74 @@ export function BadgeMedal({
           mask,
           WebkitMask: mask,
         }}
+      />
+    </span>
+  );
+}
+
+function RarityAura({ rarity, size }: { rarity: BadgeRarity; size: number }) {
+  const legendary = rarity === BadgeRarity.LEGENDARY;
+  const animated = size >= ANIMATE_MIN_SIZE;
+  const glow = legendary ? FLAME_EDGE : EPIC_GLOW;
+  const flameSize = size * 0.34;
+  const radius = size * 0.52;
+  const flameMask = `url("${flame}") center / contain no-repeat`;
+  return (
+    <span className="pointer-events-none absolute inset-0">
+      <span
+        className={animated ? 'badge-aura-pulse' : undefined}
+        style={{
+          position: 'absolute',
+          inset: -size * 0.18,
+          borderRadius: '9999px',
+          background: `radial-gradient(circle, ${glow} 0%, transparent 70%)`,
+          opacity: 0.45,
+        }}
+      />
+      {legendary &&
+        animated &&
+        FLAME_ANGLES.map((deg, i) => {
+          const rad = (deg * Math.PI) / 180;
+          return (
+            <span
+              key={deg}
+              style={{
+                position: 'absolute',
+                left: size / 2 + Math.sin(rad) * radius - flameSize / 2,
+                top: size / 2 - Math.cos(rad) * radius - flameSize * 0.75,
+                width: flameSize,
+                height: flameSize,
+                transform: `rotate(${deg}deg)`,
+              }}
+            >
+              <span
+                className="badge-flame"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: i % 2 ? FLAME_CORE : FLAME_EDGE,
+                  mask: flameMask,
+                  WebkitMask: flameMask,
+                  animationDelay: `${i * 90}ms`,
+                  animationDuration: `${700 + i * 70}ms`,
+                }}
+              />
+            </span>
+          );
+        })}
+    </span>
+  );
+}
+
+/** A small burning flame shown next to the name of someone wearing a legendary badge. */
+export function LegendaryFlame({ size = 14 }: { size?: number }) {
+  const mask = `url("${flame}") center / contain no-repeat`;
+  return (
+    <span aria-hidden className="inline-block shrink-0" style={{ width: size, height: size }}>
+      <span
+        className="badge-flame"
+        style={{ display: 'block', width: '100%', height: '100%', backgroundColor: FLAME_EDGE, mask, WebkitMask: mask, animationDuration: '940ms' }}
       />
     </span>
   );

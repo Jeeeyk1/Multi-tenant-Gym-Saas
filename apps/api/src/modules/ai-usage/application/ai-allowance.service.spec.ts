@@ -81,6 +81,14 @@ describe('AiAllowanceService', () => {
     repo.sumCost.mockResolvedValue(625_000);
     repo.countToday.mockResolvedValue(3);
     const usage = await service().assistantUsage('gym-1', staff);
-    expect(usage).toMatchObject({ pool: { usedPct: 25, capUsdMicros: 2_500_000 }, today: { used: 3, limit: 15 } });
+    expect(usage).toMatchObject({
+      pool: { usedPct: 25, capUsdMicros: 2_500_000, resetsOn: '2026-12-01' },
+      today: { used: 3, limit: 15 },
+    });
+  });
+
+  it("returns no assistant usage when the plan doesn't include the assistant", async () => {
+    repo.findGymAiPlan.mockResolvedValueOnce({ ...plan, assistantIncluded: false });
+    await expect(service().assistantUsage('gym-1', staff)).resolves.toBeNull();
   });
 });

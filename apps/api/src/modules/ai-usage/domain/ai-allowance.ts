@@ -1,5 +1,6 @@
 import { AiFeature, StaffRole } from '../../../common/enums';
 import type { AuthenticatedUser } from '../../../common/types/auth.types';
+import { localDate } from '../../../common/time/local-date';
 
 /** ai_usage_log.feature_key of the staff AI assistant. */
 export const ASSISTANT_FEATURE_KEY = 'ai_insights';
@@ -22,11 +23,13 @@ export interface PoolStatus {
   usedPct: number;
   /** When the pool resets: the start of next month in the gym's timezone. */
   resetsAt: Date;
+  /** The reset day as a calendar date (YYYY-MM-DD) in the gym's timezone, for display. */
+  resetsOn: string;
 }
 
-export function poolStatus(usedUsdMicros: number, capUsdMicros: number, resetsAt: Date): PoolStatus {
+export function poolStatus(usedUsdMicros: number, capUsdMicros: number, resetsAt: Date, timeZone: string): PoolStatus {
   const usedPct = capUsdMicros > 0 ? Math.min(100, Math.floor((usedUsdMicros / capUsdMicros) * 100)) : 100;
-  return { usedUsdMicros, capUsdMicros, usedPct, resetsAt };
+  return { usedUsdMicros, capUsdMicros, usedPct, resetsAt, resetsOn: localDate(resetsAt, timeZone) };
 }
 
 export function isPoolExhausted(status: PoolStatus): boolean {

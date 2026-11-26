@@ -6,9 +6,9 @@ import { Permission } from '../../../../common/enums';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 export interface AiUsageView {
-  /** Null when the gym has no active subscription. */
+  /** Null when the gym can't use the assistant (no active subscription, or not on its plan). */
   assistant: AssistantUsage | null;
-  /** Members' AI pool. Owner only (it's a cost figure). */
+  /** Members' AI pool. Only with reports.view (it's a cost figure). */
   members: PoolStatus | null;
   /** Whether this person can ask revenue questions (shown in the assistant's "what I can do" panel). */
   canAskRevenue: boolean;

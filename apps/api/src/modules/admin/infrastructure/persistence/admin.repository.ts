@@ -355,7 +355,30 @@ export class AdminRepository {
     return this.prisma.plan.findMany({
       where: { isActive: true },
       orderBy: { priceMonthly: 'asc' },
-      select: { id: true, name: true, tier: true, priceMonthly: true, priceYearly: true },
+      select: {
+        id: true,
+        name: true,
+        tier: true,
+        priceMonthly: true,
+        priceYearly: true,
+        assistantAiCapUsdMicros: true,
+        memberAiCapUsdMicros: true,
+      },
+    });
+  }
+
+  findBillingPlan(planId: string) {
+    return this.prisma.plan.findUnique({
+      where: { id: planId },
+      select: { id: true, assistantAiCapUsdMicros: true, memberAiCapUsdMicros: true },
+    });
+  }
+
+  updateBillingPlanAiCaps(planId: string, caps: { assistantAiCapUsdMicros: number; memberAiCapUsdMicros: number }) {
+    return this.prisma.plan.update({
+      where: { id: planId },
+      data: caps,
+      select: { id: true, name: true, tier: true, assistantAiCapUsdMicros: true, memberAiCapUsdMicros: true },
     });
   }
 

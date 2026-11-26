@@ -667,3 +667,19 @@ export interface AiUsage {
   resetsAt: string;
   features: AiFeatureUsage[];
 }
+
+export interface AiPoolStatus {
+  usedUsdMicros: number;
+  capUsdMicros: number;
+  usedPct: number;
+  resetsAt: string;
+  /** The reset day (YYYY-MM-DD) in the gym's timezone. Use this for display. */
+  resetsOn: string;
+}
+
+/** GET /gyms/:gymId/insights/usage */
+export interface AiUsageView {
+  assistant: { pool: AiPoolStatus; today: { used: number; limit: number } } | null;
+  members: AiPoolStatus | null;
+  canAskRevenue: boolean;
+}

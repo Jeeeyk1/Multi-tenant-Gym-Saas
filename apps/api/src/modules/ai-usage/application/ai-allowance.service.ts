@@ -35,9 +35,10 @@ export class AiAllowanceService {
 
   constructor(private readonly repo: AiUsageRepository) {}
 
+  /** Null when the gym can't use the assistant (no active subscription, or the plan doesn't include it). */
   async assistantUsage(gymId: string, caller: AuthenticatedUser): Promise<AssistantUsage | null> {
     const plan = await this.repo.findGymAiPlan(gymId);
-    return plan ? this.assistantUsageFor(plan, gymId, caller) : null;
+    return plan?.assistantIncluded ? this.assistantUsageFor(plan, gymId, caller) : null;
   }
 
   private async assistantUsageFor(plan: GymAiPlan, gymId: string, caller: AuthenticatedUser): Promise<AssistantUsage> {
@@ -46,7 +47,7 @@ export class AiAllowanceService {
       this.repo.countToday(gymId, caller.sub, ASSISTANT_FEATURE_KEY, plan.timezone),
     ]);
     return {
-      pool: poolStatus(used, plan.assistantCapUsdMicros, plan.periodEnd),
+      pool: poolStatus(used, plan.assistantCapUsdMicros, plan.periodEnd, plan.timezone),
       today: { used: usedToday, limit: assistantDailyLimit(caller) },
     };
   }
@@ -55,7 +56,7 @@ export class AiAllowanceService {
     const plan = await this.repo.findGymAiPlan(gymId);
     if (!plan) return null;
     const used = await this.repo.sumCost(gymId, MEMBER_FEATURE_KEYS, plan.periodStart);
-    return poolStatus(used, plan.memberCapUsdMicros, plan.periodEnd);
+    return poolStatus(used, plan.memberCapUsdMicros, plan.periodEnd, plan.timezone);
   }
 
   /**
@@ -92,7 +93,7 @@ export class AiAllowanceService {
       throw new TooManyRequestsError("Your gym's AI features aren't available right now.", 'GYM_AI_ALLOWANCE_EXCEEDED');
     }
     const used = await this.repo.sumCost(gymId, MEMBER_FEATURE_KEYS, plan.periodStart);
-    const pool = poolStatus(used, plan.memberCapUsdMicros, plan.periodEnd);
+    const pool = poolStatus(used, plan.memberCapUsdMicros, plan.periodEnd, plan.timezone);
     if (isPoolExhausted(pool)) {
       this.logger.warn(`member AI allowance used up gym=${gymId} used=${pool.usedUsdMicros} cap=${pool.capUsdMicros}`);
       throw new TooManyRequestsError(

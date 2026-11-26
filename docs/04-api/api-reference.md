@@ -1306,16 +1306,26 @@ Errors: `403 FEATURE_NOT_AVAILABLE`, `429 AI_ALLOWANCE_EXCEEDED` (monthly pool, 
 ```json
 {
   "assistant": {
-    "pool": { "usedUsdMicros": 625000, "capUsdMicros": 2500000, "usedPct": 25, "resetsAt": "2026-12-01T00:00:00.000Z" },
+    "pool": { "usedUsdMicros": 625000, "capUsdMicros": 2500000, "usedPct": 25, "resetsAt": "2026-11-30T16:00:00.000Z", "resetsOn": "2026-12-01" },
     "today": { "used": 3, "limit": 15 }
   },
   "members": { "usedUsdMicros": 0, "capUsdMicros": 3500000, "usedPct": 0, "resetsAt": "…" },
   "canAskRevenue": false
 }
 ```
-`assistant` is null without an active subscription. `members` is returned to owners only.
+`assistant` is null without an active subscription or when the plan doesn't include the assistant. `members` is
+returned only with `reports.view`. `resetsOn` is the reset day in the gym's timezone; show that, not `resetsAt`.
 Member AI endpoints also return `429 GYM_AI_ALLOWANCE_EXCEEDED` when the gym's member pool is used up. See
 `docs/02-domains/ai-usage.md`.
+
+#### PATCH /admin/billing-plans/:id
+System admin only. Sets a billing plan's monthly AI caps per gym, in dollars (0–1000, at most 2 decimals; 0 turns
+that pool off).
+```json
+{ "assistantAiCapUsd": 2.5, "memberAiCapUsd": 3.5 }
+```
+Returns the plan with `assistantAiCapUsdMicros` and `memberAiCapUsdMicros`. `GET /admin/billing-plans` now includes
+both caps. `400` for a non-UUID id, `404 PLAN_NOT_FOUND` for an unknown plan. The change is logged old → new.
 
 ### Badges v2
 

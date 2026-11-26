@@ -3,8 +3,9 @@
 AI is FitOps's cost, paid out of each gym's subscription, so every AI call is costed and capped.
 
 ## Two pools per gym, by plan
-Each billing plan (`plans`) carries two monthly caps per gym, in US micro-dollars (migration 0053), editable per
-plan:
+Each billing plan (`plans`) carries two monthly caps per gym, in US micro-dollars (migration 0053). A system admin
+edits them in the admin console (Plans → AI allowances, `PATCH /admin/billing-plans/:id`); each change is logged with
+the plan, the new values and the admin. Defaults:
 
 | Plan (tier) | Staff AI assistant | Members' AI (workouts, meals) |
 |---|---|---|
@@ -16,6 +17,7 @@ plan:
   yearly billing.
 - No `ACTIVE`/`TRIALING` subscription means no AI, so checks fail closed. A `PAST_DUE` gym is in its grace period for
   the rest of the app, but has no AI until it pays.
+- A cap of 0 turns that pool off.
 - Members also keep their own per-feature monthly limits (`modules/ai/domain/member-ai-limits.ts`).
 
 ## Cost of each call
@@ -53,3 +55,11 @@ plan:
 ## Code
 `modules/ai-usage` (`AiAllowanceService`, `AiUsageRepository`) is shared by `modules/ai-insights` (assistant) and
 `modules/ai` (members). Usage for the meter: `GET /gyms/:gymId/insights/usage`.
+
+## In the apps
+- **Web and mobile assistant:** a usage line above the input shows today's questions and the monthly pool. It
+  warns at 80% of the pool or 3 questions left. At 100%, or with no questions left, the input pauses with the
+  reset date (`resetsOn`, the day in the gym's timezone). On a plan without the assistant, `assistant` is null and
+  the chat says so. A limit error (`AI_ALLOWANCE_EXCEEDED`, `AI_DAILY_LIMIT_REACHED`, `FEATURE_NOT_AVAILABLE`)
+  pauses the input even if the meter couldn't load. A paused web tab rechecks when it becomes visible again.
+- **Empty chat:** lists what the assistant can and can't do; revenue suggestions appear only with `reports.view`.

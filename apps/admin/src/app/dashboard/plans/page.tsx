@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { PlansClient, type SaasPlan } from './plans-client';
+import { AiAllowances, type BillingPlanCaps } from './ai-allowances';
 
 export const metadata: Metadata = { title: 'Plans' };
 
 export default async function PlansPage() {
-  const plans = await api.get<SaasPlan[]>('/v1/admin/plans').catch(() => [] as SaasPlan[]);
+  const [plans, billingPlans] = await Promise.all([
+    api.get<SaasPlan[]>('/v1/admin/plans').catch(() => [] as SaasPlan[]),
+    api.get<BillingPlanCaps[]>('/v1/admin/billing-plans').catch(() => [] as BillingPlanCaps[]),
+  ]);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -20,6 +24,7 @@ export default async function PlansPage() {
       </div>
 
       <PlansClient initialPlans={plans} />
+      <AiAllowances plans={billingPlans} />
     </div>
   );
 }

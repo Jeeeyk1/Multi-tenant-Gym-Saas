@@ -10,6 +10,7 @@ import { UpdateGymStatusUseCase } from './application/use-cases/update-gym-statu
 import { ListUsersUseCase } from './application/use-cases/list-users.use-case';
 import { ListPlansUseCase } from './application/use-cases/list-plans.use-case';
 import { ListBillingPlansUseCase } from './application/use-cases/list-billing-plans.use-case';
+import { UpdateBillingPlanAiCapsUseCase } from './application/use-cases/update-billing-plan-ai-caps.use-case';
 import { CreatePlanUseCase } from './application/use-cases/create-plan.use-case';
 import { UpdatePlanUseCase } from './application/use-cases/update-plan.use-case';
 import { DeletePlanUseCase } from './application/use-cases/delete-plan.use-case';
@@ -31,6 +32,7 @@ import { LeadsModule } from '../leads/leads.module';
     ListUsersUseCase,
     ListPlansUseCase,
     ListBillingPlansUseCase,
+    UpdateBillingPlanAiCapsUseCase,
     CreatePlanUseCase,
     UpdatePlanUseCase,
     DeletePlanUseCase,

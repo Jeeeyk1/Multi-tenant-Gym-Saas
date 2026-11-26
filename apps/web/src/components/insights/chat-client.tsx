@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import { queryInsights, type HistoryTurn } from '@/lib/actions/insights';
+import { getAiUsage, queryInsights, type HistoryTurn } from '@/lib/actions/insights';
+import { UsageMeter, isPaused, usageState } from './usage-meter';
 import { ToolResultView } from './tool-result-views';
-import type { InsightsStep } from '@/types/api';
+import type { AiUsageView, InsightsStep } from '@/types/api';
 
 const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
@@ -25,18 +26,39 @@ interface RevealState {
 
 const SUGGESTIONS = [
   'How many active members do we have?',
-  'How much revenue did we make this month?',
   'How many check-ins happened today?',
+  'How many members joined this month?',
   'Show me check-ins per day for the last 2 weeks.',
 ];
+const REVENUE_SUGGESTION = 'How much revenue did we make this month?';
 
-export function InsightsChatClient({ gymId }: { gymId: string }) {
+export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; initialUsage: AiUsageView | null }) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [usage, setUsage] = useState(initialUsage);
+  // Set by a limit error, so the input pauses even if the meter couldn't be loaded.
+  const [limitHit, setLimitHit] = useState(false);
+  const paused = limitHit || isPaused(usageState(usage));
+  const canAskRevenue = usage?.canAskRevenue ?? false;
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const [reveal, setReveal] = useState<RevealState | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // A paused tab can't send, so nothing else would refresh it (e.g. after midnight). Recheck on return.
+  useEffect(() => {
+    if (!paused) return;
+    function recheck() {
+      if (document.visibilityState !== 'visible') return;
+      getAiUsage(gymId).then((next) => {
+        if (!next) return;
+        setUsage(next);
+        setLimitHit(false);
+      });
+    }
+    document.addEventListener('visibilitychange', recheck);
+    return () => document.removeEventListener('visibilitychange', recheck);
+  }, [paused, gymId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,7 +94,7 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
 
   function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || isPending) return;
+    if (!trimmed || isPending || paused) return;
 
     const userMessage: Message = { role: 'user', content: trimmed };
     setMessages((prev) => [...prev, userMessage]);
@@ -81,8 +103,11 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
     startTransition(async () => {
       const history = buildHistory();
       const result = await queryInsights(gymId, trimmed, history);
+      // Every answer (and every limit error) changes the meter.
+      getAiUsage(gymId).then((next) => next && setUsage(next));
 
       if (result.error) {
+        if (result.limit) setLimitHit(true);
         setMessages((prev) => [
           ...prev,
           { role: 'assistant', content: result.error!, error: true },
@@ -114,7 +139,7 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
       {/* Messages area */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-4">
         {isEmpty && !isPending && !reveal ? (
-          <EmptyState onSuggest={(q) => send(q)} />
+          <EmptyState onSuggest={(q) => send(q)} canAskRevenue={canAskRevenue} disabled={paused} />
         ) : (
           <>
             {messages.map((msg, i) => (
@@ -134,15 +159,16 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
 
       {/* Input area */}
       <div className="border-t border-border px-6 py-4 bg-surface">
+        <UsageMeter usage={usage} />
         <div className="flex items-end gap-3 max-w-3xl mx-auto">
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isPending}
+            disabled={isPending || paused}
             rows={1}
-            placeholder="Ask anything about your gym…"
+            placeholder={paused ? 'The assistant is paused for now' : 'Ask anything about your gym…'}
             className={cn(
               'flex-1 resize-none bg-surface border border-border rounded-md px-4 py-3',
               'text-sm text-foreground placeholder:text-muted-foreground',
@@ -153,7 +179,7 @@ export function InsightsChatClient({ gymId }: { gymId: string }) {
           />
           <button
             onClick={() => send(input)}
-            disabled={!input.trim() || isPending}
+            disabled={!input.trim() || isPending || paused}
             className={cn(
               'shrink-0 px-4 py-3 rounded-xl text-sm font-semibold transition',
               'bg-primary text-primary-foreground hover:bg-primary-hover font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
@@ -235,25 +261,57 @@ function TraceLine({ label, done }: { label: string; done: boolean }) {
   );
 }
 
-function EmptyState({ onSuggest }: { onSuggest: (q: string) => void }) {
+function EmptyState({
+  onSuggest,
+  canAskRevenue,
+  disabled,
+}: {
+  onSuggest: (q: string) => void;
+  canAskRevenue: boolean;
+  disabled: boolean;
+}) {
+  const suggestions = canAskRevenue ? [SUGGESTIONS[0], REVENUE_SUGGESTION, ...SUGGESTIONS.slice(1, 3)] : SUGGESTIONS;
   return (
     <div className="flex flex-col items-center justify-center h-full gap-8 py-16">
       <div className="text-center space-y-2">
         <p className="text-2xl font-heading font-bold text-foreground">Ask your gym anything</p>
         <p className="text-sm text-muted-foreground">
-          Get instant answers about members, attendance, revenue, and trends.
+          Get instant answers about members, attendance{canAskRevenue ? ', revenue' : ''} and trends.
         </p>
       </div>
 
+      <div className="w-full max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">What I can do</p>
+          <ul className="space-y-1 text-foreground">
+            <li>Look up members and who checked in</li>
+            <li>Count members, check-ins and renewals</li>
+            <li>Show trends over days, weeks or months</li>
+            {canAskRevenue && <li>Report revenue from renewals</li>}
+            <li>Register, renew or suspend a member (I ask first)</li>
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">What I can&apos;t do</p>
+          <ul className="space-y-1 text-muted-foreground">
+            {!canAskRevenue && <li>Revenue figures (owner only)</li>}
+            <li>Change settings, plans or staff</li>
+            <li>Read chats or members&apos; health data</li>
+            <li>Remember past conversations</li>
+          </ul>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl">
-        {SUGGESTIONS.map((q) => (
+        {suggestions.map((q) => (
           <button
             key={q}
             onClick={() => onSuggest(q)}
+            disabled={disabled}
             className={cn(
               'text-left px-4 py-3 rounded-md border border-border bg-surface font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'text-sm text-muted-foreground hover:text-foreground hover:border-primary/30',
-              'transition',
+              'transition disabled:opacity-50 disabled:cursor-not-allowed',
             )}
           >
             {q}

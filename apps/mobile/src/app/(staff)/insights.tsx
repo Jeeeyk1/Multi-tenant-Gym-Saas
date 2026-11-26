@@ -3,10 +3,11 @@ import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndica
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useInsightsQuery } from '../../hooks/insights';
+import { useAiUsage, useInsightsQuery } from '../../hooks/insights';
+import { formatApiError } from '../../lib/format-error';
 import { InsightsToolResultView } from '../../components/InsightsToolResultView';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { InsightsHistoryTurn, InsightsStep } from '../../types';
+import type { AiUsageView, InsightsHistoryTurn, InsightsStep } from '../../types';
 
 const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
@@ -27,14 +28,52 @@ interface RevealState {
 
 const SUGGESTIONS = [
   'How many active members do we have?',
-  'How much revenue this month?',
   'How many check-ins today?',
+  'How many members joined this month?',
   'Check-ins per day this week',
 ];
+const REVENUE_SUGGESTION = 'How much revenue this month?';
+const WARN_AT_PCT = 80;
+
+/** API errors that mean "can't ask again until the allowance resets", so the input pauses. */
+const LIMIT_CODES: readonly string[] = ['AI_ALLOWANCE_EXCEEDED', 'AI_DAILY_LIMIT_REACHED', 'FEATURE_NOT_AVAILABLE'];
+
+type UsageState = 'ok' | 'warning' | 'paused' | 'unavailable';
+
+/** Unavailable when the gym's plan doesn't include the assistant. Usage that hasn't loaded doesn't block. */
+function usageState(usage: AiUsageView | undefined): UsageState {
+  if (!usage) return 'ok';
+  const a = usage.assistant;
+  if (!a) return 'unavailable';
+  if (a.pool.usedPct >= 100 || a.today.used >= a.today.limit) return 'paused';
+  if (a.pool.usedPct >= WARN_AT_PCT || a.today.limit - a.today.used <= 3) return 'warning';
+  return 'ok';
+}
+
+/** `day` is a calendar date (YYYY-MM-DD) in the gym's timezone, so it's formatted as-is, not shifted. */
+function formatDay(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+
+function usageMessage(usage: AiUsageView): string | null {
+  const a = usage.assistant;
+  if (!a) return "The AI assistant isn't included in your gym's current plan.";
+  if (a.pool.usedPct >= 100) return `This month's AI allowance is used up. It resets on ${formatDay(a.pool.resetsOn)}.`;
+  if (a.today.used >= a.today.limit) return `You've used today's ${a.today.limit} questions. Back tomorrow.`;
+  if (a.pool.usedPct >= WARN_AT_PCT) return `${a.pool.usedPct}% of this month's AI allowance used · resets ${formatDay(a.pool.resetsOn)}`;
+  return `${a.today.used} of ${a.today.limit} questions today`;
+}
 
 export default function StaffInsightsScreen() {
   const router = useRouter();
   const mutation = useInsightsQuery();
+  const usageQ = useAiUsage();
+  const state = usageState(usageQ.data);
+  // Set by a limit error, so the input pauses even if usage couldn't be loaded. Fresh usage replaces it.
+  const [limitHit, setLimitHit] = useState(false);
+  useEffect(() => setLimitHit(false), [usageQ.dataUpdatedAt]);
+  const paused = limitHit || state === 'paused' || state === 'unavailable';
+  const canAskRevenue = usageQ.data?.canAskRevenue ?? false;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -63,7 +102,7 @@ export default function StaffInsightsScreen() {
 
   const send = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || mutation.isPending) return;
+    if (!trimmed || mutation.isPending || paused) return;
 
     // The assistant only reads the last few turns; sending more just fails validation on long chats.
     const history: InsightsHistoryTurn[] = messages
@@ -86,7 +125,9 @@ export default function StaffInsightsScreen() {
           }
         },
         onError: (err) => {
-          const message = (err as { message?: string })?.message ?? 'Something went wrong. Please try again.';
+          const code = (err as { code?: string }).code;
+          if (code && LIMIT_CODES.includes(code)) setLimitHit(true);
+          const message = formatApiError(err, 'Something went wrong. Please try again.');
           setMessages((prev) => [...prev, { role: 'assistant', content: message, error: true }]);
         },
       },
@@ -110,7 +151,7 @@ export default function StaffInsightsScreen() {
       </View>
 
       {isEmpty ? (
-        <EmptyState primary={COLORS.primary} onSuggest={send} />
+        <EmptyState primary={COLORS.primary} onSuggest={send} canAskRevenue={canAskRevenue} disabled={paused} />
       ) : (
         <FlatList
           ref={listRef}
@@ -134,23 +175,34 @@ export default function StaffInsightsScreen() {
         />
       )}
 
+      {usageQ.data && usageMessage(usageQ.data) && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[styles.usageLine, state === 'warning' && { color: COLORS.warning }, state === 'paused' && { color: COLORS.error }]}
+        >
+          {usageMessage(usageQ.data)}
+        </Text>
+      )}
+
       {/* Input */}
       <View style={styles.inputBar}>
         <TextInput
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder="Ask about your gym…"
+          placeholder={paused ? 'The assistant is paused for now' : 'Ask about your gym…'}
           placeholderTextColor={COLORS.textMuted}
-          editable={!mutation.isPending}
+          editable={!mutation.isPending && !paused}
           multiline
           onSubmitEditing={() => send(input)}
           returnKeyType="send"
         />
         <TouchableOpacity
-          style={[styles.sendBtn, { backgroundColor: COLORS.primary }, (!input.trim() || mutation.isPending) && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, { backgroundColor: COLORS.primary }, (!input.trim() || mutation.isPending || paused) && styles.sendBtnDisabled]}
           onPress={() => send(input)}
-          disabled={!input.trim() || mutation.isPending}
+          disabled={!input.trim() || mutation.isPending || paused}
+          accessibilityRole="button"
+          accessibilityLabel="Send"
           activeOpacity={0.8}
         >
           <Ionicons name="arrow-up" size={20} color={COLORS.onPrimary} />
@@ -209,15 +261,29 @@ function TraceBubble({ completed, active, primary }: { completed: string[]; acti
   );
 }
 
-function EmptyState({ primary, onSuggest }: { primary: string; onSuggest: (q: string) => void }) {
+function EmptyState({
+  primary,
+  onSuggest,
+  canAskRevenue,
+  disabled,
+}: {
+  primary: string;
+  onSuggest: (q: string) => void;
+  canAskRevenue: boolean;
+  disabled: boolean;
+}) {
+  const suggestions = canAskRevenue ? [SUGGESTIONS[0], REVENUE_SUGGESTION, ...SUGGESTIONS.slice(1, 3)] : SUGGESTIONS;
   return (
     <View style={styles.empty}>
       <Ionicons name="sparkles-outline" size={40} color={primary} />
       <Text style={styles.emptyTitle}>Ask your gym anything</Text>
-      <Text style={styles.emptySub}>Members, attendance, revenue, and trends.</Text>
+      <Text style={styles.emptySub}>
+        {canAskRevenue ? 'Members, attendance, revenue and trends.' : 'Members, attendance and trends. Revenue is for the owner.'}
+      </Text>
+      <Text style={styles.emptySub}>I can also register, renew or suspend a member. I always ask first.</Text>
       <View style={styles.suggestions}>
-        {SUGGESTIONS.map((q) => (
-          <TouchableOpacity key={q} style={styles.suggestion} onPress={() => onSuggest(q)} activeOpacity={0.7}>
+        {suggestions.map((q) => (
+          <TouchableOpacity key={q} style={styles.suggestion} onPress={() => onSuggest(q)} disabled={disabled} activeOpacity={0.7}>
             <Text style={styles.suggestionText}>{q}</Text>
           </TouchableOpacity>
         ))}
@@ -228,6 +294,7 @@ function EmptyState({ primary, onSuggest }: { primary: string; onSuggest: (q: st
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  usageLine: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
 
   header: {
     flexDirection: 'row',

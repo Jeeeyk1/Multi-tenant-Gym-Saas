@@ -6,11 +6,14 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { SystemAdminGuard } from '../guards/system-admin.guard';
 import { GetPlatformStatsUseCase } from '../../application/use-cases/get-platform-stats.use-case';
 import { ListGymsUseCase } from '../../application/use-cases/list-gyms.use-case';
@@ -20,6 +23,7 @@ import { UpdateGymStatusUseCase } from '../../application/use-cases/update-gym-s
 import { ListUsersUseCase } from '../../application/use-cases/list-users.use-case';
 import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
 import { ListBillingPlansUseCase } from '../../application/use-cases/list-billing-plans.use-case';
+import { UpdateBillingPlanAiCapsUseCase } from '../../application/use-cases/update-billing-plan-ai-caps.use-case';
 import { CreatePlanUseCase } from '../../application/use-cases/create-plan.use-case';
 import { UpdatePlanUseCase } from '../../application/use-cases/update-plan.use-case';
 import { DeletePlanUseCase } from '../../application/use-cases/delete-plan.use-case';
@@ -40,6 +44,8 @@ import { CreatePlanDto } from '../dto/create-plan.dto';
 import { UpdatePlanDto } from '../dto/update-plan.dto';
 import { RejectPaymentDto } from '../dto/reject-payment.dto';
 import { ExtendTrialDto } from '../dto/extend-trial.dto';
+import { UpdateBillingPlanAiCapsDto } from '../dto/update-billing-plan-ai-caps.dto';
+import type { SystemAdminAuthUser } from '../../../../common/types/auth.types';
 
 @Controller('admin')
 @UseGuards(SystemAdminGuard)
@@ -53,6 +59,7 @@ export class AdminController {
     private readonly listUsers: ListUsersUseCase,
     private readonly listPlans: ListPlansUseCase,
     private readonly listBillingPlans: ListBillingPlansUseCase,
+    private readonly updateBillingPlanAiCaps: UpdateBillingPlanAiCapsUseCase,
     private readonly createPlan: CreatePlanUseCase,
     private readonly updatePlan: UpdatePlanUseCase,
     private readonly deletePlan: DeletePlanUseCase,
@@ -148,6 +155,16 @@ export class AdminController {
   @Get('billing-plans')
   billingPlans() {
     return this.listBillingPlans.execute();
+  }
+
+  /** PATCH /admin/billing-plans/:id — set the plan's monthly AI allowances per gym, in dollars. */
+  @Patch('billing-plans/:id')
+  updateBillingPlanCaps(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateBillingPlanAiCapsDto,
+    @Req() req: Request & { admin: SystemAdminAuthUser },
+  ) {
+    return this.updateBillingPlanAiCaps.execute(id, dto, req.admin.sub);
   }
 
   @Post('gyms')

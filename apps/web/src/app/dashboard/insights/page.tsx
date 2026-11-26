@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { InsightsChatClient } from '@/components/insights/chat-client';
+import { getOr } from '@/lib/api';
+import type { AiUsageView } from '@/types/api';
 
 export const metadata: Metadata = { title: 'AI Assistant' };
 
@@ -13,17 +15,20 @@ export default async function InsightsPage() {
     redirect('/dashboard');
   }
 
+  const usage = await getOr<AiUsageView, null>(`/gyms/${user.gymId}/insights/usage`, null);
+  const canAskRevenue = usage?.canAskRevenue ?? false;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="border-b border-border px-6 py-4 shrink-0">
         <h1 className="text-xl font-semibold text-foreground">AI Assistant</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Ask questions about your gym — members, attendance, revenue, and trends.
+          Ask questions about your gym: members, attendance{canAskRevenue ? ', revenue' : ''} and trends.
         </p>
       </div>
 
       <div className="flex-1 min-h-0">
-        <InsightsChatClient gymId={user.gymId} />
+        <InsightsChatClient gymId={user.gymId} initialUsage={usage} />
       </div>
     </div>
   );

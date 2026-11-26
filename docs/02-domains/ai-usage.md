@@ -37,6 +37,11 @@ the plan, the new values and the admin. Defaults:
 - **Daily limit per person** (gym timezone): Owner 40, Staff 15. On top of that there's the 15-per-minute burst
   limit.
 - **Per question:** the last 6 turns of history, at most 4 model steps, 800 output tokens per step.
+- **Actions** (register, renew, suspend, reactivate a member) are only proposed by the model. The API checks the
+  input and the person's permission, stores the action in Redis for 10 minutes under the gym and person, and returns
+  it as `pendingAction`. It runs only when that person presses confirm (`POST …/insights/actions/:id/confirm`); it can
+  run once. The confirm makes no AI call. Proposing, confirming, cancelling and failures are logged with the action
+  id. If Redis is down, actions are refused (not run without confirmation).
 - **Errors (all 429 except the first):**
   - `FEATURE_NOT_AVAILABLE` (403): the plan doesn't include the assistant.
   - `AI_ALLOWANCE_EXCEEDED`: the gym's monthly assistant pool is used up; the message gives the reset date.

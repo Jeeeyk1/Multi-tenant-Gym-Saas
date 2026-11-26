@@ -41,3 +41,22 @@ export async function getAiUsage(gymId: string): Promise<AiUsageView | null> {
     return null;
   }
 }
+
+/** Runs an action the assistant proposed. The API makes sure it's this user's and runs it once. */
+export async function confirmInsightsAction(gymId: string, actionId: string): Promise<{ message?: string; error?: string }> {
+  try {
+    const { message } = await api.post<{ ok: true; message: string }>(`/gyms/${gymId}/insights/actions/${actionId}/confirm`);
+    return { message };
+  } catch (err: unknown) {
+    return { error: formatApiError(err, 'That action could not be completed. Please try again.') };
+  }
+}
+
+/** Best effort: an action that isn't confirmed expires on its own anyway. */
+export async function cancelInsightsAction(gymId: string, actionId: string): Promise<void> {
+  try {
+    await api.post(`/gyms/${gymId}/insights/actions/${actionId}/cancel`);
+  } catch {
+    // Nothing to do: it expires in a few minutes.
+  }
+}

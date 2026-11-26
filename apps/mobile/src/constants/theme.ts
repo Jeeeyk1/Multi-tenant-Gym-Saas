@@ -1,6 +1,13 @@
 // Accent used when a gym has no theme color.
 export const DEFAULT_ACCENT = '#CCFF00';
 
+// FitOps brand colors for the app icon, splash and wordmark (never tenant-themed).
+export const BRAND = {
+  navy: '#0A2540',
+  volt: DEFAULT_ACCENT,
+  white: '#FFFFFF',
+} as const;
+
 export const DARK_COLORS = {
   // Core backgrounds
   background: '#0E1116',

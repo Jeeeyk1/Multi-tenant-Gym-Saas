@@ -1,55 +1,77 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, View } from 'react-native';
 import { useSegments } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { STAFF_COLORS } from '../constants/theme';
+import { BRAND, DEFAULT_ACCENT, STAFF_COLORS } from '../constants/theme';
+import { useReduceMotion } from './onboarding/use-reduce-motion';
+
+const STEP_MS = 260;
+// The mark on its 48-unit grid: three tiles, then the dot.
+const GRID = 48;
+const PART = 19;
+const TILES = [
+  { x: 3, y: 3 },
+  { x: 3, y: 26 },
+  { x: 26, y: 26 },
+] as const;
+const DOT = { x: 26, y: 3 } as const;
 
 /**
- * General-purpose themed loading spinner: weight plates orbiting a dumbbell.
- * Member screens use the gym's accent; staff screens use FitOps staff colors only.
- * Use anywhere a page or section is loading.
+ * Loading indicator: the FitOps mark builds tile by tile, then the dot lands.
+ * Member screens use the gym's accent; staff screens use the FitOps staff color.
  */
 export function AppLoader({ size = 52 }: { size?: number }) {
   const { theme } = useTheme();
   const segments = useSegments();
-  const color = segments[0] === '(staff)' ? STAFF_COLORS.primary : theme.primary;
-  const spin = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
+  // Staff screens are always dark. Member screens follow the color scheme; Volt is never drawn on a light surface.
+  const isStaff = segments[0] === '(staff)';
+  const onLight = !isStaff && theme.colorScheme === 'light';
+  const tileColor = onLight ? BRAND.navy : BRAND.white;
+  const memberAccent = onLight && theme.primary === DEFAULT_ACCENT ? BRAND.navy : theme.primary;
+  const accent = isStaff ? STAFF_COLORS.primary : memberAccent;
+  const steps = useRef([...TILES, DOT].map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 1500, easing: Easing.linear, useNativeDriver: true }),
+    if (reduceMotion) {
+      steps.forEach((s) => s.setValue(1));
+      return;
+    }
+    const build = Animated.stagger(
+      STEP_MS,
+      steps.map((s) =>
+        Animated.timing(s, { toValue: 1, duration: STEP_MS, easing: Easing.out(Easing.back(1.6)), useNativeDriver: true }),
+      ),
     );
+    const clear = Animated.parallel(steps.map((s) => Animated.timing(s, { toValue: 0, duration: STEP_MS, useNativeDriver: true })));
+    const loop = Animated.loop(Animated.sequence([build, Animated.delay(STEP_MS * 2), clear]));
     loop.start();
     return () => loop.stop();
-  }, [spin]);
+  }, [reduceMotion, steps]);
 
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const dot = Math.max(6, Math.round(size * 0.15));
-  const iconSize = Math.round(size * 0.6);
-  const opacities = [1, 0.6, 0.35];
+  const unit = size / GRID;
+  const part = PART * unit;
+  const piece = (pos: { x: number; y: number }, step: Animated.Value, color: string, radius: number) => (
+    <Animated.View
+      key={`${pos.x}-${pos.y}`}
+      style={{
+        position: 'absolute',
+        left: pos.x * unit,
+        top: pos.y * unit,
+        width: part,
+        height: part,
+        borderRadius: radius,
+        backgroundColor: color,
+        opacity: step,
+        transform: [{ scale: step }],
+      }}
+    />
+  );
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ rotate }] }]}>
-        {[0, 120, 240].map((deg, i) => (
-          <View
-            key={deg}
-            style={[StyleSheet.absoluteFill, { alignItems: 'center', transform: [{ rotate: `${deg}deg` }] }]}
-          >
-            <View
-              style={{
-                width: dot,
-                height: dot,
-                borderRadius: dot / 2,
-                backgroundColor: color,
-                opacity: opacities[i],
-              }}
-            />
-          </View>
-        ))}
-      </Animated.View>
-      <Ionicons name="barbell" size={iconSize} color={color} />
+    <View accessible accessibilityRole="progressbar" accessibilityLabel="Loading" style={{ width: size, height: size }}>
+      {TILES.map((t, i) => piece(t, steps[i], tileColor, 5 * unit))}
+      {piece(DOT, steps[TILES.length], accent, part / 2)}
     </View>
   );
 }

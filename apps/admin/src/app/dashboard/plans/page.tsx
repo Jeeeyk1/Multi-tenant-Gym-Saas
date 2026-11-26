@@ -10,7 +10,7 @@ export default async function PlansPage() {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Subscription Plans</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Manage LiftHub SaaS pricing tiers shown on the landing page
+            Manage FitOps pricing tiers shown on the landing page
           </p>
         </div>
       </div>

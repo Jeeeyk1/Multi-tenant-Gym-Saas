@@ -22,7 +22,8 @@ const LOCKED_FACE = '#2B2D35';
 const FLAME_CORE = '#FFB020';
 const FLAME_EDGE = '#FF5A1F';
 const EPIC_GLOW = '#A78BFA';
-// Below this size (chat, leaderboard rows) rare badges get a still glow; flames would be noise.
+// Below this size (chat, leaderboard rows) the medal gets a still glow; BadgeStack adds one
+// LegendaryFlame beside the row instead of tiny flames around each medal.
 const ANIMATE_MIN_SIZE = 40;
 const FLAME_ANGLES = [-62, -31, 0, 31, 62];
 const LOCKED_GLYPH = '#7C7F8A';
@@ -156,6 +157,19 @@ function RarityAura({ rarity, size }: { rarity: BadgeRarity; size: number }) {
             </span>
           );
         })}
+    </span>
+  );
+}
+
+/** A small burning flame shown next to the name of someone wearing a legendary badge. */
+export function LegendaryFlame({ size = 14 }: { size?: number }) {
+  const mask = `url("${flame}") center / contain no-repeat`;
+  return (
+    <span aria-hidden className="inline-block shrink-0" style={{ width: size, height: size }}>
+      <span
+        className="badge-flame"
+        style={{ display: 'block', width: '100%', height: '100%', backgroundColor: FLAME_EDGE, mask, WebkitMask: mask, animationDuration: '940ms' }}
+      />
     </span>
   );
 }

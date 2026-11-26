@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { BadgeRarity } from '@gym-saas/contracts';
 import type { EquippedBadge } from '@/types/api';
-import { BadgeMedal } from './badge-medal';
+import { BadgeMedal, LegendaryFlame } from './badge-medal';
 import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from './badge-labels';
 
 const POPOVER_WIDTH = 256;
@@ -65,7 +66,7 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
         onPointerLeave={(e) => e.pointerType === 'mouse' && hide()}
         onClick={show}
         onBlur={hide}
-        aria-label={`Badges: ${badges.map((b) => b.name).join(', ')}`}
+        aria-label={`Badges: ${badges.map((b) => (b.rarity === BadgeRarity.LEGENDARY ? `${b.name} (legendary)` : b.name)).join(', ')}`}
         aria-describedby={open ? popoverId : undefined}
         className="inline-flex shrink-0 items-center rounded-full p-0.5 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary"
       >
@@ -74,6 +75,11 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
             <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} rarity={b.rarity} />
           </span>
         ))}
+        {badges.some((b) => b.rarity === BadgeRarity.LEGENDARY) && (
+          <span className="ml-0.5 inline-flex">
+            <LegendaryFlame size={Math.round(size * 0.85)} />
+          </span>
+        )}
       </button>
 
       {position && (

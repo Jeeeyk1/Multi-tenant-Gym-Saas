@@ -5,8 +5,8 @@ import { BadgeRarity } from '../../constants/enums';
 import { BADGE_COLORS } from '../../constants/theme';
 import { useReduceMotion } from '../onboarding/use-reduce-motion';
 
-// Below this size (chat, leaderboard rows) animation is noise and costs frames in long lists,
-// so rare badges get a still glow instead.
+// Below this size (chat, leaderboard rows) the medal gets a still glow; BadgeStack adds one
+// shared-animation LegendaryFlame beside the row instead.
 export const ANIMATE_MIN_SIZE = 40;
 const FLAME_ANGLES = [-62, -31, 0, 31, 62];
 

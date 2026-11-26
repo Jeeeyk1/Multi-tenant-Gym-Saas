@@ -6,10 +6,16 @@ export function gymUserRoom(gymId: string, userId: string): string {
   return `gym-user:${gymId}:${userId}`;
 }
 
+/** Sockets that opened a conversation join this room. */
+export function conversationRoom(conversationId: string): string {
+  return `conversation:${conversationId}`;
+}
+
 /**
- * Ends a person's open chat sockets, e.g. after they delete their account (a socket is only
- * authenticated when it connects). The gateway hands over its server at start-up; with the
- * Redis adapter, `disconnectSockets` reaches every instance.
+ * Reaches open chat sockets from outside the gateway: ending a person's sockets (e.g. after they
+ * delete their account, since a socket is only authenticated when it connects) and announcing
+ * changes made over REST (e.g. a moderator removing a message). The gateway hands over its
+ * server at start-up; with the Redis adapter, rooms reach every instance.
  */
 @Injectable()
 export class ChatSessionsService {
@@ -27,5 +33,14 @@ export class ChatSessionsService {
     }
     this.server.in(gymUserRoom(gymId, userId)).disconnectSockets(true);
     this.logger.log(`chat sockets ended gym=${gymId} user=${userId}`);
+  }
+
+  /** Same event as a delete over the socket, so open chats hide the message. */
+  announceMessageDeleted(conversationId: string, messageId: string): void {
+    if (!this.server) {
+      this.logger.warn(`chat server not ready; delete not announced message=${messageId}`);
+      return;
+    }
+    this.server.to(conversationRoom(conversationId)).emit('message.deleted', { messageId, conversationId });
   }
 }

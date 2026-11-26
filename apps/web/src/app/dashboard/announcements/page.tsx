@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { AnnouncementsClient } from '@/components/announcements/announcements-client';
 import type { StaffAnnouncement } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Announcements' };
 
 export default async function AnnouncementsPage() {
   const user = await getSessionUser();

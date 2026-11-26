@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { getOr } from '@/lib/api';
 import { BadgesClient } from '@/components/badges/badges-client';
 import type { BadgeLadder, ExerciseMilestoneBadge, GymCustomBadge } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Badges' };
 
 export default async function BadgesPage() {
   const user = await getSessionUser();

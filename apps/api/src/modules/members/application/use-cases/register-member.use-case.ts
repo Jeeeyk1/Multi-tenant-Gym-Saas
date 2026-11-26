@@ -64,6 +64,8 @@ export class RegisterMemberUseCase {
       fullName: input.fullName,
       gymName: gym.name,
       gymCode: gym.code,
+      gymLogoUrl: gym.profile?.logoUrl,
+      gymAccent: gym.profile?.primaryColor,
       token: result.inviteToken,
     });
 

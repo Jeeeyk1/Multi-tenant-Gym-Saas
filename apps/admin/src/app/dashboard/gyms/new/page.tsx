@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { NewGymForm } from './new-gym-form';
+
+export const metadata: Metadata = { title: 'Invite gym' };
 
 interface BillingPlan {
   id: string;

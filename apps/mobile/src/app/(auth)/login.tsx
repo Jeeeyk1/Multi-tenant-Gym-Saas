@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Logo } from '../../components/Logo';
+import { Logo, PoweredByFitOps } from '../../components/Logo';
 import { COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 
 export default function LoginScreen() {
@@ -151,6 +151,10 @@ export default function LoginScreen() {
         <Text style={styles.hint}>
           First time? Check your email for an activation link from your gym.
         </Text>
+
+        <View style={styles.powered}>
+          <PoweredByFitOps />
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -169,6 +173,10 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginBottom: SPACING.xl,
+  },
+  powered: {
+    marginTop: 'auto',
+    paddingTop: SPACING.xl,
   },
   backText: {
     fontSize: 14,

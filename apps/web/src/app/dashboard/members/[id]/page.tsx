@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
@@ -9,6 +10,8 @@ import { BadgeMedal } from '@/components/badges/badge-medal';
 import { BadgeStack } from '@/components/badges/badge-stack';
 import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from '@/components/badges/badge-labels';
 import type { BadgeCollection, CollectionBadge, EquippedBadge, MemberDetail, RenewalRecord, MembershipPlan, GymCustomBadge } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Member' };
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'text-success border-success/40 bg-success-bg',

@@ -1,9 +1,12 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth';
 import { getOr } from '@/lib/api';
 import { ChatFeed } from '@/components/chat/chat-feed';
 import { equippedByUser } from '@/components/badges/equipped';
 import type { ChatMessage, Conversation, EquippedBadgeRow } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Chat' };
 
 export default async function CommunityChatPage() {
   const user = await getSessionUser();

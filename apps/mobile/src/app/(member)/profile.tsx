@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Text } from '../../components/Text';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +26,8 @@ import {
 } from '../../constants/enums';
 import { FONT, RADIUS, SPACING } from '../../constants/theme';
 import { onAccent } from '../../theme/accent';
+import { PoweredByFitOps } from '../../components/Logo';
+import { APP_VERSION, PRIVACY_URL, TERMS_URL, VERSOLUTIONS_URL } from '../../constants/brand';
 import type { ColorPalette } from '../../constants/theme';
 
 // ─── Display label maps ───────────────────────────────────────────────────────
@@ -438,7 +440,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   // Tab screens hide the header, so keep content clear of the notch / status bar.
   const insets = useSafeAreaInsets();
-  const { user, signOut } = useAuth();
+  const { user, gymInfo, signOut } = useAuth();
   const { theme, toggleColorScheme } = useTheme();
   const C = theme.colors;
 
@@ -494,6 +496,18 @@ export default function ProfileScreen() {
       paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm,
     },
     signOutText: { color: onAccent(C.error), fontSize: 16, ...FONT.semibold },
+    gymCard: {
+      flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+      backgroundColor: C.surface, borderRadius: RADIUS.xl,
+      borderWidth: 1, borderColor: C.border,
+      padding: SPACING.md,
+    },
+    gymLogo: { width: 40, height: 40, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+    gymInitial: { fontSize: 18, ...FONT.bold },
+    gymName: { flex: 1, fontSize: 16, color: C.text, ...FONT.semibold },
+    about: { alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.lg },
+    aboutLinks: { fontSize: 12, color: C.textMuted, ...FONT.regular, textAlign: 'center' },
+    aboutLink: { color: C.textMuted, textDecorationLine: 'underline' },
   }), [C, theme.onPrimary]);
 
   if (loading) {
@@ -517,6 +531,20 @@ export default function ProfileScreen() {
   return (
     <>
       <ScrollView style={s.root} contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.md }]}>
+        {/* Gym */}
+        {gymInfo?.gymName ? (
+          <View style={s.gymCard}>
+            {theme.logoUrl ? (
+              <Image source={{ uri: theme.logoUrl }} style={s.gymLogo} resizeMode="contain" />
+            ) : (
+              <View style={[s.gymLogo, { backgroundColor: theme.primary }]}>
+                <Text style={[s.gymInitial, { color: theme.onPrimary }]}>{gymInfo.gymName[0].toUpperCase()}</Text>
+              </View>
+            )}
+            <Text style={s.gymName} numberOfLines={1}>{gymInfo.gymName}</Text>
+          </View>
+        ) : null}
+
         {/* Avatar */}
         <View style={s.avatarWrap}>
           <View style={[s.avatar, { backgroundColor: theme.primary }]}>
@@ -620,6 +648,17 @@ export default function ProfileScreen() {
         >
           <Text style={s.signOutText}>{signingOut ? 'Signing out…' : 'Sign Out'}</Text>
         </Pressable>
+
+        {/* About */}
+        <View style={s.about}>
+          <PoweredByFitOps />
+          <Text style={s.aboutLinks}>
+            Version {APP_VERSION} ·{' '}
+            <Text style={s.aboutLink} onPress={() => Linking.openURL(TERMS_URL)}>Terms</Text> ·{' '}
+            <Text style={s.aboutLink} onPress={() => Linking.openURL(PRIVACY_URL)}>Privacy</Text> ·{' '}
+            <Text style={s.aboutLink} onPress={() => Linking.openURL(VERSOLUTIONS_URL)}>VerSolutions</Text>
+          </Text>
+        </View>
       </ScrollView>
 
       {user && (

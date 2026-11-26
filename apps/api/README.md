@@ -1,6 +1,6 @@
 # @gym-saas/api
 
-NestJS REST API for the Gym SaaS platform.
+NestJS REST API for the FitOps platform.
 
 ## Local development
 

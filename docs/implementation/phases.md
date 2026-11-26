@@ -1,6 +1,6 @@
 # Implementation Phases
 
-This document defines the build order for the Gym SaaS platform.
+This document defines the build order for the FitOps platform.
 
 Each phase has a clear goal, a list of deliverables, and a note on what it unblocks.
 Phases must be completed in order unless explicitly noted as parallelizable.

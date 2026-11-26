@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { MemberActivateForm } from './activate-form';
+
+export const metadata: Metadata = { title: 'Activate membership' };
 
 interface Props {
   searchParams: Promise<{ token?: string; code?: string }>;

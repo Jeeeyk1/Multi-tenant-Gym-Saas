@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-This document records confirmed schema decisions for the Gym SaaS platform.
+This document records confirmed schema decisions for the FitOps platform.
 
 The canonical migration history lives in `db/migrations/*.sql`.
 The Prisma schema mirrors the current state in `prisma/schema.prisma`.

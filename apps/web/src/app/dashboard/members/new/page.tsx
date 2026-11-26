@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { RegisterMemberForm } from '@/components/members/register-member-form';
 import type { MembershipPlan } from '@/types/api';
+
+export const metadata: Metadata = { title: 'New member' };
 
 const TIPS = [
   'A welcome email is sent automatically with login instructions.',

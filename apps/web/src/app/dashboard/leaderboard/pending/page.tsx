@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { PendingClient } from '@/components/leaderboard/pending-client';
 import type { PrSubmission } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Pending lifts' };
 
 export default async function PendingApprovalsPage() {
   const user = await getSessionUser();

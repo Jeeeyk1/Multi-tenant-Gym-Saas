@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
@@ -5,6 +6,8 @@ import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
 import { CheckinsTrendChart } from '@/components/dashboard/checkins-trend-chart';
 import { cn } from '@/lib/utils';
 import type { StaffCheckIn, MembersPage, CheckinsTrendPoint } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Dashboard' };
 
 function getGreeting(): string {
   const h = new Date().getHours();

@@ -1,5 +1,9 @@
+import type { Metadata } from 'next';
 import { CodeEntryForm } from '@/components/auth/code-entry-form';
-import { FitOpsMark } from '@/components/brand/fitops-mark';
+import { FitOpsLockup } from '@/components/brand/fitops-mark';
+import { VerSolutionsEndorsement } from '@/components/brand/versolutions-endorsement';
+
+export const metadata: Metadata = { title: 'Sign in' };
 
 interface Props {
   searchParams: Promise<{ activated?: string; reset?: string }>;
@@ -23,8 +27,8 @@ export default async function HomePage({ searchParams }: Props) {
       <div className="relative w-full max-w-sm space-y-8">
         {/* Platform logo */}
         <div className="text-center">
-          <FitOpsMark size={64} className="mb-5" />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Staff Portal</h1>
+          <FitOpsLockup size={40} className="mb-6" />
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Sign in to FitOps</h1>
           <p className="text-sm text-muted-foreground mt-2">
             Sign in with your gym or organization code
           </p>
@@ -53,6 +57,8 @@ export default async function HomePage({ searchParams }: Props) {
         <p className="text-center text-xs text-muted-foreground px-2">
           Are you a member? Download the mobile app to check in and manage your membership.
         </p>
+
+        <VerSolutionsEndorsement className="text-center" />
       </div>
     </main>
   );

@@ -1,6 +1,9 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { InsightsChatClient } from '@/components/insights/chat-client';
+
+export const metadata: Metadata = { title: 'AI Assistant' };
 
 export default async function InsightsPage() {
   const user = await getSessionUser();

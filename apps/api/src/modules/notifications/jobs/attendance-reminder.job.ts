@@ -37,8 +37,8 @@ export class AttendanceReminderJob {
         }
         messages.push({
           to: token,
-          title: "We miss you! 💪",
-          body: `Hey ${target.fullName.split(' ')[0]}, it's been a while. Come train today!`,
+          title: target.gymName,
+          body: `We miss you, ${target.fullName.split(' ')[0]}! It's been a while. Come train today 💪`,
           data: { type: NOTIFICATION_TYPE },
         });
       }

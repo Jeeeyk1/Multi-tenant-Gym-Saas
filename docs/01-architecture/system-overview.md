@@ -1,6 +1,6 @@
 # System Overview
 
-This document describes the high-level architecture of the Gym SaaS platform.
+This document describes the high-level architecture of the FitOps platform.
 
 It explains the purpose of each application, the main system boundaries, and the core technical and business principles that shape the codebase.
 

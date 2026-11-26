@@ -17,7 +17,7 @@ const members = {
   markInviteFailed: jest.fn(),
 } as unknown as jest.Mocked<MembersRepository>;
 
-const email = { sendMemberInvite: jest.fn() } as unknown as jest.Mocked<EmailService>;
+const email = { sendMemberInvite: jest.fn().mockResolvedValue(true) } as unknown as jest.Mocked<EmailService>;
 
 function invite(id: string, over: Record<string, unknown> = {}) {
   return { id, email: `${id}@x.com`, fullName: id, token: `tok-${id}`, gym: { name: 'Iron', code: 'IRON' }, ...over };
@@ -28,6 +28,7 @@ describe('SendMemberInvitesJob', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    email.sendMemberInvite.mockResolvedValue(true);
     job = new SendMemberInvitesJob(members, email, makeLock());
   });
 
@@ -47,6 +48,16 @@ describe('SendMemberInvitesJob', () => {
   it('marks an invite failed (for retry) when the email send throws', async () => {
     members.listPendingInvites.mockResolvedValue([invite('a')] as never);
     email.sendMemberInvite.mockRejectedValueOnce(new Error('rate limited'));
+
+    await job.run();
+
+    expect(members.markInviteFailed).toHaveBeenCalledWith('a');
+    expect(members.markInviteSent).not.toHaveBeenCalled();
+  });
+
+  it('marks an invite failed when the email service reports a failure', async () => {
+    members.listPendingInvites.mockResolvedValue([invite('a')] as never);
+    email.sendMemberInvite.mockResolvedValueOnce(false);
 
     await job.run();
 

@@ -146,6 +146,7 @@ nano .env       # or your preferred editor
 | `SUPERADMIN_TOKEN` | Generate: `openssl rand -base64 32` |
 | `INVITE_EXPIRY_HOURS` | `72` |
 | `WEB_URL` | `https://your-domain.com` |
+| `LANDING_URL` | `https://your-landing-domain.com` |
 | `EMAIL_FROM` | `noreply@your-domain.com` |
 | `RESEND_API_KEY` | From resend.com dashboard |
 | `CLOUDINARY_CLOUD_NAME` | From Cloudinary dashboard |
@@ -168,7 +169,7 @@ echo "SUPERADMIN_TOKEN=$(openssl rand -base64 32)"
 
 ```bash
 NEXT_PUBLIC_API_URL=https://your-domain.com/api/v1
-APP_HOST=https://your-domain.com
+NEXT_PUBLIC_LANDING_URL=https://your-landing-domain.com
 ```
 
 ---

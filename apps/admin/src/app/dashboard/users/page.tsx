@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+
+export const metadata: Metadata = { title: 'Users' };
 
 interface User {
   id: string;
@@ -22,6 +25,7 @@ export default async function UsersPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
+        <p className="text-[13px] text-muted-foreground">FitOps</p>
         <h1 className="text-2xl font-bold text-foreground mb-1">Users</h1>
         <p className="text-sm text-muted-foreground">{data?.total ?? 0} total across all gyms</p>
       </div>

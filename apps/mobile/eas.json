@@ -14,7 +14,8 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://localhost:9001/api"
+        "EXPO_PUBLIC_API_URL": "http://localhost:9001/api",
+        "EXPO_PUBLIC_LANDING_URL": "http://localhost:9004"
       }
     },
     "preview": {
@@ -23,7 +24,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_STAGING_API_URL"
+        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_STAGING_API_URL",
+        "EXPO_PUBLIC_LANDING_URL": "REPLACE_WITH_STAGING_LANDING_URL"
       }
     },
     "production": {
@@ -32,7 +34,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_PRODUCTION_API_URL"
+        "EXPO_PUBLIC_API_URL": "REPLACE_WITH_PRODUCTION_API_URL",
+        "EXPO_PUBLIC_LANDING_URL": "REPLACE_WITH_PRODUCTION_LANDING_URL"
       }
     }
   },

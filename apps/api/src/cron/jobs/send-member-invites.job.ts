@@ -35,13 +35,19 @@ export class SendMemberInvitesJob {
 
       for (const invite of pending) {
         try {
-          await this.email.sendMemberInvite({
+          const delivered = await this.email.sendMemberInvite({
             to: invite.email,
             fullName: invite.fullName,
             gymName: invite.gym.name,
             gymCode: invite.gym.code,
+            gymLogoUrl: invite.gym.profile?.logoUrl,
+            gymAccent: invite.gym.profile?.primaryColor,
             token: invite.token,
           });
+          if (!delivered) {
+            await this.members.markInviteFailed(invite.id);
+            continue;
+          }
           await this.members.markInviteSent(invite.id);
           sent++;
         } catch (err) {

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { Logo, Wordmark } from './Logo';
 import { BRAND, FONT } from '../constants/theme';
@@ -14,14 +13,6 @@ interface AppSplashProps {
 export function AppSplash({ onDone }: AppSplashProps) {
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
-  const [gymName, setGymName] = useState<string | null>(null);
-
-  useEffect(() => {
-    AsyncStorage.getItem('pending_gym_name').then((name) => {
-      if (name) setGymName(name);
-    });
-  }, []);
-
   const logoScale = useRef(new Animated.Value(0.5)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const nameOpacity = useRef(new Animated.Value(0)).current;
@@ -96,9 +87,8 @@ export function AppSplash({ onDone }: AppSplashProps) {
         </Animated.View>
       </View>
 
-      {/* The member's gym once we know it; FitOps before that. */}
       <Animated.View style={{ opacity: nameOpacity, transform: [{ translateY: nameY }], marginBottom: 10 }}>
-        {gymName ? <Animated.Text style={styles.appName}>{gymName}</Animated.Text> : <Wordmark size={30} />}
+        <Wordmark size={30} />
       </Animated.View>
 
       {/* Tagline — character by character */}
@@ -139,13 +129,6 @@ const styles = StyleSheet.create({
     height: 130,
     borderRadius: 65,
     borderWidth: 1.5,
-  },
-  appName: {
-    fontSize: 28,
-    color: BRAND.white,
-    ...FONT.bold,
-    letterSpacing: -0.5,
-    textAlign: 'center',
   },
   taglineRow: {
     flexDirection: 'row',

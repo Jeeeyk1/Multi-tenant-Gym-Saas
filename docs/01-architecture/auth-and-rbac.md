@@ -1,6 +1,6 @@
 # Authentication and RBAC
 
-This document defines authentication and authorization for the Gym SaaS platform.
+This document defines authentication and authorization for the FitOps platform.
 
 ---
 

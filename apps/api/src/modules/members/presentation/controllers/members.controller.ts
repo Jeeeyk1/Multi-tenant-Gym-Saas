@@ -35,6 +35,7 @@ import { RegisterDeviceTokenUseCase } from '../../application/use-cases/register
 import { UpdateMyPrivacyUseCase } from '../../application/use-cases/update-my-privacy.use-case';
 import { ValidateBulkInviteUseCase } from '../../application/use-cases/validate-bulk-invite.use-case';
 import { BulkInviteMembersUseCase } from '../../application/use-cases/bulk-invite-members.use-case';
+import { DeleteMyAccountUseCase } from '../../application/use-cases/delete-my-account.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
 import { BulkInviteDto } from '../dto/bulk-invite.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
@@ -42,6 +43,7 @@ import { UpsertMyProfileDto } from '../dto/upsert-my-profile.dto';
 import { LogWeightDto } from '../dto/log-weight.dto';
 import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
 import { UpdateMyPrivacyDto } from '../dto/update-my-privacy.dto';
+import { DeleteMyAccountDto } from '../dto/delete-my-account.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId/members')
@@ -51,6 +53,7 @@ export class MembersController {
     private readonly registerMemberUseCase: RegisterMemberUseCase,
     private readonly validateBulkInviteUseCase: ValidateBulkInviteUseCase,
     private readonly bulkInviteMembersUseCase: BulkInviteMembersUseCase,
+    private readonly deleteMyAccountUseCase: DeleteMyAccountUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly getMemberUseCase: GetMemberUseCase,
     private readonly getMyMemberUseCase: GetMyMemberUseCase,
@@ -213,6 +216,21 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.updateMyPrivacyUseCase.execute(gymId, dto, user);
+  }
+
+  /**
+   * POST /gyms/:gymId/members/me/delete-account
+   * The caller deletes their own member account (needs their password). Personal, health and chat
+   * data is deleted; renewals and check-ins stay without a name. A staff or owner login stays.
+   */
+  @Post('me/delete-account')
+  @HttpCode(HttpStatus.OK)
+  deleteMyAccount(
+    @Param('gymId') gymId: string,
+    @Body() dto: DeleteMyAccountDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.deleteMyAccountUseCase.execute(gymId, dto.password, user);
   }
 
   /**

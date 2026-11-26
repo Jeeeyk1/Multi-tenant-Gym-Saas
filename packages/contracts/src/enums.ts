@@ -9,6 +9,8 @@ export enum MemberStatus {
   INACTIVE = 'INACTIVE',
   EXPIRED = 'EXPIRED',
   SUSPENDED = 'SUSPENDED',
+  /** The member deleted their account; kept, anonymised, for the gym's records. */
+  DELETED = 'DELETED',
 }
 
 export enum StaffRole {

@@ -28,7 +28,7 @@ describe('MemberAccessGuard', () => {
     await guard.canActivate(ctx(gymUser('u-owner')));
     expect(findFirst).toHaveBeenCalledWith({
       where: { id: 'm1', gymId: 'g1' },
-      select: { userId: true },
+      select: { userId: true, status: true },
     });
   });
 
@@ -67,5 +67,13 @@ describe('MemberAccessGuard', () => {
   it('denies when there is no authenticated user', async () => {
     await expect(guard.canActivate(ctx(undefined))).rejects.toBeInstanceOf(ForbiddenError);
     expect(findFirst).not.toHaveBeenCalled();
+  });
+
+  it('lets staff read a deleted member but not write to them', async () => {
+    findFirst.mockResolvedValue({ userId: 'placeholder', status: 'DELETED' });
+    const staff = gymUser('u-staff', ['members.details', 'members.edit']);
+    await expect(guard.canActivate(ctx(staff, 'GET'))).resolves.toBe(true);
+    await expect(guard.canActivate(ctx(staff, 'PATCH'))).rejects.toMatchObject({ code: 'MEMBER_DELETED' });
+    await expect(guard.canActivate(ctx(staff, 'POST'))).rejects.toMatchObject({ code: 'MEMBER_DELETED' });
   });
 });

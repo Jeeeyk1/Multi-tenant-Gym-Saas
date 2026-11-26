@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import { ForbiddenError, NotFoundError } from '../errors';
+import { ConflictError, ForbiddenError, NotFoundError } from '../errors';
 import type { AuthenticatedUser } from '../types/auth.types';
-import { Permission } from '../enums';
+import { MemberStatus, Permission } from '../enums';
 
 const READ_PERMISSION = Permission.MEMBERS_DETAILS;
 const WRITE_PERMISSION = Permission.MEMBERS_EDIT;
@@ -34,9 +34,13 @@ export class MemberAccessGuard implements CanActivate {
 
     const member = await this.prisma.gymMember.findFirst({
       where: { id: memberId, gymId },
-      select: { userId: true },
+      select: { userId: true, status: true },
     });
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+    // A deleted account is kept only for the gym's records: history can be read, nothing new written.
+    if (member.status === MemberStatus.DELETED && request.method !== 'GET') {
+      throw new ConflictError('This member deleted their account', 'MEMBER_DELETED');
+    }
 
     if (user.type !== 'gym') return true;
     if (member.userId === user.sub) return true;

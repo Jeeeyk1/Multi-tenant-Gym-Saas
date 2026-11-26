@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { ConflictError, ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { RenewalsRepository } from '../../infrastructure/persistence/renewals.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
-import { Permission } from '../../../../common/enums';
+import { MemberStatus, Permission } from '../../../../common/enums';
 
 export interface RenewMembershipInput {
   planId?: string;
@@ -28,6 +28,9 @@ export class RenewMembershipUseCase {
     const member = await this.repo.findMemberForRenewal(memberId, gymId);
     if (!member) {
       throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
+    }
+    if (member.status === MemberStatus.DELETED) {
+      throw new ConflictError('This member deleted their account', 'MEMBER_DELETED');
     }
 
     let durationDays: number;

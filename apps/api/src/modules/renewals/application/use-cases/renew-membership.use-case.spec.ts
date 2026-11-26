@@ -116,4 +116,12 @@ describe('RenewMembershipUseCase', () => {
       useCase.execute('gym-2', 'member-1', { amountPaid: 1500 }, staffCaller),
     ).rejects.toMatchObject({ code: 'GYM_ACCESS_DENIED' });
   });
+
+  it('refuses a member who deleted their account', async () => {
+    mockRepo.findMemberForRenewal.mockResolvedValue({ ...expiredMember, status: 'DELETED' } as never);
+    await expect(useCase.execute('gym-1', 'member-1', { planId: 'plan-1', amountPaid: 500 }, staffCaller)).rejects.toMatchObject({
+      code: 'MEMBER_DELETED',
+    });
+    expect(mockRepo.processRenewal).not.toHaveBeenCalled();
+  });
 });

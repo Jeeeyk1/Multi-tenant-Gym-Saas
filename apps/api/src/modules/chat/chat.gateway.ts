@@ -4,6 +4,7 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -16,6 +17,7 @@ import { DeleteMessageUseCase } from './application/use-cases/delete-message.use
 import { ReactToMessageUseCase } from './application/use-cases/react-to-message.use-case';
 import { MarkConversationReadUseCase } from './application/use-cases/mark-conversation-read.use-case';
 import type { GymAuthUser } from '../../common/types/auth.types';
+import { ChatSessionsService, gymUserRoom } from './application/chat-sessions.service';
 
 // ─── Payload shapes ───────────────────────────────────────────────────────────
 
@@ -82,7 +84,7 @@ interface ReadPayload {
  */
 // CORS for the socket is set centrally in RedisIoAdapter.createIOServer (from app.corsOrigins).
 @WebSocketGateway({ namespace: '/chat' })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private readonly server!: Server;
 
@@ -95,7 +97,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly deleteMessageUseCase: DeleteMessageUseCase,
     private readonly reactToMessageUseCase: ReactToMessageUseCase,
     private readonly markConversationReadUseCase: MarkConversationReadUseCase,
+    private readonly sessions: ChatSessionsService,
   ) {}
+
+  afterInit(server: Server) {
+    this.sessions.attach(server);
+  }
 
   // ─── Connection lifecycle ─────────────────────────────────────────────────
 
@@ -113,6 +120,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (user.type !== 'gym') throw new Error('Org tokens cannot access chat');
 
       socket.data.user = user;
+      await socket.join(gymUserRoom(user.gymId, user.sub));
       this.logger.debug(`Connected: socket=${socket.id} user=${user.sub} gym=${user.gymId}`);
     } catch (err: any) {
       // Emit the error so the client can read it before the socket closes

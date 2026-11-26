@@ -42,7 +42,7 @@ export class AdminRepository {
   getPlatformStats() {
     return this.prisma.$transaction([
       this.prisma.gym.count(),
-      this.prisma.gymMember.count(),
+      this.prisma.gymMember.count({ where: { status: { not: MemberStatus.DELETED } } }),
       this.prisma.checkIn.count({
         where: {
           checkedInAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
@@ -69,7 +69,7 @@ export class AdminRepository {
           createdAt: true,
           organization: { select: { id: true, name: true, slug: true } },
           profile: { select: { logoUrl: true, primaryColor: true } },
-          _count: { select: { members: true, staff: true } },
+          _count: { select: { members: { where: { status: { not: MemberStatus.DELETED } } }, staff: true } },
         },
       }),
       this.prisma.gym.count(),
@@ -111,7 +111,7 @@ export class AdminRepository {
           },
         },
         profile: { select: { logoUrl: true, primaryColor: true, secondaryColor: true, description: true } },
-        _count: { select: { members: true, staff: true, checkIns: true } },
+        _count: { select: { members: { where: { status: { not: MemberStatus.DELETED } } }, staff: true, checkIns: true } },
       },
     });
   }
@@ -179,14 +179,16 @@ export class AdminRepository {
 
   listUsers(page: number, limit: number, gymId?: string) {
     const skip = (page - 1) * limit;
+    // Anonymised logins and "Deleted member" placeholders are records, not users to manage.
     const where = gymId
       ? {
+          deletedAt: null,
           OR: [
             { gymMembers: { some: { gymId } } },
             { gymStaff: { some: { gymId } } },
           ],
         }
-      : {};
+      : { deletedAt: null };
 
     return this.prisma.$transaction([
       this.prisma.user.findMany({

@@ -85,6 +85,11 @@ export function MemberActions({ member, plans }: Props) {
     }
   }
 
+  // A deleted account is kept only for the gym's records; the API refuses changes to it.
+  if (member.status === 'DELETED') {
+    return <p className="text-sm text-muted-foreground">This member deleted their account. Their payment and attendance history is kept.</p>;
+  }
+
   return (
     <>
       <div className="flex flex-wrap gap-3">

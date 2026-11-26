@@ -9,27 +9,27 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		6A6D071393F2837A4AC5BE8D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 79F3F21C83526FB22430B362 /* PrivacyInfo.xcprivacy */; };
-		89DF35AB6E8D6C8CD796D135 /* libPods-FitZone.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1076A6FB3CBB2B26D570A266 /* libPods-FitZone.a */; };
+		6749FCBA385BE3734F5142BB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 860729224CBC2922C84F9134 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		EA4FD985A75FABE2546B6E99 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E602C7FF28076E74DB32E81 /* ExpoModulesProvider.swift */; };
+		C56D073FEEF304E6ABDDE5ED /* libPods-FitOps.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1AEA5606ED13ACEC11AC600B /* libPods-FitOps.a */; };
+		DD6EBB5E0583DE66508D47E5 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF2E12702659C952D7A3362 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1076A6FB3CBB2B26D570A266 /* libPods-FitZone.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FitZone.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07F961A680F5B00A75B9A /* FitZone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitZone.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FitZone/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FitZone/Info.plist; sourceTree = "<group>"; };
-		3220DF65215746B0F6781BFE /* Pods-FitZone.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitZone.release.xcconfig"; path = "Target Support Files/Pods-FitZone/Pods-FitZone.release.xcconfig"; sourceTree = "<group>"; };
-		59423ED2155190B9C07B31C1 /* Pods-FitZone.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitZone.debug.xcconfig"; path = "Target Support Files/Pods-FitZone/Pods-FitZone.debug.xcconfig"; sourceTree = "<group>"; };
-		79F3F21C83526FB22430B362 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = FitZone/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		8E602C7FF28076E74DB32E81 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-FitZone/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = FitZone/SplashScreen.storyboard; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* FitOps.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitOps.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = FitOps/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = FitOps/Info.plist; sourceTree = "<group>"; };
+		1AEA5606ED13ACEC11AC600B /* libPods-FitOps.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-FitOps.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A3C6B12BD408DA959A71749 /* Pods-FitOps.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitOps.release.xcconfig"; path = "Target Support Files/Pods-FitOps/Pods-FitOps.release.xcconfig"; sourceTree = "<group>"; };
+		860729224CBC2922C84F9134 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = FitOps/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = FitOps/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		CEF2E12702659C952D7A3362 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-FitOps/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		D448EE96F4A21A1CDAA8BE24 /* Pods-FitOps.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FitOps.debug.xcconfig"; path = "Target Support Files/Pods-FitOps/Pods-FitOps.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = FitZone/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* FitZone-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FitZone-Bridging-Header.h"; path = "FitZone/FitZone-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = FitOps/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* FitOps-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FitOps-Bridging-Header.h"; path = "FitOps/FitOps-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,31 +37,41 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				89DF35AB6E8D6C8CD796D135 /* libPods-FitZone.a in Frameworks */,
+				C56D073FEEF304E6ABDDE5ED /* libPods-FitOps.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* FitZone */ = {
+		13B07FAE1A68108700A75B9A /* FitOps */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* FitZone-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* FitOps-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				79F3F21C83526FB22430B362 /* PrivacyInfo.xcprivacy */,
+				860729224CBC2922C84F9134 /* PrivacyInfo.xcprivacy */,
 			);
-			name = FitZone;
+			name = FitOps;
 			sourceTree = "<group>";
 		};
-		23274C5D4D3D966D0EAAF4D5 /* ExpoModulesProviders */ = {
+		1D569177C7E0181534017A1C /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				C15C731D0BFCF0742D517B94 /* FitZone */,
+				D448EE96F4A21A1CDAA8BE24 /* Pods-FitOps.debug.xcconfig */,
+				4A3C6B12BD408DA959A71749 /* Pods-FitOps.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		214BC5AC1A19C91068C8BD01 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				BAFB00EF5589E8B907652DBD /* FitOps */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -70,7 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				1076A6FB3CBB2B26D570A266 /* libPods-FitZone.a */,
+				1AEA5606ED13ACEC11AC600B /* libPods-FitOps.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -85,12 +95,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* FitZone */,
+				13B07FAE1A68108700A75B9A /* FitOps */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				D89E858992DFA59C5D405545 /* Pods */,
-				23274C5D4D3D966D0EAAF4D5 /* ExpoModulesProviders */,
+				1D569177C7E0181534017A1C /* Pods */,
+				214BC5AC1A19C91068C8BD01 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -100,9 +110,17 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* FitZone.app */,
+				13B07F961A680F5B00A75B9A /* FitOps.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BAFB00EF5589E8B907652DBD /* FitOps */ = {
+			isa = PBXGroup;
+			children = (
+				CEF2E12702659C952D7A3362 /* ExpoModulesProvider.swift */,
+			);
+			name = FitOps;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -111,50 +129,32 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = FitZone/Supporting;
-			sourceTree = "<group>";
-		};
-		C15C731D0BFCF0742D517B94 /* FitZone */ = {
-			isa = PBXGroup;
-			children = (
-				8E602C7FF28076E74DB32E81 /* ExpoModulesProvider.swift */,
-			);
-			name = FitZone;
-			sourceTree = "<group>";
-		};
-		D89E858992DFA59C5D405545 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				59423ED2155190B9C07B31C1 /* Pods-FitZone.debug.xcconfig */,
-				3220DF65215746B0F6781BFE /* Pods-FitZone.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
+			path = FitOps/Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* FitZone */ = {
+		13B07F861A680F5B00A75B9A /* FitOps */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "FitZone" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "FitOps" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				0D39D81AAE89CE08102AF2B1 /* [Expo] Configure project */,
+				A836970363C1273C131A3F87 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				77590A1BA2F552A002B93244 /* [CP] Embed Pods Frameworks */,
+				FDEBFDF05271FD920CA3FD6A /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = FitZone;
-			productName = FitZone;
-			productReference = 13B07F961A680F5B00A75B9A /* FitZone.app */;
+			name = FitOps;
+			productName = FitOps;
+			productReference = 13B07F961A680F5B00A75B9A /* FitOps.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -170,7 +170,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "FitZone" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "FitOps" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -183,7 +183,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* FitZone */,
+				13B07F861A680F5B00A75B9A /* FitOps */,
 			);
 		};
 /* End PBXProject section */
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				6A6D071393F2837A4AC5BE8D /* PrivacyInfo.xcprivacy in Resources */,
+				6749FCBA385BE3734F5142BB /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,57 +235,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-FitZone-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-FitOps-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		0D39D81AAE89CE08102AF2B1 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/FitZone/FitZone.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-FitZone/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-FitZone/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-FitZone/expo-configure-project.sh\"\n";
-		};
-		77590A1BA2F552A002B93244 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FitZone/Pods-FitZone-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FitZone/Pods-FitZone-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
@@ -294,7 +248,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-FitZone/Pods-FitZone-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-FitOps/Pods-FitOps-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -321,7 +275,53 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FitZone/Pods-FitZone-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FitOps/Pods-FitOps-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A836970363C1273C131A3F87 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/FitOps/FitOps.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-FitOps/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-FitOps/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-FitOps/expo-configure-project.sh\"\n";
+		};
+		FDEBFDF05271FD920CA3FD6A /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-FitOps/Pods-FitOps-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-FitOps/Pods-FitOps-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -332,7 +332,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				EA4FD985A75FABE2546B6E99 /* ExpoModulesProvider.swift in Sources */,
+				DD6EBB5E0583DE66508D47E5 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,18 +341,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 59423ED2155190B9C07B31C1 /* Pods-FitZone.debug.xcconfig */;
+			baseConfigurationReference = D448EE96F4A21A1CDAA8BE24 /* Pods-FitOps.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = FitZone/FitZone.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FitOps/FitOps.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = FitZone/Info.plist;
+				INFOPLIST_FILE = FitOps/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -366,8 +366,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gymSaas.mobile;
-				PRODUCT_NAME = FitZone;
-				SWIFT_OBJC_BRIDGING_HEADER = "FitZone/FitZone-Bridging-Header.h";
+				PRODUCT_NAME = FitOps;
+				SWIFT_OBJC_BRIDGING_HEADER = "FitOps/FitOps-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -377,13 +377,13 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3220DF65215746B0F6781BFE /* Pods-FitZone.release.xcconfig */;
+			baseConfigurationReference = 4A3C6B12BD408DA959A71749 /* Pods-FitOps.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = FitZone/FitZone.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FitOps/FitOps.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = FitZone/Info.plist;
+				INFOPLIST_FILE = FitOps/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -397,8 +397,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.gymSaas.mobile;
-				PRODUCT_NAME = FitZone;
-				SWIFT_OBJC_BRIDGING_HEADER = "FitZone/FitZone-Bridging-Header.h";
+				PRODUCT_NAME = FitOps;
+				SWIFT_OBJC_BRIDGING_HEADER = "FitOps/FitOps-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -526,7 +526,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "FitZone" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "FitOps" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -535,7 +535,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "FitZone" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "FitOps" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

@@ -1,23 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+// One OS listener for the whole app: medals in long lists all read this, so a per-component
+// listener would mean dozens of subscriptions.
+let reduceMotionNow = false;
+const listeners = new Set<() => void>();
+let started = false;
+
+function setReduceMotion(value: boolean) {
+  if (value === reduceMotionNow) return;
+  reduceMotionNow = value;
+  listeners.forEach((l) => l());
+}
+
+function subscribe(listener: () => void) {
+  if (!started) {
+    started = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+  }
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 /** True when the user asked the OS to reduce motion; animations should be skipped. */
 export function useReduceMotion(): boolean {
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (mounted) setReduceMotion(value);
-    });
-    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
-
-  return reduceMotion;
+  return useSyncExternalStore(subscribe, () => reduceMotionNow);
 }
 
 /** True while a screen reader (VoiceOver / TalkBack) is running. */

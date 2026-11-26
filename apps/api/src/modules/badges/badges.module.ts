@@ -16,6 +16,7 @@ import { MarkBadgesSeenUseCase } from './application/use-cases/mark-badges-seen.
 import { ListLaddersUseCase } from './application/use-cases/list-ladders.use-case';
 import { SaveLadderUseCase } from './application/use-cases/save-ladder.use-case';
 import { BadgeNotifier } from './application/badge-notifier';
+import { BadgeRarityService } from './application/badge-rarity.service';
 import { LadderService } from './application/ladder.service';
 import { BadgesController } from './presentation/controllers/badges.controller';
 import { BadgesService } from './badges.service';
@@ -41,6 +42,7 @@ import { BadgesService } from './badges.service';
     SaveLadderUseCase,
     BadgeNotifier,
     LadderService,
+    BadgeRarityService,
     BadgesService,
   ],
   exports: [BadgesService, CloseCycleUseCase],

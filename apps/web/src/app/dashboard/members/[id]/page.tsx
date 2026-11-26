@@ -7,7 +7,7 @@ import { MemberActions } from '@/components/members/member-actions';
 import { AwardBadgeDialog } from '@/components/members/award-badge-dialog';
 import { BadgeMedal } from '@/components/badges/badge-medal';
 import { BadgeStack } from '@/components/badges/badge-stack';
-import { CATEGORY_LABEL, TIER_LABEL } from '@/components/badges/badge-labels';
+import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from '@/components/badges/badge-labels';
 import type { BadgeCollection, CollectionBadge, EquippedBadge, MemberDetail, RenewalRecord, MembershipPlan, GymCustomBadge } from '@/types/api';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -35,7 +35,7 @@ function EarnedBadgeRow({ badge }: { badge: CollectionBadge }) {
   const earned = badge.earned!;
   return (
     <li className={cn('px-5 py-3 flex items-center gap-4', earned.expired && 'opacity-50')}>
-      <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={36} />
+      <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={36} rarity={earned.expired ? null : badge.rarity} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">
           {badge.name}
@@ -46,6 +46,7 @@ function EarnedBadgeRow({ badge }: { badge: CollectionBadge }) {
         <p className="text-xs text-muted-foreground">
           {[
             badge.tier && TIER_LABEL[badge.tier],
+            badge.rarity && RARITY_LABEL[badge.rarity],
             badge.description,
             badge.timesEarned > 1 && `Earned ${badge.timesEarned} times`,
             earned.expired && 'Expired',
@@ -88,6 +89,7 @@ export default async function MemberDetailPage({ params }: Props) {
     b?.earned
       ? [{
           memberBadgeId: b.earned.memberBadgeId,
+          key: b.key,
           awardedAt: b.earned.awardedAt,
           category: b.category,
           name: b.name,
@@ -95,6 +97,7 @@ export default async function MemberDetailPage({ params }: Props) {
           icon: b.icon,
           color: b.color,
           tier: b.tier,
+          rarity: b.rarity,
         }]
       : [],
   );

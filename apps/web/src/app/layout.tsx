@@ -20,8 +20,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'LiftHub — Staff Portal',
-  description: 'Gym management platform',
+  title: 'FitOps — Staff',
+  description: 'Run your gym: members, check-ins, renewals and community.',
 };
 
 const themeScript = `

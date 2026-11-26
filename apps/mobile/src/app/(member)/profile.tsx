@@ -16,7 +16,7 @@ import { useMyBadges } from '../../hooks/badges';
 import type { EquippedBadge, GymMember, MemberBadge, MemberProfile } from '../../types';
 import { BadgeMedal } from '../../components/badges/BadgeMedal';
 import { BadgeStack } from '../../components/badges/BadgeStack';
-import { CATEGORY_LABEL, CATEGORY_ORDER, memberBadgeView } from '../../components/badges/badge-labels';
+import { CATEGORY_LABEL, CATEGORY_ORDER, memberBadgeKey, memberBadgeView } from '../../components/badges/badge-labels';
 import {
   ActivityLevel,
   DietType,
@@ -142,7 +142,7 @@ function equippedBadges(badges: MemberBadge[]): EquippedBadge[] {
   return badges
     .filter((b) => b.isEquipped && !(b.expiresAt && new Date(b.expiresAt) < now))
     .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
-    .map((b) => ({ memberBadgeId: b.id, awardedAt: b.awardedAt, ...memberBadgeView(b) }));
+    .map((b) => ({ memberBadgeId: b.id, key: memberBadgeKey(b), awardedAt: b.awardedAt, ...memberBadgeView(b) }));
 }
 
 function EquippedSlots({ equipped, hasBadges, onPress }: { equipped: EquippedBadge[]; hasBadges: boolean; onPress: () => void }) {
@@ -161,7 +161,7 @@ function EquippedSlots({ equipped, hasBadges, onPress }: { equipped: EquippedBad
           return (
             <View key={category} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
               {badge ? (
-                <BadgeMedal category={category} tier={badge.tier} color={badge.color} icon={badge.icon} size={44} />
+                <BadgeMedal category={category} tier={badge.tier} color={badge.color} icon={badge.icon} size={44} rarity={badge.rarity} />
               ) : (
                 <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderStyle: 'dashed', borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="add" size={18} color={C.textMuted} />

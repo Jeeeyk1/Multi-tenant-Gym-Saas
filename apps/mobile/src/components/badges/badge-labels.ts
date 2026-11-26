@@ -1,4 +1,4 @@
-import { BadgeCategory, BadgeTier } from '../../constants/enums';
+import { BadgeCategory, BadgeRarity, BadgeTier } from '../../constants/enums';
 import { BADGE_COLORS } from '../../constants/theme';
 import type { MemberBadge } from '../../types';
 
@@ -22,6 +22,18 @@ export const TIER_LABEL: Record<BadgeTier, string> = {
   [BadgeTier.BRONZE]: 'Bronze',
 };
 
+export const RARITY_LABEL: Record<BadgeRarity, string> = {
+  [BadgeRarity.LEGENDARY]: 'Legendary',
+  [BadgeRarity.EPIC]: 'Epic',
+};
+
+/** The badge definition a member's badge came from, as the API keys it (`catalog:<id>` …). */
+export function memberBadgeKey(b: MemberBadge): string {
+  if (b.badgeCatalog) return `catalog:${b.badgeCatalog.id}`;
+  if (b.milestoneBadge) return `milestone:${b.milestoneBadge.id}`;
+  return `custom:${b.customBadge?.id}`;
+}
+
 /** The definition fields of a member's badge, whichever kind it is. */
 export function memberBadgeView(b: MemberBadge) {
   return {
@@ -31,5 +43,6 @@ export function memberBadgeView(b: MemberBadge) {
     icon: b.badgeCatalog?.icon ?? b.customBadge?.icon ?? b.milestoneBadge?.icon ?? 'ribbon',
     color: b.badgeCatalog?.color ?? b.customBadge?.color ?? b.milestoneBadge?.color ?? BADGE_COLORS.FALLBACK,
     tier: b.badgeRank ?? b.milestoneBadge?.tier ?? null,
+    rarity: b.rarity,
   };
 }

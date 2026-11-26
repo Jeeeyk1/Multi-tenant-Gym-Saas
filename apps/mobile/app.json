@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FitZone",
+    "name": "FitOps",
     "slug": "gym-saas-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,14 +8,16 @@
     "userInterfaceStyle": "dark",
     "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#0E1116"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A2540"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gymSaas.mobile",
       "infoPlist": {
-        "NSHealthShareUsageDescription": "FitZone reads your workout calories and heart rate so you can track your fitness progress.",
-        "NSHealthUpdateUsageDescription": "FitZone saves your workout sessions to Apple Health."
+        "NSHealthShareUsageDescription": "FitOps reads your workout calories and heart rate so you can track your fitness progress.",
+        "NSHealthUpdateUsageDescription": "FitOps saves your workout sessions to Apple Health."
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
@@ -25,6 +27,7 @@
     "android": {
       "package": "com.gymSaas.mobile",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A2540"
       }
     },

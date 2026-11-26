@@ -33,3 +33,8 @@ export enum BadgeTier {
   SILVER = 'SILVER',
   BRONZE = 'BRONZE',
 }
+
+export enum BadgeRarity {
+  EPIC = 'EPIC',
+  LEGENDARY = 'LEGENDARY',
+}

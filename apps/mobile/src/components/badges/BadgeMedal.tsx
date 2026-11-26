@@ -2,10 +2,14 @@ import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { BadgeCategory, type BadgeTier } from '../../constants/enums';
+import { BadgeCategory, BadgeRarity, type BadgeTier } from '../../constants/enums';
 import { BADGE_COLORS } from '../../constants/theme';
+import { ANIMATE_MIN_SIZE, RarityAura } from './RarityAura';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
+
+// How far legendary flames reach above the medal, as a share of its size (see RarityAura).
+const FLAME_HEADROOM = 0.3;
 
 
 // Category shapes on a 100×100 grid: Consistency = weight plate, Loyalty = shield,
@@ -36,6 +40,7 @@ export function BadgeMedal({
   icon,
   size = 48,
   locked = false,
+  rarity = null,
 }: {
   category: BadgeCategory;
   tier: BadgeTier | null;
@@ -43,6 +48,8 @@ export function BadgeMedal({
   icon: string;
   size?: number;
   locked?: boolean;
+  /** Rare badges glow; legendary ones burn. Never shown while locked. */
+  rarity?: BadgeRarity | null;
 }) {
   const rim = locked ? BADGE_COLORS.LOCKED : BADGE_COLORS[tier ?? 'IRON'];
   const face = locked ? BADGE_COLORS.LOCKED_FACE : color;
@@ -51,7 +58,18 @@ export function BadgeMedal({
   const glyphOffset = category === BadgeCategory.LOYALTY ? -size * 0.04 : 0;
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessible={false}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Legendary flames rise above the medal; keep them off the label or edge above.
+        marginTop: rarity === BadgeRarity.LEGENDARY && !locked && size >= ANIMATE_MIN_SIZE ? size * FLAME_HEADROOM : 0,
+      }}
+      accessible={false}
+    >
+      {rarity && !locked && <RarityAura rarity={rarity} size={size} />}
       <Svg width={size} height={size} viewBox="0 0 100 100" style={{ position: 'absolute' }}>
         {category === BadgeCategory.CONSISTENCY ? (
           <>

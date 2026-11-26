@@ -1,6 +1,13 @@
 // Accent used when a gym has no theme color.
 export const DEFAULT_ACCENT = '#CCFF00';
 
+// FitOps brand colors for the app icon, splash and wordmark (never tenant-themed).
+export const BRAND = {
+  navy: '#0A2540',
+  volt: DEFAULT_ACCENT,
+  white: '#FFFFFF',
+} as const;
+
 export const DARK_COLORS = {
   // Core backgrounds
   background: '#0E1116',
@@ -189,4 +196,8 @@ export const BADGE_COLORS = {
   LOCKED_GLYPH: '#7C7F8A',
   GLYPH: '#FFFFFF',
   FALLBACK: '#6B7280',
+  // Rarity effects: warm flames for legendary, a violet glow for epic.
+  FLAME_CORE: '#FFB020',
+  FLAME_EDGE: '#FF5A1F',
+  EPIC_GLOW: '#A78BFA',
 } as const;

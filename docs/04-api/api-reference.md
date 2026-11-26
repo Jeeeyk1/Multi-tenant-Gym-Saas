@@ -1292,7 +1292,7 @@ Each badge has:
 - `earned` (`{ memberBadgeId, awardedAt, expiresAt, expired, isEquipped, seenAt }`, or `null` when locked);
 - `timesEarned`;
 - `progress` (`{ current, target, unit }`, or `null`);
-- `rarityPct` (the share of active members who hold it, cached for an hour).
+- `rarityPct` (the share of active members who hold it) and `rarity` (see below). Both are cached for 15 minutes.
 
 #### PATCH /gyms/:gymId/badges/my/:badgeId
 `{ "equipped": true }` equips the badge and unequips the member's other badge in the same category.
@@ -1303,8 +1303,18 @@ Each badge has:
 New badges have `seenAt: null`.
 
 #### GET /gyms/:gymId/badges/equipped
-`[{ userId, badges: [{ memberBadgeId, category, name, description, icon, color, tier, awardedAt }], badge }]`.
+`[{ userId, badges: [{ memberBadgeId, key, category, name, description, icon, color, tier, rarity, awardedAt }], badge }]`.
 `badges` is in category order. `badge` (the first badge, old shape) is kept for app versions before Badges v2.
+A member's own badge list (`GET badges/my`, `GET members/:memberId/badges`) also carries `rarity`.
+
+#### Badge rarity
+`rarity` is `LEGENDARY`, `EPIC` or `null`, based on the share of the gym's **active** members who hold the badge
+(`modules/badges/domain/badge-rarity.ts`):
+- `LEGENDARY`: 5% or less, in a gym with at least 20 active members.
+- `EPIC`: 15% or less, in a gym with at least 10 active members.
+
+Small gyms never get rare badges; otherwise every badge would look rare. Clients draw flames (legendary) or a
+glow (epic) around the medal.
 
 #### GET /gyms/:gymId/badges/ladders
 For staff with `badges.manage`. Returns the gym's leaderboard lifts:

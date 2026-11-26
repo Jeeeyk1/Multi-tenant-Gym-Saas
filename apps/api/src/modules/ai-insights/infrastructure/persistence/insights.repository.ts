@@ -174,6 +174,23 @@ export class InsightsRepository {
     }));
   }
 
+  /** Name and number of one member of this gym, for describing an action before it runs. Null if not in this gym. */
+  async findMemberById(gymId: string, memberId: string) {
+    const row = await this.prisma.gymMember.findFirst({
+      where: { id: memberId, gymId },
+      select: { id: true, membershipNumber: true, status: true, membershipPlanId: true, user: { select: { fullName: true } } },
+    });
+    return row
+      ? {
+          memberId: row.id,
+          name: row.user.fullName,
+          membershipNumber: row.membershipNumber,
+          status: row.status,
+          hasPlan: row.membershipPlanId !== null,
+        }
+      : null;
+  }
+
   async getMemberCheckinStatus(gymId: string, memberId: string, dateStr?: string) {
     const member = await this.prisma.gymMember.findFirst({
       where: { id: memberId, gymId },

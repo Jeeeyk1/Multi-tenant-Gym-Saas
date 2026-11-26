@@ -1,27 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InsightsRepository } from '../../infrastructure/persistence/insights.repository';
 import { MembershipPlansRepository } from '../../../membership-plans/infrastructure/persistence/membership-plans.repository';
-import { RegisterMemberUseCase } from '../../../members/application/use-cases/register-member.use-case';
-import { SuspendMemberUseCase } from '../../../members/application/use-cases/suspend-member.use-case';
-import { ReactivateMemberUseCase } from '../../../members/application/use-cases/reactivate-member.use-case';
-import { RenewMembershipUseCase } from '../../../renewals/application/use-cases/renew-membership.use-case';
 import type { LlmContent, LlmToolSchema } from '../../domain/llm.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { METRIC_ENTITIES, validateMetricQuery, describeFilterValues, type MetricEntity } from './metric.whitelist';
 import { validateTrendQuery } from './trend.whitelist';
 import { hasPermission } from '../../../../common/auth/authorization';
 import { Permission } from '../../../../common/enums';
+import { optionalString, requireString, type ToolCall, type ToolContext } from './tool-input';
 
-interface ToolCall {
-  id: string;
-  name: string;
-  input: Record<string, unknown>;
-}
-
-export interface ToolContext {
-  gymId: string;
-  caller: AuthenticatedUser;
-}
+export type { ToolCall, ToolContext } from './tool-input';
 
 export interface ToolExecutionResult {
   /** Fed back into the model's conversation (already JSON-stringified). */
@@ -30,8 +18,6 @@ export interface ToolExecutionResult {
   data: unknown;
   isError: boolean;
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Staff get the assistant for day-to-day questions; money totals stay with the owner (reports.view).
 const REVENUE_DENIED = 'Revenue figures are only available to the gym owner.';
@@ -46,10 +32,6 @@ const STEP_LABELS: Record<string, string> = {
   query_metric: 'Calculating metric',
   get_trend: 'Building trend',
   list_membership_plans: 'Loading membership plans',
-  register_member: 'Inviting member',
-  renew_membership: 'Renewing membership',
-  suspend_member: 'Suspending member',
-  reactivate_member: 'Reactivating member',
 };
 
 @Injectable()
@@ -57,14 +39,11 @@ export class ToolRegistry {
   constructor(
     private readonly repo: InsightsRepository,
     private readonly plansRepo: MembershipPlansRepository,
-    private readonly registerMember: RegisterMemberUseCase,
-    private readonly renewMembership: RenewMembershipUseCase,
-    private readonly suspendMember: SuspendMemberUseCase,
-    private readonly reactivateMember: ReactivateMemberUseCase,
   ) {}
 
+  /** Read-only tools, run as soon as the model calls them. Actions are in ActionTools. */
   schemas(): LlmToolSchema[] {
-    return [...this.readTools(), ...this.actionTools()];
+    return this.readTools();
   }
 
   systemPrompt(): string {
@@ -93,13 +72,10 @@ export class ToolRegistry {
       '',
       'Actions you can take: register_member (invite by email), renew_membership, suspend_member, reactivate_member.',
       'Resolve a member with find_member first (to get member_id). Use list_membership_plans to get a plan_id.',
-      '',
-      'CONFIRMATION RULE — this is mandatory for any action that changes data or sends an email',
-      '(register_member, renew_membership, suspend_member, reactivate_member):',
-      '1. Gather every required detail.',
-      '2. Summarize exactly what you are about to do and ask the user to confirm.',
-      '3. Call the tool ONLY after the user explicitly confirms (e.g. "yes", "go ahead").',
-      'Never call an action tool in the same turn you first propose it. If unconfirmed, ask — do not act.',
+      'If a required detail is missing or unclear (which member, which plan, the amount paid), ask the user first.',
+      'Once you have the details, call the action tool. It does not run yet: the app shows the user a summary with a',
+      'confirm button, and only the user can confirm. Do not ask the user to type "yes"; the button does that.',
+      'Propose one action per answer. If an action was proposed earlier in the chat, do not propose it again unless asked.',
     ].join('\n');
   }
 
@@ -157,50 +133,6 @@ export class ToolRegistry {
           .map((plan) => ({ id: plan.id, name: plan.name, price: Number(plan.price), durationDays: plan.durationDays }));
       }
 
-      case 'register_member': {
-        const email = requireString(input.email, 'email');
-        if (!EMAIL_RE.test(email)) throw new Error('A valid email address is required');
-        const fullName = requireString(input.full_name, 'full_name');
-        const planId = optionalString(input.plan_id);
-        const expiryDate = optionalString(input.expiry_date);
-        if (!planId && !expiryDate) throw new Error('Either plan_id or expiry_date is required');
-        await this.registerMember.execute(
-          gymId,
-          { email, fullName, phone: optionalString(input.phone), planId, expiryDate },
-          caller,
-        );
-        return { ok: true, invitedEmail: email, fullName };
-      }
-
-      case 'renew_membership': {
-        const memberId = requireString(input.member_id, 'member_id');
-        const amountPaid = requireNumber(input.amount_paid, 'amount_paid');
-        await this.renewMembership.execute(
-          gymId,
-          memberId,
-          {
-            planId: optionalString(input.plan_id),
-            amountPaid,
-            paymentMethod: optionalString(input.payment_method),
-            notes: optionalString(input.notes),
-          },
-          caller,
-        );
-        return { ok: true, memberId };
-      }
-
-      case 'suspend_member': {
-        const memberId = requireString(input.member_id, 'member_id');
-        await this.suspendMember.execute(gymId, memberId, caller);
-        return { ok: true, memberId, status: 'SUSPENDED' };
-      }
-
-      case 'reactivate_member': {
-        const memberId = requireString(input.member_id, 'member_id');
-        await this.reactivateMember.execute(gymId, memberId, caller);
-        return { ok: true, memberId, status: 'ACTIVE' };
-      }
-
       default:
         throw new Error(`Unknown tool "${call.name}"`);
     }
@@ -256,59 +188,6 @@ export class ToolRegistry {
     ];
   }
 
-  private actionTools(): LlmToolSchema[] {
-    return [
-      {
-        name: 'register_member',
-        description: 'Invite a new member by email (sends an invite email). Needs plan_id (from list_membership_plans) OR expiry_date. Confirm all details with the user before calling.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            email: { type: 'string' },
-            full_name: { type: 'string' },
-            phone: { type: 'string' },
-            plan_id: { type: 'string', description: 'From list_membership_plans' },
-            expiry_date: { type: 'string', description: 'YYYY-MM-DD, only if no plan_id' },
-          },
-          required: ['email', 'full_name'],
-        },
-      },
-      {
-        name: 'renew_membership',
-        description: 'Renew a member\'s membership. Resolve member_id with find_member first. Confirm with the user before calling.',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            member_id: { type: 'string' },
-            plan_id: { type: 'string', description: 'From list_membership_plans' },
-            amount_paid: { type: 'number' },
-            payment_method: { type: 'string' },
-            notes: { type: 'string' },
-          },
-          required: ['member_id', 'amount_paid'],
-        },
-      },
-      {
-        name: 'suspend_member',
-        description: 'Suspend a member. Resolve member_id with find_member first. Confirm with the user before calling.',
-        inputSchema: {
-          type: 'object',
-          properties: { member_id: { type: 'string' } },
-          required: ['member_id'],
-        },
-      },
-      {
-        name: 'reactivate_member',
-        description: 'Reactivate a suspended member. Resolve member_id with find_member first. Confirm with the user before calling.',
-        inputSchema: {
-          type: 'object',
-          properties: { member_id: { type: 'string' } },
-          required: ['member_id'],
-        },
-      },
-    ];
-  }
-
   private metricSchema(): Record<string, unknown> {
     const aliasUnion = (pick: (config: (typeof METRIC_ENTITIES)[keyof typeof METRIC_ENTITIES]) => Record<string, string>) =>
       [...new Set(Object.values(METRIC_ENTITIES).flatMap((config) => Object.keys(pick(config))))];
@@ -333,23 +212,4 @@ export class ToolRegistry {
       required: ['entity', 'metric'],
     };
   }
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new Error(`"${field}" is required`);
-  }
-  return value;
-}
-
-function optionalString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
-}
-
-function requireNumber(value: unknown, field: string): number {
-  const num = typeof value === 'string' ? Number(value) : value;
-  if (typeof num !== 'number' || Number.isNaN(num)) {
-    throw new Error(`"${field}" must be a number`);
-  }
-  return num;
 }

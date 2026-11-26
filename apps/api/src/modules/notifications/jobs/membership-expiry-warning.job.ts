@@ -37,8 +37,8 @@ export class MembershipExpiryWarningJob {
         }
         messages.push({
           to: token,
-          title: 'Your membership expires soon ⏳',
-          body: `Hey ${target.fullName.split(' ')[0]}, your membership ends in ${DAYS_BEFORE_EXPIRY} days. Tap to view details.`,
+          title: target.gymName,
+          body: `Hey ${target.fullName.split(' ')[0]}, your membership expires in ${DAYS_BEFORE_EXPIRY} days. Tap to view details.`,
           data: { type: NOTIFICATION_TYPE, screen: 'membership' },
         });
       }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { adminLogout } from '@/lib/auth';
+import { FitOpsMarkReversed, FitOpsWordmark, VerSolutionsLogo } from '@/components/brand/versolutions';
 
 const NAV = [
   {
@@ -80,32 +81,28 @@ export function Sidebar({ email }: { email: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-56 flex-shrink-0 flex flex-col h-screen bg-surface border-r border-border">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground leading-none">Admin</p>
-          <p className="text-xs text-muted-foreground leading-none mt-0.5">System Portal</p>
-        </div>
+    <aside className="w-[248px] flex-shrink-0 flex flex-col h-full bg-navy text-slate-light px-3.5 py-[18px] gap-[18px]">
+      <VerSolutionsLogo className="px-1.5 text-white" />
+
+      <div className="flex items-center gap-2.5 min-h-[52px] px-3 py-2 rounded-xl border border-navy-line bg-navy-raised">
+        <FitOpsMarkReversed size={26} />
+        <span className="flex flex-col">
+          <span className="text-[11px] text-slate">Product</span>
+          <FitOpsWordmark className="text-base text-white" />
+        </span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
+      <nav className="flex-1 flex flex-col gap-0.5">
         {NAV.map((item) => {
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition ${
+              className={`flex items-center gap-2.5 h-10 px-3 rounded-[10px] text-sm transition ${
                 active
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+                  ? 'bg-navy-raised text-white font-semibold [&_svg]:text-sky'
+                  : 'text-slate-light hover:bg-navy-raised/60 hover:text-white [&_svg]:text-slate'
               }`}
             >
               {item.icon}
@@ -115,13 +112,13 @@ export function Sidebar({ email }: { email: string }) {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-border">
-        <p className="text-xs text-muted-foreground truncate mb-2 px-1">{email}</p>
+      <div className="pt-2.5 border-t border-navy-line">
+        <p className="text-[13px] text-white font-semibold truncate px-1.5">{email}</p>
+        <p className="text-xs text-slate-light px-1.5 mb-2">VerSolutions</p>
         <form action={adminLogout}>
           <button
             type="submit"
-            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition"
+            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-[10px] text-sm text-slate-light hover:bg-navy-raised/60 hover:text-white transition"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

@@ -5,8 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-heading)', 'var(--font-body)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'var(--font-body)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -24,6 +26,10 @@ const config: Config = {
         destructive: 'hsl(var(--destructive))',
         success: 'hsl(var(--success))',
         warning: 'hsl(var(--warning))',
+        navy: { DEFAULT: '#0A2540', raised: '#12304F', line: '#1E3A5F' },
+        sky: '#93C5FD',
+        slate: { DEFAULT: '#93A4BA', light: '#CBD5E1' },
+        amber: '#F59E0B',
       },
     },
   },

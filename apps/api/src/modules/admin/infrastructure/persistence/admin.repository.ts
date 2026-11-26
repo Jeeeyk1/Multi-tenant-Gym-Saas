@@ -65,6 +65,7 @@ export class AdminRepository {
           name: true,
           code: true,
           status: true,
+          city: true,
           createdAt: true,
           organization: { select: { id: true, name: true, slug: true } },
           profile: { select: { logoUrl: true, primaryColor: true } },

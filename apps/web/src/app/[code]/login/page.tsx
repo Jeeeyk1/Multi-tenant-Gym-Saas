@@ -1,13 +1,12 @@
+import type { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/login-form';
 import Link from 'next/link';
-import { FitOpsMark } from '@/components/brand/fitops-mark';
+import { FitOpsLockup } from '@/components/brand/fitops-mark';
+import { VerSolutionsEndorsement } from '@/components/brand/versolutions-endorsement';
 
-interface GymBranding {
-  name: string | null;
-  logoUrl: string | null;
-}
+export const metadata: Metadata = { title: 'Sign in' };
 
-async function fetchGymBranding(code: string): Promise<GymBranding> {
+async function fetchGymName(code: string): Promise<string | null> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:9001/api/v1';
     const res = await fetch(`${apiUrl}/auth/resolve-code`, {
@@ -16,63 +15,35 @@ async function fetchGymBranding(code: string): Promise<GymBranding> {
       body: JSON.stringify({ code }),
       next: { revalidate: 300 },
     });
-    if (!res.ok) return { name: null, logoUrl: null };
-    const data = await res.json() as {
-      name?: string;
-      logoUrl?: string | null;
-    };
-    return {
-      name: data.name ?? null,
-      logoUrl: data.logoUrl ?? null,
-    };
+    if (!res.ok) return null;
+    const data = await res.json() as { name?: string };
+    return data.name ?? null;
   } catch {
-    return { name: null, logoUrl: null };
+    return null;
   }
 }
 
 interface Props {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ type?: string; name?: string; logo?: string; activated?: string }>;
+  searchParams: Promise<{ type?: string; name?: string; activated?: string }>;
 }
 
 export default async function LoginPage({ params, searchParams }: Props) {
   const { code } = await params;
-  const { type = 'gym', name, logo, activated } = await searchParams;
+  const { type = 'gym', name, activated } = await searchParams;
   const loginType = type === 'org' ? 'org' : 'gym';
 
-  // Branding from query params (code-entry flow) takes priority.
-  // If missing (subdomain flow), fetch directly from the API.
-  let gymName = name ? decodeURIComponent(name) : null;
-  let logoUrl = logo ? decodeURIComponent(logo) : null;
-  if (!gymName && !logoUrl) {
-    const branding = await fetchGymBranding(code);
-    gymName = branding.name;
-    logoUrl = branding.logoUrl;
-  }
+  // Subdomain visits have no query params, so ask the API.
+  const gymName = name ?? (await fetchGymName(code));
 
   return (
     <>
       <main className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
-          {/* Gym identity header */}
           <div className="text-center mb-10">
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={gymName ?? 'Gym logo'}
-                className="w-16 h-16 rounded-xl object-contain mx-auto mb-4 border border-border bg-surface"
-              />
-            ) : (
-              <FitOpsMark size={64} className="mb-4" />
-            )}
-            {gymName ? (
-              <>
-                <h1 className="text-2xl font-bold text-foreground">Welcome to</h1>
-                <p className="text-xl font-semibold text-primary mt-0.5">{gymName}</p>
-              </>
-            ) : (
-              <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-            )}
+            <FitOpsLockup size={40} className="mb-6" />
+            <h1 className="text-2xl font-bold text-foreground">Sign in to FitOps</h1>
+            {gymName && <p className="text-sm text-muted-foreground mt-1">for {gymName}</p>}
             <p className="text-sm text-muted-foreground mt-1 font-mono uppercase tracking-widest">{code}</p>
           </div>
 
@@ -91,6 +62,8 @@ export default async function LoginPage({ params, searchParams }: Props) {
               ← Change code
             </Link>
           </p>
+
+          <VerSolutionsEndorsement className="text-center mt-4" />
         </div>
       </main>
     </>

@@ -1,8 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { LeaderboardConfigClient } from '@/components/leaderboard/config-client';
 import type { Exercise, LeaderboardConfigItem } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Leaderboard settings' };
 
 export default async function LeaderboardConfigPage() {
   const user = await getSessionUser();

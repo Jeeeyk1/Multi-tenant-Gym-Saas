@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { formatNumber } from '@/lib/utils';
+
+export const metadata: Metadata = { title: 'Overview' };
 
 interface Stats {
   totalGyms: number;
@@ -30,6 +33,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8">
+      <p className="text-[13px] text-muted-foreground">FitOps</p>
       <h1 className="text-2xl font-bold text-foreground mb-1">Platform Overview</h1>
       <p className="text-sm text-muted-foreground mb-8">Real-time snapshot across all gyms.</p>
 

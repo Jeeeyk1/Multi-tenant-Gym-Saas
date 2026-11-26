@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { StaffClient } from '@/components/staff/staff-client';
 import type { StaffMember, GymRole } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Staff' };
 
 export default async function StaffPage() {
   const user = await getSessionUser();

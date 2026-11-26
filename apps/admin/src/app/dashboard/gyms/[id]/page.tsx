@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -6,6 +7,10 @@ import { GymStatusToggle } from './status-toggle';
 import { ResendInviteButton } from './resend-invite-button';
 import { ExtendTrialButton } from './extend-trial-button';
 import { GymStatus } from '@gym-saas/contracts';
+import { GymAvatar, StatusTag, type Tone } from '@/components/gyms/gym-avatar';
+import { MemberAppPreview } from '@/components/gyms/member-app-preview';
+
+export const metadata: Metadata = { title: 'Gym' };
 
 type SubscriptionStatus = 'PENDING_PAYMENT' | 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED' | 'CANCELLED';
 
@@ -37,13 +42,13 @@ const SUBSCRIPTION_LABEL: Record<SubscriptionStatus, string> = {
   CANCELLED: 'Cancelled',
 };
 
-const SUBSCRIPTION_STYLE: Record<SubscriptionStatus, string> = {
-  PENDING_PAYMENT: 'bg-yellow-500/10 text-yellow-400',
-  TRIALING: 'bg-primary/10 text-primary',
-  ACTIVE: 'bg-success/10 text-success',
-  PAST_DUE: 'bg-yellow-500/10 text-yellow-400',
-  SUSPENDED: 'bg-destructive/10 text-destructive',
-  CANCELLED: 'bg-foreground/10 text-muted-foreground',
+const SUBSCRIPTION_TONE: Record<SubscriptionStatus, Tone> = {
+  PENDING_PAYMENT: 'orange',
+  TRIALING: 'blue',
+  ACTIVE: 'green',
+  PAST_DUE: 'orange',
+  SUSPENDED: 'orange',
+  CANCELLED: 'grey',
 };
 
 export default async function GymDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -59,18 +64,10 @@ export default async function GymDetailPage({ params }: { params: Promise<{ id: 
 
       <div className="flex items-start justify-between mb-8">
         <div className="flex items-center gap-4">
-          {gym.profile?.logoUrl ? (
-            <img src={gym.profile.logoUrl} alt="" className="w-14 h-14 rounded-xl object-contain border border-border bg-surface" />
-          ) : (
-            <div
-              className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-bold text-black"
-              style={{ backgroundColor: gym.profile?.primaryColor ?? '#6EE7B7' }}
-            >
-              {gym.name[0]}
-            </div>
-          )}
+          <GymAvatar name={gym.name} logoUrl={gym.profile?.logoUrl} accent={gym.profile?.primaryColor} size={56} />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{gym.name}</h1>
+            <p className="text-[13px] text-muted-foreground">FitOps</p>
+            <h1 className="text-2xl text-foreground">{gym.name}</h1>
             <p className="text-sm text-muted-foreground font-mono">{gym.code}</p>
           </div>
         </div>
@@ -112,17 +109,26 @@ export default async function GymDetailPage({ params }: { params: Promise<{ id: 
                     : `Renews ${formatDate(gym.subscription.currentPeriodEnd)}`}
               </p>
             </div>
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${SUBSCRIPTION_STYLE[gym.subscription.status]}`}>
+            <StatusTag tone={SUBSCRIPTION_TONE[gym.subscription.status]}>
               {SUBSCRIPTION_LABEL[gym.subscription.status]}
-            </span>
+            </StatusTag>
           </div>
           {(gym.subscription.status === 'TRIALING' || gym.subscription.status === 'PENDING_PAYMENT') && (
             <ExtendTrialButton gymId={gym.id} lapsed={gym.subscription.status === 'PENDING_PAYMENT'} />
           )}
 
           <MemberCapUsage activeCount={gym.activeMemberCount} cap={gym.memberCap} />
+
+          <div className="flex items-center justify-between pt-3 border-t border-border">
+            <span className="text-xs text-muted-foreground">Invoice issuer</span>
+            <span className="text-xs font-semibold text-foreground">VerSolutions</span>
+          </div>
         </div>
       )}
+
+      <div className="mb-6">
+        <MemberAppPreview name={gym.name} logoUrl={gym.profile?.logoUrl} accent={gym.profile?.primaryColor} />
+      </div>
 
       <div className="bg-surface border border-border rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -134,13 +140,9 @@ export default async function GymDetailPage({ params }: { params: Promise<{ id: 
                 : 'The owner has not yet activated their account.'}
             </p>
           </div>
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-            gym.ownerActivated
-              ? 'bg-success/10 text-success'
-              : 'bg-yellow-500/10 text-yellow-400'
-          }`}>
+          <StatusTag tone={gym.ownerActivated ? 'green' : 'orange'}>
             {gym.ownerActivated ? 'Activated' : 'Pending'}
-          </span>
+          </StatusTag>
         </div>
         {!gym.ownerActivated && <ResendInviteButton gymId={gym.id} />}
       </div>

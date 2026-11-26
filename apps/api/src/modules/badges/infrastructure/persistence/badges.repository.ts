@@ -659,7 +659,10 @@ export class BadgesRepository {
   findMemberPushTargets(memberId: string) {
     return this.prisma.gymMember.findUnique({
       where: { id: memberId },
-      select: { user: { select: { id: true, deviceTokens: { select: { token: true } } } } },
+      select: {
+        gym: { select: { name: true } },
+        user: { select: { id: true, deviceTokens: { select: { token: true } } } },
+      },
     });
   }
 }

@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { PlansClient } from '@/components/plans/plans-client';
 import type { MembershipPlan } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Plans' };
 
 export default async function PlansPage() {
   const user = await getSessionUser();

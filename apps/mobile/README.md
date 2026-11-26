@@ -1,6 +1,6 @@
 # @gym-saas/mobile
 
-Expo 51 mobile application for the Gym SaaS platform.
+Expo 54 mobile application for the FitOps platform.
 
 ## Local development
 
@@ -22,6 +22,7 @@ Expo reads variables prefixed with `EXPO_PUBLIC_` at build time.
 | Variable               | Description                      |
 |------------------------|----------------------------------|
 | `EXPO_PUBLIC_API_URL`  | Base URL for the API             |
+| `EXPO_PUBLIC_LANDING_URL` | Landing site, for the Terms and Privacy links |
 
 ## Monorepo config
 

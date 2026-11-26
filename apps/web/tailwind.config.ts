@@ -79,6 +79,7 @@ const config: Config = {
       fontFamily: {
         heading: ['var(--font-heading)', 'var(--font-body)', 'system-ui', 'sans-serif'],
         sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         display: ['48px', { lineHeight: '52px', letterSpacing: '-0.03em', fontWeight: '800' }],

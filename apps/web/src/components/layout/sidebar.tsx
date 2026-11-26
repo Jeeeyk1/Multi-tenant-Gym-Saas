@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { logout } from '@/lib/auth';
+import { normalizeHex, onAccent } from '@/lib/accent';
+import { FitOpsLockup } from '@/components/brand/fitops-mark';
 
 interface NavItem {
   label: string;
@@ -35,10 +37,12 @@ interface SidebarProps {
   userName: string;
   gymName?: string;
   gymCode?: string;
+  gymLocation?: string | null;
+  gymColor?: string | null;
   logoUrl?: string | null;
 }
 
-export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: SidebarProps) {
+export function Sidebar({ permissions, userName, gymName, gymCode, gymLocation, gymColor, logoUrl }: SidebarProps) {
   const pathname = usePathname();
   const [dark, setDark] = useState(false);
 
@@ -53,6 +57,8 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
     try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* localStorage unavailable */ }
   }
 
+  const badgeColor = logoUrl ? null : normalizeHex(gymColor);
+
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.permission || permissions.includes(item.permission),
   );
@@ -62,12 +68,15 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
       {/* Gym identity */}
       <div className="px-4 py-5 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div
+            className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden flex-shrink-0"
+            style={badgeColor ? { backgroundColor: badgeColor, borderColor: badgeColor, color: onAccent(badgeColor) } : undefined}
+          >
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt={gymName ?? 'Gym logo'} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-sm font-bold text-muted-foreground">
+              <span className={cn('text-sm font-bold', !badgeColor && 'text-muted-foreground')}>
                 {gymName ? gymName[0].toUpperCase() : '?'}
               </span>
             )}
@@ -76,11 +85,13 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
             <p className="text-sm font-semibold text-foreground truncate">
               {gymName ?? '—'}
             </p>
-            {gymCode && (
+            {gymLocation ? (
+              <p className="text-xs text-muted-foreground truncate">{gymLocation}</p>
+            ) : gymCode ? (
               <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
                 {gymCode}
               </p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -135,6 +146,9 @@ export function Sidebar({ permissions, userName, gymName, gymCode, logoUrl }: Si
           <span>{dark ? '☀' : '☾'}</span>
           {dark ? 'Light mode' : 'Dark mode'}
         </button>
+        <div className="px-2 pt-2">
+          <FitOpsLockup size={14} />
+        </div>
       </div>
     </aside>
   );

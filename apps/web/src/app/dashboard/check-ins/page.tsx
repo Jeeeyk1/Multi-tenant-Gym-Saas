@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -5,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
 import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
 import type { StaffCheckIn, CheckInsPage } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Check-ins' };
 
 const METHOD_LABELS: Record<string, string> = {
   MANUAL_STAFF: 'Staff',

@@ -37,10 +37,12 @@ export class BadgeNotifier {
       if (tokens.length === 0) return;
 
       const body =
-        badgeNames.length === 1 ? `You earned ${badgeNames[0]}.` : `You earned ${badgeNames.length} badges: ${badgeNames.join(', ')}.`;
+        badgeNames.length === 1
+          ? `New badge! You earned ${badgeNames[0]}.`
+          : `New badges! You earned ${badgeNames.length}: ${badgeNames.join(', ')}.`;
       const messages: ExpoPushMessage[] = tokens.map((to) => ({
         to,
-        title: 'New badge!',
+        title: target?.gym.name ?? 'New badge!',
         body,
         data: { type: NOTIFICATION_TYPE },
       }));

@@ -102,6 +102,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
 
   return (
     <div className="p-8 max-w-lg">
+      <p className="text-[13px] text-muted-foreground">FitOps</p>
       <h1 className="text-2xl font-bold text-foreground mb-1">Invite Gym Client</h1>
       <p className="text-sm text-muted-foreground mb-8">
         Creates the gym, provisions a subscription on the selected plan, and sends the owner an

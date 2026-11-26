@@ -45,7 +45,6 @@ export async function resolveCode(
 
   if (data.type === 'GYM') {
     const params = new URLSearchParams({ type: 'gym', name: data.name });
-    if (data.logoUrl) params.set('logo', data.logoUrl);
     redirect(`/${data.code}/login?${params.toString()}`);
   } else {
     redirect(`/${data.slug}/login?type=org&name=${encodeURIComponent(data.name)}`);

@@ -1,18 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import { normalizeHex, onAccent } from './accent';
 
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
-  private readonly from: string;
+  private readonly fromAddress: string;
   private readonly webUrl: string;
+  private readonly landingUrl: string;
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private readonly config: ConfigService) {
     this.resend = new Resend(config.getOrThrow<string>('RESEND_API_KEY'));
-    this.from = config.get<string>('EMAIL_FROM') ?? 'noreply@gym.noetecha.com';
+    this.fromAddress = config.get<string>('EMAIL_FROM') ?? 'hello@getversolutions.com';
     this.webUrl = config.get<string>('WEB_URL') ?? 'http://localhost:9002';
+    this.landingUrl = config.get<string>('LANDING_URL') ?? 'http://localhost:9004';
   }
 
   async sendOwnerInvite(opts: {
@@ -25,14 +28,14 @@ export class EmailService {
     const link = `${this.webUrl}/activate?token=${opts.token}`;
     await this.send({
       to: opts.to,
-      subject: `You've been invited to manage ${opts.gymName}`,
+      subject: `You're invited to manage ${opts.gymName} on FitOps`,
       html: template({
-        title: `Welcome to ${opts.gymName}!`,
+        title: `Welcome to ${escapeHtml(opts.gymName)}!`,
         preheader: `Activate your account and start managing your gym.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            Your gym <strong>${opts.gymName}</strong> has been set up on the platform.
+            Your gym <strong>${escapeHtml(opts.gymName)}</strong> has been set up on FitOps.
             You're all set to start managing your gym — members, schedules, check-ins, and more.
           </p>
           <p style="margin:0 0 24px">
@@ -42,7 +45,7 @@ export class EmailService {
         `,
         ctaLabel: 'Activate My Account',
         ctaUrl: link,
-        footer: `Your gym code is <strong>${opts.gymCode}</strong> — you'll need this to sign in.`,
+        footer: `Your gym code is <strong>${escapeHtml(opts.gymCode)}</strong> — you'll need this to sign in.`,
       }),
     });
   }
@@ -56,7 +59,7 @@ export class EmailService {
         title: 'Reset your password',
         preheader: 'You requested a password reset. Click to set a new password.',
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
             We received a request to reset your password. Click the button below to choose a new one.
             This link expires in <strong>1 hour</strong>.
@@ -78,18 +81,22 @@ export class EmailService {
     gymName: string;
     gymCode: string;
     token: string;
+    gymLogoUrl?: string | null;
+    gymAccent?: string | null;
   }) {
-    const link = `${this.webUrl}/member-activate?token=${opts.token}&code=${opts.gymCode}`;
-    await this.send({
+    const link = `${this.webUrl}/member-activate?token=${opts.token}&code=${encodeURIComponent(opts.gymCode)}`;
+    return this.send({
       to: opts.to,
+      fromName: `${opts.gymName} via FitOps`,
       subject: `You've been invited to join ${opts.gymName}`,
       html: template({
-        title: `Welcome to ${opts.gymName}!`,
+        gym: { name: opts.gymName, logoUrl: opts.gymLogoUrl, accent: opts.gymAccent },
+        title: `Welcome to ${escapeHtml(opts.gymName)}!`,
         preheader: `Your membership is ready — activate your account to get started.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            You've been added as a member of <strong>${opts.gymName}</strong>.
+            You've been added as a member of <strong>${escapeHtml(opts.gymName)}</strong>.
             Activate your account to access your membership, track check-ins, and more.
           </p>
           <p style="margin:0 0 24px">
@@ -98,31 +105,40 @@ export class EmailService {
         `,
         ctaLabel: 'Activate My Membership',
         ctaUrl: link,
-        footer: `Your gym code is <strong>${opts.gymCode}</strong>.`,
+        footer: `Your gym code is <strong>${escapeHtml(opts.gymCode)}</strong>.`,
       }),
     });
   }
 
-  async sendMemberWelcome(opts: { to: string; fullName: string; gymName: string; gymCode: string }) {
+  async sendMemberWelcome(opts: {
+    to: string;
+    fullName: string;
+    gymName: string;
+    gymCode: string;
+    gymLogoUrl?: string | null;
+    gymAccent?: string | null;
+  }) {
     await this.send({
       to: opts.to,
+      fromName: `${opts.gymName} via FitOps`,
       subject: `You're activated — welcome to ${opts.gymName}!`,
       html: template({
-        title: `You're all set, ${opts.fullName}!`,
+        gym: { name: opts.gymName, logoUrl: opts.gymLogoUrl, accent: opts.gymAccent },
+        title: `You're all set, ${escapeHtml(opts.fullName)}!`,
         preheader: `Your membership is active. Download the app to get started.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            Your membership at <strong>${opts.gymName}</strong> is now active.
-            Download the GainzOS mobile app and sign in using your gym code below.
+            Your membership at <strong>${escapeHtml(opts.gymName)}</strong> is now active.
+            Download the FitOps mobile app and sign in using your gym code below.
           </p>
           <p style="margin:0 0 24px;text-align:center;">
-            <span style="display:inline-block;background:#f4f4f5;border-radius:10px;padding:10px 24px;font-size:22px;font-weight:700;letter-spacing:3px;color:#111827;">${opts.gymCode}</span>
+            <span style="display:inline-block;background:#f4f4f5;border-radius:10px;padding:10px 24px;font-size:22px;font-weight:700;letter-spacing:3px;color:#111827;">${escapeHtml(opts.gymCode)}</span>
           </p>
         `,
         ctaLabel: 'Download the App',
-        ctaUrl: 'https://gainzos.app/download',
-        footer: `Use code <strong>${opts.gymCode}</strong> when signing in on the mobile app.`,
+        ctaUrl: this.landingUrl,
+        footer: `Use code <strong>${escapeHtml(opts.gymCode)}</strong> when signing in on the mobile app.`,
       }),
     });
   }
@@ -132,18 +148,18 @@ export class EmailService {
       to: opts.to,
       subject: `Welcome to ${opts.gymName} — you're all set!`,
       html: template({
-        title: `You're all set, ${opts.fullName}!`,
+        title: `You're all set, ${escapeHtml(opts.fullName)}!`,
         preheader: `Your account is active. Sign in to start managing your gym.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            Your account for <strong>${opts.gymName}</strong> is now active.
-            Head to the staff portal to set up your gym profile, invite members, and get started.
+            Your account for <strong>${escapeHtml(opts.gymName)}</strong> is now active.
+            Head to FitOps to set up your gym profile, invite members, and get started.
           </p>
         `,
-        ctaLabel: 'Go to Staff Portal',
+        ctaLabel: 'Open FitOps',
         ctaUrl: this.webUrl,
-        footer: `Your gym code is <strong>${opts.gymCode}</strong> — you'll need this to sign in.`,
+        footer: `Your gym code is <strong>${escapeHtml(opts.gymCode)}</strong> — you'll need this to sign in.`,
       }),
     });
   }
@@ -160,11 +176,11 @@ export class EmailService {
       subject: `Upcoming renewal for ${opts.gymName}`,
       html: template({
         title: `Your subscription renews soon`,
-        preheader: `${opts.amount} due ${opts.dueAt} for ${opts.gymName}.`,
+        preheader: `${opts.amount} due ${opts.dueAt} for ${escapeHtml(opts.gymName)}.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            Your <strong>${opts.gymName}</strong> subscription renews on <strong>${opts.dueAt}</strong>
+            Your <strong>${escapeHtml(opts.gymName)}</strong> subscription renews on <strong>${opts.dueAt}</strong>
             for <strong>${opts.amount}</strong>. Pay before then to keep your gym running without
             interruption.
           </p>
@@ -181,12 +197,12 @@ export class EmailService {
       to: opts.to,
       subject: `${opts.gymName} has been suspended — action needed`,
       html: template({
-        title: `${opts.gymName} is suspended`,
+        title: `${escapeHtml(opts.gymName)} is suspended`,
         preheader: `Your subscription payment is overdue — the gym is now locked.`,
         body: `
-          <p style="margin:0 0 16px">Hi <strong>${opts.fullName}</strong>,</p>
+          <p style="margin:0 0 16px">Hi <strong>${escapeHtml(opts.fullName)}</strong>,</p>
           <p style="margin:0 0 16px">
-            We didn't receive payment for <strong>${opts.gymName}</strong>'s renewal within the
+            We didn't receive payment for <strong>${escapeHtml(opts.gymName)}</strong>'s renewal within the
             grace period, so the gym has been suspended. Staff and members won't be able to use
             the app until this is resolved.
           </p>
@@ -209,7 +225,7 @@ export class EmailService {
     try {
       // Resend reports API failures in `error` rather than throwing.
       const { error } = await this.resend.emails.send({
-        from: this.from,
+        from: this.sender('FitOps'),
         to: opts.to,
         replyTo: lead.email,
         subject: `New free trial request: ${lead.gymName}`,
@@ -228,22 +244,81 @@ export class EmailService {
     }
   }
 
-  private async send(opts: { to: string; subject: string; html: string }) {
+  // Quoted so commas, '@' or parentheses in a gym name can't break the From header.
+  private sender(name: string): string {
+    return `"${name.replace(/["\\\r\n]/g, '')}" <${this.fromAddress}>`;
+  }
+
+  /** Returns false if the email was not sent. Never throws, so a failed email can't block the primary flow. */
+  private async send(opts: { to: string; subject: string; html: string; fromName?: string }): Promise<boolean> {
     try {
-      await this.resend.emails.send({
-        from: this.from,
+      // Resend reports API failures in `error` rather than throwing.
+      const { error } = await this.resend.emails.send({
+        from: this.sender(opts.fromName ?? 'FitOps'),
         to: opts.to,
         subject: opts.subject,
         html: opts.html,
       });
+      if (error) {
+        this.logger.error(`Failed to send email to ${opts.to}: ${error.message}`);
+        return false;
+      }
+      return true;
     } catch (err) {
-      // Log but don't throw — a failed email should never block the primary flow.
       this.logger.error(`Failed to send email to ${opts.to}: ${(err as Error).message}`);
+      return false;
     }
   }
 }
 
+const NAVY = '#0A2540';
+const INK = '#0E1116';
+const VOLT = '#CCFF00';
+const CODE_BLUE = '#1D4ED8';
+const SIGNAL_BLUE = '#3B82F6';
+
+// Built from table cells so it renders where SVG and images are blocked.
+function fitOpsLockup(): string {
+  const tile = `<td width="12" height="12" style="width:12px;height:12px;background-color:${NAVY};border-radius:3px;font-size:0;line-height:0;">&nbsp;</td>`;
+  const dot = `<td width="12" height="12" style="width:12px;height:12px;background-color:${SIGNAL_BLUE};border-radius:6px;font-size:0;line-height:0;">&nbsp;</td>`;
+  const gap = `<td width="2" style="width:2px;font-size:0;line-height:0;">&nbsp;</td>`;
+  return `<table cellpadding="0" cellspacing="0" role="presentation"><tr>
+    <td style="padding-right:10px;vertical-align:middle;">
+      <table cellpadding="0" cellspacing="0" role="presentation">
+        <tr>${tile}${gap}${dot}</tr>
+        <tr><td colspan="3" height="2" style="height:2px;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr>${tile}${gap}${tile}</tr>
+      </table>
+    </td>
+    <td style="vertical-align:middle;font-family:Manrope,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;letter-spacing:-0.4px;color:${NAVY};">
+      <span style="font-weight:800;">Fit</span><span style="font-weight:500;">Ops</span>
+    </td>
+  </tr></table>`;
+}
+
+interface GymBrand {
+  name: string;
+  logoUrl?: string | null;
+  accent?: string | null;
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function gymHeader(gym: GymBrand): string {
+  const logo = gym.logoUrl && /^https:\/\//.test(gym.logoUrl)
+    ? `<img src="${escapeHtml(gym.logoUrl)}" alt="" width="40" height="40" style="display:block;width:40px;height:40px;border-radius:10px;object-fit:contain;background:#ffffff;" />`
+    : '';
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="background-color:${INK};border-radius:12px;"><tr>
+    ${logo ? `<td style="padding:12px 0 12px 16px;vertical-align:middle;">${logo}</td>` : ''}
+    <td style="padding:12px 20px 12px ${logo ? '12px' : '20px'};vertical-align:middle;color:#ffffff;font-family:Manrope,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:-0.3px;">${escapeHtml(gym.name)}</td>
+  </tr></table>`;
+}
+
 function template(opts: {
+  /** Member emails only. */
+  gym?: GymBrand;
   title: string;
   preheader: string;
   body: string;
@@ -251,6 +326,9 @@ function template(opts: {
   ctaUrl: string;
   footer?: string;
 }): string {
+  const accent = opts.gym ? (normalizeHex(opts.gym.accent) ?? VOLT) : CODE_BLUE;
+  const accentText = opts.gym ? onAccent(accent) : '#ffffff';
+  const endorsement = opts.gym ? 'Powered by FitOps' : 'FitOps · a VerSolutions product';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -270,13 +348,7 @@ function template(opts: {
           <!-- Logo / brand -->
           <tr>
             <td align="center" style="padding-bottom:24px;">
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background-color:#6366f1;border-radius:12px;padding:10px 20px;">
-                    <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.3px;">GymSaaS</span>
-                  </td>
-                </tr>
-              </table>
+              ${opts.gym ? gymHeader(opts.gym) : fitOpsLockup()}
             </td>
           </tr>
 
@@ -295,9 +367,9 @@ function template(opts: {
               <!-- CTA button -->
               <table cellpadding="0" cellspacing="0" style="margin:8px 0 0;">
                 <tr>
-                  <td style="background-color:#6366f1;border-radius:10px;">
+                  <td style="background-color:${accent};border-radius:10px;">
                     <a href="${opts.ctaUrl}"
-                       style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:-0.1px;">
+                       style="display:inline-block;padding:14px 28px;color:${accentText};font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:-0.1px;">
                       ${opts.ctaLabel}
                     </a>
                   </td>
@@ -307,7 +379,7 @@ function template(opts: {
               <!-- Link fallback -->
               <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
                 Or paste this link in your browser:<br />
-                <a href="${opts.ctaUrl}" style="color:#6366f1;word-break:break-all;">${opts.ctaUrl}</a>
+                <a href="${opts.ctaUrl}" style="color:${opts.gym ? '#374151' : CODE_BLUE};word-break:break-all;">${opts.ctaUrl}</a>
               </p>
 
             </td>
@@ -326,6 +398,11 @@ function template(opts: {
             <td style="padding:24px 8px 0;text-align:center;font-size:12px;color:#9ca3af;">
               You received this email because an account was created on your behalf.<br />
               If this wasn't you, you can safely ignore this email.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 8px 0;text-align:center;font-size:12px;color:#9ca3af;font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;">
+              ${endorsement}
             </td>
           </tr>
 

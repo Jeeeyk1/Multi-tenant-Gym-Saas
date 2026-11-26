@@ -1,9 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { MembersTable } from '@/components/members/members-table';
 import { BulkInviteButton } from '@/components/members/bulk-invite-button';
 import type { MembersPage } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Members' };
 
 const PAGE_SIZE = 50;
 

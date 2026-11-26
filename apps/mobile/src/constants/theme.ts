@@ -183,6 +183,8 @@ export const FONT = {
   bold: { fontFamily: 'Manrope_700Bold', fontWeight: '700' as const },
   display: { fontFamily: 'Manrope_800ExtraBold', fontWeight: '800' as const },
   wordmarkLight: { fontFamily: 'Manrope_500Medium', fontWeight: '500' as const },
+  mono: { fontFamily: 'JetBrainsMono_400Regular', fontWeight: '400' as const },
+  monoSemibold: { fontFamily: 'JetBrainsMono_600SemiBold', fontWeight: '600' as const },
 };
 
 /** Badge medal rims by tier; iron for untiered badges. Fixed across tenants and themes. */

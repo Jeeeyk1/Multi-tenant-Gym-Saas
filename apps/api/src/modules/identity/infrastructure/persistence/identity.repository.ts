@@ -183,9 +183,10 @@ export class IdentityRepository {
         email: true,
         fullName: true,
         gymMembers: {
+          orderBy: { joinedAt: 'desc' },
           take: 1,
           select: {
-            gym: { select: { name: true, code: true } },
+            gym: { select: { name: true, code: true, profile: { select: { logoUrl: true, primaryColor: true } } } },
           },
         },
       },

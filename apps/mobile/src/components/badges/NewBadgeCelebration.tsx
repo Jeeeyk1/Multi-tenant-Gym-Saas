@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Modal, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Modal, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Text } from '../Text';
 import { useTheme } from '../../context/ThemeContext';
@@ -80,7 +80,8 @@ export function NewBadgeCelebration() {
 
   const scale = stamp.interpolate({ inputRange: [0, 1], outputRange: [STAMP_FROM_SCALE, 1] });
   const rotate = stamp.interpolate({ inputRange: [0, 1], outputRange: [STAMP_FROM_ROTATION, '0deg'] });
-  const opacity = stamp.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], easing: Easing.out(Easing.quad) });
+  // Fades in over the first 40% of the stamp. (No `easing` here: the native driver rejects it.)
+  const opacity = stamp.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] });
   const more = unseen.length - 1;
 
   return (

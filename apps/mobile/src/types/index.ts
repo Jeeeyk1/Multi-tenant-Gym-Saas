@@ -1,4 +1,4 @@
-import type { BadgeCategory, BadgeTier } from '../constants/enums';
+import type { BadgeCategory, BadgeRarity, BadgeTier } from '../constants/enums';
 // Auth
 export interface ResolveCodeResponse {
   type: 'GYM' | 'ORG';
@@ -534,10 +534,12 @@ export interface CustomBadge {
 }
 
 // A member equips one badge per category.
-export type { BadgeCategory, BadgeTier } from '../constants/enums';
+export type { BadgeCategory, BadgeRarity, BadgeTier } from '../constants/enums';
 
 export interface MemberBadge {
   id: string;
+  /** EPIC or LEGENDARY when few members of the gym hold it. */
+  rarity: BadgeRarity | null;
   category: BadgeCategory;
   source: 'AUTO_SYSTEM' | 'AUTO_CYCLE' | 'AUTO_MILESTONE' | 'STAFF_AWARD';
   badgeRank: BadgeTier | null;
@@ -564,6 +566,9 @@ export interface MemberBadge {
 /** A badge as shown next to a member's name (chat, leaderboard, Who's Here). */
 export interface EquippedBadge {
   memberBadgeId: string;
+  /** The badge definition, same as `CollectionBadge.key`. */
+  key: string;
+  rarity: BadgeRarity | null;
   category: BadgeCategory;
   name: string;
   description: string | null;
@@ -599,6 +604,7 @@ export interface CollectionBadge {
   timesEarned: number;
   progress: { current: number; target: number; unit: string } | null;
   rarityPct: number | null;
+  rarity: BadgeRarity | null;
 }
 
 export interface BadgeCollection {

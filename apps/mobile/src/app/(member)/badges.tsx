@@ -28,7 +28,7 @@ function BadgeCell({ badge, onPress }: { badge: CollectionBadge; onPress: () => 
       style={({ pressed }) => [styles.cell, pressed && { opacity: 0.8 }]}
     >
       <View>
-        <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={58} locked={!earned} />
+        <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={58} locked={!earned} rarity={earned?.expired ? null : badge.rarity} />
         {earned?.isEquipped && (
           <View style={[styles.equippedDot, { backgroundColor: theme.primary, borderColor: C.background }]}>
             <Ionicons name="checkmark" size={11} color={theme.onPrimary} />
@@ -110,7 +110,7 @@ export default function BadgesScreen() {
                 </Text>
                 {equipped ? (
                   <>
-                    <BadgeMedal category={category} tier={equipped.tier} color={equipped.color} icon={equipped.icon} size={46} />
+                    <BadgeMedal category={category} tier={equipped.tier} color={equipped.color} icon={equipped.icon} size={46} rarity={equipped.rarity} />
                     <Text variant="caption" style={{ color: C.text, textAlign: 'center' }} numberOfLines={2}>
                       {equipped.name}
                     </Text>

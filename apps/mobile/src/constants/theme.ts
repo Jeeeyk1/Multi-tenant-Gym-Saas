@@ -189,4 +189,8 @@ export const BADGE_COLORS = {
   LOCKED_GLYPH: '#7C7F8A',
   GLYPH: '#FFFFFF',
   FALLBACK: '#6B7280',
+  // Rarity effects: warm flames for legendary, a violet glow for epic.
+  FLAME_CORE: '#FFB020',
+  FLAME_EDGE: '#FF5A1F',
+  EPIC_GLOW: '#A78BFA',
 } as const;

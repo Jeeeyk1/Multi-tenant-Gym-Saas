@@ -17,7 +17,7 @@ export function BadgeStack({
     <View style={{ flexDirection: 'row' }}>
       {badges.slice(0, 3).map((b, i) => (
         <View key={b.memberBadgeId} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: 3 - i }}>
-          <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} />
+          <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} rarity={b.rarity} />
         </View>
       ))}
     </View>

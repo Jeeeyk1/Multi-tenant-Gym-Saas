@@ -111,3 +111,18 @@
     font-feature-settings: 'tnum';
   }
 }
+
+/* Rare badge effects (components/badges/badge-medal.tsx). Still glow only when motion is reduced. */
+@keyframes badge-aura-pulse {
+  0%, 100% { transform: scale(0.96); opacity: 0.3; }
+  50% { transform: scale(1.06); opacity: 0.6; }
+}
+@keyframes badge-flame {
+  0%, 100% { transform: translateY(0) scaleY(0.8); opacity: 0.55; }
+  50% { transform: translateY(-18%) scaleY(1.15); opacity: 1; }
+}
+.badge-aura-pulse { animation: badge-aura-pulse 2.2s ease-in-out infinite; }
+.badge-flame { animation-name: badge-flame; animation-iteration-count: infinite; animation-timing-function: ease-in-out; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .badge-aura-pulse, .badge-flame { animation: none; }
+}

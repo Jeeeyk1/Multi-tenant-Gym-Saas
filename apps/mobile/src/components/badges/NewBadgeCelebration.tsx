@@ -8,7 +8,7 @@ import { Notice, PrimaryButton, TextButton } from '../onboarding/controls';
 import { formatApiError } from '../../lib/format-error';
 import { useReduceMotion } from '../onboarding/use-reduce-motion';
 import { BadgeMedal } from './BadgeMedal';
-import { CATEGORY_LABEL, TIER_LABEL, memberBadgeView } from './badge-labels';
+import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL, memberBadgeView } from './badge-labels';
 
 const STAMP_FROM_SCALE = 1.8;
 const STAMP_FROM_ROTATION = '-12deg';
@@ -88,10 +88,10 @@ export function NewBadgeCelebration() {
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: C.background }]} accessibilityViewIsModal>
           <Text variant="label" style={{ color: theme.primary, letterSpacing: 1.2 }}>
-            NEW BADGE
+            {view.rarity ? `NEW ${RARITY_LABEL[view.rarity].toUpperCase()} BADGE` : 'NEW BADGE'}
           </Text>
           <Animated.View style={{ opacity, transform: [{ scale }, { rotate }] }}>
-            <BadgeMedal category={view.category} tier={view.tier} color={view.color} icon={view.icon} size={120} />
+            <BadgeMedal category={view.category} tier={view.tier} color={view.color} icon={view.icon} size={120} rarity={view.rarity} />
           </Animated.View>
           <View style={{ alignItems: 'center', gap: 4 }}>
             <Text variant="h2" style={{ color: C.text, textAlign: 'center' }}>

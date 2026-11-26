@@ -7,7 +7,7 @@ import { Notice, PrimaryButton, TextButton } from '../onboarding/controls';
 import { formatApiError } from '../../lib/format-error';
 import type { CollectionBadge } from '../../types';
 import { BadgeMedal } from './BadgeMedal';
-import { CATEGORY_LABEL, TIER_LABEL } from './badge-labels';
+import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from './badge-labels';
 import { Sheet } from './Sheet';
 
 function formatDate(iso: string): string {
@@ -31,7 +31,7 @@ export function BadgeDetailSheet({ badge, onClose }: { badge: CollectionBadge | 
       {badge && (
         <>
           <View style={{ alignItems: 'center', gap: 8 }}>
-            <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={96} locked={!earned} />
+            <BadgeMedal category={badge.category} tier={badge.tier} color={badge.color} icon={badge.icon} size={96} locked={!earned} rarity={earned?.expired ? null : badge.rarity} />
             <Text variant="caption" style={{ color: C.textMuted, letterSpacing: 0.8 }}>
               {CATEGORY_LABEL[badge.category].toUpperCase()}
               {badge.tier ? ` · ${TIER_LABEL[badge.tier].toUpperCase()}` : ''}
@@ -70,7 +70,12 @@ export function BadgeDetailSheet({ badge, onClose }: { badge: CollectionBadge | 
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Fact label={earned ? 'Earned' : 'Status'} value={earned ? formatDate(earned.awardedAt) : 'Not yet earned'} />
-            <Fact label="Rarity" value={badge.rarityPct === null ? '—' : `${badge.rarityPct}% of members`} />
+            <Fact
+              label="Rarity"
+              value={[badge.rarity && RARITY_LABEL[badge.rarity], badge.rarityPct === null ? null : `${badge.rarityPct}% of members`]
+                .filter(Boolean)
+                .join(' · ') || '—'}
+            />
           </View>
           {badge.timesEarned > 1 && (
             <Text variant="caption" style={{ color: C.textMuted, textAlign: 'center' }}>

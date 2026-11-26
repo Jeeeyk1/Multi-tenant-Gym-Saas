@@ -25,7 +25,7 @@ export function EquippedBadgesSheet({
       </Text>
       {badges.map((b) => (
         <View key={b.memberBadgeId} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={52} />
+          <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={52} rarity={b.rarity} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text variant="caption" style={{ color: C.textMuted, letterSpacing: 0.8 }}>
               {CATEGORY_LABEL[b.category].toUpperCase()}

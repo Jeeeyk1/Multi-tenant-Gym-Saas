@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { EquippedBadge } from '@/types/api';
 import { BadgeMedal } from './badge-medal';
-import { CATEGORY_LABEL, TIER_LABEL } from './badge-labels';
+import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from './badge-labels';
 
 const POPOVER_WIDTH = 256;
 const POPOVER_GAP = 4;
@@ -71,7 +71,7 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
       >
         {badges.slice(0, 3).map((b, i) => (
           <span key={b.memberBadgeId} style={{ marginLeft: i === 0 ? 0 : -size * 0.3, zIndex: 3 - i }} className="relative">
-            <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} />
+            <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={size} rarity={b.rarity} />
           </span>
         ))}
       </button>
@@ -85,11 +85,12 @@ export function BadgeStack({ badges, size = 18 }: { badges: EquippedBadge[]; siz
         >
           {badges.map((b) => (
             <div key={b.memberBadgeId} className="flex items-start gap-3">
-              <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={36} />
+              <BadgeMedal category={b.category} tier={b.tier} color={b.color} icon={b.icon} size={36} rarity={b.rarity} />
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {CATEGORY_LABEL[b.category]}
                   {b.tier && ` · ${TIER_LABEL[b.tier]}`}
+                  {b.rarity && ` · ${RARITY_LABEL[b.rarity]}`}
                 </p>
                 <p className="text-sm font-medium text-foreground">{b.name}</p>
                 {b.description && <p className="text-xs text-muted-foreground">{b.description}</p>}

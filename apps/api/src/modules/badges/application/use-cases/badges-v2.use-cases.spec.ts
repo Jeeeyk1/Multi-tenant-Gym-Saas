@@ -3,12 +3,14 @@ import { CheckMilestoneBadgeUseCase } from './check-milestone-badge.use-case';
 import { AwardCustomBadgeUseCase } from './award-custom-badge.use-case';
 import { SaveLadderUseCase } from './save-ladder.use-case';
 import { GetBadgeCollectionUseCase } from './get-badge-collection.use-case';
+import { ListEquippedBadgesUseCase } from './list-equipped-badges.use-case';
 import type { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { BadgeNotifier } from '../badge-notifier';
 import type { LadderService } from '../ladder.service';
+import { BadgeRarityService } from '../badge-rarity.service';
 import type { CacheService } from '../../../../common/cache/cache.service';
 import type { GymAuthUser } from '../../../../common/types/auth.types';
-import { BadgeCategory, BadgeCriteriaType } from '../../../../common/enums';
+import { BadgeCategory, BadgeCriteriaType, BadgeRarity } from '../../../../common/enums';
 
 const repo = {
   getEnabledBadgeCatalog: jest.fn(),
@@ -33,6 +35,7 @@ const repo = {
   awardRungForExistingLifts: jest.fn(),
   getBestApprovedLifts: jest.fn(),
   getBadgeHolderCounts: jest.fn(),
+  listEquippedBadgesByGym: jest.fn(),
   getGymTimezone: jest.fn(),
   getSessionCount: jest.fn(),
   getDistinctWorkoutTypeCount: jest.fn(),
@@ -198,7 +201,7 @@ describe('SaveLadderUseCase', () => {
 
 describe('GetBadgeCollectionUseCase', () => {
   const checkAuto = { awardFromStats: jest.fn() } as unknown as jest.Mocked<CheckAutoBadgesUseCase>;
-  const useCase = () => new GetBadgeCollectionUseCase(repo, ladders, cache, checkAuto);
+  const useCase = () => new GetBadgeCollectionUseCase(repo, ladders, new BadgeRarityService(repo, cache), checkAuto);
 
   beforeEach(() => {
     quietStats();
@@ -226,6 +229,8 @@ describe('GetBadgeCollectionUseCase', () => {
     const consistency = result.categories.find((c) => c.category === BadgeCategory.CONSISTENCY)!;
     expect(consistency.equipped?.key).toBe('catalog:c1');
     expect(consistency.badges[0]).toMatchObject({ earned: { memberBadgeId: 'mb1', isEquipped: true }, rarityPct: 25 });
+    // 5 of 20 members (25%) is common; nobody holding a badge in a gym of 20 makes it legendary.
+    expect(consistency.badges[0].rarity).toBeNull();
     expect(consistency.badges[1]).toMatchObject({ earned: null, progress: { current: 5, target: 10, unit: 'sessions' } });
 
     const strength = result.categories.find((c) => c.category === BadgeCategory.STRENGTH)!;
@@ -243,5 +248,24 @@ describe('GetBadgeCollectionUseCase', () => {
   it("refuses another member's collection without members.view", async () => {
     repo.findMemberByUserId.mockResolvedValue({ id: 'someone-else' } as never);
     await expect(useCase().execute('gym-1', 'member-1', memberCaller)).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});
+
+describe('ListEquippedBadgesUseCase', () => {
+  it('marks each equipped badge with its rarity in the gym', async () => {
+    repo.listEquippedBadgesByGym.mockResolvedValue([
+      {
+        userId: 'user-1',
+        badges: [
+          { memberBadgeId: 'mb1', key: 'milestone:gold', category: 'STRENGTH', name: 'Back Squat · Gold', description: null, icon: 'barbell', color: '#000', tier: 'GOLD', rank: null, awardedAt: new Date() },
+          { memberBadgeId: 'mb2', key: 'catalog:first', category: 'LOYALTY', name: 'First Month', description: null, icon: 'heart', color: '#000', tier: null, rank: null, awardedAt: new Date() },
+        ],
+      },
+    ]);
+    repo.getBadgeHolderCounts.mockResolvedValue({ activeMembers: 40, holders: { 'milestone:gold': 1, 'catalog:first': 30 } });
+
+    const [row] = await new ListEquippedBadgesUseCase(repo, new BadgeRarityService(repo, cache)).execute('gym-1', memberCaller);
+
+    expect(row.badges.map((b) => b.rarity)).toEqual([BadgeRarity.LEGENDARY, null]);
   });
 });

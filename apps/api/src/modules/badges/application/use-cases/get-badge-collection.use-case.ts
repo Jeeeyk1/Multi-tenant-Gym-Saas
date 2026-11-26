@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
-import { BadgeCategory, BadgeCriteriaType, Permission } from '../../../../common/enums';
-import { CacheService } from '../../../../common/cache/cache.service';
+import { BadgeCategory, BadgeCriteriaType, BadgeRarity, Permission } from '../../../../common/enums';
+import { BadgeRarityService } from '../badge-rarity.service';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { catalogProgress, type Progress } from '../../domain/badge-stats';
 import { LADDER_TIERS } from '../../domain/lift-ladder';
@@ -11,7 +11,6 @@ import { CheckAutoBadgesUseCase } from './check-auto-badges.use-case';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, hasPermission } from '../../../../common/auth/authorization';
 
-const RARITY_TTL_SECONDS = 3600;
 const CATEGORY_ORDER = [BadgeCategory.CONSISTENCY, BadgeCategory.LOYALTY, BadgeCategory.STRENGTH];
 
 export interface EarnedBadge {
@@ -42,6 +41,8 @@ export interface CollectionBadge {
   progress: (Progress & { unit: string }) | null;
   /** Share of the gym's active members who hold this badge, 0–100. */
   rarityPct: number | null;
+  /** EPIC or LEGENDARY when few members hold it (see domain/badge-rarity.ts). */
+  rarity: BadgeRarity | null;
 }
 
 export interface BadgeCollection {
@@ -72,7 +73,7 @@ export class GetBadgeCollectionUseCase {
   constructor(
     private readonly repo: BadgesRepository,
     private readonly ladders: LadderService,
-    private readonly cache: CacheService,
+    private readonly rarity: BadgeRarityService,
     private readonly checkAuto: CheckAutoBadgesUseCase,
   ) {}
 
@@ -88,11 +89,11 @@ export class GetBadgeCollectionUseCase {
 
     await this.ladders.ensureDefaultLaddersCached(gymId);
     const now = new Date();
-    const [catalog, stats, bestLifts, rarity] = await Promise.all([
+    const [catalog, stats, bestLifts, rarityOf] = await Promise.all([
       this.repo.listCatalogForGym(gymId),
       loadBadgeStats(this.repo, memberId, gymId, now),
       this.repo.getBestApprovedLifts(memberId, gymId),
-      this.cache.wrap(`badges:rarity:${gymId}`, RARITY_TTL_SECONDS, () => this.repo.getBadgeHolderCounts(gymId)),
+      this.rarity.lookup(gymId),
     ]);
     // Badges are normally awarded after check-ins and workouts. When members open their own
     // collection, award what they already qualify for (e.g. a new month of membership) so
@@ -142,8 +143,10 @@ export class GetBadgeCollectionUseCase {
         },
       };
     };
-    const rarityFor = (key: string) =>
-      rarity.activeMembers > 0 ? Math.round(((rarity.holders[key] ?? 0) / rarity.activeMembers) * 100) : null;
+    const rarityFor = (key: string) => {
+      const { sharePct, rarity } = rarityOf(key);
+      return { rarityPct: sharePct, rarity };
+    };
 
     const badges: CollectionBadge[] = [
       ...catalog.map((b) => {
@@ -160,7 +163,7 @@ export class GetBadgeCollectionUseCase {
           exercise: null,
           ...earnedFor(key),
           progress: progress ? { ...progress, unit: UNIT[b.criteriaType as BadgeCriteriaType] ?? '' } : null,
-          rarityPct: rarityFor(key),
+          ...rarityFor(key),
         };
       }),
       ...milestones
@@ -184,7 +187,7 @@ export class GetBadgeCollectionUseCase {
             exercise: { id: m.exercise.id, name: m.exercise.name },
             ...earnedFor(key),
             progress: { current: Math.min(bestLifts.get(m.exercise.id) ?? 0, target), target, unit: 'kg' },
-            rarityPct: rarityFor(key),
+            ...rarityFor(key),
           };
         }),
       ...customs.map((c) => {
@@ -200,7 +203,7 @@ export class GetBadgeCollectionUseCase {
           exercise: null,
           ...earnedFor(key),
           progress: null,
-          rarityPct: rarityFor(key),
+          ...rarityFor(key),
         };
       }),
     ];

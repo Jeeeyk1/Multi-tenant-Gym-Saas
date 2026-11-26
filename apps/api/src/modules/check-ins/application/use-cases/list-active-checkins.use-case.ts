@@ -3,6 +3,7 @@ import { CheckInsRepository } from '../../infrastructure/persistence/check-ins.r
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 import { Permission } from '../../../../common/enums';
+import { withoutMemberDetails } from '../../../../common/auth/member-details';
 
 @Injectable()
 export class ListActiveCheckinsUseCase {
@@ -17,6 +18,6 @@ export class ListActiveCheckinsUseCase {
     // Staff see all active check-ins.
     // Members with checkins.view (staff) see all — privacy filtering applies to
     // member-facing views. For the staff dashboard, all are visible.
-    return checkins;
+    return withoutMemberDetails(checkins, caller);
   }
 }

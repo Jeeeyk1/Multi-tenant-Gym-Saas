@@ -20,7 +20,7 @@ export class SaveLadderUseCase {
 
   async execute(gymId: string, exerciseId: string, input: SaveLadderInput, caller: AuthenticatedUser): Promise<void> {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.BADGES_MANAGE);
+    assertPermission(caller, Permission.LEADERBOARD_MANAGE);
 
     const exercise = await this.repo.findExerciseForGym(gymId, exerciseId);
     if (!exercise) throw new NotFoundError('Exercise not found', 'EXERCISE_NOT_FOUND');

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { TokenInvalidError } from '../../domain/errors/token-invalid.error';
 import { IdentityRepository, RefreshTokenContext } from '../../infrastructure/persistence/identity.repository';
 import type { OrgAuthUser, GymAuthUser } from '../../../../common/types/auth.types';
+import { gymClaims } from '../../domain/gym-claims';
 
 export interface RefreshTokenResult {
   accessToken: string;
@@ -39,38 +40,14 @@ export class RefreshTokenUseCase {
         orgRole: member.role as OrgAuthUser['orgRole'],
       };
     } else if (context.type === 'gym' && context.gymId) {
-      const staff = await this.repo.findGymStaffWithPermissions(stored.userId, context.gymId);
-
-      if (staff) {
-        const roleNames = staff.roles.map((sr) => sr.role.name);
-        const permissions: string[] = [
-          ...new Set(
-            staff.roles.flatMap((sr) =>
-              sr.role.rolePermissions.map((rp) => rp.permission.key),
-            ),
-          ),
-        ];
-        payload = {
-          sub: stored.userId,
-          type: 'gym',
-          gymId: context.gymId,
-          roles: roleNames,
-          permissions,
-        };
-      } else {
-        // Not (or no longer) active staff here — only keep issuing tokens if the
-        // user is still a member of this gym, as login requires.
-        const member = await this.repo.findGymMember(stored.userId, context.gymId);
-        if (!member) throw new TokenInvalidError();
-
-        payload = {
-          sub: stored.userId,
-          type: 'gym',
-          gymId: context.gymId,
-          roles: ['MEMBER'],
-          permissions: ['checkins.self', 'announcements.view'],
-        };
-      }
+      const [staff, member] = await Promise.all([
+        this.repo.findGymStaffWithPermissions(stored.userId, context.gymId),
+        this.repo.findGymMember(stored.userId, context.gymId),
+      ]);
+      // Same rule as login: no longer staff and not a member means no new tokens.
+      const claims = gymClaims(staff, Boolean(member));
+      if (!claims) throw new TokenInvalidError();
+      payload = { sub: stored.userId, type: 'gym', gymId: context.gymId, ...claims };
     } else {
       throw new TokenInvalidError();
     }

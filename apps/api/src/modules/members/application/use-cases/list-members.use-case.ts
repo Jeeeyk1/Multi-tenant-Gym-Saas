@@ -3,6 +3,7 @@ import { MembersRepository } from '../../infrastructure/persistence/members.repo
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 import { Permission } from '../../../../common/enums';
+import { visibleMember } from '../../domain/member-visibility';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -29,7 +30,7 @@ export class ListMembersUseCase {
     ]);
 
     return {
-      data,
+      data: data.map((member) => visibleMember(member, caller)),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

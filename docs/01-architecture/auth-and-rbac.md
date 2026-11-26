@@ -66,7 +66,7 @@ JWT issued (staff):
 {
   "userId": "...",
   "gymId": "...",
-  "roles": ["MANAGER"],
+  "roles": ["STAFF"],
   "permissions": ["members.view", "members.create", "checkins.manage"]
 }
 ```
@@ -137,41 +137,25 @@ Scope: org-level actions only. Validated against org-level JWT.
 
 ### 3. Gym roles (RBAC)
 
-Stored via: `gym_staff` → `gym_staff_roles` → `roles` → `permissions`
+Stored via: `gym_staff` → `gym_staff_roles` → `roles` → `role_permissions` → `permissions`
 
-Predefined system roles:
-- `MANAGER` — full gym control
-- `FRONT_DESK` — member registration, check-ins, renewals
-- `TRAINER` — member view, check-ins
-
-Custom roles can be created by gyms with `is_system_role = false`.
+Predefined system roles: `OWNER`, `STAFF` and `TRAINER` (app only). The full matrix, and how staff who are
+also members get a member view, are in `docs/02-domains/staff-and-rbac.md`.
 
 ---
 
 ## Permissions model
 
-Permissions are granular action keys:
-
-```
-members.view
-members.create
-members.edit
-members.renew
-members.suspend
-checkins.view
-checkins.manage
-reports.view
-staff.view
-staff.manage
-announcements.manage
-gym.settings
-```
+Permissions are granular action keys, listed in the `Permission` enum
+(`apps/api/src/common/enums/permission.enum.ts`). `members.view` is the member list (name and status);
+`members.details` adds contact details, plan, prices and payments.
 
 Rules:
 - a user can hold multiple roles simultaneously
 - effective permissions = union of all assigned roles' permissions
-- permissions are embedded in the JWT at login time
-- DB is not queried for permissions on every request
+- someone who is also a member of the gym also gets the `MEMBER` role and member permissions
+- permissions are embedded in the JWT at login and refresh (`gymClaims()` in `modules/identity/domain`)
+- DB is not queried for permissions on every request, so role changes apply at the next refresh
 
 ---
 
@@ -195,7 +179,7 @@ copy these checks into a module; add a helper here if a new pattern is needed. `
 
 ❌ Incorrect:
 ```typescript
-if (user.roles.includes('MANAGER'))
+if (user.roles.includes('STAFF'))
 ```
 
 ---

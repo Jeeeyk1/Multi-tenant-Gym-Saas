@@ -5,9 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsError } from '../../domain/errors/invalid-credentials.error';
 import { IdentityRepository } from '../../infrastructure/persistence/identity.repository';
 import type { GymAuthUser } from '../../../../common/types/auth.types';
-
-// Fixed permissions granted to all gym members (not configurable per gym in MVP).
-const MEMBER_PERMISSIONS = ['checkins.self', 'announcements.view'] as const;
+import { gymClaims } from '../../domain/gym-claims';
 
 export interface GymLoginResult {
   accessToken: string;
@@ -39,39 +37,15 @@ export class GymLoginUseCase {
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) throw new InvalidCredentialsError();
 
-    // Determine if staff or member
-    const staff = await this.repo.findGymStaffWithPermissions(user.id, gym.id);
-    const isMember = staff === null && (await this.repo.findGymMember(user.id, gym.id)) !== null;
-    if (!staff && !isMember) throw new InvalidCredentialsError();
+    // Staff, a member, or both (e.g. a trainer who also trains here).
+    const [staff, member] = await Promise.all([
+      this.repo.findGymStaffWithPermissions(user.id, gym.id),
+      this.repo.findGymMember(user.id, gym.id),
+    ]);
+    const claims = gymClaims(staff, Boolean(member));
+    if (!claims) throw new InvalidCredentialsError();
 
-    let payload: GymAuthUser;
-
-    if (staff) {
-      // Build union of all role permissions
-      const roleNames = staff.roles.map((sr) => sr.role.name);
-      const permissions: string[] = [
-        ...new Set(
-          staff.roles.flatMap((sr) =>
-            sr.role.rolePermissions.map((rp) => rp.permission.key),
-          ),
-        ),
-      ];
-      payload = {
-        sub: user.id,
-        type: 'gym',
-        gymId: gym.id,
-        roles: roleNames,
-        permissions,
-      };
-    } else {
-      payload = {
-        sub: user.id,
-        type: 'gym',
-        gymId: gym.id,
-        roles: ['MEMBER'],
-        permissions: [...MEMBER_PERMISSIONS],
-      };
-    }
+    const payload: GymAuthUser = { sub: user.id, type: 'gym', gymId: gym.id, ...claims };
 
     const accessToken = this.jwt.sign(payload);
 

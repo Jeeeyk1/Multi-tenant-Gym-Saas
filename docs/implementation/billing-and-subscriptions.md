@@ -10,7 +10,7 @@ reference number only (no screenshot).
 
 - `admin/create-gym-client.use-case.ts` already provisions the full stack in one transaction:
   Organization + Gym + profile + schedules + community conversation + owner `User` (created
-  `isActive: true`) + `OrganizationMember(OWNER)` + `GymStaff` with the `GYM_OWNER` role + an
+  `isActive: true`) + `OrganizationMember(OWNER)` + `GymStaff` with the `OWNER` role + an
   **invite token**. Provisioning works.
 - `Subscription`, `Invoice`, `Plan`, `PlanFeature` tables exist. **Nothing writes to Subscription or
   Invoice** — they sit empty. (This is why a provisioned gym has no plan/entitlement until a row is
@@ -162,7 +162,7 @@ When ready: integrate **PayMongo or Xendit** (both do GCash + QR Ph + cards in P
 - **Enums** (`common/enums`): `SubscriptionStatus`, `InvoiceStatus`, `BillingCycle`.
 - **Migration `0039`**: invoice `payment_reference`, `payment_submitted_at`, `verified_by`,
   `rejection_reason` + `idx_invoices_status`. Prisma `Invoice` updated.
-- **Permission** `billing.manage` (seed) → GYM_OWNER only (owner-only billing; not MANAGER).
+- **Permission** `billing.manage` (seed) → OWNER only (owner-only billing; not STAFF).
 - **Provisioning**: `createGymClient` now takes `planId` + optional `billingCycle`, and in the same
   transaction creates `Subscription (PENDING_PAYMENT)` + first `Invoice (OPEN, due +7d, amount from plan)`.
 - **Billing module** (`modules/billing`):

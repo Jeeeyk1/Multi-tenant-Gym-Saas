@@ -3,7 +3,10 @@
  * `announcements.view` are granted to every member at login (gym-login.use-case.ts) and aren't stored.
  */
 export enum Permission {
+  /** The member list and badges: name and status. */
   MEMBERS_VIEW = 'members.view',
+  /** Contact details, plan, prices, renewals and payments. Trainers don't have it. */
+  MEMBERS_DETAILS = 'members.details',
   MEMBERS_CREATE = 'members.create',
   MEMBERS_EDIT = 'members.edit',
   MEMBERS_RENEW = 'members.renew',

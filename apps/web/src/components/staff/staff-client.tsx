@@ -6,8 +6,8 @@ import { inviteStaff, deactivateStaff, assignRole, removeRole } from '@/lib/acti
 import type { StaffMember, GymRole } from '@/types/api';
 
 const ROLE_COLORS: Record<string, string> = {
-  MANAGER: 'text-primary border-primary/40 bg-primary/10',
-  FRONT_DESK: 'text-success border-success/40 bg-success-bg',
+  OWNER: 'text-primary border-primary/40 bg-primary/10',
+  STAFF: 'text-success border-success/40 bg-success-bg',
   TRAINER: 'text-warning border-warning/40 bg-warning-bg',
 };
 

@@ -2,57 +2,36 @@
 -- Description: Maps system roles to permissions
 -- Idempotent: uses INSERT ... ON CONFLICT DO NOTHING
 --
--- GYM_OWNER  → every permission (see note below)
--- MANAGER    → all permissions
--- FRONT_DESK → member ops + check-ins (no reports, staff mgmt, or gym settings)
--- TRAINER    → view-only + check-ins
---
--- GYM_OWNER is created in migrations/0029_gym_owner_role.sql, which tried to grant it
--- every permission via CROSS JOIN permissions at migration time. Migrations run before
--- seeds (db:migrate && db:seed), and permissions are defined here in seeds (002), so that
--- cross join saw an empty permissions table and granted nothing. Granting GYM_OWNER
--- everything here (after permissions exist) keeps it correct, including for permissions
--- added by future migrations/seeds.
+-- OWNER   → every permission
+-- STAFF   → front desk, members incl. details, community, leaderboard (see below)
+-- TRAINER → app only: check-ins, community, PR review, badge awarding; members' name and status only
+-- Same matrix as migration 0051_roles_owner_staff_trainer; change both together.
 
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 JOIN permissions p ON (
-  -- GYM_OWNER gets every permission, full stop
-  (r.name = 'GYM_OWNER')
+  -- OWNER gets every permission, full stop
+  r.name = 'OWNER'
 
   OR
 
-  -- MANAGER gets everything
-  (r.name = 'MANAGER' AND p.key IN (
-    'members.view', 'members.create', 'members.edit', 'members.renew', 'members.suspend', 'members.manage',
+  -- STAFF: front desk, members and renewals, the community, leaderboard (the owner can switch
+  -- leaderboard.manage off per gym). No staff management, reports, settings, billing or AI.
+  (r.name = 'STAFF' AND p.key IN (
+    'members.view', 'members.details', 'members.create', 'members.edit', 'members.renew', 'members.suspend',
     'checkins.view', 'checkins.manage',
-    'reports.view',
-    'staff.view', 'staff.manage',
     'announcements.manage',
     'chat.manage',
     'plans.view',
-    'gym.settings',
     'leaderboard.view', 'leaderboard.submit', 'leaderboard.review', 'leaderboard.manage',
-    'badges.manage', 'badges.award',
-    'insights.query'
-  ))
-
-  OR
-
-  -- FRONT_DESK: member operations, check-ins, chat, plans, leaderboard review, badge awarding
-  (r.name = 'FRONT_DESK' AND p.key IN (
-    'members.view', 'members.create', 'members.edit', 'members.renew', 'members.manage',
-    'checkins.view', 'checkins.manage',
-    'chat.manage',
-    'plans.view',
-    'leaderboard.view', 'leaderboard.submit', 'leaderboard.review',
     'badges.award'
   ))
 
   OR
 
-  -- TRAINER: view members, check-ins, chat, leaderboard, badge awarding
+  -- TRAINER (app only): check-ins, chat moderation, PR review, badge awarding. Members' name and
+  -- status only: no members.details, so no contact or payment information.
   (r.name = 'TRAINER' AND p.key IN (
     'members.view',
     'checkins.view', 'checkins.manage',

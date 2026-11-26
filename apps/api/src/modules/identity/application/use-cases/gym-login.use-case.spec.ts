@@ -70,6 +70,23 @@ describe('GymLoginUseCase', () => {
     );
   });
 
+  it('adds the member role for staff who are also members of the gym', async () => {
+    (mockRepo.findGymByCode as jest.Mock).mockResolvedValue(validGym);
+    (mockRepo.findUserByEmail as jest.Mock).mockResolvedValue(validUser);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (mockRepo.findGymStaffWithPermissions as jest.Mock).mockResolvedValue(staffRecord);
+    (mockRepo.findGymMember as jest.Mock).mockResolvedValue({ id: 'member-1' });
+
+    await useCase.execute('FITMNL', 'staff@gym.com', 'password');
+
+    expect(mockJwt.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roles: ['MANAGER', 'MEMBER'],
+        permissions: expect.arrayContaining(['members.view', 'checkins.self', 'announcements.view']),
+      }),
+    );
+  });
+
   it('returns member JWT with fixed permissions on valid member login', async () => {
     (mockRepo.findGymByCode as jest.Mock).mockResolvedValue(validGym);
     (mockRepo.findUserByEmail as jest.Mock).mockResolvedValue(validUser);

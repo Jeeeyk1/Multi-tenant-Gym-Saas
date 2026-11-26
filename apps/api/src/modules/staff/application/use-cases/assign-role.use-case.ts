@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConflictError, NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
 import { assertCanManageStaff } from '../../domain/staff-management.rules';
@@ -12,6 +12,8 @@ export interface AssignRoleInput {
 
 @Injectable()
 export class AssignRoleUseCase {
+  private readonly logger = new Logger(AssignRoleUseCase.name);
+
   constructor(private readonly repo: StaffRepository) {}
 
   async execute(
@@ -40,6 +42,8 @@ export class AssignRoleUseCase {
       throw new ConflictError('Staff member already has this role', 'ROLE_ALREADY_ASSIGNED');
     }
 
-    return this.repo.assignRole(staffId, input.roleId, caller.sub);
+    const assigned = await this.repo.assignRole(staffId, input.roleId, caller.sub);
+    this.logger.log(`staff role assigned gym=${gymId} staff=${staffId} role=${role.name} by=${caller.sub}`);
+    return assigned;
   }
 }

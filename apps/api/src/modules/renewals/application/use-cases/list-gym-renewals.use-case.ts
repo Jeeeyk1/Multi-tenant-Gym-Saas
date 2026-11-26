@@ -10,7 +10,7 @@ export class ListGymRenewalsUseCase {
 
   execute(gymId: string, caller: AuthenticatedUser, limit = 50) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.MEMBERS_VIEW);
+    assertPermission(caller, Permission.MEMBERS_DETAILS);
     return this.repo.listGymRenewals(gymId, limit);
   }
 }

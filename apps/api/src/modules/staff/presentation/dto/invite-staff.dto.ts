@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { StaffRole } from '../../../../common/enums';
 
 export class InviteStaffDto {
   @IsEmail()
@@ -13,4 +14,9 @@ export class InviteStaffDto {
   @IsString()
   @MaxLength(20)
   phone?: string;
+
+  /** The role to give right away. Optional, so older clients that assign it afterwards keep working. */
+  @IsOptional()
+  @IsEnum(StaffRole)
+  role?: StaffRole;
 }

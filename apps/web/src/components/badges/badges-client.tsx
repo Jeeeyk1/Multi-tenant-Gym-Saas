@@ -22,19 +22,29 @@ interface Props {
   customBadges: GymCustomBadge[] | null;
   ladders: BadgeLadder[] | null;
   olderMilestones: ExerciseMilestoneBadge[];
+  /** Owners create custom badges; staff only manage the lift ladders here. */
+  canCreateBadges: boolean;
 }
 
-export function BadgesClient({ gymId, customBadges, ladders, olderMilestones }: Props) {
+export function BadgesClient({ gymId, customBadges, ladders, olderMilestones, canCreateBadges }: Props) {
   return (
     <div className="space-y-10">
       <LaddersSection gymId={gymId} ladders={ladders} />
-      <CustomBadgesSection gymId={gymId} badges={customBadges} />
+      <CustomBadgesSection gymId={gymId} badges={customBadges} canCreate={canCreateBadges} />
       {olderMilestones.length > 0 && <OlderMilestonesSection badges={olderMilestones} />}
     </div>
   );
 }
 
-function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCustomBadge[] | null }) {
+function CustomBadgesSection({
+  gymId,
+  badges,
+  canCreate,
+}: {
+  gymId: string;
+  badges: GymCustomBadge[] | null;
+  canCreate: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +86,14 @@ function CustomBadgesSection({ gymId, badges }: { gymId: string; badges: GymCust
             One-off badges you can award manually to members
           </p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="px-4 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          + New Badge
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setOpen(true)}
+            className="px-4 py-2 text-sm bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            + New Badge
+          </button>
+        )}
       </div>
 
       {/* List */}

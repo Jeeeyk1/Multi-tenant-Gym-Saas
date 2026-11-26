@@ -12,7 +12,7 @@ export class GetMemberProfileUseCase {
 
   async execute(gymId: string, memberId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, Permission.MEMBERS_VIEW);
+    assertPermission(caller, Permission.MEMBERS_DETAILS);
 
     const member = await this.repo.findMemberById(memberId, gymId);
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');

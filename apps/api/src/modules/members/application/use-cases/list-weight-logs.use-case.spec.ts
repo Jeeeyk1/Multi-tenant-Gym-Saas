@@ -32,8 +32,8 @@ describe('ListWeightLogsUseCase', () => {
     });
   });
 
-  it('lets staff with members.view read it', async () => {
-    await useCase.execute('gym-1', 'member-1', caller('user-staff', ['members.view']));
+  it('lets staff with members.details read it', async () => {
+    await useCase.execute('gym-1', 'member-1', caller('user-staff', ['members.details']));
     expect(mockRepo.listWeightLogs).toHaveBeenCalled();
   });
 

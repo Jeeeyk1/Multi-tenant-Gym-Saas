@@ -45,7 +45,7 @@ export class StaffController {
   ) {
     return this.inviteStaffUseCase.execute(
       gymId,
-      { email: dto.email!, fullName: dto.fullName!, phone: dto.phone },
+      { email: dto.email!, fullName: dto.fullName!, phone: dto.phone, role: dto.role },
       user,
     );
   }

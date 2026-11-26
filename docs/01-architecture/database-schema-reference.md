@@ -139,7 +139,7 @@ Safe set: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`
 | gym_profile | Gym | Branding and contact info. One-to-one with gyms. |
 | gym_schedules | Gym | Operating hours per day of week. |
 | gym_features | Gym | Per-gym feature flags. |
-| roles | RBAC | Seeded system roles (MANAGER, FRONT_DESK, TRAINER). |
+| roles | RBAC | Seeded system roles (OWNER, STAFF, TRAINER; migration 0051). |
 | permissions | RBAC | Granular action keys. Seeded. |
 | role_permissions | RBAC | Maps roles to permissions. |
 | gym_staff | RBAC | User-to-gym employment relationship. |

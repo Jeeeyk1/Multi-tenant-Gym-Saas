@@ -2,6 +2,7 @@ import { InviteStaffUseCase } from './invite-staff.use-case';
 import { ConflictError, ForbiddenError } from '../../../../common/errors';
 import type { StaffRepository } from '../../infrastructure/persistence/staff.repository';
 import type { OrgAuthUser, GymAuthUser } from '../../../../common/types/auth.types';
+import { StaffRole } from '../../../../common/enums';
 
 const mockRepo = {
   findUserByEmail: jest.fn(),
@@ -20,7 +21,7 @@ const gymCallerWithPermission: GymAuthUser = {
   sub: 'user-gym',
   type: 'gym',
   gymId: 'gym-1',
-  roles: ['MANAGER'],
+  roles: ['STAFF'],
   permissions: ['staff.manage'],
 };
 
@@ -107,5 +108,32 @@ describe('InviteStaffUseCase', () => {
     const result = await useCase.execute('gym-1', validInput, gymCallerWithPermission);
 
     expect(result.staffId).toBe('staff-3');
+  });
+
+  describe('with a role', () => {
+    beforeEach(() => {
+      (mockRepo.findUserByEmail as jest.Mock).mockResolvedValue(null);
+      (mockRepo.inviteStaff as jest.Mock).mockResolvedValue({ staffId: 's1', userId: 'u1', inviteToken: 't' });
+    });
+
+    it('gives the role in the same call', async () => {
+      await useCase.execute('gym-1', { ...validInput, role: StaffRole.TRAINER }, gymCallerWithPermission);
+      expect(mockRepo.inviteStaff).toHaveBeenCalledWith(
+        expect.objectContaining({ roleName: StaffRole.TRAINER, invitedBy: 'user-gym' }),
+      );
+    });
+
+    it('refuses to make someone an owner unless the caller is an owner', async () => {
+      await expect(
+        useCase.execute('gym-1', { ...validInput, role: StaffRole.OWNER }, gymCallerWithPermission),
+      ).rejects.toMatchObject({ code: 'OWNER_ROLE_PROTECTED' });
+      expect(mockRepo.inviteStaff).not.toHaveBeenCalled();
+    });
+
+    it('lets an owner invite another owner', async () => {
+      const owner: GymAuthUser = { ...gymCallerWithPermission, roles: [StaffRole.OWNER] };
+      await useCase.execute('gym-1', { ...validInput, role: StaffRole.OWNER }, owner);
+      expect(mockRepo.inviteStaff).toHaveBeenCalledWith(expect.objectContaining({ roleName: StaffRole.OWNER }));
+    });
   });
 });

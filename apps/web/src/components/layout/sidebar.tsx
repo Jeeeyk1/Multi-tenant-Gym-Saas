@@ -22,7 +22,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Announcements', href: '/dashboard/announcements', icon: '◇', permission: 'announcements.manage' },
   { label: 'Chat', href: '/dashboard/chat', icon: '◉', permission: 'chat.manage' },
   { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: '⬆', permission: 'leaderboard.view' },
-  { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'badges.manage' },
+  // Lift ladders (leaderboard.manage) live here; owners also create custom badges on this page.
+  { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'leaderboard.manage' },
   { label: 'AI Assistant', href: '/dashboard/insights', icon: '✦', permission: 'insights.query' },
   { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
   { label: 'Billing', href: '/dashboard/billing', icon: '₱', permission: 'billing.manage' },

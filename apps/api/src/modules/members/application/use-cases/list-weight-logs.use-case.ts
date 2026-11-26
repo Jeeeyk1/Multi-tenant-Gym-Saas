@@ -16,7 +16,7 @@ export class ListWeightLogsUseCase {
 
     // Members read their own history; staff need members.view.
     const isSelf = caller.type === 'gym' && member.user.id === caller.sub;
-    if (!isSelf && !hasPermission(caller, Permission.MEMBERS_VIEW)) {
+    if (!isSelf && !hasPermission(caller, Permission.MEMBERS_DETAILS)) {
       throw new ForbiddenError('Missing permission: members.view', 'PERMISSION_DENIED');
     }
 

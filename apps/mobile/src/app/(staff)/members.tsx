@@ -112,8 +112,9 @@ export default function MembersScreen() {
       list = list.filter(
         (m) =>
           m.user.fullName.toLowerCase().includes(q) ||
-          m.membershipNumber.toLowerCase().includes(q) ||
-          m.user.email.toLowerCase().includes(q),
+          // Trainers only receive name and status.
+          Boolean(m.membershipNumber?.toLowerCase().includes(q)) ||
+          Boolean(m.user.email?.toLowerCase().includes(q)),
       );
     }
     return list;

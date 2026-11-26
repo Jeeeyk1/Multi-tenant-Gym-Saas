@@ -76,7 +76,7 @@ const next = isActive ? GymStatus.SUSPENDED : GymStatus.ACTIVE;
 |---|---|
 | `GymStatus` | `ACTIVE`, `SUSPENDED`, `PENDING` |
 | `MemberStatus` | `ACTIVE`, `INACTIVE`, `EXPIRED`, `SUSPENDED` |
-| `StaffRole` | `OWNER`, `MANAGER`, `STAFF` |
+| `StaffRole` | `OWNER`, `STAFF`, `TRAINER` |
 | `MembershipPlanStatus` | `ACTIVE`, `INACTIVE` |
 | `BadgeCategory` | `CONSISTENCY`, `LOYALTY`, `STRENGTH` |
 | `BadgeTier` | `GOLD`, `SILVER`, `BRONZE` |

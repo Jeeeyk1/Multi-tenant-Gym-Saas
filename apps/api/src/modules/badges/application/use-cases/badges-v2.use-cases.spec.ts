@@ -155,14 +155,14 @@ describe('SaveLadderUseCase', () => {
   it('only gives leaderboard lifts a ladder', async () => {
     repo.isLeaderboardLift.mockResolvedValue(false);
     await expect(
-      new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: true, weights: { BRONZE: 50, SILVER: 70, GOLD: 90 } }, staff(['badges.manage'])),
+      new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: true, weights: { BRONZE: 50, SILVER: 70, GOLD: 90 } }, staff(['leaderboard.manage'])),
     ).rejects.toMatchObject({ code: 'NOT_A_LEADERBOARD_LIFT' });
     expect(repo.saveLadder).not.toHaveBeenCalled();
   });
 
   it('requires weights that go up from bronze to gold', async () => {
     await expect(
-      new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: true, weights: { BRONZE: 80, SILVER: 60, GOLD: 100 } }, staff(['badges.manage'])),
+      new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: true, weights: { BRONZE: 80, SILVER: 60, GOLD: 100 } }, staff(['leaderboard.manage'])),
     ).rejects.toMatchObject({ code: 'INVALID_LADDER' });
   });
 
@@ -176,13 +176,13 @@ describe('SaveLadderUseCase', () => {
       'gym-1',
       'squat',
       { enabled: true, weights: { BRONZE: 50, SILVER: 70, GOLD: 90 } },
-      staff(['badges.manage']),
+      staff(['leaderboard.manage']),
     );
     expect(repo.awardRungForExistingLifts).toHaveBeenCalledTimes(3);
   });
 
   it('switches a ladder off', async () => {
-    await new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: false }, staff(['badges.manage']));
+    await new SaveLadderUseCase(repo).execute('gym-1', 'squat', { enabled: false }, staff(['leaderboard.manage']));
     expect(repo.disableLadder).toHaveBeenCalledWith('gym-1', 'squat');
     expect(repo.saveLadder).not.toHaveBeenCalled();
     // A lift removed from the leaderboard can still have its ladder switched off.

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
 import { assertCanManageStaff } from '../../domain/staff-management.rules';
@@ -8,6 +8,8 @@ import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class RemoveRoleUseCase {
+  private readonly logger = new Logger(RemoveRoleUseCase.name);
+
   constructor(private readonly repo: StaffRepository) {}
 
   async execute(gymId: string, staffId: string, roleId: string, caller: AuthenticatedUser) {
@@ -28,5 +30,6 @@ export class RemoveRoleUseCase {
     }
 
     await this.repo.removeRole(staffId, roleId);
+    this.logger.log(`staff role removed gym=${gymId} staff=${staffId} role=${roleName ?? roleId} by=${caller.sub}`);
   }
 }

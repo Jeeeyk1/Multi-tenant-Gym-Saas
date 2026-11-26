@@ -10,211 +10,93 @@ This domain manages:
 
 It defines **who can do what** inside a gym.
 
----
-
-## Core concepts
-
-### 1. Staff
-
-A staff member is:
-
-- a user assigned to a gym
-- stored in `gym_staff`
-
-A user can:
-- be staff in multiple gyms
-- have different roles per gym
+Gyms are set up very differently: a solo owner who does everything, an owner with a front desk, staff who
+also coach, gyms with no coach at all, and occasionally a full team. Roles are designed so every one of those
+works: nothing assumes a role exists in a gym, and one person can hold several roles.
 
 ---
 
-### 2. Roles (predefined)
+## Staff
 
-Roles are **strictly predefined**.
+A staff member is a user assigned to a gym (`gym_staff`). A user can be staff in several gyms with
+different roles in each, and can also be a **member** of the same gym (see "Staff who are also members").
 
-Examples:
-
-- MANAGER
-- FRONT_DESK
-- TRAINER
-
-These are stored in:
-
-- `roles` table
-- `is_system_role = true`
+Staff are invited with `POST /gyms/:gymId/staff` (`staff.manage`, so Owner only). The invite can carry the
+`role` (`OWNER`, `STAFF` or `TRAINER`), given in the same transaction. Only an owner can make someone an owner,
+and nobody can change their own roles. Roles can also be added or removed later
+(`POST/DELETE /gyms/:gymId/staff/:staffId/roles`). Invites and role changes are logged with who made them.
 
 ---
 
-### 3. SUPER_ADMIN
+## Roles
 
-Defined in:
+Three predefined system roles (`roles`, `is_system_role = true`), mirrored by `StaffRole`
+(`apps/api/src/common/enums/staff-role.enum.ts`) and migration `0051_roles_owner_staff_trainer`:
 
-```text
-users.system_role = SUPER_ADMIN
+| | Owner | Staff | Trainer (app only) |
+|---|---|---|---|
+| Members: name and status | ✓ | ✓ | ✓ |
+| Members: contact details, plan, prices, renewals (`members.details`) | ✓ | ✓ | — |
+| Register, edit, renew, suspend members | ✓ | ✓ | — |
+| Delete members | ✓ | — | — |
+| Check-ins | ✓ | ✓ | ✓ |
+| Announcements: post | ✓ | ✓ | — (can read) |
+| Community chat moderation | ✓ | ✓ | ✓ |
+| Leaderboard: submit and review PRs | ✓ | ✓ | ✓ |
+| Leaderboard settings and lift ladders (`leaderboard.manage`) | ✓ | ✓ (owner can switch off) | — |
+| Badges: award | ✓ | ✓ | ✓ |
+| Badges: create custom badges (`badges.manage`) | ✓ | — | — |
+| Plans (`plans.view`) | ✓ | ✓ | — |
+| Reports, staff management, gym settings, billing, AI assistant | ✓ | — | — |
 
-UPER_ADMIN:
+- **Several people can be Owner.** That's the answer for a manager who needs everything.
+- **Roles combine.** Permissions are the union of a person's roles, so a staff member who also coaches can hold
+  Staff + Trainer (Staff already covers the trainer's permissions).
+- **Trainers** see members' name and status only: list and detail responses are reduced by
+  `visibleMember()` (`modules/members/domain/member-visibility.ts`) without `members.details`. They use the app;
+  the web dashboard shows them a "use the app" page.
+- The matrix lives in `db/seeds/003_role_permissions.sql` (fresh databases) and migration 0051 (existing ones).
+  Change both together.
 
-bypasses all RBAC checks
-has full system access
-is not gym-scoped
-Role behavior
-Multi-role support
-A staff member can have multiple roles:
+---
 
-Example:
+## Staff who are also members
 
-text
+A trainer who trains at the same gym has both a `gym_staff` and a `gym_members` row. Their gym token then has
+their staff roles **plus** `MEMBER`, and the member permissions (`checkins.self`, `announcements.view`), so the
+app can offer a member view. One function builds the token's roles and permissions for login and refresh:
+`gymClaims()` in `modules/identity/domain/gym-claims.ts`. Someone who is neither staff nor a member can't sign in.
 
+---
 
-User A:
-- MANAGER
-- TRAINER
-Permissions = union of all roles.
+## Permissions
 
-Why this matters
-In small gyms:
+Permission keys are listed in the `Permission` enum (`common/enums/permission.enum.ts`), matching the
+`permissions` table. They are embedded in the JWT at login and refresh, so **role changes apply at the next
+token refresh or sign-in**.
 
-one person may handle everything
-This allows:
+Use cases check them with the shared helpers in `common/auth/authorization.ts`:
 
-flexible permission assignment
-no need for custom roles
-Permissions
-Permissions are granular actions.
+```ts
+assertGymAccess(caller, gymId);
+assertPermission(caller, Permission.MEMBERS_CREATE);
+```
 
-Examples:
+Never check role names for access (`roles.includes('STAFF')`). The exceptions are the owner-protection rules in
+`modules/staff/domain/staff-management.rules.ts`, which are about the Owner role itself.
 
-members.view
-members.create
-members.renew
-checkins.manage
-staff.manage
-announcements.manage
-Role → Permission mapping
-Each role has a fixed set of permissions.
+---
 
-Example:
+## Invariants
 
-MANAGER
-full access
-staff management
-reports
-announcements
-FRONT_DESK
-member registration
-renewals
-check-ins
-TRAINER
-view members
-check-ins
-Permission resolution
-At login:
+- Roles are predefined; gyms don't create custom roles.
+- A user must be active in `gym_staff` (or a member) to act in a gym; permissions apply only to that gym.
+- `gymId` comes from the authenticated context, never the request body.
+- Only an owner grants, removes or acts on the Owner role. Nobody changes their own roles or deactivates themself.
+- Org tokens (the organization owner) pass permission checks for gyms they own; `GymAccessGuard` scopes them.
 
-Load all roles for staff
-Load all permissions for those roles
-Combine into a unique set
-text
+## Edge cases
 
-
-permissions = union(all role permissions)
-JWT payload
-JWT must include:
-
-json
-
-
-{
-  "userId": "...",
-  "gymId": "...",
-  "roles": ["MANAGER", "TRAINER"],
-  "permissions": ["members.view", "checkins.manage"]
-}
-Authorization rule
-Always check permissions.
-
-Never check roles directly.
-
-✅ Correct:
-
-ts
-
-
-@RequirePermission('members.create')
-❌ Incorrect:
-
-ts
-
-
-if (user.roles.includes('MANAGER'))
-Gym scoping
-Permissions are valid only within a gym.
-
-Rules:
-
-user must belong to gym_staff
-permissions apply only to that gym
-must validate gym_id on every request
-Staff assignment flow
-Owner/manager adds user as staff
-System creates gym_staff
-Assign roles via gym_staff_roles
-Permissions derived automatically
-Access rules
-Staff must:
-be active in gym_staff
-have assigned roles
-have required permissions
-SUPER_ADMIN behavior
-SUPER_ADMIN:
-
-bypasses permission checks
-can access any gym
-used for internal system admin only
-Invariants
-roles are predefined
-roles cannot be arbitrarily created by gyms
-permissions are derived from roles
-a user must belong to gym_staff to act in that gym
-permissions must always be checked via guard
-Edge cases
-User with no roles
-should not access protected endpoints
-Multi-role conflict
-no conflict, permissions are unioned
-Staff removed from gym
-access must immediately be revoked
-Role updated
-JWT must be refreshed
-Common mistakes (must avoid)
-❌ Checking roles directly
-❌ Skipping permission guard
-❌ Not validating gym_id
-❌ Trusting request body for authorization
-❌ Allowing cross-gym access
-
-Integration with other domains
-Members
-permission required for:
-create
-edit
-renew
-suspend
-Check-ins
-permission required for:
-manual check-in
-viewing logs
-Announcements
-permission required for:
-create
-publish
-Design goal
-RBAC must be:
-
-predictable
-consistent
-easy to enforce
-secure by default
-A developer should always know:
-
-where permissions come from
-how they are enforced
-what scope they apply to
+- **Staff with no roles:** no permissions, so protected endpoints refuse them.
+- **Staff removed from a gym:** their next refresh fails unless they are also a member, who then gets a member token.
+- **Role changed:** takes effect at the next token refresh.

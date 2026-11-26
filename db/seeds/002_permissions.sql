@@ -4,7 +4,8 @@
 
 INSERT INTO permissions (key, description, module) VALUES
   -- Members module
-  ('members.view',          'View member list and details',             'Members'),
+  ('members.view',          'View the member list: name and status',    'Members'),
+  ('members.details',       'See contact details, plan, prices and payments', 'Members'),
   ('members.create',        'Register new member',                      'Members'),
   ('members.edit',          'Edit member details',                      'Members'),
   ('members.renew',         'Renew membership',                         'Members'),

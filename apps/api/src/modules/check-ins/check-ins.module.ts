@@ -6,6 +6,7 @@ import { ListActiveCheckinsUseCase } from './application/use-cases/list-active-c
 import { ListActivePublicCheckinsUseCase } from './application/use-cases/list-active-public-checkins.use-case';
 import { ListCheckinHistoryUseCase } from './application/use-cases/list-checkin-history.use-case';
 import { ListMyCheckInsUseCase } from './application/use-cases/list-my-checkins.use-case';
+import { GetMyCheckinStreakUseCase } from './application/use-cases/get-my-checkin-streak.use-case';
 import { CheckInsController } from './presentation/controllers/check-ins.controller';
 import { BadgesModule } from '../badges/badges.module';
 
@@ -20,6 +21,7 @@ import { BadgesModule } from '../badges/badges.module';
     ListActivePublicCheckinsUseCase,
     ListCheckinHistoryUseCase,
     ListMyCheckInsUseCase,
+    GetMyCheckinStreakUseCase,
   ],
 })
 export class CheckInsModule {}

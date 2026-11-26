@@ -9,7 +9,8 @@ import { useTheme } from '../../../context/ThemeContext';
 import { AppLoader } from '../../../components/AppLoader';
 import { PressableScale } from '../../../components/ui';
 import { useWorkout } from '../../../context/WorkoutContext';
-import { useWorkoutSessions } from '../../../hooks/workouts';
+import { useWorkoutSessions, useWorkoutSummary } from '../../../hooks/workouts';
+import { countDayStreak } from '../../../lib/day-streak';
 import { SPACING, RADIUS, FONT } from '../../../constants/theme';
 import { workoutTypeMeta, DEFAULT_WORKOUT_ICON, DEFAULT_WORKOUT_COLOR } from '../../../constants/workout-types';
 import type { WorkoutSession } from '../../../types';
@@ -21,31 +22,6 @@ function startOfWeek(): Date {
   return d;
 }
 
-function computeStreak(sessions: WorkoutSession[]): number {
-  if (!sessions.length) return 0;
-  const days = [
-    ...new Set(
-      sessions.map((s) => {
-        const d = new Date(s.startedAt);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-      }),
-    ),
-  ].sort((a, b) => b - a);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayMs = today.getTime();
-
-  if (days[0] !== todayMs && days[0] !== todayMs - 86_400_000) return 0;
-
-  let streak = 1;
-  for (let i = 1; i < days.length; i++) {
-    if (days[i - 1] - days[i] === 86_400_000) streak++;
-    else break;
-  }
-  return streak;
-}
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -71,6 +47,8 @@ export default function TrainScreen() {
   const { activeSession } = useWorkout();
 
   const sessionsQ = useWorkoutSessions(20);
+  const summaryQ = useWorkoutSummary();
+  const summary = summaryQ.data;
   const sessions: WorkoutSession[] = sessionsQ.data?.pages[0]?.data ?? [];
   const isLoading = sessionsQ.isLoading;
   const refreshing = sessionsQ.isRefetching;
@@ -79,12 +57,14 @@ export default function TrainScreen() {
   // render. Depending on `sessionsQ` made the callback new each render, so useFocusEffect re-ran
   // it on every render while focused, and each refetch re-rendered → an unbounded request loop.
   const { refetch: refetchSessions } = sessionsQ;
-  useFocusEffect(useCallback(() => { refetchSessions(); }, [refetchSessions]));
+  const { refetch: refetchSummary } = summaryQ;
+  useFocusEffect(useCallback(() => { refetchSessions(); refetchSummary(); }, [refetchSessions, refetchSummary]));
 
   const weekStart = startOfWeek();
   const weekSessions = sessions.filter((s) => new Date(s.startedAt) >= weekStart);
   const weekMinutes = weekSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-  const streak = computeStreak(sessions);
+  // Workout days in a row (different from the check-in streak on Home, so it's labelled "Workout streak").
+  const streak = countDayStreak(sessions.map((ss) => ss.startedAt));
   const recentSessions = sessions.slice(0, 3);
 
   const s = useMemo(() => StyleSheet.create({
@@ -236,7 +216,7 @@ export default function TrainScreen() {
       style={s.container}
       contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.sm }]}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => sessionsQ.refetch()} tintColor={theme.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={() => { sessionsQ.refetch(); summaryQ.refetch(); }} tintColor={theme.primary} />
       }
       showsVerticalScrollIndicator={false}
     >
@@ -267,7 +247,7 @@ export default function TrainScreen() {
         </View>
         <View style={s.statCard}>
           <Text style={[s.statNum, { color: theme.primary }]}>{streak}</Text>
-          <Text style={s.statLabel}>Day streak</Text>
+          <Text style={s.statLabel}>Workout streak</Text>
         </View>
       </View>
 
@@ -352,7 +332,7 @@ export default function TrainScreen() {
         </View>
       )}
 
-      {sessions.length > 0 && (
+      {summary && summary.totalSessions > 0 && (
         <>
           <View style={[s.sectionHeader, { marginTop: SPACING.xl }]}>
             <Text style={s.sectionTitle}>All Time</Text>
@@ -360,23 +340,15 @@ export default function TrainScreen() {
           <View style={s.allTimeCard}>
             <View style={s.allTimeRow}>
               <Text style={s.allTimeLabel}>Total sessions</Text>
-              <Text style={s.allTimeValue}>{sessions.length}</Text>
+              <Text style={s.allTimeValue}>{summary.totalSessions}</Text>
             </View>
             <View style={[s.allTimeRow, s.allTimeRowBorder]}>
               <Text style={s.allTimeLabel}>Total minutes</Text>
-              <Text style={s.allTimeValue}>
-                {sessions.reduce((sum, ss) => sum + ss.durationMinutes, 0)}
-              </Text>
+              <Text style={s.allTimeValue}>{summary.totalMinutes}</Text>
             </View>
             <View style={[s.allTimeRow, s.allTimeRowBorder, { borderBottomWidth: 0 }]}>
               <Text style={s.allTimeLabel}>Most trained</Text>
-              <Text style={s.allTimeValue}>
-                {(() => {
-                  const counts: Record<string, number> = {};
-                  sessions.forEach((ss) => { counts[ss.workoutType] = (counts[ss.workoutType] ?? 0) + 1; });
-                  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
-                })()}
-              </Text>
+              <Text style={s.allTimeValue}>{summary.mostTrainedType ?? '—'}</Text>
             </View>
           </View>
         </>

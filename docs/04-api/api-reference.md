@@ -800,9 +800,8 @@ Errors:
 ---
 
 #### PATCH /gyms/:gymId/checkins/:id/checkout
-Manually check out a member.
-
-**Requires `checkins.manage` permission.**
+Check out a member. Staff need `checkins.manage`; a member may check out their own active check-in (the mobile
+Check In screen's "Hold to check out").
 
 Response `200`:
 ```json
@@ -820,6 +819,19 @@ Response `200`: array of active check-in objects.
 
 ---
 
+#### GET /gyms/:gymId/checkins/me/streak
+The caller's check-in streak: consecutive days with a check-in, counted in the gym's timezone and ending today or
+yesterday. Same rule as the streak badges, so Home and badge progress agree.
+
+**Requires `checkins.self` permission.**
+
+Response `200`:
+```json
+{ "streak": 12 }
+```
+
+---
+
 #### GET /gyms/:gymId/checkins
 Check-in history (paginated).
 
@@ -828,6 +840,22 @@ Check-in history (paginated).
 Query params: `page`, `limit`, `memberId`, `from` (ISO date), `to` (ISO date).
 
 Response `200`: paginated check-in history.
+
+---
+
+### Workout sessions
+
+#### GET /gyms/:gymId/workout-sessions/summary
+All-time totals for the caller's own sessions (Train's "All Time" card). The session list is paged, so clients
+must not sum it themselves.
+
+**Members only** (gym token with a member record in this gym).
+
+Response `200`:
+```json
+{ "totalSessions": 54, "totalMinutes": 2810, "mostTrainedType": "Strength" }
+```
+`mostTrainedType` is `null` when there are no sessions.
 
 ---
 

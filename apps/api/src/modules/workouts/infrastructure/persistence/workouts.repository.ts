@@ -75,4 +75,27 @@ export class WorkoutsRepository {
   countSessions(memberId: string) {
     return this.prisma.workoutSession.count({ where: { memberId } });
   }
+
+  /** Totals across every session, plus the workout type logged most often (null with no sessions). */
+  async summarizeSessions(memberId: string) {
+    const [totals, topType] = await Promise.all([
+      this.prisma.workoutSession.aggregate({
+        where: { memberId },
+        _count: { _all: true },
+        _sum: { durationMinutes: true },
+      }),
+      this.prisma.workoutSession.groupBy({
+        by: ['workoutType'],
+        where: { memberId },
+        _count: { workoutType: true },
+        orderBy: { _count: { workoutType: 'desc' } },
+        take: 1,
+      }),
+    ]);
+    return {
+      totalSessions: totals._count._all,
+      totalMinutes: totals._sum.durationMinutes ?? 0,
+      mostTrainedType: topType[0]?.workoutType ?? null,
+    };
+  }
 }

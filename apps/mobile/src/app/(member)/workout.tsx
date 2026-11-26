@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLogWorkoutSession } from '../../hooks/workouts';
+import { Button } from '../../components/ui';
 import { healthKitService } from '../../services/healthkit.service';
 import { SPACING, RADIUS, FONT, SHADOW_1, type ColorPalette } from '../../constants/theme';
 import { onAccent } from '../../theme/accent';
@@ -47,6 +48,17 @@ export default function WorkoutScreen() {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const logSession = useLogWorkoutSession();
   const isSaving = logSession.isPending;
+  // Kept so a failed save can be retried from the summary instead of the session being lost.
+  const [unsaved, setUnsaved] = useState<Parameters<typeof logSession.mutateAsync>[0] | null>(null);
+
+  async function saveSession(input: Parameters<typeof logSession.mutateAsync>[0]) {
+    try {
+      await logSession.mutateAsync(input);
+      setUnsaved(null);
+    } catch {
+      setUnsaved(input);
+    }
+  }
 
   // Request HealthKit permissions once when the screen mounts (non-blocking)
   useEffect(() => {
@@ -96,18 +108,14 @@ export default function WorkoutScreen() {
     setIsReadingHealth(false);
 
     if (user?.gymId) {
-      try {
-        await logSession.mutateAsync({
-          workoutType: result.workoutType,
-          startedAt: result.startedAt,
-          endedAt: result.endedAt,
-          durationMinutes: result.durationMinutes,
-          caloriesBurned: caloriesBurned ?? undefined,
-          avgHeartRate: avgHeartRate ?? undefined,
-        });
-      } catch {
-        // Non-blocking — summary is shown even if the API call fails
-      }
+      await saveSession({
+        workoutType: result.workoutType,
+        startedAt: result.startedAt,
+        endedAt: result.endedAt,
+        durationMinutes: result.durationMinutes,
+        caloriesBurned: caloriesBurned ?? undefined,
+        avgHeartRate: avgHeartRate ?? undefined,
+      });
     }
   }
 
@@ -230,6 +238,8 @@ export default function WorkoutScreen() {
       ? 'Reading health data…'
       : isSaving
       ? 'Saving your session…'
+      : unsaved
+      ? "Couldn't save your session. Check your connection and try again."
       : 'Your session has been saved.';
 
     return (
@@ -249,6 +259,15 @@ export default function WorkoutScreen() {
             {(isReadingHealth || isSaving) && (
               <ActivityIndicator color={theme.primary} size="small" style={{ marginTop: 6 }} />
             )}
+            {unsaved && !isSaving ? (
+              <Button
+                label="Try saving again"
+                icon="refresh"
+                size="compact"
+                onPress={() => saveSession(unsaved)}
+                style={{ marginTop: SPACING.md, alignSelf: 'center' }}
+              />
+            ) : null}
           </View>
 
           <View style={styles.summaryCard}>

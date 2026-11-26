@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
 import { useTheme } from '../../../context/ThemeContext';
 import { AppLoader } from '../../../components/AppLoader';
-import { useActivePublicCheckins, useMyMember, useMyCheckIns, useMyProfile } from '../../../hooks/members';
+import { useActivePublicCheckins, useMyCheckinStreak, useMyMember, useMyCheckIns, useMyProfile } from '../../../hooks/members';
 import { useCurrentFitnessPlan, useDailyNutrition } from '../../../hooks/fitness-plan';
 import { TodayCard } from '../../../components/dashboard/TodayCard';
 import { SetupPlanCard } from '../../../components/dashboard/SetupPlanCard';
@@ -20,7 +20,7 @@ import { MembershipCard } from '../../../components/MembershipCard';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { SPACING, RADIUS, FONT } from '../../../constants/theme';
 import type { CheckIn } from '../../../types';
-import { computeStreak } from '../../../lib/checkin-streak';
+import { isToday } from '../../../lib/day-streak';
 
 
 export default function DashboardScreen() {
@@ -34,6 +34,7 @@ export default function DashboardScreen() {
 
   const memberQ = useMyMember();
   const checkInsQ = useMyCheckIns(7);
+  const streakQ = useMyCheckinStreak();
   const whosHereQ = useActivePublicCheckins();
   const planQ = useCurrentFitnessPlan();
   const dailyQ = useDailyNutrition();
@@ -182,7 +183,8 @@ export default function DashboardScreen() {
     );
   }
 
-  const { streak, lastCheckInToday } = computeStreak(checkIns);
+  const streak = streakQ.data?.streak ?? 0;
+  const lastCheckInToday = checkIns.length > 0 && isToday(checkIns[0].checkedInAt);
   // A restored session's token has no name, so fall back to the member record.
   const firstName = (user?.fullName || member?.user?.fullName || '').split(' ')[0] || 'there';
 

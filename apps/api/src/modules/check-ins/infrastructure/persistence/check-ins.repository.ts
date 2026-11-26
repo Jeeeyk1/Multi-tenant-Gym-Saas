@@ -42,6 +42,21 @@ export class CheckInsRepository {
     });
   }
 
+  async getGymTimezone(gymId: string): Promise<string> {
+    const gym = await this.prisma.gym.findUnique({ where: { id: gymId }, select: { timezone: true } });
+    return gym?.timezone ?? 'UTC';
+  }
+
+  /** Every check-in time for one member, newest first (streaks need the full run of days). */
+  async listCheckinTimestamps(memberId: string): Promise<Date[]> {
+    const rows = await this.prisma.checkIn.findMany({
+      where: { memberId },
+      select: { checkedInAt: true },
+      orderBy: { checkedInAt: 'desc' },
+    });
+    return rows.map((r) => r.checkedInAt);
+  }
+
   findActiveCheckin(memberId: string) {
     return this.prisma.checkIn.findFirst({
       where: { memberId, checkedOutAt: null },

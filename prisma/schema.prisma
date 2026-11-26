@@ -59,6 +59,7 @@ model User {
   announcementReads         AnnouncementRead[]
   aiUsageLogs               AiUsageLog[]
   assignedRoles             GymStaffRole[]         @relation("AssignedBy")
+  roleOverridesUpdated      GymRolePermissionOverride[] @relation("RoleOverrideUpdatedBy")
   deviceTokens              DeviceToken[]
   notificationLogs          NotificationLog[]
   submittedPrSubmissions    MemberPrSubmission[]   @relation("SubmittedBy")
@@ -182,6 +183,7 @@ model Gym {
   memberBadges         MemberBadge[]
   convertedSignups     SignupRequest[]
   memberInviteOutbox   MemberInviteOutbox[]
+  roleOverrides        GymRolePermissionOverride[]
 
   @@map("gyms")
 }
@@ -246,8 +248,9 @@ model Role {
   isSystemRole  Boolean  @default(false) @map("is_system_role")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  rolePermissions RolePermission[]
-  gymStaffRoles   GymStaffRole[]
+  rolePermissions     RolePermission[]
+  gymStaffRoles       GymStaffRole[]
+  permissionOverrides GymRolePermissionOverride[]
 
   @@map("roles")
 }
@@ -258,7 +261,8 @@ model Permission {
   description String?
   module      String
 
-  rolePermissions RolePermission[]
+  rolePermissions     RolePermission[]
+  permissionOverrides GymRolePermissionOverride[]
 
   @@map("permissions")
 }
@@ -273,6 +277,25 @@ model RolePermission {
 
   @@unique([roleId, permissionId])
   @@map("role_permissions")
+}
+
+/// Per-gym change to one role's permission (migration 0052). Adjustable pairs are listed in
+/// common/auth/role-settings.ts (apps/api).
+model GymRolePermissionOverride {
+  gymId        String   @map("gym_id") @db.Uuid
+  roleId       String   @map("role_id") @db.Uuid
+  permissionId String   @map("permission_id") @db.Uuid
+  isGranted    Boolean  @map("is_granted")
+  updatedBy    String?  @map("updated_by") @db.Uuid
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  gym        Gym        @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  updatedByUser User?   @relation("RoleOverrideUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@id([gymId, roleId, permissionId])
+  @@map("gym_role_permission_overrides")
 }
 
 model GymStaff {

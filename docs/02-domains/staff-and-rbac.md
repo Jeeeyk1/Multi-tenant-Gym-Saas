@@ -60,6 +60,24 @@ Three predefined system roles (`roles`, `is_system_role = true`), mirrored by `S
 
 ---
 
+## Owner switches (per gym)
+
+Because gyms are set up differently, the owner can switch selected permissions on or off for Staff or Trainer in
+their own gym. A role's permissions in `role_permissions` stay the default; a row in
+`gym_role_permission_overrides` changes one permission for one role in one gym.
+
+- **Adjustable pairs are listed in code:** `ROLE_SETTINGS` in `apps/api/src/common/auth/role-settings.ts`. To make
+  another permission adjustable, add a setting there; nothing else changes. Overrides for anything not on the list
+  are ignored, and the Owner role is never overridden.
+- **Today's setting:** `STAFF_MANAGES_LEADERBOARD` (Staff · `leaderboard.manage`, on by default). It covers the
+  leaderboard lifts and the lift ladders.
+- **API (Owner only, `gym.settings`):** `GET /gyms/:gymId/role-settings` and
+  `PUT /gyms/:gymId/role-settings/:key { "enabled": bool }`. Switching back to the default deletes the row.
+  Changes are logged (`role setting changed gym=… setting=… enabled=… by=…`).
+- **Tokens apply overrides per role before the union** (`gymClaims()`), so switching Staff's leaderboard off
+  doesn't affect someone who is also an Owner. It takes effect at each person's next token refresh, within the
+  access-token lifetime (`JWT_ACCESS_EXPIRES_IN`, 15 minutes by default).
+
 ## Staff who are also members
 
 A trainer who trains at the same gym has both a `gym_staff` and a `gym_members` row. Their gym token then has

@@ -10,6 +10,7 @@ const mockRepo = {
   findOrgMember: jest.fn(),
   findGymStaffWithPermissions: jest.fn(),
   findGymMember: jest.fn(),
+  findGymRoleOverrides: jest.fn().mockResolvedValue([]),
   revokeRefreshTokenById: jest.fn().mockResolvedValue(undefined),
   generateRefreshTokenPair: jest.fn().mockReturnValue({ raw: 'new-raw', hash: 'new-hash' }),
   saveRefreshToken: jest.fn().mockResolvedValue(undefined),

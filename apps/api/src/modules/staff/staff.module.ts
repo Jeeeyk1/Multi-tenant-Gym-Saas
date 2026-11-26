@@ -6,9 +6,13 @@ import { AssignRoleUseCase } from './application/use-cases/assign-role.use-case'
 import { RemoveRoleUseCase } from './application/use-cases/remove-role.use-case';
 import { ListStaffUseCase } from './application/use-cases/list-staff.use-case';
 import { StaffRepository } from './infrastructure/persistence/staff.repository';
+import { RoleSettingsRepository } from './infrastructure/persistence/role-settings.repository';
+import { RoleSettingsController } from './presentation/controllers/role-settings.controller';
+import { ListRoleSettingsUseCase } from './application/use-cases/list-role-settings.use-case';
+import { UpdateRoleSettingUseCase } from './application/use-cases/update-role-setting.use-case';
 
 @Module({
-  controllers: [StaffController],
+  controllers: [StaffController, RoleSettingsController],
   providers: [
     StaffRepository,
     InviteStaffUseCase,
@@ -16,6 +20,9 @@ import { StaffRepository } from './infrastructure/persistence/staff.repository';
     AssignRoleUseCase,
     RemoveRoleUseCase,
     ListStaffUseCase,
+    RoleSettingsRepository,
+    ListRoleSettingsUseCase,
+    UpdateRoleSettingUseCase,
   ],
 })
 export class StaffModule {}

@@ -1,4 +1,5 @@
 import { MEMBER_ROLE, Permission } from '../../../common/enums';
+import { applyRoleOverrides, type RoleOverride } from '../../../common/auth/role-settings';
 
 // Every member can check in and read announcements; not stored per gym.
 export const MEMBER_PERMISSIONS: readonly string[] = [Permission.CHECKINS_SELF, Permission.ANNOUNCEMENTS_VIEW];
@@ -11,12 +12,22 @@ export interface StaffWithRoles {
  * The roles and permissions in a gym token. Staff get the union of their roles' permissions;
  * someone who is also a member of the gym (e.g. a trainer who trains there) also gets the
  * MEMBER role and member permissions, so the app can offer them a member view.
+ * `overrides` are the gym's changes to its roles (e.g. Staff can't manage the leaderboard);
+ * they apply per role before the union, so they never take away what another role grants.
  * Returns null when the user is neither staff nor a member here.
  */
-export function gymClaims(staff: StaffWithRoles | null, isMember: boolean): { roles: string[]; permissions: string[] } | null {
+export function gymClaims(
+  staff: StaffWithRoles | null,
+  isMember: boolean,
+  overrides: RoleOverride[] = [],
+): { roles: string[]; permissions: string[] } | null {
   if (!staff && !isMember) return null;
   const roles = staff ? staff.roles.map((sr) => sr.role.name) : [];
-  const permissions = new Set(staff ? staff.roles.flatMap((sr) => sr.role.rolePermissions.map((rp) => rp.permission.key)) : []);
+  const permissions = new Set(
+    (staff?.roles ?? []).flatMap((sr) =>
+      applyRoleOverrides(sr.role.name, sr.role.rolePermissions.map((rp) => rp.permission.key), overrides),
+    ),
+  );
   if (isMember) {
     roles.push(MEMBER_ROLE);
     MEMBER_PERMISSIONS.forEach((p) => permissions.add(p));

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
+import type { RoleOverride } from '../../../../common/auth/role-settings';
 
 export interface RefreshTokenContext {
   type: 'org' | 'gym';
@@ -79,6 +80,15 @@ export class IdentityRepository {
         },
       },
     });
+  }
+
+  /** The gym's changes to its roles' permissions (role settings), for building the token. */
+  async findGymRoleOverrides(gymId: string): Promise<RoleOverride[]> {
+    const rows = await this.prisma.gymRolePermissionOverride.findMany({
+      where: { gymId },
+      select: { isGranted: true, role: { select: { name: true } }, permission: { select: { key: true } } },
+    });
+    return rows.map((r) => ({ roleName: r.role.name, permissionKey: r.permission.key, isGranted: r.isGranted }));
   }
 
   findGymMember(userId: string, gymId: string) {

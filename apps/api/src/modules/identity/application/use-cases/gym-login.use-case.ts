@@ -38,11 +38,12 @@ export class GymLoginUseCase {
     if (!passwordValid) throw new InvalidCredentialsError();
 
     // Staff, a member, or both (e.g. a trainer who also trains here).
-    const [staff, member] = await Promise.all([
+    const [staff, member, overrides] = await Promise.all([
       this.repo.findGymStaffWithPermissions(user.id, gym.id),
       this.repo.findGymMember(user.id, gym.id),
+      this.repo.findGymRoleOverrides(gym.id),
     ]);
-    const claims = gymClaims(staff, Boolean(member));
+    const claims = gymClaims(staff, Boolean(member), overrides);
     if (!claims) throw new InvalidCredentialsError();
 
     const payload: GymAuthUser = { sub: user.id, type: 'gym', gymId: gym.id, ...claims };

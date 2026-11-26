@@ -140,6 +140,7 @@ Safe set: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`
 | gym_schedules | Gym | Operating hours per day of week. |
 | gym_features | Gym | Per-gym feature flags. |
 | roles | RBAC | Seeded system roles (OWNER, STAFF, TRAINER; migration 0051). |
+| gym_role_permission_overrides | RBAC | Owner switches: a gym's change to one role's permission (0052). Adjustable pairs in `common/auth/role-settings.ts`. |
 | permissions | RBAC | Granular action keys. Seeded. |
 | role_permissions | RBAC | Maps roles to permissions. |
 | gym_staff | RBAC | User-to-gym employment relationship. |

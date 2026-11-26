@@ -25,4 +25,14 @@ describe('gymClaims', () => {
   it('returns null for someone who is neither staff nor a member', () => {
     expect(gymClaims(null, false)).toBeNull();
   });
+
+  it("applies the gym's overrides per role, so another role's permission is kept", () => {
+    const off = [{ roleName: 'STAFF', permissionKey: 'leaderboard.manage', isGranted: false }];
+    expect(gymClaims(staff('STAFF', ['leaderboard.manage', 'checkins.manage']), false, off)?.permissions).toEqual(['checkins.manage']);
+
+    const staffAndOwner = {
+      roles: [...staff('STAFF', ['leaderboard.manage']).roles, ...staff('OWNER', ['leaderboard.manage']).roles],
+    };
+    expect(gymClaims(staffAndOwner, false, off)?.permissions).toEqual(['leaderboard.manage']);
+  });
 });

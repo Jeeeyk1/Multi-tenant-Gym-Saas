@@ -418,6 +418,30 @@ Response `200`:
 
 ---
 
+#### GET /gyms/:gymId/role-settings
+The owner's per-gym switches for what Staff and Trainers may do. **Requires `gym.settings`** (Owner).
+
+Response `200`:
+```json
+[
+  {
+    "key": "STAFF_MANAGES_LEADERBOARD",
+    "role": "STAFF",
+    "permission": "leaderboard.manage",
+    "label": "Staff can manage the leaderboard",
+    "description": "Choose the leaderboard lifts and set the bronze, silver and gold lift ladders.",
+    "enabled": true,
+    "enabledByDefault": true
+  }
+]
+```
+
+#### PUT /gyms/:gymId/role-settings/:key
+`{ "enabled": false }` → `204`. Unknown key → `404 ROLE_SETTING_NOT_FOUND`. Applies to each staff member at their
+next token refresh (within the access-token lifetime, 15 minutes by default). Setting the current value is a no-op.
+
+---
+
 ### Membership Plans
 
 #### GET /gyms/:gymId/plans

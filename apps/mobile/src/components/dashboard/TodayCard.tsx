@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../Text';
@@ -30,11 +31,14 @@ export function TodayCard({
   data,
   title = 'Today',
   onPress,
+  action,
 }: {
   data: DailyNutrition;
   /** e.g. "Yesterday" when showing another day. */
   title?: string;
   onPress?: () => void;
+  /** A button under the summary (e.g. "Log a meal"), kept outside the tappable area so screen readers reach it. */
+  action?: ReactNode;
 }) {
   const { theme } = useTheme();
   const C = theme.colors;
@@ -84,20 +88,31 @@ export function TodayCard({
       </View>
     );
   }
-  return (
+  const summary = (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => [styles.card, { backgroundColor: C.surface, borderColor: C.border }, pressed && { opacity: 0.9 }]}
+      style={({ pressed }) => [
+        action ? styles.inner : [styles.card, { backgroundColor: C.surface, borderColor: C.border }],
+        pressed && { opacity: 0.9 },
+      ]}
     >
       {body}
     </Pressable>
+  );
+  if (!action) return summary;
+  return (
+    <View style={[styles.card, { backgroundColor: C.surface, borderColor: C.border }]}>
+      {summary}
+      {action}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 16, padding: 16, gap: 12, marginBottom: 16 },
+  inner: { gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   macros: { flex: 1, gap: 10 },

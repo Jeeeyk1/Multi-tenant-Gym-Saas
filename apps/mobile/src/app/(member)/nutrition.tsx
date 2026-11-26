@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '../../components/Text';
 import { useTheme } from '../../context/ThemeContext';
 import { useDailyNutrition } from '../../hooks/fitness-plan';
@@ -77,7 +77,9 @@ export default function NutritionScreen() {
   const isToday = shownDate !== undefined && shownDate === todayDate;
 
   const logsQ = useFoodLogs(shownDate);
-  const [sheet, setSheet] = useState<'add' | 'idea' | null>(null);
+  // Home's "Log a meal" opens this screen with ?add=1 to go straight to the add sheet.
+  const params = useLocalSearchParams<{ add?: string }>();
+  const [sheet, setSheet] = useState<'add' | 'idea' | null>(params.add ? 'add' : null);
   const toast = useToast();
   const remaining = dailyQ.data?.remaining ?? null;
 

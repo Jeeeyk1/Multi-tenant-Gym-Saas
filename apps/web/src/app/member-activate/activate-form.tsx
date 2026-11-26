@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { PRIVACY_URL, TERMS_URL } from '@/lib/brand';
 import { activateMember, type ActivateMemberState } from './actions';
 
 interface Props {
@@ -9,7 +10,6 @@ interface Props {
 }
 
 const initial: ActivateMemberState = { error: null, success: false };
-const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:9004';
 
 export function MemberActivateForm({ token, gymCode }: Props) {
   const [password, setPassword] = useState('');
@@ -46,7 +46,7 @@ export function MemberActivateForm({ token, gymCode }: Props) {
         <div>
           <h2 className="text-lg font-semibold text-foreground">You&apos;re all set!</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Your membership is now active. Download the GainzOS app to sign in.
+            Your membership is now active. Download the FitOps app to sign in.
           </p>
         </div>
 
@@ -115,11 +115,11 @@ export function MemberActivateForm({ token, gymCode }: Props) {
 
       <p className="text-xs text-muted-foreground text-center leading-relaxed">
         By activating, you agree to our{' '}
-        <a href={`${LANDING_URL}/terms`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           Terms
         </a>{' '}
         and{' '}
-        <a href={`${LANDING_URL}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           Privacy Policy
         </a>
         .

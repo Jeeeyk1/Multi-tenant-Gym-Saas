@@ -1,6 +1,8 @@
 import { getMySubscription } from '@/lib/actions/billing';
 import { formatDate } from '@/lib/utils';
 import { PaymentForm } from './payment-form';
+import { FitOpsLockup } from '@/components/brand/fitops-mark';
+import { PRIVACY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/lib/brand';
 
 function formatPhp(amount: number): string {
   return `₱${Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -28,7 +30,10 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
       <div>
         <h1 className="text-2xl font-bold text-foreground mb-1">Billing</h1>
         <p className="text-sm text-muted-foreground">
-          {subscription.plan.name} plan · billed {subscription.billingCycle === 'YEARLY' ? 'yearly' : 'monthly'}
+          {subscription.plan.name} plan ·{' '}
+          {subscription.billingCycle === 'YEARLY' && subscription.plan.priceYearly != null
+            ? `${formatPhp(subscription.plan.priceYearly)} / year`
+            : `${formatPhp(subscription.plan.priceMonthly)} / month`}
         </p>
       </div>
 
@@ -106,6 +111,19 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
           </p>
         </div>
       )}
+
+      <div className="bg-surface border border-border rounded-xl p-6 space-y-3">
+        <FitOpsLockup size={20} />
+        <p className="text-sm text-muted-foreground">
+          FitOps Help:{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="text-primary hover:underline">{SUPPORT_EMAIL}</a>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Prices include VAT. Billed by VerSolutions. FitOps is a product of VerSolutions.{' '}
+          <a href={TERMS_URL} className="hover:underline">Terms</a> ·{' '}
+          <a href={PRIVACY_URL} className="hover:underline">Privacy</a>
+        </p>
+      </div>
     </div>
   );
 }

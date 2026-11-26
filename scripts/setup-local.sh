@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Local development setup for the Gym SaaS monorepo.
+# Local development setup for the FitOps monorepo.
 #
 #   ./scripts/setup-local.sh              # install, start Postgres + Redis, migrate
 #   ./scripts/setup-local.sh --seed       # ...and load dev seed data (DEVGYM fixtures)
@@ -130,7 +130,8 @@ write_if_missing apps/landing/.env.local "API_URL=${API_ORIGIN}
 NEXT_PUBLIC_API_URL=${API_ORIGIN}
 NEXT_PUBLIC_WEB_URL=http://localhost:${WEB_PORT}"
 
-write_if_missing apps/mobile/.env "EXPO_PUBLIC_API_URL=${API_ORIGIN}/${API_PREFIX}"
+write_if_missing apps/mobile/.env "EXPO_PUBLIC_API_URL=${API_ORIGIN}/${API_PREFIX}
+EXPO_PUBLIC_LANDING_URL=http://localhost:${LANDING_PORT}"
 
 # ─── 3. Port check ───────────────────────────────────────────────────────────
 step "Checking ports"

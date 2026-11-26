@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Manrope, Inter } from 'next/font/google';
+import { Manrope, Inter, JetBrains_Mono } from 'next/font/google';
 import { UIProviders } from '@/providers/ui-providers';
 import './globals.css';
 
@@ -19,8 +19,15 @@ const inter = Inter({
   weight: ['400', '500', '600'],
 });
 
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+  weight: ['400', '600'],
+});
+
 export const metadata: Metadata = {
-  title: 'FitOps — Staff',
+  title: { default: 'FitOps', template: '%s · FitOps' },
   description: 'Run your gym: members, check-ins, renewals and community.',
 };
 
@@ -34,7 +41,7 @@ const themeScript = `
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${manrope.variable} ${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

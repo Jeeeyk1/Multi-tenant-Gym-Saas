@@ -43,7 +43,12 @@ describe('RegisterMemberUseCase', () => {
     jest.clearAllMocks();
     useCase = new RegisterMemberUseCase(mockRepo, mockEmail);
     mockRepo.findUserByEmail.mockResolvedValue(null);
-    mockRepo.findGymById.mockResolvedValue({ id: 'gym-1', name: 'Test Gym', code: 'TESTGYM' });
+    mockRepo.findGymById.mockResolvedValue({
+      id: 'gym-1',
+      name: 'Test Gym',
+      code: 'TESTGYM',
+      profile: { logoUrl: 'https://cdn.test/logo.png', primaryColor: '#FF5500' },
+    });
     mockRepo.findPlanById.mockResolvedValue(plan as any);
     mockRepo.registerMember.mockResolvedValue(registrationResult);
   });
@@ -59,6 +64,9 @@ describe('RegisterMemberUseCase', () => {
       expect.objectContaining({ gymId: 'gym-1', planId: 'plan-1', email: 'new@test.com' }),
     );
     expect(result).toEqual(registrationResult);
+    expect(mockEmail.sendMemberInvite).toHaveBeenCalledWith(
+      expect.objectContaining({ gymName: 'Test Gym', gymLogoUrl: 'https://cdn.test/logo.png', gymAccent: '#FF5500' }),
+    );
   });
 
   it('registers a member with explicit expiryDate (no plan)', async () => {

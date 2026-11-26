@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import type { GymRenewal } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Renewals' };
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

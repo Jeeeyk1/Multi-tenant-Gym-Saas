@@ -44,6 +44,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           userName={user.fullName || user.email}
           gymCode={user.gymCode}
           gymName={gymDetail?.name}
+          gymLocation={gymDetail?.city}
+          gymColor={gymDetail?.profile?.primaryColor}
           logoUrl={gymDetail?.profile?.logoUrl}
         />
         <main className="flex-1 overflow-y-auto">

@@ -3,7 +3,7 @@ import type { BadgeCategory, BadgeRarity, BadgeTier } from '../constants/enums';
 export interface ResolveCodeResponse {
   type: 'GYM' | 'ORG';
   gymId?: string;
-  gymName?: string;
+  name?: string;
   logoUrl?: string | null;
   primaryColor?: string | null;
   secondaryColor?: string | null;

@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { getGymDetail } from '@/lib/actions/settings';
 import { SettingsForm } from '@/components/settings/settings-form';
 import { SchedulesForm } from '@/components/settings/schedules-form';
+
+export const metadata: Metadata = { title: 'Settings' };
 
 export default async function SettingsPage() {
   const user = await getSessionUser();

@@ -24,6 +24,12 @@ function contrastRatio(a: string, b: string): number {
   return (l1 + 0.05) / (l2 + 0.05);
 }
 
+/** '#RRGGBB' for any accepted hex form (so it is safe in CSS), or null if invalid. */
+export function normalizeHex(hex: string | null | undefined): string | null {
+  const rgb = hex ? hexToRgb(hex) : null;
+  return rgb ? '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase() : null;
+}
+
 /** Dark or white text, whichever reads better on `accent`. For gradients, pass the first color. */
 export function onAccent(accent: string): string {
   return contrastRatio(accent, DARK_TEXT) >= contrastRatio(accent, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT;

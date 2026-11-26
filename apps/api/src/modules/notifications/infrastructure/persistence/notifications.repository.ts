@@ -42,6 +42,7 @@ export class NotificationsRepository {
         ],
       },
       select: {
+        gym: { select: { name: true } },
         user: {
           select: {
             id: true,
@@ -55,6 +56,7 @@ export class NotificationsRepository {
     return members.map((m) => ({
       userId: m.user.id,
       fullName: m.user.fullName,
+      gymName: m.gym.name,
       tokens: m.user.deviceTokens.map((t) => t.token),
     }));
   }
@@ -95,6 +97,7 @@ export class NotificationsRepository {
       },
       select: {
         expiryDate: true,
+        gym: { select: { name: true } },
         user: {
           select: {
             id: true,
@@ -108,6 +111,7 @@ export class NotificationsRepository {
     return members.map((m) => ({
       userId: m.user.id,
       fullName: m.user.fullName,
+      gymName: m.gym.name,
       expiryDate: m.expiryDate,
       tokens: m.user.deviceTokens.map((t) => t.token),
     }));

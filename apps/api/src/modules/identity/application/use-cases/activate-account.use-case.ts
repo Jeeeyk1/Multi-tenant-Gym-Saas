@@ -55,6 +55,8 @@ export class ActivateAccountUseCase {
         fullName: user.fullName,
         gymName: gym.name,
         gymCode: gym.code,
+        gymLogoUrl: gym.profile?.logoUrl,
+        gymAccent: gym.profile?.primaryColor,
       });
     } catch (err) {
       this.logger.error(`Failed to send member welcome email for user ${userId}: ${(err as Error).message}`);

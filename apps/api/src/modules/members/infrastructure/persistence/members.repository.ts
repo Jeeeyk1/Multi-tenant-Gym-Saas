@@ -122,7 +122,7 @@ export class MembersRepository {
   findGymById(gymId: string) {
     return this.prisma.gym.findUnique({
       where: { id: gymId },
-      select: { id: true, name: true, code: true },
+      select: { id: true, name: true, code: true, profile: { select: { logoUrl: true, primaryColor: true } } },
     });
   }
 
@@ -409,7 +409,7 @@ export class MembersRepository {
         email: true,
         fullName: true,
         token: true,
-        gym: { select: { name: true, code: true } },
+        gym: { select: { name: true, code: true, profile: { select: { logoUrl: true, primaryColor: true } } } },
       },
     });
   }

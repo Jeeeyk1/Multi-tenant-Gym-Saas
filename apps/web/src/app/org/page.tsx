@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
+
+export const metadata: Metadata = { title: 'Organization' };
 
 interface OrgDetail {
   id: string;

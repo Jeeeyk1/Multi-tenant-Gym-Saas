@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getSessionUser } from '@/lib/auth';
 import { logout } from '@/lib/auth';
-import { FitOpsMark } from '@/components/brand/fitops-mark';
+import { FitOpsLockup } from '@/components/brand/fitops-mark';
 
 export default async function OrgLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
@@ -13,8 +13,7 @@ export default async function OrgLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="h-14 bg-surface border-b border-border flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
-          <FitOpsMark size={20} />
-          <span className="text-sm font-semibold text-foreground">GainzOS</span>
+          <FitOpsLockup size={20} />
           <span className="text-xs text-muted-foreground ml-2">Organization Portal</span>
         </div>
         <div className="flex items-center gap-4">

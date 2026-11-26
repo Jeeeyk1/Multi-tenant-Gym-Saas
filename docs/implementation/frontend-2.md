@@ -7,7 +7,7 @@ DESIGN:
 LOGO ANIMATION SEQUENCE:
 1. Start with a cartoon chicken mascot icon (emoji or SVG placeholder 🍗) 
    fading in from scale 0.5 to 1.0 with a slight bounce — duration 600ms
-2. App name "GainzOS" fades in below it with a slide-up effect — delay 400ms
+2. App name "FitOps" fades in below it with a slide-up effect — delay 400ms
 3. Tagline "Train. Connect. Grow." appears letter by letter — delay 800ms
 4. Subtle mint green (#6EE7B7) glow pulse around the logo — loops once
 

@@ -47,7 +47,33 @@ export function Wordmark({ size = 28, color = BRAND.white }: { size?: number; co
   );
 }
 
+export function PoweredByFitOps() {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.powered} accessibilityLabel="Powered by FitOps">
+      <Svg width={14} height={14} viewBox="0 0 48 48">
+        <Rect x="3" y="3" width="19" height="19" rx="5" fill={theme.colors.textMuted} />
+        <Circle cx="35.5" cy="12.5" r="9.5" fill={theme.colors.textMuted} />
+        <Rect x="3" y="26" width="19" height="19" rx="5" fill={theme.colors.textMuted} />
+        <Rect x="26" y="26" width="19" height="19" rx="5" fill={theme.colors.textMuted} />
+      </Svg>
+      <RNText style={[styles.poweredText, { color: theme.colors.textMuted }]}>Powered by FitOps</RNText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  powered: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  poweredText: {
+    ...FONT.medium,
+    fontSize: 12,
+    lineHeight: 16,
+  },
   container: {
     alignItems: 'center',
     gap: 10,

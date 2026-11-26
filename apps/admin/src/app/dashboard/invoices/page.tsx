@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+
+export const metadata: Metadata = { title: 'Invoices' };
 
 interface Invoice {
   id: string;
@@ -43,6 +46,7 @@ export default async function InvoicesPage({
   return (
     <div className="p-8">
       <div className="mb-8">
+        <p className="text-[13px] text-muted-foreground">FitOps</p>
         <h1 className="text-2xl font-bold text-foreground mb-1">Invoices</h1>
         <p className="text-sm text-muted-foreground">{total} total</p>
       </div>

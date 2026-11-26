@@ -1,9 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { getOr } from '@/lib/api';
 import { BadgeStack } from '@/components/badges/badge-stack';
 import { equippedByUser } from '@/components/badges/equipped';
 import type { EquippedBadgeRow, LeaderboardExerciseResult } from '@/types/api';
+
+export const metadata: Metadata = { title: 'Leaderboard' };
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

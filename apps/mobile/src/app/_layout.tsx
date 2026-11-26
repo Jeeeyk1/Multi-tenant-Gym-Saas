@@ -14,6 +14,7 @@ import {
   Inter_500Medium,
   Inter_600SemiBold,
 } from '@expo-google-fonts/inter';
+import { JetBrainsMono_400Regular, JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -71,6 +72,8 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_600SemiBold,
   });
   const [splashDone, setSplashDone] = useState(false);
 

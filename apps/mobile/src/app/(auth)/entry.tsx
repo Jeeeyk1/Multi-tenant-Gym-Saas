@@ -4,7 +4,7 @@ import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Logo } from '../../components/Logo';
+import { Logo, Wordmark } from '../../components/Logo';
 import { authService } from '../../services/auth.service';
 import { useTheme } from '../../context/ThemeContext';
 import { COLORS, SPACING, RADIUS, FONT, DEFAULT_ACCENT } from '../../constants/theme';
@@ -46,7 +46,7 @@ export default function EntryScreen() {
     try {
       const result = await authService.resolveCode(trimmed);
       await AsyncStorage.setItem('pending_gym_code', trimmed);
-      await AsyncStorage.setItem('pending_gym_name', result.gymName ?? '');
+      await AsyncStorage.setItem('pending_gym_name', result.name ?? '');
       await AsyncStorage.setItem('pending_gym_logo', result.logoUrl ?? '');
       if (result.primaryColor || result.secondaryColor) {
         await setGymTheme(result.primaryColor ?? DEFAULT_ACCENT, result.secondaryColor ?? DEFAULT_ACCENT, result.logoUrl ?? null);
@@ -73,6 +73,7 @@ export default function EntryScreen() {
           ]}
         >
           <Logo size={80} showText={false} />
+          <Wordmark size={28} color={COLORS.text} />
           <Text style={styles.tagline}>Your gym, in your pocket</Text>
         </Animated.View>
 
@@ -82,9 +83,9 @@ export default function EntryScreen() {
             { opacity: contentOpacity, transform: [{ translateY: contentY }] },
           ]}
         >
-          <Text style={styles.heading}>Enter your gym code</Text>
+          <Text style={styles.heading}>Join your gym</Text>
           <Text style={styles.subheading}>
-            Ask your gym staff for the code if you don't have it yet
+            Enter your gym code. Ask your gym staff if you don't have it yet.
           </Text>
 
           <TextInput
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     color: COLORS.text,
     fontSize: 18,
-    ...FONT.semibold,
+    ...FONT.monoSemibold,
     letterSpacing: 2,
   },
   inputError: {

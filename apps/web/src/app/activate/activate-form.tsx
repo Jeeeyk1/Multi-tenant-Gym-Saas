@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { PRIVACY_URL, TERMS_URL } from '@/lib/brand';
 import { activateAccount } from './actions';
 
 interface Props {
@@ -8,7 +9,6 @@ interface Props {
 }
 
 const initial = { error: null as string | null };
-const LANDING_URL = process.env.NEXT_PUBLIC_LANDING_URL ?? 'http://localhost:9004';
 
 export function ActivateForm({ token }: Props) {
   const [password, setPassword] = useState('');
@@ -83,11 +83,11 @@ export function ActivateForm({ token }: Props) {
 
       <p className="text-xs text-muted-foreground text-center leading-relaxed">
         By activating, you agree to our{' '}
-        <a href={`${LANDING_URL}/terms`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           Terms
         </a>{' '}
         and{' '}
-        <a href={`${LANDING_URL}/privacy`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
           Privacy Policy
         </a>
         .

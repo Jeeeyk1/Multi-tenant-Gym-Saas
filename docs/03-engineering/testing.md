@@ -1,6 +1,6 @@
 # Testing Standards
 
-This document defines the testing strategy, patterns, and conventions for the Gym SaaS API.
+This document defines the testing strategy, patterns, and conventions for the FitOps API.
 
 ---
 

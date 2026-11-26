@@ -14,6 +14,8 @@ import {
 } from '../../hooks/leaderboard';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 import type { PrSubmission, Exercise } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { Permission } from '../../constants/enums';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -197,6 +199,8 @@ export default function StaffLeaderboardScreen() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
+  // Config saves need leaderboard.manage (Owner; Staff unless the owner switched it off).
+  const canConfigure = useAuth().can(Permission.LEADERBOARD_MANAGE);
 
   // ── Pending tab ────────────────────────────────────────────────────────────
 
@@ -322,14 +326,16 @@ export default function StaffLeaderboardScreen() {
           </Text>
           {activeTab === 'pending' && <View style={[styles.tabUnderline, { backgroundColor: COLORS.primary }]} />}
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'config' && styles.tabActive]}
-          onPress={() => setActiveTab('config')}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.tabText, activeTab === 'config' && { color: COLORS.primary }]}>Config</Text>
-          {activeTab === 'config' && <View style={[styles.tabUnderline, { backgroundColor: COLORS.primary }]} />}
-        </TouchableOpacity>
+        {canConfigure && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'config' && styles.tabActive]}
+            onPress={() => setActiveTab('config')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tabText, activeTab === 'config' && { color: COLORS.primary }]}>Config</Text>
+            {activeTab === 'config' && <View style={[styles.tabUnderline, { backgroundColor: COLORS.primary }]} />}
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── PENDING TAB ─────────────────────────────────────────────────── */}

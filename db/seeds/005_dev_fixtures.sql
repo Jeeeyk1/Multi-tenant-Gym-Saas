@@ -6,7 +6,8 @@
 -- Fixed credentials
 --   Owner  : manager@devgym.com  / Password123!   (OWNER, so every screen works locally)
 --   Staff  : staff@devgym.com    / Password123!   (STAFF)
---   Trainer: trainer@devgym.com  / Password123!   (TRAINER: app only, members' name and status only)
+--   Trainer: trainer@devgym.com  / Password123!   (TRAINER and also a member: app only, members' name and
+--                                                  status only; can switch to the member view)
 --   Member : member@devgym.com   / Password123!
 --
 -- Fixed IDs (stable across re-seedings so Postman collection stays valid)
@@ -168,6 +169,27 @@ VALUES (
 ON CONFLICT (id) DO UPDATE SET
   status = 'ACTIVE',
   expiry_date = NOW() + INTERVAL '365 days';
+
+-- ─── Trainer who also trains here ─────────────────────────────────────────────
+-- trainer@devgym.com is staff AND a member, so the app offers the member view switch.
+INSERT INTO gym_members (id, gym_id, user_id, membership_plan_id, membership_number, status, expiry_date, qr_code_token)
+VALUES (
+  '00000000-0000-0000-0000-00000000000e',
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-00000000000b',
+  '00000000-0000-0000-0000-000000000007',
+  'MBR-DEV002',
+  'ACTIVE',
+  NOW() + INTERVAL '365 days',
+  'devqrtoken0000000000000000000000000000000000000000000000000000002'
+)
+ON CONFLICT (id) DO UPDATE SET
+  status = 'ACTIVE',
+  expiry_date = NOW() + INTERVAL '365 days';
+
+INSERT INTO member_privacy (member_id)
+VALUES ('00000000-0000-0000-0000-00000000000e')
+ON CONFLICT (member_id) DO NOTHING;
 
 -- ─── Member Privacy ───────────────────────────────────────────────────────────
 INSERT INTO member_privacy (member_id)

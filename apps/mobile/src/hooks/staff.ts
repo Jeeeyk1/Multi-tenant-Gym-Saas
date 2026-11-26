@@ -124,13 +124,14 @@ export function useStaffMember(memberId: string | undefined) {
   });
 }
 
-export function useStaffRenewals(memberId: string | undefined) {
+/** `enabled` is false for callers who can't see payments (trainers), so the screen doesn't request them. */
+export function useStaffRenewals(memberId: string | undefined, enabled = true) {
   const { user } = useAuth();
   const gymId = user?.gymId;
   return useQuery<RenewalRecord[]>({
     queryKey: staffKeys.renewals(gymId, memberId ?? ''),
     queryFn: () => staffService.listRenewals(gymId!, memberId!),
-    enabled: Boolean(gymId && memberId),
+    enabled: enabled && Boolean(gymId && memberId),
   });
 }
 

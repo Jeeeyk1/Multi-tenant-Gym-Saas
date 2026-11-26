@@ -1,16 +1,23 @@
+import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useMyProfile } from '../hooks/members';
+import { getPreferredView, type PreferredView } from '../lib/preferred-view';
 
 export default function IndexScreen() {
-  const { isAuthenticated, isLoading, isStaff } = useAuth();
+  const { isAuthenticated, isLoading, isStaff, isAlsoMember } = useAuth();
   const profileQ = useMyProfile();
+  const [preferred, setPreferred] = useState<PreferredView | null>(null);
 
-  if (isLoading) return null;
+  useEffect(() => {
+    getPreferredView().then(setPreferred);
+  }, []);
+
+  if (isLoading || preferred === null) return null;
   if (!isAuthenticated) return <Redirect href="/(auth)/entry" />;
 
-  // Staff bypass onboarding and go straight to their dashboard
-  if (isStaff) return <Redirect href="/(staff)/dashboard" />;
+  // Staff go straight to their dashboard, unless they're also a member who chose the member view.
+  if (isStaff && !(isAlsoMember && preferred === 'member')) return <Redirect href="/(staff)/dashboard" />;
 
   // Profile query: data === undefined → still loading; data === null → no profile (treat as done);
   // data with onboardingDone false → onboarding pending.

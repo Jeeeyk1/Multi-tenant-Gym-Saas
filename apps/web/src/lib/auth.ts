@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import axios from 'axios';
 import { authClient } from './api';
 import { decodeJwt, isStaffToken } from './utils';
+import { usesWebDashboard } from './roles';
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -93,6 +94,10 @@ export async function login(
 
   if (!isStaffToken(payload)) {
     redirect(`/${code}/not-staff`);
+  }
+
+  if (!usesWebDashboard((payload.roles as string[]) ?? [])) {
+    redirect(`/${code}/not-staff?as=trainer`);
   }
 
   redirect('/dashboard');

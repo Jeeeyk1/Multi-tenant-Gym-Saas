@@ -53,8 +53,13 @@ Three predefined system roles (`roles`, `is_system_role = true`), mirrored by `S
 - **Roles combine.** Permissions are the union of a person's roles, so a staff member who also coaches can hold
   Staff + Trainer (Staff already covers the trainer's permissions).
 - **Trainers** see members' name and status only: list and detail responses are reduced by
-  `visibleMember()` (`modules/members/domain/member-visibility.ts`) without `members.details`. They use the app;
-  the web dashboard shows them a "use the app" page.
+  `visibleMember()` (`modules/members/domain/member-visibility.ts`) without `members.details`. They use the app:
+  the web dashboard is for people with Owner or Staff (`usesWebDashboard()` in `apps/web/src/lib/roles.ts`), and
+  everyone else is sent to `/[code]/not-staff?as=trainer` (or `as=member`), both at sign-in and from the dashboard
+  layout.
+- **Web pages** are guarded by the same permission as their menu item (e.g. Settings needs `gym.settings`, Staff
+  needs `staff.manage`; member pages need `members.view`, adding a member needs `members.create`), so typing a URL
+  leads back to the dashboard instead of an empty page.
 - The matrix lives in `db/seeds/003_role_permissions.sql` (fresh databases) and migration 0051 (existing ones).
   Change both together.
 

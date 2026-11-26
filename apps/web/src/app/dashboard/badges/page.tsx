@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { getOr } from '@/lib/api';
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: 'Badges' };
 export default async function BadgesPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('leaderboard.manage')) redirect('/dashboard');
 
   const [customBadges, milestoneBadges, ladders] = await Promise.all([
     getOr<GymCustomBadge[], null>(`/gyms/${user.gymId}/badges/custom`, null),

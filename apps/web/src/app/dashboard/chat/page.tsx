@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getSessionUser } from '@/lib/auth';
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: 'Chat' };
 export default async function CommunityChatPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('chat.manage')) redirect('/dashboard');
 
   const cookieStore = await cookies();
   const token = cookieStore.get('access_token')?.value ?? '';

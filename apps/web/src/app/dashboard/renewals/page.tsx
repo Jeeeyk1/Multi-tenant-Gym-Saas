@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -24,6 +25,7 @@ const METHOD_LABEL: Record<string, string> = {
 export default async function RenewalsPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('members.renew')) redirect('/dashboard');
 
   const renewals = await api
     .get<GymRenewal[]>(`/gyms/${user.gymId}/renewals?limit=100`)

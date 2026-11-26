@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -9,6 +10,7 @@ export const metadata: Metadata = { title: 'Plans' };
 export default async function PlansPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('plans.view')) redirect('/dashboard');
 
   const plans = await api
     .get<MembershipPlan[]>(`/gyms/${user.gymId}/plans`)

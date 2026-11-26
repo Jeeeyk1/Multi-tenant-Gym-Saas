@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { inviteStaff, deactivateStaff, assignRole, removeRole } from '@/lib/actions/staff';
+import { StaffRole } from '@gym-saas/contracts';
+import { ROLE_DESCRIPTION, ROLE_LABEL, roleLabel } from '@/lib/roles';
 import type { StaffMember, GymRole } from '@/types/api';
 
 const ROLE_COLORS: Record<string, string> = {
@@ -15,9 +17,12 @@ interface Props {
   gymId: string;
   staff: StaffMember[];
   roles: GymRole[];
+  /** Only owners can make someone an owner. */
+  canGrantOwner: boolean;
 }
 
-export function StaffClient({ gymId, staff, roles }: Props) {
+export function StaffClient({ gymId, staff, roles, canGrantOwner }: Props) {
+  const grantable = canGrantOwner ? roles : roles.filter((r) => r.name !== StaffRole.OWNER);
   const [inviteOpen, setInviteOpen] = useState(false);
 
   return (
@@ -43,14 +48,14 @@ export function StaffClient({ gymId, staff, roles }: Props) {
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
           <ul className="divide-y divide-border">
             {staff.map((s) => (
-              <StaffRow key={s.id} gymId={gymId} member={s} availableRoles={roles} />
+              <StaffRow key={s.id} gymId={gymId} member={s} availableRoles={grantable} />
             ))}
           </ul>
         </div>
       )}
 
       {inviteOpen && (
-        <InviteModal gymId={gymId} onClose={() => setInviteOpen(false)} />
+        <InviteModal gymId={gymId} canGrantOwner={canGrantOwner} onClose={() => setInviteOpen(false)} />
       )}
     </>
   );
@@ -132,7 +137,7 @@ function StaffRow({
                   ROLE_COLORS[r.role.name] ?? 'text-muted-foreground border-border',
                 )}
               >
-                {r.role.name}
+                {roleLabel(r.role.name)}
                 {member.isActive && (
                   <button
                     onClick={() => handleRemoveRole(r.role.id)}
@@ -156,7 +161,7 @@ function StaffRow({
               >
                 <option value="">+ Assign role…</option>
                 {unassignedRoles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <option key={r.id} value={r.id}>{roleLabel(r.name)}</option>
                 ))}
               </select>
               {selectedRoleId && (
@@ -189,7 +194,11 @@ function StaffRow({
   );
 }
 
-function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void }) {
+const INVITE_ROLES = [StaffRole.STAFF, StaffRole.TRAINER, StaffRole.OWNER];
+
+function InviteModal({ gymId, canGrantOwner, onClose }: { gymId: string; canGrantOwner: boolean; onClose: () => void }) {
+  const [role, setRole] = useState<StaffRole>(StaffRole.STAFF);
+  const roleChoices = INVITE_ROLES.filter((r) => r !== StaffRole.OWNER || canGrantOwner);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -213,7 +222,7 @@ function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void })
       <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-foreground">Invite Staff Member</h2>
+          <h2 className="text-base font-semibold text-foreground">Invite to your team</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition text-lg px-1">✕</button>
         </div>
 
@@ -252,6 +261,36 @@ function InviteModal({ gymId, onClose }: { gymId: string; onClose: () => void })
               <input name="email" type="email" required placeholder="jane@example.com" disabled={isPending}
                 className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
             </div>
+            <fieldset>
+              <legend className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Role <span className="text-destructive">*</span>
+              </legend>
+              <div className="space-y-2">
+                {roleChoices.map((r) => (
+                  <label
+                    key={r}
+                    className={cn(
+                      'flex gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition focus-within:ring-2 focus-within:ring-focus-ring',
+                      role === r ? 'border-primary bg-primary/10' : 'border-border hover:bg-hover',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={r}
+                      checked={role === r}
+                      onChange={() => setRole(r)}
+                      disabled={isPending}
+                      className="mt-1 accent-primary"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold text-foreground">{ROLE_LABEL[r]}</span>
+                      <span className="block text-xs text-muted-foreground">{ROLE_DESCRIPTION[r]}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <div>
               <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
                 Phone <span className="text-muted-foreground font-normal normal-case">(optional)</span>

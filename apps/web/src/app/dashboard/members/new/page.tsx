@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
@@ -17,6 +18,7 @@ const TIPS = [
 export default async function NewMemberPage() {
   const user = await getSessionUser();
   if (!user) return null;
+  if (!user.permissions.includes('members.create')) redirect('/dashboard');
 
   const plans = await api
     .get<MembershipPlan[]>(`/gyms/${user.gymId}/plans`)

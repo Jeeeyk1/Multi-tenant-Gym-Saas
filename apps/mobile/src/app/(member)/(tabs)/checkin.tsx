@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Pressable, StyleSheet, ActivityIndicator, Animated } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useSelfCheckIn } from '../../hooks/members';
-import { AnimatedMascot } from '../../components/AnimatedMascot';
-import { SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { CheckIn } from '../../types';
-import { onAccent } from '../../theme/accent';
+import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
+import { useSelfCheckIn } from '../../../hooks/members';
+import { AnimatedMascot } from '../../../components/AnimatedMascot';
+import { SPACING, RADIUS, FONT } from '../../../constants/theme';
+import type { CheckIn } from '../../../types';
+import { onAccent } from '../../../theme/accent';
 
 type Status = 'idle' | 'loading' | 'checked_in' | 'already_in' | 'error';
 

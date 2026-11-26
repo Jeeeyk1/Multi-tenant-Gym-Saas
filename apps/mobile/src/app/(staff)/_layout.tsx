@@ -36,7 +36,7 @@ export default function StaffLayout() {
 
   // Members who somehow land here get sent to their own section
   if (!isLoading && !isStaff) {
-    return <Redirect href="/(member)/dashboard" />;
+    return <Redirect href="/(member)/(tabs)/dashboard" />;
   }
 
   return (

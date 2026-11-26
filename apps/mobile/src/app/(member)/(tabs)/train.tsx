@@ -1,17 +1,18 @@
 import React, { useCallback, useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useTheme } from '../../context/ThemeContext';
-import { AppLoader } from '../../components/AppLoader';
-import { useWorkout } from '../../context/WorkoutContext';
-import { useWorkoutSessions } from '../../hooks/workouts';
-import { SPACING, RADIUS, FONT } from '../../constants/theme';
-import { workoutTypeMeta, DEFAULT_WORKOUT_ICON, DEFAULT_WORKOUT_COLOR } from '../../constants/workout-types';
-import type { WorkoutSession } from '../../types';
+import { useTheme } from '../../../context/ThemeContext';
+import { AppLoader } from '../../../components/AppLoader';
+import { PressableScale } from '../../../components/ui';
+import { useWorkout } from '../../../context/WorkoutContext';
+import { useWorkoutSessions } from '../../../hooks/workouts';
+import { SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { workoutTypeMeta, DEFAULT_WORKOUT_ICON, DEFAULT_WORKOUT_COLOR } from '../../../constants/workout-types';
+import type { WorkoutSession } from '../../../types';
 
 function startOfWeek(): Date {
   const d = new Date();
@@ -102,6 +103,18 @@ export default function TrainScreen() {
       paddingHorizontal: SPACING.md,
       paddingVertical: 14,
       marginBottom: SPACING.md,
+    },
+    linkCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm + 4,
+      backgroundColor: C.surface,
+      borderRadius: RADIUS.xl,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 14,
+      marginBottom: SPACING.lg,
     },
     resumeTitle: { fontSize: 14, color: C.text, ...FONT.semibold },
     resumeSub: { fontSize: 12, color: C.textSecondary, marginTop: 2 },
@@ -281,6 +294,20 @@ export default function TrainScreen() {
           </LinearGradient>
         </Pressable>
       )}
+
+      <PressableScale
+        onPress={() => router.push('/(member)/leaderboard')}
+        style={s.linkCard}
+        accessibilityRole="button"
+        accessibilityLabel="Leaderboard"
+      >
+        <Ionicons name="trophy-outline" size={22} color={theme.primary} />
+        <View style={{ flex: 1 }}>
+          <Text style={s.resumeTitle}>Leaderboard</Text>
+          <Text style={s.resumeSub}>See where you rank on each lift</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+      </PressableScale>
 
       <View style={s.sectionHeader}>
         <Text style={s.sectionTitle}>Recent Sessions</Text>

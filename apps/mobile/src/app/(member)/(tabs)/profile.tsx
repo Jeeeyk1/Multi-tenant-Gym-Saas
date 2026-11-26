@@ -1,35 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../../context/AuthContext';
+import { useTheme } from '../../../context/ThemeContext';
 import {
   useMyMember,
   useMyProfile,
   useUpdateMyProfile,
-} from '../../hooks/members';
-import { useMyBadges } from '../../hooks/badges';
-import type { EquippedBadge, GymMember, MemberBadge, MemberProfile } from '../../types';
-import { BadgeMedal } from '../../components/badges/BadgeMedal';
-import { BadgeStack } from '../../components/badges/BadgeStack';
-import { CATEGORY_LABEL, CATEGORY_ORDER, memberBadgeKey, memberBadgeView } from '../../components/badges/badge-labels';
+} from '../../../hooks/members';
+import { useMyBadges } from '../../../hooks/badges';
+import type { EquippedBadge, GymMember, MemberBadge, MemberProfile } from '../../../types';
+import { BadgeMedal } from '../../../components/badges/BadgeMedal';
+import { BadgeStack } from '../../../components/badges/BadgeStack';
+import { CATEGORY_LABEL, CATEGORY_ORDER, memberBadgeKey, memberBadgeView } from '../../../components/badges/badge-labels';
 import {
   ActivityLevel,
   DietType,
   ExperienceLevel,
   FitnessGoal,
   PreferredStyle,
-} from '../../constants/enums';
-import { FONT, RADIUS, SPACING } from '../../constants/theme';
-import { onAccent } from '../../theme/accent';
-import { PoweredByFitOps } from '../../components/Logo';
-import { APP_VERSION, PRIVACY_URL, TERMS_URL, VERSOLUTIONS_URL } from '../../constants/brand';
-import type { ColorPalette } from '../../constants/theme';
-import { setPreferredView } from '../../lib/preferred-view';
+} from '../../../constants/enums';
+import { FONT, RADIUS, SPACING } from '../../../constants/theme';
+import { onAccent } from '../../../theme/accent';
+import { PoweredByFitOps } from '../../../components/Logo';
+import { APP_VERSION, PRIVACY_URL, TERMS_URL, VERSOLUTIONS_URL } from '../../../constants/brand';
+import type { ColorPalette } from '../../../constants/theme';
+import { setPreferredView } from '../../../lib/preferred-view';
 
 // ─── Display label maps ───────────────────────────────────────────────────────
 

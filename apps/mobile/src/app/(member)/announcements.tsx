@@ -98,7 +98,7 @@ export default function AnnouncementsScreen() {
 
         <TouchableOpacity
           style={[styles.chatBanner, { borderColor: theme.primary + '40' }]}
-          onPress={() => router.push('/(member)/chat')}
+          onPress={() => router.push('/(member)/(tabs)/chat')}
           activeOpacity={0.75}
         >
           <Ionicons name="chatbubbles" size={20} color={theme.primary} />

@@ -8,7 +8,7 @@ import { formatApiError } from '../../lib/format-error';
 import type { CollectionBadge } from '../../types';
 import { BadgeMedal } from './BadgeMedal';
 import { CATEGORY_LABEL, RARITY_LABEL, TIER_LABEL } from './badge-labels';
-import { Sheet } from './Sheet';
+import { Sheet } from '../ui';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

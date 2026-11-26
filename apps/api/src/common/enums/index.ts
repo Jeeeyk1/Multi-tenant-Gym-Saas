@@ -29,3 +29,4 @@ export { MealStyle } from './meal-style.enum';
 export { BadgeCategory } from './badge-category.enum';
 export { Permission } from './permission.enum';
 export { BadgeRarity } from './badge-rarity.enum';
+export { AssistantAction } from './assistant-action.enum';

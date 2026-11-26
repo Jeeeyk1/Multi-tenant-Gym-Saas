@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import { getAiUsage, queryInsights, type HistoryTurn } from '@/lib/actions/insights';
+import {
+  cancelInsightsAction,
+  confirmInsightsAction,
+  getAiUsage,
+  queryInsights,
+  type HistoryTurn,
+} from '@/lib/actions/insights';
+import { ActionCard, isExpired, type ActionStatus } from './action-card';
 import { UsageMeter, isPaused, usageState } from './usage-meter';
 import { ToolResultView } from './tool-result-views';
-import type { AiUsageView, InsightsStep } from '@/types/api';
+import type { AiUsageView, InsightsPendingAction, InsightsStep } from '@/types/api';
 
 const HISTORY_TURNS = 6;
 const STEP_REVEAL_MS = 450;
@@ -16,13 +23,25 @@ interface Message {
   content: string;
   steps?: InsightsStep[];
   error?: boolean;
+  pendingAction?: InsightsPendingAction | null;
 }
 
 interface RevealState {
   answer: string;
   steps: InsightsStep[];
+  pendingAction: InsightsPendingAction | null;
   revealedCount: number;
 }
+
+// What the assistant reads back about an action card, so it knows what was proposed and what happened.
+const STATUS_FOR_HISTORY: Record<ActionStatus, string> = {
+  waiting: 'not confirmed yet',
+  running: 'not confirmed yet',
+  expired: 'expired, not done',
+  done: 'confirmed and done',
+  cancelled: 'cancelled by the user',
+  failed: 'failed',
+};
 
 const SUGGESTIONS = [
   'How many active members do we have?',
@@ -42,6 +61,9 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const [reveal, setReveal] = useState<RevealState | null>(null);
+  const [actionStatus, setActionStatus] = useState<Record<string, ActionStatus>>({});
+  // Ids already confirmed or cancelled. A ref, not state, so a fast double tap is caught before the re-render.
+  const handledActions = useRef(new Set<string>());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -78,7 +100,10 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
     }
 
     const t = setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'assistant', content: reveal.answer, steps: reveal.steps }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: reveal.answer, steps: reveal.steps, pendingAction: reveal.pendingAction },
+      ]);
       setReveal(null);
     }, REVEAL_SETTLE_MS);
     return () => clearTimeout(t);
@@ -89,7 +114,37 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
     return messages
       .filter((m) => !m.error)
       .slice(-HISTORY_TURNS)
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({
+        role: m.role,
+        content: m.pendingAction
+          ? `${m.content}\nProposed: ${m.pendingAction.summary} (${STATUS_FOR_HISTORY[actionStatus[m.pendingAction.id] ?? 'waiting']})`
+          : m.content,
+      }));
+  }
+
+  async function confirmAction(action: InsightsPendingAction) {
+    if (handledActions.current.has(action.id)) return;
+    handledActions.current.add(action.id);
+    if (isExpired(action.expiresAt)) {
+      setActionStatus((prev) => ({ ...prev, [action.id]: 'expired' }));
+      return;
+    }
+    setActionStatus((prev) => ({ ...prev, [action.id]: 'running' }));
+    const result = await confirmInsightsAction(gymId, action.id);
+    setActionStatus((prev) => ({ ...prev, [action.id]: result.error ? 'failed' : 'done' }));
+    setMessages((prev) => [
+      ...prev,
+      result.error
+        ? { role: 'assistant', content: result.error, error: true }
+        : { role: 'assistant', content: result.message ?? 'Done.' },
+    ]);
+  }
+
+  function cancelAction(action: InsightsPendingAction) {
+    if (handledActions.current.has(action.id)) return;
+    handledActions.current.add(action.id);
+    setActionStatus((prev) => ({ ...prev, [action.id]: 'cancelled' }));
+    void cancelInsightsAction(gymId, action.id);
   }
 
   function send(text: string) {
@@ -115,12 +170,12 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
         return;
       }
 
-      const { answer, steps } = result.data!;
+      const { answer, steps, pendingAction } = result.data!;
       if (steps.length === 0) {
         // Pure conversational turn — nothing was looked up, so there's nothing to trace.
-        setMessages((prev) => [...prev, { role: 'assistant', content: answer, steps }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: answer, steps, pendingAction }]);
       } else {
-        setReveal({ answer, steps, revealedCount: 0 });
+        setReveal({ answer, steps, pendingAction, revealedCount: 0 });
       }
     });
   }
@@ -143,7 +198,13 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
         ) : (
           <>
             {messages.map((msg, i) => (
-              <ChatBubble key={i} message={msg} />
+              <ChatBubble
+                key={i}
+                message={msg}
+                actionStatus={msg.pendingAction ? (actionStatus[msg.pendingAction.id] ?? 'waiting') : undefined}
+                onConfirm={confirmAction}
+                onCancel={cancelAction}
+              />
             ))}
             {isPending && !reveal && <TraceBubble completed={[]} active="Thinking" />}
             {reveal && (
@@ -197,7 +258,18 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
   );
 }
 
-function ChatBubble({ message }: { message: Message }) {
+function ChatBubble({
+  message,
+  actionStatus,
+  onConfirm,
+  onCancel,
+}: {
+  message: Message;
+  actionStatus?: ActionStatus;
+  onConfirm: (action: InsightsPendingAction) => void;
+  onCancel: (action: InsightsPendingAction) => void;
+}) {
+  const action = message.pendingAction;
   const isUser = message.role === 'user';
   const dataSteps = (message.steps ?? []).filter((s) => s.data != null);
 
@@ -219,6 +291,14 @@ function ChatBubble({ message }: { message: Message }) {
         {!isUser && dataSteps.map((step, i) => (
           <ToolResultView key={i} tool={step.tool} data={step.data} />
         ))}
+        {action && actionStatus && (
+          <ActionCard
+            action={action}
+            status={actionStatus}
+            onConfirm={() => onConfirm(action)}
+            onCancel={() => onCancel(action)}
+          />
+        )}
       </div>
     </div>
   );
@@ -288,7 +368,7 @@ function EmptyState({
             <li>Count members, check-ins and renewals</li>
             <li>Show trends over days, weeks or months</li>
             {canAskRevenue && <li>Report revenue from renewals</li>}
-            <li>Register, renew or suspend a member (I ask first)</li>
+            <li>Register, renew or suspend a member (nothing happens until you confirm)</li>
           </ul>
         </div>
         <div>

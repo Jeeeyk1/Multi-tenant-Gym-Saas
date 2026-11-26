@@ -383,10 +383,20 @@ export interface AiUsageView {
   canAskRevenue: boolean;
 }
 
+/** An action the assistant proposed. Nothing happens until the user confirms it. */
+export interface InsightsPendingAction {
+  id: string;
+  action: 'register_member' | 'renew_membership' | 'suspend_member' | 'reactivate_member';
+  summary: string;
+  confirmLabel: string;
+  expiresAt: string;
+}
+
 export interface InsightsResult {
   answer: string;
   toolsUsed: string[];
   steps: InsightsStep[];
+  pendingAction: InsightsPendingAction | null;
 }
 
 export interface GymSubscription {

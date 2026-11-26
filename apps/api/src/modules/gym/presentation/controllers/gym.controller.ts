@@ -28,6 +28,8 @@ import { CreateGymDto } from '../dto/create-gym.dto';
 import { UpdateGymProfileDto } from '../dto/update-gym-profile.dto';
 import { UpdateGymSchedulesDto } from '../dto/update-gym-schedules.dto';
 import type { AuthenticatedUser, OrgAuthUser } from '../../../../common/types/auth.types';
+import { hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Controller('gyms')
 export class GymController {
@@ -102,7 +104,7 @@ export class GymController {
       if (user.gymId !== gymId) {
         throw new ForbiddenError('Access denied', 'GYM_ACCESS_DENIED');
       }
-      if (!user.permissions.includes('gym.settings')) {
+      if (!hasPermission(user, Permission.GYM_SETTINGS)) {
         throw new ForbiddenError('gym.settings permission required', 'PERMISSION_DENIED');
       }
     }

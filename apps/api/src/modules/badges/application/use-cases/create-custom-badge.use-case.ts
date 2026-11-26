@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
-import { BadgeCategory } from '../../../../common/enums';
+import { BadgeCategory, Permission } from '../../../../common/enums';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 
 export interface CreateCustomBadgeInput {
   name: string;
@@ -18,24 +18,12 @@ export class CreateCustomBadgeUseCase {
 
   async execute(gymId: string, input: CreateCustomBadgeInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'badges.manage');
+    assertPermission(caller, Permission.BADGES_MANAGE);
 
     return this.repo.createCustomBadge(gymId, {
       ...input,
       category: input.category ?? BadgeCategory.LOYALTY,
       createdByUserId: caller.sub,
     });
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

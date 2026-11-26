@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { MembershipPlansRepository } from '../../infrastructure/persistence/membership-plans.repository';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { plansCacheKey } from '../plans-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface CreatePlanInput {
   name: string;
@@ -22,21 +23,9 @@ export class CreatePlanUseCase {
 
   async execute(gymId: string, input: CreatePlanInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'gym.settings');
+    assertPermission(caller, Permission.GYM_SETTINGS);
     const plan = await this.repo.create({ gymId, ...input });
     await this.cache.del(plansCacheKey(gymId));
     return plan;
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

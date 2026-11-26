@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
 import { EMAIL_RE } from '../bulk-invite/bulk-invite.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface BulkInviteMemberInput {
   email: string;
@@ -33,7 +35,7 @@ export class BulkInviteMembersUseCase {
     members: BulkInviteMemberInput[],
     caller: AuthenticatedUser,
   ): Promise<BulkInviteResult> {
-    assertPermission(caller, 'members.create');
+    assertPermission(caller, Permission.MEMBERS_CREATE);
 
     const gym = await this.repo.findGymById(gymId);
     if (!gym) throw new NotFoundError('Gym not found', 'GYM_NOT_FOUND');
@@ -65,11 +67,5 @@ export class BulkInviteMembersUseCase {
     }
 
     return { created, skipped };
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

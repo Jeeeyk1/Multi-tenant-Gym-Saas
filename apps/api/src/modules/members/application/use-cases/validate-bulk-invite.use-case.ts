@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
 import { parseMemberSpreadsheet } from '../bulk-invite/spreadsheet-parser';
 import { BulkInvitePreview, BulkInviteRowResult, EMAIL_RE } from '../bulk-invite/bulk-invite.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 /**
  * Parses an uploaded member spreadsheet and returns a preview classifying each row
@@ -14,7 +15,7 @@ export class ValidateBulkInviteUseCase {
   constructor(private readonly repo: MembersRepository) {}
 
   async execute(gymId: string, buffer: Buffer, caller: AuthenticatedUser): Promise<BulkInvitePreview> {
-    assertPermission(caller, 'members.create');
+    assertPermission(caller, Permission.MEMBERS_CREATE);
 
     const parsed = parseMemberSpreadsheet(buffer);
 
@@ -51,11 +52,5 @@ export class ValidateBulkInviteUseCase {
         invalid: rows.filter((r) => r.status === 'invalid').length,
       },
     };
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

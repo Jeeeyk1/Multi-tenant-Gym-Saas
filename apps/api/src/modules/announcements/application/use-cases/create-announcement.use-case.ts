@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface CreateAnnouncementInput {
   title: string;
@@ -22,7 +23,7 @@ export class CreateAnnouncementUseCase {
 
   async execute(gymId: string, input: CreateAnnouncementInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'announcements.manage');
+    assertPermission(caller, Permission.ANNOUNCEMENTS_MANAGE);
 
     const status = resolveStatus(input.publishAt);
 
@@ -48,16 +49,4 @@ export class CreateAnnouncementUseCase {
 function resolveStatus(publishAt?: Date): string {
   if (!publishAt || publishAt <= new Date()) return 'PUBLISHED';
   return 'SCHEDULED';
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
-  }
 }

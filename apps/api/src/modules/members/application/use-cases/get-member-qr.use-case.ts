@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { MembersRepository } from '../../infrastructure/persistence/members.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class GetMemberQrUseCase {
@@ -19,18 +21,12 @@ export class GetMemberQrUseCase {
     // A gym-level member can access their own QR only.
     if (caller.type === 'gym') {
       const isOwnRecord = member.user.id === caller.sub;
-      const hasStaffAccess = caller.permissions.includes('members.view');
+      const hasStaffAccess = hasPermission(caller, Permission.MEMBERS_VIEW);
       if (!isOwnRecord && !hasStaffAccess) {
         throw new ForbiddenError('Missing permission: members.view', 'PERMISSION_DENIED');
       }
     }
 
     return { qrCodeToken: member.qrCodeToken };
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
   }
 }

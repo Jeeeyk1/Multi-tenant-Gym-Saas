@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class ListMemberBadgesUseCase {
@@ -15,7 +17,7 @@ export class ListMemberBadgesUseCase {
       const myMember = await this.repo.findMemberByUserId(gymId, caller.sub);
       if (!myMember) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
-      const canViewOthers = caller.permissions.includes('members.view');
+      const canViewOthers = hasPermission(caller, Permission.MEMBERS_VIEW);
       if (!canViewOthers && myMember.id !== targetMemberId) {
         throw new ForbiddenError('Cannot view another member\'s badges', 'FORBIDDEN');
       }
@@ -35,11 +37,5 @@ export class ListMemberBadgesUseCase {
     if (!member) throw new NotFoundError('Member not found', 'MEMBER_NOT_FOUND');
 
     return this.repo.listMemberBadges(member.id, gymId);
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
   }
 }

@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import { BadgesService } from '../../../badges/badges.service';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { leaderboardCacheKey } from '../leaderboard-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 interface ConfigItem {
   exerciseId: string;
@@ -24,7 +26,7 @@ export class UpdateLeaderboardConfigUseCase {
 
   async execute(gymId: string, items: ConfigItem[], caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'leaderboard.manage');
+    assertPermission(caller, Permission.LEADERBOARD_MANAGE);
 
     for (const item of items) {
       const exercise = await this.repo.findExerciseById(item.exerciseId);
@@ -65,17 +67,5 @@ export class UpdateLeaderboardConfigUseCase {
 
   private logError(step: string, gymId: string, err: unknown) {
     this.logger.error(`leaderboard ${step} setup failed gym=${gymId}`, err instanceof Error ? err.stack : String(err));
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

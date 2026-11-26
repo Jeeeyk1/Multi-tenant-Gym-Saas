@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { BadgeNotifier } from '../badge-notifier';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface AwardCustomBadgeInput {
   memberId: string;
@@ -22,7 +24,7 @@ export class AwardCustomBadgeUseCase {
 
   async execute(gymId: string, input: AwardCustomBadgeInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'badges.award');
+    assertPermission(caller, Permission.BADGES_AWARD);
 
     const member = await this.repo.findMemberInGym(gymId, input.memberId);
     if (!member) throw new NotFoundError('Member not found in this gym', 'MEMBER_NOT_FOUND');
@@ -42,17 +44,5 @@ export class AwardCustomBadgeUseCase {
     this.logger.log(`badge awarded gym=${gymId} member=${input.memberId} source=STAFF_AWARD custom=${badge.id} by=${caller.sub}`);
     void this.notifier.notify(input.memberId, [badge.name]);
     return awarded;
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { LadderService } from '../ladder.service';
 import { LADDER_TIERS, defaultLadder, type LadderWeights } from '../../domain/lift-ladder';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface LadderView {
   exercise: { id: string; name: string };
@@ -22,12 +23,8 @@ export class ListLaddersUseCase {
   ) {}
 
   async execute(gymId: string, caller: AuthenticatedUser): Promise<LadderView[]> {
-    if (caller.type === 'gym' && caller.gymId !== gymId) {
-      throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-    }
-    if (caller.type === 'gym' && !caller.permissions.includes('badges.manage')) {
-      throw new ForbiddenError('Missing permission: badges.manage', 'PERMISSION_DENIED');
-    }
+    assertGymAccess(caller, gymId);
+    assertPermission(caller, Permission.BADGES_MANAGE);
 
     await this.ladders.ensureDefaultLadders(gymId);
     const lifts = await this.repo.listLadders(gymId);

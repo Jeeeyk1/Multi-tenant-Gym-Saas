@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { CheckInsRepository } from '../../infrastructure/persistence/check-ins.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -16,7 +17,7 @@ export class ListCheckinHistoryUseCase {
     caller: AuthenticatedUser,
   ) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'checkins.view');
+    assertPermission(caller, Permission.CHECKINS_VIEW);
 
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT));
@@ -31,17 +32,5 @@ export class ListCheckinHistoryUseCase {
       data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

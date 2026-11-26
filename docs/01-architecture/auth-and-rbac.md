@@ -179,10 +179,19 @@ Rules:
 
 Always check permissions. Never check role names directly.
 
+Use-case code checks with the shared helpers in `apps/api/src/common/auth/authorization.ts` and the
+`Permission` enum (`common/enums/permission.enum.ts`, which mirrors the `permissions` table):
+
 ✅ Correct:
 ```typescript
-@RequirePermission('members.create')
+assertGymAccess(caller, gymId);
+assertPermission(caller, Permission.MEMBERS_CREATE);
+const canModerate = hasPermission(caller, Permission.CHAT_MANAGE);
 ```
+
+Org tokens pass permission checks (`GymAccessGuard` has already scoped them to their own gyms). Don't
+copy these checks into a module; add a helper here if a new pattern is needed. `@RequirePermission` with
+`PermissionsGuard` also exists for controller-level checks.
 
 ❌ Incorrect:
 ```typescript

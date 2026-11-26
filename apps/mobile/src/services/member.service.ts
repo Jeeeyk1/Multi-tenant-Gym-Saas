@@ -21,6 +21,9 @@ export const memberService = {
   selfCheckIn: (gymId: string) =>
     api.post<CheckIn>(`/gyms/${gymId}/checkins`, { method: 'APP_SELF_CHECKIN' }),
 
+  /** The member's check-in streak in the gym's local days (same rule as the streak badges). */
+  getMyCheckinStreak: (gymId: string) => api.get<{ streak: number }>(`/gyms/${gymId}/checkins/me/streak`),
+
   /** Members may close their own active check-in; the API checks ownership. */
   selfCheckOut: (gymId: string, checkinId: string) =>
     api.patch<Pick<CheckIn, 'id' | 'checkedOutAt'>>(`/gyms/${gymId}/checkins/${checkinId}/checkout`),

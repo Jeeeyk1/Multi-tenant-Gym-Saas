@@ -517,6 +517,13 @@ export interface WorkoutSession {
   createdAt: string;
 }
 
+/** GET /workout-sessions/summary — totals across all of the member's sessions. */
+export interface WorkoutSummary {
+  totalSessions: number;
+  totalMinutes: number;
+  mostTrainedType: string | null;
+}
+
 export interface WorkoutSessionsPage {
   data: WorkoutSession[];
   meta: { total: number; page: number; limit: number; totalPages: number };

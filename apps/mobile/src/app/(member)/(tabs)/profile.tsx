@@ -23,7 +23,9 @@ import {
   ExperienceLevel,
   FitnessGoal,
   PreferredStyle,
+  UnitSystem,
 } from '../../../constants/enums';
+import { cmToFeetInches, feetInchesToCm, kgToLb, lbToKg, toNumber } from '../../../lib/units';
 import { FONT, RADIUS, SPACING } from '../../../constants/theme';
 import { onAccent } from '../../../theme/accent';
 import { PoweredByFitOps } from '../../../components/Logo';
@@ -265,21 +267,46 @@ function DaysPicker({ value, onChange, C, primary }: {
   );
 }
 
+function formatWeight(kg: number | string, imperial: boolean): string {
+  const n = toNumber(kg);
+  if (n === null) return '—';
+  return imperial ? `${Math.round(kgToLb(n) * 10) / 10} lb` : `${Math.round(n * 10) / 10} kg`;
+}
+
+function formatHeight(cm: number | string, imperial: boolean): string {
+  const n = toNumber(cm);
+  if (n === null) return '—';
+  if (!imperial) return `${n} cm`;
+  const { feet, inches } = cmToFeetInches(n);
+  return `${feet}′ ${inches}″`;
+}
+
 // ─── Edit modal ───────────────────────────────────────────────────────────────
 
+// Weight and height are held in the member's own units (lb, ft + in when imperial) and converted on save.
 interface ProfileForm {
-  age: string; weightKg: string; targetWeightKg: string; heightCm: string;
+  age: string; weight: string; targetWeight: string; heightCm: string; heightFt: string; heightIn: string;
   daysPerWeek: number | null; fitnessGoal: FitnessGoal | null;
   activityLevel: ActivityLevel | null; experienceLevel: ExperienceLevel | null;
   preferredStyle: PreferredStyle | null; dietType: DietType | null; injuries: string;
 }
 
-function profileToForm(p: MemberProfile | null): ProfileForm {
+function weightForForm(kg: number | string | null | undefined, imperial: boolean): string {
+  const n = toNumber(kg);
+  if (n === null) return '';
+  return String(imperial ? Math.round(kgToLb(n) * 10) / 10 : n);
+}
+
+function profileToForm(p: MemberProfile | null, imperial: boolean): ProfileForm {
+  const cm = toNumber(p?.heightCm);
+  const ftIn = cm !== null ? cmToFeetInches(cm) : null;
   return {
     age: p?.age != null ? String(p.age) : '',
-    weightKg: p?.weightKg != null ? String(p.weightKg) : '',
-    targetWeightKg: p?.targetWeightKg != null ? String(p.targetWeightKg) : '',
-    heightCm: p?.heightCm != null ? String(p.heightCm) : '',
+    weight: weightForForm(p?.weightKg, imperial),
+    targetWeight: weightForForm(p?.targetWeightKg, imperial),
+    heightCm: cm !== null ? String(cm) : '',
+    heightFt: ftIn ? String(ftIn.feet) : '',
+    heightIn: ftIn ? String(ftIn.inches) : '',
     daysPerWeek: p?.daysPerWeek ?? null,
     fitnessGoal: (p?.fitnessGoal as FitnessGoal) ?? null,
     activityLevel: (p?.activityLevel as ActivityLevel) ?? null,
@@ -290,8 +317,8 @@ function profileToForm(p: MemberProfile | null): ProfileForm {
   };
 }
 
-function EditProfileModal({ visible, initialForm, onClose }: {
-  visible: boolean; initialForm: ProfileForm; onClose: () => void;
+function EditProfileModal({ visible, initialForm, imperial, onClose }: {
+  visible: boolean; initialForm: ProfileForm; imperial: boolean; onClose: () => void;
 }) {
   const { theme } = useTheme();
   const C = theme.colors;
@@ -309,13 +336,22 @@ function EditProfileModal({ visible, initialForm, onClose }: {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Only send body metrics the member changed, so opening Edit and saving doesn't drift
+  // the stored kg/cm through a lb or ft/in round trip.
+  const changed = (...keys: (keyof ProfileForm)[]) => keys.some((k) => form[k] !== initialForm[k]);
+  const toKg = (v: string) => (imperial ? lbToKg(parseFloat(v)) : parseFloat(v));
+
   function handleSave() {
     setError(null);
+    const heightChanged = imperial ? changed('heightFt', 'heightIn') : changed('heightCm');
+    const heightValue = imperial
+      ? form.heightFt !== '' ? feetInchesToCm(parseInt(form.heightFt, 10), parseInt(form.heightIn || '0', 10)) : null
+      : form.heightCm !== '' ? parseInt(form.heightCm, 10) : null;
     const data: Partial<Omit<MemberProfile, 'id' | 'memberId'>> = {
       ...(form.age !== '' && { age: parseInt(form.age, 10) }),
-      ...(form.weightKg !== '' && { weightKg: parseFloat(form.weightKg) }),
-      ...(form.targetWeightKg !== '' && { targetWeightKg: parseFloat(form.targetWeightKg) }),
-      ...(form.heightCm !== '' && { heightCm: parseInt(form.heightCm, 10) }),
+      ...(form.weight !== '' && changed('weight') && { weightKg: toKg(form.weight) }),
+      ...(form.targetWeight !== '' && changed('targetWeight') && { targetWeightKg: toKg(form.targetWeight) }),
+      ...(heightValue !== null && heightChanged && { heightCm: heightValue }),
       ...(form.daysPerWeek != null && { daysPerWeek: form.daysPerWeek }),
       ...(form.fitnessGoal != null && { fitnessGoal: form.fitnessGoal }),
       ...(form.activityLevel != null && { activityLevel: form.activityLevel }),
@@ -385,11 +421,19 @@ function EditProfileModal({ visible, initialForm, onClose }: {
           <View style={s.formCard}>
             <NumericInput label="Age" unit="yrs" value={form.age} onChange={(v) => set('age', v)} C={C} />
             <View style={s.divider} />
-            <NumericInput label="Weight" unit="kg" value={form.weightKg} onChange={(v) => set('weightKg', v)} C={C} />
+            <NumericInput label="Weight" unit={imperial ? 'lb' : 'kg'} value={form.weight} onChange={(v) => set('weight', v)} C={C} />
             <View style={s.divider} />
-            <NumericInput label="Target Weight" unit="kg" value={form.targetWeightKg} onChange={(v) => set('targetWeightKg', v)} C={C} />
+            <NumericInput label="Target Weight" unit={imperial ? 'lb' : 'kg'} value={form.targetWeight} onChange={(v) => set('targetWeight', v)} C={C} />
             <View style={s.divider} />
-            <NumericInput label="Height" unit="cm" value={form.heightCm} onChange={(v) => set('heightCm', v)} C={C} />
+            {imperial ? (
+              <>
+                <NumericInput label="Height, feet" unit="ft" value={form.heightFt} onChange={(v) => set('heightFt', v)} C={C} />
+                <View style={s.divider} />
+                <NumericInput label="Height, inches" unit="in" value={form.heightIn} onChange={(v) => set('heightIn', v)} C={C} />
+              </>
+            ) : (
+              <NumericInput label="Height" unit="cm" value={form.heightCm} onChange={(v) => set('heightCm', v)} C={C} />
+            )}
           </View>
 
           <Text style={s.formSection}>Training</Text>
@@ -453,6 +497,7 @@ export default function ProfileScreen() {
 
   const member: GymMember | null = memberQ.data ?? null;
   const profile: MemberProfile | null = profileQ.data ?? null;
+  const imperial = profile?.unitSystem === UnitSystem.IMPERIAL;
   const badges: MemberBadge[] = badgesQ.data ?? [];
   const equipped = useMemo(() => equippedBadges(badgesQ.data ?? []), [badgesQ.data]);
   const loading = memberQ.isLoading || profileQ.isLoading || badgesQ.isLoading;
@@ -595,9 +640,9 @@ export default function ProfileScreen() {
               {profile!.dietType && profile!.dietType !== DietType.NONE && <Row label="Diet" value={fmtEnum(profile!.dietType, DIET_LABELS)} C={C} />}
               {profile!.daysPerWeek != null && <Row label="Days / week" value={`${profile!.daysPerWeek} day${profile!.daysPerWeek !== 1 ? 's' : ''}`} C={C} />}
               {profile!.age != null && <Row label="Age" value={`${profile!.age} yrs`} C={C} />}
-              {profile!.weightKg != null && <Row label="Weight" value={`${profile!.weightKg} kg`} C={C} />}
-              {profile!.targetWeightKg != null && <Row label="Target" value={`${profile!.targetWeightKg} kg`} C={C} />}
-              {profile!.heightCm != null && <Row label="Height" value={`${profile!.heightCm} cm`} C={C} />}
+              {profile!.weightKg != null && <Row label="Weight" value={formatWeight(profile!.weightKg, imperial)} C={C} />}
+              {profile!.targetWeightKg != null && <Row label="Target" value={formatWeight(profile!.targetWeightKg, imperial)} C={C} />}
+              {profile!.heightCm != null && <Row label="Height" value={formatHeight(profile!.heightCm, imperial)} C={C} />}
               {profile!.injuries && <Row label="Injuries" value={profile!.injuries} C={C} />}
             </>
           ) : (
@@ -683,7 +728,8 @@ export default function ProfileScreen() {
       {user && (
         <EditProfileModal
           visible={editVisible}
-          initialForm={profileToForm(profile)}
+          initialForm={profileToForm(profile, imperial)}
+          imperial={imperial}
           onClose={() => setEditVisible(false)}
         />
       )}

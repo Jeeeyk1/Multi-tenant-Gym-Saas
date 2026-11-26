@@ -18,6 +18,7 @@ import { ListActiveCheckinsUseCase } from '../../application/use-cases/list-acti
 import { ListActivePublicCheckinsUseCase } from '../../application/use-cases/list-active-public-checkins.use-case';
 import { ListCheckinHistoryUseCase } from '../../application/use-cases/list-checkin-history.use-case';
 import { ListMyCheckInsUseCase } from '../../application/use-cases/list-my-checkins.use-case';
+import { GetMyCheckinStreakUseCase } from '../../application/use-cases/get-my-checkin-streak.use-case';
 import { CheckInDto } from '../dto/check-in.dto';
 import { CheckinHistoryQueryDto } from '../dto/checkin-history-query.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
@@ -32,6 +33,7 @@ export class CheckInsController {
     private readonly listActivePublicCheckinsUseCase: ListActivePublicCheckinsUseCase,
     private readonly listCheckinHistoryUseCase: ListCheckinHistoryUseCase,
     private readonly listMyCheckInsUseCase: ListMyCheckInsUseCase,
+    private readonly getMyCheckinStreakUseCase: GetMyCheckinStreakUseCase,
   ) {}
 
   /**
@@ -65,6 +67,16 @@ export class CheckInsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.listMyCheckInsUseCase.execute(gymId, { limit: query.limit }, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/checkins/me/streak
+   * The caller's check-in streak in the gym's local days (same rule as the streak badges).
+   * Requires checkins.self.
+   */
+  @Get('me/streak')
+  getMyStreak(@Param('gymId') gymId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.getMyCheckinStreakUseCase.execute(gymId, user);
   }
 
   /**

@@ -21,6 +21,8 @@ export const memberKeys = {
     [...memberKeys.all, 'me', 'checkins', { gymId, limit }] as const,
   myRenewals: (gymId: string | undefined) =>
     [...memberKeys.all, 'me', 'renewals', gymId] as const,
+  // Not under 'me','checkins': that prefix holds CheckIn[] lists the check-in mutations patch in place.
+  myStreak: (gymId: string | undefined) => [...memberKeys.all, 'me', 'streak', gymId] as const,
   activePublicCheckins: (gymId: string | undefined) =>
     [...memberKeys.all, 'active-public-checkins', gymId] as const,
 };
@@ -67,6 +69,16 @@ export function useMyCheckIns(limit = 7) {
   });
 }
 
+export function useMyCheckinStreak() {
+  const { user } = useAuth();
+  const gymId = user?.gymId;
+  return useQuery<{ streak: number }>({
+    queryKey: memberKeys.myStreak(gymId),
+    queryFn: () => memberService.getMyCheckinStreak(gymId!),
+    enabled: Boolean(gymId),
+  });
+}
+
 export function useSelfCheckIn() {
   const { user } = useAuth();
   const gymId = user?.gymId;
@@ -84,6 +96,7 @@ export function useSelfCheckIn() {
       queryClient.invalidateQueries({
         queryKey: [...memberKeys.all, 'me', 'checkins'],
       });
+      queryClient.invalidateQueries({ queryKey: memberKeys.myStreak(gymId) });
       // Who's here should include the member straight away.
       queryClient.invalidateQueries({ queryKey: memberKeys.activePublicCheckins(gymId) });
     },

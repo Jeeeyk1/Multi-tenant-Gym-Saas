@@ -9,6 +9,7 @@ import { useTheme } from '../../../context/ThemeContext';
 import {
   useActivePublicCheckins,
   useMyCheckIns,
+  useMyCheckinStreak,
   useMyMember,
   useSelfCheckIn,
   useSelfCheckOut,
@@ -16,7 +17,6 @@ import {
 import { Button, EmptyState, HoldButton, ScreenHeader, Skeleton, SlideToConfirm, useToast } from '../../../components/ui';
 import { CheckinQrSheet } from '../../../components/checkin/CheckinQrSheet';
 import { ElapsedTime } from '../../../components/checkin/ElapsedTime';
-import { computeStreak } from '../../../lib/checkin-streak';
 import { formatApiError } from '../../../lib/format-error';
 import { haptic } from '../../../lib/haptics';
 import { CheckInErrorCode, MemberStatus } from '../../../constants/enums';
@@ -44,6 +44,7 @@ export default function CheckInScreen() {
   const checkInsQ = useMyCheckIns(RECENT_CHECKINS);
   const memberQ = useMyMember();
   const hereQ = useActivePublicCheckins();
+  const streakQ = useMyCheckinStreak();
   const selfCheckIn = useSelfCheckIn();
   const selfCheckOut = useSelfCheckOut();
   const [qrOpen, setQrOpen] = useState(false);
@@ -62,7 +63,7 @@ export default function CheckInScreen() {
   const checkIns = checkInsQ.data ?? [];
   const latest = checkIns[0];
   const active = latest && latest.checkedOutAt === null ? latest : null;
-  const { streak } = computeStreak(checkIns);
+  const streak = streakQ.data?.streak ?? 0;
   const member = memberQ.data;
   const membershipBlocked = blockedBy !== null || (member !== undefined && member.status !== MemberStatus.ACTIVE);
   const hereCount = hereQ.data?.totalCount;
@@ -70,7 +71,7 @@ export default function CheckInScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     setBlockedBy(null);
-    await Promise.all([checkInsQ.refetch(), memberQ.refetch(), hereQ.refetch()]);
+    await Promise.all([checkInsQ.refetch(), memberQ.refetch(), hereQ.refetch(), streakQ.refetch()]);
     setRefreshing(false);
   };
 

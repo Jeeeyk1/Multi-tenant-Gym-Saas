@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../../../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../../common/decorators/current-user.decorator';
 import { LogWorkoutSessionUseCase } from '../../application/use-cases/log-workout-session.use-case';
 import { ListWorkoutSessionsUseCase } from '../../application/use-cases/list-workout-sessions.use-case';
+import { GetWorkoutSummaryUseCase } from '../../application/use-cases/get-workout-summary.use-case';
 import { LogWorkoutSessionDto } from '../dto/log-workout-session.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
@@ -12,6 +13,7 @@ export class WorkoutsController {
   constructor(
     private readonly logSession: LogWorkoutSessionUseCase,
     private readonly listSessions: ListWorkoutSessionsUseCase,
+    private readonly getSummary: GetWorkoutSummaryUseCase,
   ) {}
 
   /** POST /gyms/:gymId/workout-sessions — member saves a completed session */
@@ -23,6 +25,12 @@ export class WorkoutsController {
     @CurrentUser() caller: AuthenticatedUser,
   ) {
     return this.logSession.execute(gymId, dto, caller);
+  }
+
+  /** GET /gyms/:gymId/workout-sessions/summary — all-time totals for the member's own sessions */
+  @Get('summary')
+  async summary(@Param('gymId') gymId: string, @CurrentUser() caller: AuthenticatedUser) {
+    return this.getSummary.execute(gymId, caller);
   }
 
   /** GET /gyms/:gymId/workout-sessions?page=1&limit=20 — member's own session history */

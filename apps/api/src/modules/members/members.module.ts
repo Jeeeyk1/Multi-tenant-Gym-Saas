@@ -18,9 +18,14 @@ import { RemoveMemberUseCase } from './application/use-cases/remove-member.use-c
 import { GetMemberQrUseCase } from './application/use-cases/get-member-qr.use-case';
 import { RegisterDeviceTokenUseCase } from './application/use-cases/register-device-token.use-case';
 import { UpdateMyPrivacyUseCase } from './application/use-cases/update-my-privacy.use-case';
+import { DeleteMyAccountUseCase } from './application/use-cases/delete-my-account.use-case';
 import { MembersController } from './presentation/controllers/members.controller';
+import { StorageModule } from '../../common/adapters/storage/storage.module';
+import { ChatModule } from '../chat/chat.module';
+import { RateLimiterService } from '../../common/rate-limiter/rate-limiter.service';
 
 @Module({
+  imports: [StorageModule, ChatModule],
   controllers: [MembersController],
   providers: [
     MembersRepository,
@@ -42,6 +47,8 @@ import { MembersController } from './presentation/controllers/members.controller
     RegisterDeviceTokenUseCase,
     UpdateMyPrivacyUseCase,
     RemoveMemberUseCase,
+    DeleteMyAccountUseCase,
+    RateLimiterService,
   ],
   exports: [MembersRepository, RegisterMemberUseCase, SuspendMemberUseCase, ReactivateMemberUseCase],
 })

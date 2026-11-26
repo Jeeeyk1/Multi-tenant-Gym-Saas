@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { PrSubmissionStatus } from '../../../../common/enums';
+import { MemberStatus, PrSubmissionStatus } from '../../../../common/enums';
 
 @Injectable()
 export class LeaderboardRepository {
@@ -15,9 +15,10 @@ export class LeaderboardRepository {
     });
   }
 
+  /** Members who deleted their account are left out: nothing new is written onto them. */
   findMemberInGym(memberId: string, gymId: string) {
     return this.prisma.gymMember.findFirst({
-      where: { id: memberId, gymId },
+      where: { id: memberId, gymId, status: { not: MemberStatus.DELETED } },
       select: { id: true },
     });
   }

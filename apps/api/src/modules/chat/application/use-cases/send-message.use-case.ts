@@ -3,6 +3,10 @@ import { ChatRepository } from '../../infrastructure/persistence/chat.repository
 import { NotFoundError } from '../../../../common/errors/not-found.error';
 import { ForbiddenError } from '../../../../common/errors/forbidden.error';
 import type { GymAuthUser } from '../../../../common/types/auth.types';
+import { MEMBER_ROLE } from '../../../../common/enums';
+
+/** A member token with no staff role. */
+const isMemberOnly = (caller: GymAuthUser) => caller.roles.length > 0 && caller.roles.every((role) => role === MEMBER_ROLE);
 
 @Injectable()
 export class SendMessageUseCase {
@@ -33,9 +37,10 @@ export class SendMessageUseCase {
     }
 
     // If the caller has a gym_members record, their membership must be ACTIVE to chat.
-    // Staff have no gym_members record so this check is skipped for them.
+    // Staff have no gym_members record so this check is skipped for them. A token that says
+    // "member" with no record left (the account was deleted) is refused, not treated as staff.
     const gymMember = await this.repo.findGymMemberStatus(gymId, caller.sub);
-    if (gymMember && gymMember.status !== 'ACTIVE') {
+    if (gymMember ? gymMember.status !== 'ACTIVE' : isMemberOnly(caller)) {
       throw new ForbiddenError('Membership is not active', 'MEMBERSHIP_NOT_ACTIVE');
     }
 

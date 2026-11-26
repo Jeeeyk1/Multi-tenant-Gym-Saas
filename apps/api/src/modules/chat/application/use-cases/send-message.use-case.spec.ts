@@ -129,4 +129,16 @@ describe('SendMessageUseCase', () => {
 
     expect(mockRepo.createMessage).toHaveBeenCalledWith(expect.objectContaining({ replyToId: 'msg-0' }));
   });
+
+  it('refuses a member-only token whose member record is gone (deleted account)', async () => {
+    mockRepo.findConversation.mockResolvedValue(makeConversation());
+    mockRepo.upsertMembership.mockResolvedValue(makeMembership());
+    mockRepo.findGymMemberStatus.mockResolvedValue(null);
+
+    const uc = new SendMessageUseCase(mockRepo);
+    await expect(
+      uc.execute('gym-1', 'conv-1', { content: 'still here?' }, { ...makeCaller(), roles: ['MEMBER'] }),
+    ).rejects.toMatchObject({ code: 'MEMBERSHIP_NOT_ACTIVE' });
+    expect(mockRepo.createMessage).not.toHaveBeenCalled();
+  });
 });

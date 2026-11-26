@@ -40,7 +40,7 @@ export interface CheckinsTrendPoint {
 export interface MemberListItem {
   id: string;
   membershipNumber: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED';
+  status: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' | 'DELETED';
   expiryDate: string;
   joinedAt: string;
   user: { id: string; email: string; fullName: string; phone: string | null };
@@ -56,7 +56,7 @@ export interface MemberDetail {
   id: string;
   gymId: string;
   membershipNumber: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED';
+  status: 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' | 'DELETED';
   qrCodeToken: string;
   expiryDate: string;
   joinedAt: string;

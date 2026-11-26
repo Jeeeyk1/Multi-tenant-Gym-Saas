@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MemberStatus } from '../../../../common/enums';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
 import { METRIC_ENTITIES, type MetricQuery } from '../../application/tools/metric.whitelist';
 import type { TrendQuery, TrendGranularity } from '../../application/tools/trend.whitelist';
@@ -53,6 +54,8 @@ export class InsightsRepository {
     // MembershipRenewal has no direct gymId — scope through the member relation.
     const gymScope = query.entity === 'renewals' ? { member: { gymId } } : { gymId };
     const where: Record<string, unknown> = { ...gymScope, ...query.where };
+    // Deleted accounts are kept only for the records; count them only when asked for by status.
+    if (query.entity === 'members' && where.status === undefined) where.status = { not: MemberStatus.DELETED };
     if (query.range) {
       where[METRIC_ENTITIES[query.entity].dateField] = {
         ...(query.range.gte ? { gte: query.range.gte } : {}),
@@ -162,7 +165,7 @@ export class InsightsRepository {
 
   async findMembers(gymId: string, name: string) {
     const rows = await this.prisma.gymMember.findMany({
-      where: { gymId, user: { fullName: { contains: name, mode: 'insensitive' } } },
+      where: { gymId, status: { not: MemberStatus.DELETED }, user: { fullName: { contains: name, mode: 'insensitive' } } },
       take: 5,
       select: { id: true, membershipNumber: true, status: true, user: { select: { fullName: true } } },
     });

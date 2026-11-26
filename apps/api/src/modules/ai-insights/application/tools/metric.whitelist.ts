@@ -7,7 +7,7 @@ export const METRIC_ENTITIES = {
     filters: { status: 'status' },
     // Stored values are upper-case (see gym_members_status_check). Filter values are
     // normalized to these case-insensitively so a natural-language "active" still matches.
-    filterValues: { status: ['ACTIVE', 'EXPIRED', 'SUSPENDED'] },
+    filterValues: { status: ['ACTIVE', 'EXPIRED', 'SUSPENDED', 'DELETED'] },
   },
   checkins: {
     label: 'member check-ins',

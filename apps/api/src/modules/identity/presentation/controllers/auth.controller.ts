@@ -115,8 +115,7 @@ export class AuthController {
 
   /**
    * POST /auth/forgot-password
-   * Public. Always returns 200 to prevent email enumeration.
-   * In production the token would be emailed — for MVP it is returned in the response.
+   * Public. Always returns 204 to prevent email enumeration. The reset link is emailed, never returned.
    */
   @Post('forgot-password')
   @UseGuards(AuthThrottleGuard)

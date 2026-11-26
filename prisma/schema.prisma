@@ -42,6 +42,8 @@ model User {
   emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  /// Set when this login was anonymised because the person deleted their account.
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
 
   // Relations
   userTokens                UserToken[]
@@ -486,6 +488,8 @@ model GymMember {
   expiryDate       DateTime @map("expiry_date") @db.Date
   joinedAt         DateTime @default(now()) @map("joined_at") @db.Timestamptz
   updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  /// Set with status DELETED when the member deleted their account (the row is anonymised, not removed).
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz
 
   gym            Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)

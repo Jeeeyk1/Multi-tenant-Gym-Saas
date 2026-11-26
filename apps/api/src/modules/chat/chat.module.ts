@@ -9,6 +9,7 @@ import { MarkConversationReadUseCase } from './application/use-cases/mark-conver
 import { ChatController } from './presentation/controllers/chat.controller';
 import { ConversationsController } from './presentation/controllers/conversations.controller';
 import { ChatGateway } from './chat.gateway';
+import { ChatSessionsService } from './application/chat-sessions.service';
 
 @Module({
   imports: [PrismaModule],
@@ -20,7 +21,9 @@ import { ChatGateway } from './chat.gateway';
     ReactToMessageUseCase,
     MarkConversationReadUseCase,
     ChatGateway,
+    ChatSessionsService,
   ],
   controllers: [ChatController, ConversationsController],
+  exports: [ChatSessionsService],
 })
 export class ChatModule {}

@@ -611,6 +611,20 @@ Response `200`:
 
 ---
 
+#### POST /gyms/:gymId/members/me/delete-account
+The caller deletes their own member account. Body: `{ "password": "…" }`.
+Personal, health and progress data is deleted, and so is their chat in this gym (unless they are staff here).
+Renewals and check-ins stay, anonymised. A staff, owner or other-gym login stays (member side only). See
+`docs/02-domains/member.md`.
+Staff writes to a deleted member (`PATCH …/profile`, weight logs, badges, PRs on their behalf, renew, suspend,
+reactivate) return `409 MEMBER_DELETED`; reads still work.
+
+Response `200`: `{ "loginDeleted": true }` (`false` when the login stays because the person is also staff).
+Errors: `403 INVALID_PASSWORD`, `404 MEMBER_NOT_FOUND` (not a member here, or already deleted), `429 RATE_LIMITED`
+(5 attempts per 15 minutes).
+
+---
+
 #### PATCH /gyms/:gymId/members/me/profile
 Save the caller's fitness profile. Every field is optional so onboarding can save one step at a time.
 `PATCH /gyms/:gymId/members/:memberId/profile` is the staff version (`members.edit`); it ignores

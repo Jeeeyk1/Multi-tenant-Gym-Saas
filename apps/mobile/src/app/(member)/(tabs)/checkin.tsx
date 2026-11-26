@@ -22,6 +22,7 @@ import { haptic } from '../../../lib/haptics';
 import { CheckInErrorCode, MemberStatus } from '../../../constants/enums';
 import { FONT, RADIUS, SPACING } from '../../../constants/theme';
 import { fonts } from '../../../theme/typography';
+import type { CheckIn } from '../../../types';
 
 // Same limit as Home so both screens share one cached query.
 const RECENT_CHECKINS = 7;
@@ -198,6 +199,8 @@ export default function CheckInScreen() {
             </Text>
           </Animated.View>
         )}
+
+        {!loading && checkIns.some((c) => c.checkedOutAt !== null) ? <RecentVisits checkIns={checkIns} /> : null}
       </ScrollView>
 
       <CheckinQrSheet
@@ -206,6 +209,39 @@ export default function CheckInScreen() {
         qrCodeToken={member?.qrCodeToken}
         membershipNumber={member?.membershipNumber}
       />
+    </View>
+  );
+}
+
+/** The last few finished visits (moved here from Home). */
+function RecentVisits({ checkIns }: { checkIns: CheckIn[] }) {
+  const { theme } = useTheme();
+  const C = theme.colors;
+  const visits = checkIns.filter((c) => c.checkedOutAt !== null).slice(0, 5);
+  return (
+    <View style={styles.recent}>
+      <Text style={[styles.eyebrow, { color: C.textMuted }]}>Recent visits</Text>
+      <View style={[styles.list, { backgroundColor: C.surface, borderColor: C.border }]}>
+        {visits.map((v, i) => {
+          const start = new Date(v.checkedInAt);
+          const minutes = Math.round((new Date(v.checkedOutAt!).getTime() - start.getTime()) / 60000);
+          return (
+            <View key={v.id} style={[styles.visit, i > 0 && { borderTopWidth: 1, borderTopColor: C.border }]}>
+              <View>
+                <Text variant="label" style={{ color: C.text }}>
+                  {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </Text>
+                <Text variant="caption" style={{ color: C.textMuted }}>
+                  {formatTime(v.checkedInAt)}
+                </Text>
+              </View>
+              <Text variant="caption" style={{ color: C.textSecondary }}>
+                {minutes} min
+              </Text>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -238,4 +274,7 @@ const styles = StyleSheet.create({
   mono: { ...FONT.mono, fontSize: 13 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   hint: { textAlign: 'center' },
+  recent: { marginTop: SPACING.xl, gap: SPACING.sm },
+  list: { borderWidth: 1, borderRadius: RADIUS.xl, overflow: 'hidden' },
+  visit: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.md, paddingVertical: 12 },
 });

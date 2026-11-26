@@ -1,0 +1,186 @@
+{
+  "brand": {
+    "navy": "#0A2540",
+    "signalBlue": "#3B82F6",
+    "codeBlue": "#1D4ED8",
+    "codeBlueHover": "#1E40AF",
+    "sky": "#93C5FD",
+    "blueTint": "#DBEAFE",
+    "volt": "#CCFF00",
+    "_notes": {
+      "signalBlue": "Logo dot, highlights, charts. Not for small white text (3.7:1).",
+      "codeBlue": "Buttons, links, active states. White text on it is 6.7:1.",
+      "volt": "Energy accent: marketing (on Navy or near-black only) and the default member-app accent. Never on white, never with white text, never in the staff UI."
+    }
+  },
+  "font": {
+    "display": "Manrope, Inter, system-ui, sans-serif",
+    "ui": "Inter, system-ui, sans-serif",
+    "mono": "'JetBrains Mono', ui-monospace, monospace",
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    },
+    "scale": {
+      "display": {
+        "size": 48,
+        "lineHeight": 52,
+        "family": "display",
+        "weight": 800,
+        "tracking": "-0.03em"
+      },
+      "heading": {
+        "size": 32,
+        "lineHeight": 38,
+        "family": "display",
+        "weight": 800,
+        "tracking": "-0.03em"
+      },
+      "title": {
+        "size": 22,
+        "lineHeight": 28,
+        "family": "display",
+        "weight": 700,
+        "tracking": "-0.02em"
+      },
+      "body": {
+        "size": 16,
+        "lineHeight": 24,
+        "family": "ui",
+        "weight": 400
+      },
+      "label": {
+        "size": 14,
+        "lineHeight": 20,
+        "family": "ui",
+        "weight": 500
+      },
+      "eyebrow": {
+        "size": 12,
+        "lineHeight": 16,
+        "family": "ui",
+        "weight": 600,
+        "tracking": "0.16em",
+        "transform": "uppercase"
+      }
+    }
+  },
+  "radius": {
+    "sm": 8,
+    "md": 10,
+    "lg": 12,
+    "xl": 16,
+    "pill": 999,
+    "appIcon": "22.5%"
+  },
+  "space": {
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "5": 20,
+    "6": 24,
+    "8": 32,
+    "10": 40,
+    "12": 48
+  },
+  "staff": {
+    "light": {
+      "bg": "#F5F7FA",
+      "surface": "#FFFFFF",
+      "surfaceInverse": "#0A2540",
+      "border": "#E2E8F0",
+      "text": "#0A2540",
+      "textSecondary": "#475569",
+      "textOnInverse": "#FFFFFF",
+      "textSecondaryOnInverse": "#CBD5E1",
+      "numberOnInverse": "#93C5FD",
+      "iconMuted": "#93A4BA",
+      "primary": "#1D4ED8",
+      "primaryHover": "#1E40AF",
+      "onPrimary": "#FFFFFF",
+      "link": "#1D4ED8",
+      "navActiveBg": "#DBEAFE",
+      "navActiveText": "#1D4ED8",
+      "focusRing": "#3B82F6",
+      "chartPrimary": "#0A2540",
+      "chartHighlight": "#3B82F6",
+      "disabledBg": "#E2E8F0",
+      "disabledText": "#64748B",
+      "hover": "#F5F7FA",
+      "segmentTrack": "#E6E8ED"
+    },
+    "dark": {
+      "bg": "#071A2E",
+      "surface": "#0A2540",
+      "surfaceRaised": "#12304F",
+      "border": "#1E3A5F",
+      "text": "#F5F7FA",
+      "textSecondary": "#CBD5E1",
+      "iconMuted": "#93A4BA",
+      "primary": "#93C5FD",
+      "primaryHover": "#BFDBFE",
+      "onPrimary": "#0A2540",
+      "link": "#93C5FD",
+      "navActiveBg": "#12304F",
+      "navActiveText": "#93C5FD",
+      "focusRing": "#93C5FD",
+      "chartPrimary": "#93C5FD",
+      "chartHighlight": "#3B82F6"
+    }
+  },
+  "member": {
+    "_notes": "Neutral base so the gym's existing theme color stands out. Default accent is Volt when a gym has no theme. Gym theme presets (including gradients) stay exactly as they are today.",
+    "defaultAccent": "#CCFF00",
+    "dark": {
+      "bg": "#0E1116",
+      "surface": "#171B22",
+      "border": "#23272F",
+      "text": "#FFFFFF",
+      "textSecondary": "#C9CDD6"
+    }
+  },
+  "status": {
+    "_notes": "Fixed for every gym and theme. Never derived from the gym accent.",
+    "light": {
+      "success": "#087A55",
+      "successBg": "#E3F4EC",
+      "warning": "#9A3412",
+      "warningSolid": "#E5531A",
+      "warningBg": "#FCE7DD",
+      "danger": "#D92D20",
+      "dangerBg": "#FDECEA",
+      "dangerText": "#B42318"
+    },
+    "dark": {
+      "success": "#4ADE80",
+      "successBg": "#0F2E22",
+      "warning": "#FB923C",
+      "warningBg": "#3A1D0E",
+      "danger": "#F87171",
+      "dangerBg": "#3A1414"
+    }
+  },
+  "elevation": {
+    "0": "none",
+    "1": "0 8px 24px rgba(10, 37, 64, 0.12)"
+  },
+  "size": {
+    "button": {
+      "staff": 44,
+      "member": 52
+    },
+    "input": 44,
+    "navItem": 40,
+    "tile": 48,
+    "icon": {
+      "table": 16,
+      "nav": 20,
+      "standalone": 24
+    }
+  },
+  "_scope": "Visual only: colors, fonts, logo, spacing, radius, shadows, icon style. No layout, feature, behavior, copy or data changes."
+}

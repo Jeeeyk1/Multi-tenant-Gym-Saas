@@ -15,6 +15,7 @@ export class PublicRepository {
         description: true,
         priceMonthly: true,
         priceYearly: true,
+        memberLimit: true,
         features: true,
         isPopular: true,
       },

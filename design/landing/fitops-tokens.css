@@ -1,0 +1,79 @@
+/* FitOps design tokens. Source of truth: fitops-tokens.json
+   Visual only: apply to existing components and screens without changing layout or behavior. */
+
+/* ---------- Staff / admin dashboard (always FitOps brand) ---------- */
+:root,
+[data-app="staff"] {
+  --font-display: Manrope, Inter, system-ui, sans-serif;
+  --font-ui: Inter, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 8px; --radius-md: 10px; --radius-lg: 12px; --radius-xl: 16px; --radius-pill: 999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --shadow-1: 0 8px 24px rgba(10, 37, 64, 0.12);
+  --size-button: 44px; --size-input: 44px; --size-nav-item: 40px;
+  --color-hover: #F5F7FA; --color-disabled-bg: #E2E8F0; --color-disabled-text: #64748B;
+  --color-segment-track: #E6E8ED; --color-danger-text: #B42318;
+
+  --color-bg: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-surface-inverse: #0A2540;
+  --color-border: #E2E8F0;
+  --color-text: #0A2540;
+  --color-text-secondary: #475569;
+  --color-text-on-inverse: #FFFFFF;
+  --color-text-secondary-on-inverse: #CBD5E1;
+  --color-number-on-inverse: #93C5FD;
+  --color-icon-muted: #93A4BA;
+
+  --color-primary: #1D4ED8;
+  --color-primary-hover: #1E40AF;
+  --color-on-primary: #FFFFFF;
+  --color-link: #1D4ED8;
+  --color-nav-active-bg: #DBEAFE;
+  --color-nav-active-text: #1D4ED8;
+  --color-focus-ring: #3B82F6;
+  --color-chart-primary: #0A2540;
+  --color-chart-highlight: #3B82F6;
+
+  --color-success: #087A55; --color-success-bg: #E3F4EC;
+  --color-warning: #9A3412; --color-warning-solid: #E5531A; --color-warning-bg: #FCE7DD;
+  --color-danger: #D92D20; --color-danger-bg: #FDECEA;
+}
+
+[data-app="staff"][data-theme="dark"] {
+  --color-bg: #071A2E;
+  --color-surface: #0A2540;
+  --color-surface-raised: #12304F;
+  --color-surface-inverse: #12304F;
+  --color-border: #1E3A5F;
+  --color-text: #F5F7FA;
+  --color-text-secondary: #CBD5E1;
+  --color-primary: #93C5FD;
+  --color-primary-hover: #BFDBFE;
+  --color-on-primary: #0A2540;
+  --color-link: #93C5FD;
+  --color-nav-active-bg: #12304F;
+  --color-nav-active-text: #93C5FD;
+  --color-focus-ring: #93C5FD;
+  --color-chart-primary: #93C5FD;
+
+  --color-success: #4ADE80; --color-success-bg: #0F2E22;
+  --color-warning: #FB923C; --color-warning-bg: #3A1D0E;
+  --color-danger: #F87171; --color-danger-bg: #3A1414;
+}
+
+/* ---------- Member app (gym-themed) ----------
+   --color-accent and --color-on-accent are set at runtime from the gym's
+   Branding settings via accent-utils.ts (buildMemberTheme). */
+[data-app="member"] {
+  --color-bg: #0E1116;
+  --color-surface: #171B22;
+  --color-border: #23272F;
+  --color-text: #FFFFFF;
+  --color-text-secondary: #C9CDD6;
+  --color-accent: #CCFF00;      /* Volt: default when the gym has not set a theme */
+  --color-on-accent: #0E1116;
+  --color-success: #4ADE80; --color-warning: #FB923C; --color-danger: #F87171;
+}

@@ -369,6 +369,7 @@ export class AdminRepository {
     description?: string;
     priceMonthly: number;
     priceYearly?: number;
+    memberLimit?: number;
     features: string[];
     isPopular?: boolean;
     isActive?: boolean;
@@ -384,6 +385,7 @@ export class AdminRepository {
       description: string;
       priceMonthly: number;
       priceYearly: number;
+      memberLimit: number;
       features: string[];
       isPopular: boolean;
       isActive: boolean;

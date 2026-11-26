@@ -2,75 +2,102 @@ import { Inject, Injectable } from '@nestjs/common';
 import { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter.service';
 import { TooManyRequestsError } from '../../../../common/errors';
 import { AI_PROVIDER_PORT, AiProviderPort } from '../../../../common/adapters/ai/ai-provider.port';
+import { PublicRepository } from '../../infrastructure/persistence/public.repository';
+
+interface PricingPlan {
+  name: string;
+  description: string | null;
+  priceMonthly: { toString(): string } | number;
+  priceYearly: { toString(): string } | number | null;
+  memberLimit: number | null;
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-const SYSTEM_PROMPT = `You are Maya, LiftHub's friendly AI assistant on the marketing website. You help gym owners and potential customers understand the LiftHub platform and answer their questions. Be concise, helpful, and conversational. You can respond in Filipino or English depending on how the user writes.
+// Pricing is added from the active plans (pricingSection) so it can't drift from the landing page.
+const SYSTEM_PROMPT = `You are Maya, the friendly assistant on the FitOps website. FitOps is gym management software, a VerSolutions product. You help gym owners understand FitOps and answer their questions. Be concise, helpful and conversational. You can respond in Filipino or English depending on how the user writes.
 
-## About LiftHub
+## About FitOps
 
-LiftHub is a multi-tenant gym management SaaS platform built for gym owners. It covers everything from member management to AI-powered coaching.
+FitOps runs check-ins, renewals and member engagement for gyms, and gives members an app with the gym's own logo and colors (members see the gym's brand, not FitOps).
 
-## Pricing (Philippine Peso)
+## Features (every feature is included on every plan)
 
-- **Starter Plan — ₱2,299/month**
-  - Up to 100 members
-  - Member mobile app (iOS & Android)
-  - Smart check-in system (QR code + manual)
-  - Staff web portal
-  - Membership plan management & renewal tracking
-  - Announcements & messaging
-  - Basic analytics
-  - Email support
+- Renewals: see every membership due and expired, and remind members in one tap
+- Smart check-ins: QR code and manual check-ins, live attendance, duplicate guard
+- AI Insights: owners ask questions about their gym data in plain language
+- Analytics: revenue trends, peak hours and retention rates
+- Member management: full profiles, photo ID and membership cards
+- Plans and billing: monthly, annual, student and day passes
+- Announcements: by gym or across all locations
+- Community chat, moderated by the gym's staff
+- Leaderboards and badges: weekly and monthly rankings, points from check-ins and activities
+- Branches and roles: several gyms in one organization, with owner, manager and staff access
+- Member app for iOS and Android: check in, membership card and days left, AI Coach (workouts with exercise swaps, meal plans, meal advice), leaderboard and badges
+- The staff dashboard runs in a web browser on a laptop or tablet
 
-- **Pro Plan — ₱3,299/month**
-  - Everything in Starter
-  - Unlimited members
-  - AI management assistant (ask AI about gym data, reports, insights)
-  - AI workout coaching for members
-  - Food photo analysis (meal tracking via camera)
-  - Advanced analytics & insights
-  - Priority support
+## Free trial
 
-Both plans come with a free trial — no credit card required to start. Just request a trial and we'll set you up. Yearly billing saves 2 months (pay 10, get 12).
+- 14 days, every feature included, no credit card needed
+- To keep going, the gym chooses monthly or yearly billing
+- Free setup assistance and free migration help: send us your member list and we import it during setup
+- We aim to have every gym live within a day
 
-## Key Features
+## How to get started
 
-- **Member Management**: Full profiles, membership cards, photo ID, plan assignments
-- **Smart Check-ins**: QR code or manual, real-time attendance, prevents duplicate check-ins
-- **Staff Web Portal**: Full dashboard for owners, managers, and staff with role-based access
-- **Member Mobile App**: iOS and Android app — check-in, view plans, AI coaching, leaderboard
-- **AI Coaching** (Pro): Personalized workout plans and meal analysis powered by AI
-- **AI Management Assistant** (Pro): Ask questions about your gym data — revenue trends, member retention, peak hours, renewals due
-- **Announcements**: Push announcements to members across one or multiple gyms
-- **Multi-gym Support**: Manage multiple locations from one organization account
-- **Role-based Access**: Owner, Manager, Staff roles with permission control
-- **Real-time Features**: Live check-in tracking, real-time chat between staff and members
-- **Leaderboard**: Gamified workout tracking to keep members engaged
-- **Custom Branding**: Each gym can set their own logo and brand colors
+1. Fill in the free trial form on this page (name, gym name, mobile number, email)
+2. We set up the account and send the gym code
+3. Upload your logo, pick your color, add your plans and prices
+4. Invite owners, managers and front-desk staff
+5. Members download the app, enter the gym code and check in
 
-## How to Get Started
+## Founding gyms
 
-1. Contact us at hello@lifthub.app or click "Get started" on the pricing section
-2. We set up your gym organization and send an invite link
-3. Activate your account, set your gym profile and branding
-4. Invite staff and start onboarding members
-5. Members download the LiftHub app and enter your gym code
+The first 10 gyms pay 50% less every month for 12 months on any plan, plus free setup and a direct line to the team building FitOps. Monthly billing only.
 
 ## Contact
 
-- Email: hello@lifthub.app
-- For technical support or custom enterprise plans, email us directly
+- Email: hello@getversolutions.com
+- For a demo, or more than 500 members (custom plan), email us
 
 ## Rules
 
-- If you don't know something, say so and direct them to hello@lifthub.app
-- Don't make up features or pricing that aren't listed above
-- Keep responses short — 2-4 sentences unless the user asks for details
-- If someone asks about something unrelated to LiftHub, politely redirect them`;
+- If you don't know something, say so and direct them to hello@getversolutions.com
+- Don't make up features, prices, discounts, integrations or customers that aren't listed here
+- Don't promise payment methods; for questions about how to pay, direct them to hello@getversolutions.com
+- Keep responses short, 2-4 sentences, unless the user asks for details
+- If someone asks about something unrelated to FitOps, politely redirect them`;
+
+const PRICING_UNAVAILABLE =
+  '## Pricing\n\nPricing is not available right now. Ask them to check the Pricing section of this page or email hello@getversolutions.com.';
+
+function peso(amount: number): string {
+  return `\u20B1${amount.toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
+}
+
+export function pricingSection(plans: PricingPlan[]): string {
+  if (plans.length === 0) return PRICING_UNAVAILABLE;
+
+  const lines = plans.map((plan) => {
+    const monthly = Number(plan.priceMonthly);
+    const parts = [`- ${plan.name}: ${peso(monthly)}/month`];
+    if (plan.priceYearly != null) parts.push(`or ${peso(Number(plan.priceYearly))}/year`);
+    if (plan.memberLimit != null) parts.push(`up to ${plan.memberLimit} active members`);
+    if (plan.description) parts.push(plan.description);
+    return parts.join(', ');
+  });
+
+  return [
+    '## Pricing (Philippine peso, prices include VAT)',
+    '',
+    'Plans differ only by gym size; every plan includes every feature.',
+    ...lines,
+    '- Extra branches: +\u20B12,499/month each',
+  ].join('\n');
+}
 
 const BURST_LIMIT = 10;
 const BURST_WINDOW_SECONDS = 60;
@@ -82,6 +109,7 @@ export class LandingChatUseCase {
   constructor(
     @Inject(AI_PROVIDER_PORT) private readonly ai: AiProviderPort,
     private readonly rateLimiter: RateLimiterService,
+    private readonly plans: PublicRepository,
   ) {}
 
   async execute(message: string, history: ChatMessage[], ip: string): Promise<string> {
@@ -99,8 +127,11 @@ export class LandingChatUseCase {
       .map((m) => `${m.role === 'user' ? 'User' : 'Maya'}: ${m.content}`)
       .join('\n');
 
+    const plans = await this.plans.listActivePlans().catch(() => []);
+
     const prompt = [
       SYSTEM_PROMPT,
+      pricingSection(plans),
       historyText ? `\n## Conversation so far\n${historyText}` : '',
       `\nUser: ${message}`,
       `Maya:`,

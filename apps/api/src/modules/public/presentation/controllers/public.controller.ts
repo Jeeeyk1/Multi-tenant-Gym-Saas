@@ -26,10 +26,11 @@ export class PublicController {
     return { reply };
   }
 
-  /** POST /public/signup-requests — landing "Subscribe" lead capture. Rate-limited by IP. */
+  /** POST /public/signup-requests — free-trial lead capture. Same reply for honeypot hits; never echoes the lead. */
   @Post('signup-requests')
   @HttpCode(HttpStatus.CREATED)
-  submitSignupRequest(@Body() dto: CreateSignupRequestDto, @Req() req: Request) {
-    return this.createSignupRequest.execute(dto, req.ip ?? 'unknown');
+  async submitSignupRequest(@Body() dto: CreateSignupRequestDto, @Req() req: Request) {
+    await this.createSignupRequest.execute(dto, req.ip ?? 'unknown');
+    return { received: true };
   }
 }

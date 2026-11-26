@@ -12,15 +12,22 @@ export class CreateSignupRequestDto {
   declare ownerName: string;
 
   @IsEmail()
+  @MaxLength(200)
   declare email: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(30)
-  phone?: string;
+  declare phone: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
   planInterest?: string;
+
+  // Honeypot: only bots fill it.
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  website?: string;
 }

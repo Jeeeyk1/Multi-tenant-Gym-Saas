@@ -6,6 +6,7 @@ export interface CreatePlanInput {
   description?: string;
   priceMonthly: number;
   priceYearly?: number;
+  memberLimit?: number;
   features: string[];
   isPopular?: boolean;
   isActive?: boolean;

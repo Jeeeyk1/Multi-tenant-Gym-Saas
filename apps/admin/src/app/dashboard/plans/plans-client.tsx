@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { clientApi } from '@/lib/client-api';
 
-interface SaasPlan {
+export interface SaasPlan {
   id: string;
   name: string;
   description: string | null;
   priceMonthly: number;
   priceYearly: number | null;
+  memberLimit: number | null;
   features: string[];
   isPopular: boolean;
   isActive: boolean;
@@ -21,6 +22,7 @@ interface FormState {
   description: string;
   priceMonthly: string;
   priceYearly: string;
+  memberLimit: string;
   features: string;
   isPopular: boolean;
   isActive: boolean;
@@ -32,6 +34,7 @@ const EMPTY_FORM: FormState = {
   description: '',
   priceMonthly: '',
   priceYearly: '',
+  memberLimit: '',
   features: '',
   isPopular: false,
   isActive: true,
@@ -44,6 +47,7 @@ function planToForm(p: SaasPlan): FormState {
     description: p.description ?? '',
     priceMonthly: String(p.priceMonthly),
     priceYearly: p.priceYearly != null ? String(p.priceYearly) : '',
+    memberLimit: p.memberLimit != null ? String(p.memberLimit) : '',
     features: p.features.join('\n'),
     isPopular: p.isPopular,
     isActive: p.isActive,
@@ -85,6 +89,7 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
       description: f.description.trim() || undefined,
       priceMonthly: parseFloat(f.priceMonthly),
       priceYearly: f.priceYearly ? parseFloat(f.priceYearly) : undefined,
+      memberLimit: f.memberLimit ? parseInt(f.memberLimit, 10) : undefined,
       features: f.features.split('\n').map((s) => s.trim()).filter(Boolean),
       isPopular: f.isPopular,
       isActive: f.isActive,
@@ -189,6 +194,9 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
               </p>
               {plan.priceYearly && (
                 <p className="text-xs text-muted-foreground">₱{Number(plan.priceYearly).toLocaleString('en-PH', { maximumFractionDigits: 0 })}/yr</p>
+              )}
+              {plan.memberLimit != null && (
+                <p className="text-xs text-muted-foreground">Up to {plan.memberLimit.toLocaleString('en-PH')} members</p>
               )}
             </div>
 
@@ -298,6 +306,22 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
                     value={form.priceYearly}
                     onChange={(e) => setForm((f) => ({ ...f, priceYearly: e.target.value }))}
                     placeholder="24990"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="plan-member-limit" className="block text-xs font-medium text-muted-foreground mb-1">
+                    Member limit <span className="font-normal">(shown as &ldquo;Up to N members&rdquo;)</span>
+                  </label>
+                  <input
+                    id="plan-member-limit"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.memberLimit}
+                    onChange={(e) => setForm((f) => ({ ...f, memberLimit: e.target.value }))}
+                    placeholder="200"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>

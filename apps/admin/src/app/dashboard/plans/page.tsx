@@ -1,18 +1,5 @@
 import { api } from '@/lib/api';
-import { PlansClient } from './plans-client';
-
-interface SaasPlan {
-  id: string;
-  name: string;
-  description: string | null;
-  priceMonthly: number;
-  priceYearly: number | null;
-  features: string[];
-  isPopular: boolean;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-}
+import { PlansClient, type SaasPlan } from './plans-client';
 
 export default async function PlansPage() {
   const plans = await api.get<SaasPlan[]>('/v1/admin/plans').catch(() => [] as SaasPlan[]);

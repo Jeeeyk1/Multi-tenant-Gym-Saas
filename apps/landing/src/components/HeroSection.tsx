@@ -1,290 +1,69 @@
-import { BRAND_NAME } from '@/lib/brand';
+import { DEMO_GYM, DEMO_MEMBER, DEMO_STATS } from '@/lib/demo-data';
+import { FloatingStat } from './mockups/FloatingStat';
+import { HeroPhone } from './mockups/HeroPhone';
+import { RenewalsDashboard } from './mockups/RenewalsDashboard';
+import { ButtonLink } from './ui/ButtonLink';
+import { Container } from './ui/Container';
+import { CheckIcon, TrophyIcon } from './ui/icons';
+import { TrustList } from './ui/TrustList';
+import { motionDelay } from '@/lib/motion';
+
+const TRUST_ITEMS = ['Free trial', 'No credit card required', 'Free setup assistance'];
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden pt-24 pb-16 lg:pb-20 px-6">
-      {/* Dot grid background */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-50"
-        style={{
-          backgroundImage: 'radial-gradient(hsl(var(--border)) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-      {/* Fade the dot grid at the bottom */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-background" />
-
-      <div className="relative max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-
-          {/* ── Left: copy ── */}
-          <div className="flex flex-col items-start max-w-xl">
-            <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 text-sm text-primary font-medium mb-8">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse-slow" />
-              Built for gym owners, by gym people
-            </div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-[64px] font-bold text-foreground tracking-tight leading-[1.08] mb-6">
-              Run your gym{' '}
-              <span className="text-primary">smarter,</span>
-              <br />
-              not harder.
-            </h1>
-
-            <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-              {BRAND_NAME} gives gym owners everything they need — member management,
-              smart check-ins, AI coaching, leaderboards, and real-time analytics
-              — all in one platform.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
-              <a
-                href="#pricing"
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-xl font-semibold text-base hover:bg-primary/90 transition-all duration-200"
-              >
-                Start your free trial
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                </svg>
-              </a>
-              <a
-                href="#features"
-                className="inline-flex items-center gap-2 border border-border text-foreground px-8 py-3.5 rounded-xl font-medium text-base hover:bg-foreground/5 transition-all duration-200"
-              >
-                See features
-              </a>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {['No credit card required', 'Free trial', 'Cancel anytime'].map((item) => (
-                <div key={item} className="flex items-center gap-1.5">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary flex-shrink-0">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  {item}
-                </div>
-              ))}
-            </div>
+    <section id="hero" className="bg-hero overflow-hidden pb-20 pt-14 sm:pb-[104px] sm:pt-20">
+      <Container className="flex flex-wrap items-center gap-14">
+        <div className="flex max-w-full flex-[1_1_440px] flex-col gap-6">
+          <p className="motion-enter font-mono text-[13px] uppercase tracking-eyebrow text-volt" style={motionDelay(0)}>
+            Built for gym owners, by gym people</p>
+          <h1 className="font-display text-[clamp(42px,6vw,68px)] font-extrabold leading-none tracking-[-0.045em] text-white">
+            Keep your members.
+            <br />
+            <span className="text-volt">Lose the logbook.</span>
+          </h1>
+          <p style={motionDelay(2)} className="motion-enter max-w-[520px] text-[19px] leading-relaxed text-ink-on-navy">
+            FitOps runs check-ins, renewals and member engagement, and gives your members an app with your gym&apos;s
+            logo.
+          </p>
+          <div className="motion-enter flex flex-wrap gap-3" style={motionDelay(3)}>
+            <ButtonLink href="#trial" className="h-[52px]">
+              Start free trial
+            </ButtonLink>
+            <ButtonLink href="#members" variant="outline-navy" className="h-[52px]">
+              See the member app
+            </ButtonLink>
           </div>
-
-          {/* ── Right: floating mockups ── */}
-          <div className="hidden lg:block relative h-[580px] select-none">
-
-            {/* Desktop dashboard mockup */}
-            <div className="absolute top-0 right-0 w-[540px] rounded-2xl overflow-hidden border border-border shadow-2xl shadow-foreground/10 bg-surface">
-              {/* Browser bar */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background">
-                <div className="w-3 h-3 rounded-full bg-red-400/60" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
-                <div className="w-3 h-3 rounded-full bg-green-400/60" />
-                <div className="flex-1 bg-surface border border-border rounded-md h-5 ml-3 max-w-[200px] flex items-center px-3">
-                  <span className="text-[10px] text-muted-foreground truncate">app.lifthub.io/dashboard</span>
-                </div>
-              </div>
-
-              {/* Dashboard body */}
-              <div className="flex" style={{ height: '328px' }}>
-                {/* Sidebar */}
-                <div className="w-44 border-r border-border p-3 flex flex-col gap-0.5 bg-surface flex-shrink-0">
-                  <div className="px-2 py-1.5 mb-2">
-                    <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-widest">Iron Forge Gym</p>
-                  </div>
-                  {[
-                    { label: 'Dashboard', active: true },
-                    { label: 'Members' },
-                    { label: 'Check-ins' },
-                    { label: 'Leaderboard' },
-                    { label: 'AI Assistant' },
-                    { label: 'Staff' },
-                    { label: 'Billing' },
-                  ].map(({ label, active }) => (
-                    <div
-                      key={label}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] ${
-                        active ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground'
-                      }`}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-sm flex-shrink-0 ${active ? 'bg-primary' : 'bg-border'}`} />
-                      {label}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Main content — mirrors the real signed-in dashboard */}
-                <div className="flex-1 p-4 bg-background overflow-hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[9px] text-muted-foreground leading-none">Good morning, Maria</p>
-                      <p className="text-xs font-bold text-foreground mt-1">Dashboard</p>
-                    </div>
-                    <span className="text-[8px] px-2 py-1 rounded-full bg-surface border border-border text-muted-foreground">Mon, Jul 27</span>
-                  </div>
-
-                  {/* Stat cards — real dashboard has exactly two: Active Right Now, Total Members */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-surface border border-border border-l-[3px] border-l-primary rounded-lg p-2.5">
-                      <p className="text-[9px] text-muted-foreground leading-none mb-1.5">Active Right Now</p>
-                      <p className="text-lg font-bold text-primary leading-none">14</p>
-                      <p className="text-[8px] text-muted-foreground mt-1">members in gym</p>
-                    </div>
-                    <div className="bg-surface border border-border rounded-lg p-2.5">
-                      <p className="text-[9px] text-muted-foreground leading-none mb-1.5">Total Members</p>
-                      <p className="text-lg font-bold text-foreground leading-none">112</p>
-                      <p className="text-[8px] text-muted-foreground mt-1">enrolled across all plans</p>
-                    </div>
-                  </div>
-
-                  {/* Chart */}
-                  <div className="bg-surface border border-border rounded-lg p-3 mb-3">
-                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Check-ins Trend</p>
-                    <div className="flex items-end gap-1" style={{ height: '40px' }}>
-                      {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-                        <div
-                          key={i}
-                          className={`flex-1 rounded-sm ${i === 5 ? 'bg-primary' : 'bg-primary/20'}`}
-                          style={{ height: `${h}%` }}
-                        />
-                      ))}
-                    </div>
-                    <div className="flex mt-1">
-                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                        <span key={d} className="flex-1 text-center text-[8px] text-muted-foreground">{d}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Currently Active list */}
-                  <div>
-                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Currently Active</p>
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      {[
-                        { initials: 'AR', name: 'Ana Reyes', num: 'MEM-0231', dur: '42m' },
-                        { initials: 'MS', name: 'Marco Santos', num: 'MEM-0198', dur: '18m' },
-                      ].map((m) => (
-                        <div key={m.num} className="flex items-center gap-2 px-2.5 py-1.5 border-b border-border last:border-b-0">
-                          <div className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[7px] font-bold flex items-center justify-center flex-shrink-0">
-                            {m.initials}
-                          </div>
-                          <p className="text-[9px] font-medium text-foreground flex-1 truncate">{m.name}</p>
-                          <p className="text-[8px] text-muted-foreground">{m.dur}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Phone mockup — overlapping bottom-left */}
-            <div className="absolute bottom-0 left-6 w-[158px] rounded-[28px] overflow-hidden border-2 border-border shadow-2xl shadow-foreground/15 bg-background">
-              {/* App header */}
-              <div className="bg-primary px-4 py-2.5 flex items-center justify-between">
-                <span className="text-[10px] text-primary-foreground font-bold tracking-wide">{BRAND_NAME}</span>
-                <div className="w-5 h-5 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                  <span className="text-[8px] text-primary-foreground font-bold">AR</span>
-                </div>
-              </div>
-
-              {/* Leaderboard screen */}
-              <div className="p-3 bg-background">
-                <p className="text-[10px] font-bold text-foreground mb-2.5 flex items-center gap-1.5">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
-                    <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
-                    <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
-                  </svg>
-                  Leaderboard
-                </p>
-                <div className="space-y-1">
-                  {[
-                    { rank: '1', name: 'Ana R.', pts: '2,450', gold: true, you: false },
-                    { rank: '2', name: 'Marco S.', pts: '2,100', gold: false, you: false },
-                    { rank: '3', name: 'Kelly T.', pts: '1,890', gold: false, you: false },
-                    { rank: '4', name: 'You', pts: '1,650', gold: false, you: true },
-                  ].map((r) => (
-                    <div
-                      key={r.rank}
-                      className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg ${r.you ? 'bg-primary/10' : ''}`}
-                    >
-                      <span className={`text-[9px] font-bold w-3 flex-shrink-0 ${r.gold ? 'text-amber-400' : r.you ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {r.rank}
-                      </span>
-                      <div className={`w-5 h-5 rounded-full flex-shrink-0 ${r.gold ? 'bg-amber-400/20' : r.you ? 'bg-primary/20' : 'bg-border'}`} />
-                      <span className={`text-[9px] flex-1 truncate ${r.you ? 'text-primary font-semibold' : 'text-foreground'}`}>{r.name}</span>
-                      <span className="text-[8px] text-muted-foreground">{r.pts}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Badge strip */}
-                <div className="mt-2.5 pt-2.5 border-t border-border">
-                  <p className="text-[8px] text-muted-foreground mb-1.5">Earned badges</p>
-                  <div className="flex gap-1.5">
-                    {[
-                      <path key="flame" d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 1 0 3 2 3 5a5 5 0 0 1-10 0c0-5 3-7 5-11z" />,
-                      <path key="bolt" d="M13 2 4 14h6l-1 8 9-12h-6z" />,
-                      <path key="dumbbell" d="M4 9v6M2 10v4M20 9v6M22 10v4M7 12h10" />,
-                    ].map((path, i) => (
-                      <span key={i} className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          {path}
-                        </svg>
-                      </span>
-                    ))}
-                    <span className="w-7 h-7 bg-border/40 rounded-lg flex items-center justify-center text-[8px] text-muted-foreground font-semibold">+5</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom nav — mirrors the real app's 5 tabs */}
-              <div className="flex justify-around py-2.5 border-t border-border bg-surface">
-                {[
-                  { active: true, d: 'M3 11.5 12 4l9 7.5M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9' },
-                  { active: false, d: 'M6.5 6.5h11M6.5 17.5h11M3 9.5h2v5H3zM19 9.5h2v5h-2z' },
-                  { active: false, d: 'M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4zM10 10h4v4h-10' },
-                  { active: false, d: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zM15 9l-2 6-6 2 2-6z' },
-                  { active: false, d: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1.5-4 5-6 8-6s6.5 2 8 6' },
-                ].map((tab, i) => (
-                  <svg
-                    key={i}
-                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    className={tab.active ? 'text-primary' : 'text-muted-foreground'}
-                  >
-                    <path d={tab.d} />
-                  </svg>
-                ))}
-              </div>
-            </div>
-
-            {/* Floating stat card — top right */}
-            <div className="absolute top-5 right-[-12px] bg-background border border-border rounded-xl shadow-lg shadow-foreground/8 px-3.5 py-2.5 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success">
-                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /><polyline points="16 7 22 7 22 13" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-foreground leading-none">87 check-ins</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">Today · still counting</p>
-              </div>
-            </div>
-
-            {/* Floating stat card — bottom right */}
-            <div className="absolute bottom-28 right-[-16px] bg-background border border-border rounded-xl shadow-lg shadow-foreground/8 px-3.5 py-2.5 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-400/15 flex items-center justify-center flex-shrink-0 text-amber-400">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v5a5 5 0 0 1-10 0z" />
-                  <path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-foreground leading-none">Ana R.</p>
-                <p className="text-[9px] text-muted-foreground mt-0.5">Rank #1 this week</p>
-              </div>
-            </div>
-          </div>
+          <TrustList items={TRUST_ITEMS} tone="navy" className="motion-enter" style={motionDelay(4)} />
         </div>
-      </div>
+
+        <div
+          role="img"
+          aria-label="FitOps staff dashboard showing renewals due this week, next to a gym's branded member app reminding a member to renew."
+          className="motion-enter relative max-w-full flex-[1_1_540px] pb-10"
+          style={motionDelay(3, 120)}
+        >
+          <RenewalsDashboard className="sm:mr-[150px]" />
+          <HeroPhone className="motion-drift absolute bottom-0 right-0 hidden sm:flex" style={motionDelay(10, 150)} />
+          <FloatingStat
+            icon={<CheckIcon className="text-volt" />}
+            iconClassName="bg-volt/15"
+            title={`${DEMO_STATS.checkInsToday} check-ins`}
+            subtitle="Today · still counting"
+            className="motion-drift -top-11 right-[120px] hidden md:flex"
+            style={motionDelay(0)}
+          />
+          <FloatingStat
+            icon={<TrophyIcon />}
+            // #RRGGBB + 26 = 15% opacity.
+            iconStyle={{ color: DEMO_GYM.color, backgroundColor: `${DEMO_GYM.color}26` }}
+            title={DEMO_MEMBER.shortName}
+            subtitle="Rank #1 this week"
+            className="motion-drift -left-7 bottom-16 hidden md:flex"
+            style={motionDelay(20, 150)}
+          />
+        </div>
+      </Container>
     </section>
   );
 }

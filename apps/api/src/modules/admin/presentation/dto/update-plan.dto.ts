@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdatePlanDto {
   @IsString()
@@ -18,6 +18,11 @@ export class UpdatePlanDto {
   @IsOptional()
   @Min(0)
   declare priceYearly?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  declare memberLimit?: number;
 
   @IsArray()
   @IsString({ each: true })

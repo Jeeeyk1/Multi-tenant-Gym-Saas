@@ -6,7 +6,7 @@ export interface CreateSignupRequestInput {
   gymName: string;
   ownerName: string;
   email: string;
-  phone?: string;
+  phone: string;
   planInterest?: string;
 }
 

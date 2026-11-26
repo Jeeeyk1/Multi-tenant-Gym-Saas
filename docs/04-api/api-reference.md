@@ -39,6 +39,7 @@ Authorization: Bearer <token>
   "sub": "<userId>",
   "type": "gym",
   "gymId": "<gymId>",
+  "gymCode": "DEVGYM",
   "roles": ["STAFF"],
   "permissions": ["members.view", "members.details", "announcements.manage", "..."]
 }

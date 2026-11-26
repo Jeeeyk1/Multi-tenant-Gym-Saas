@@ -14,6 +14,10 @@ import {
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
 import { formatApiError } from '../../../lib/format-error';
 import type { RenewalRecord } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { Permission } from '../../../constants/enums';
+import { useEquippedBadgesMap } from '../../../hooks/badges';
+import { BadgeStack } from '../../../components/badges/BadgeStack';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE: COLORS.active,
@@ -195,19 +199,61 @@ function RenewalRow({ record }: { record: RenewalRecord }) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
+/** What a trainer sees: who the member is and whether their membership is active, plus their badges. */
+function BasicMemberView({ name, userId, status, statusColor }: { name: string; userId: string; status: string; statusColor: string }) {
+  const router = useRouter();
+  const equippedQ = useEquippedBadgesMap();
+  const badges = equippedQ.data?.get(userId) ?? [];
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Back to members"
+        >
+          <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+          <Text style={styles.backLabel}>Members</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.profileSection}>
+        <View style={[styles.bigAvatar, { borderColor: COLORS.primary }]}>
+          <Text style={[styles.bigAvatarText, { color: COLORS.primary }]}>{getInitials(name)}</Text>
+        </View>
+        <Text style={styles.fullName}>{name}</Text>
+        <BadgeStack badges={badges} size={22} />
+      </View>
+      <View style={styles.statusCard}>
+        <View style={styles.statusRow}>
+          <Text style={styles.cardLabel}>STATUS</Text>
+          <View style={[styles.statusBadge, { borderColor: statusColor }]}>
+            <Text style={[styles.statusBadgeText, { color: statusColor }]}>{status}</Text>
+          </View>
+        </View>
+      </View>
+      <Text style={styles.basicNote}>Contact details, plan and payments are only visible to the owner and front desk.</Text>
+    </ScrollView>
+  );
+}
+
 export default function MemberDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  const { can } = useAuth();
+  // Trainers see a member's name and status only; the API leaves everything else out.
+  const seesDetails = can(Permission.MEMBERS_DETAILS);
   const memberQ = useStaffMember(id);
-  const renewalsQ = useStaffRenewals(id);
+  const renewalsQ = useStaffRenewals(id, seesDetails);
   const suspendMutation = useSuspendMember();
   const reactivateMutation = useReactivateMember();
   const renewMutation = useRenewMembership(id ?? '');
 
   const member = memberQ.data ?? null;
   const renewals: RenewalRecord[] = renewalsQ.data ?? [];
-  const isLoading = memberQ.isLoading || renewalsQ.isLoading;
+  const isLoading = memberQ.isLoading || (seesDetails && renewalsQ.isLoading);
   const error =
     (memberQ.error as { message?: string } | null)?.message ??
     (renewalsQ.error as { message?: string } | null)?.message ??
@@ -286,9 +332,15 @@ export default function MemberDetailScreen() {
   }
 
   const statusColor = STATUS_COLOR[member.status] ?? COLORS.textMuted;
+
+  if (!seesDetails) {
+    return <BasicMemberView name={member.user.fullName} userId={member.user.id} status={member.status} statusColor={statusColor} />;
+  }
+
   const expired = isExpired(member.expiryDate);
-  const canSuspend = member.status === 'ACTIVE';
-  const canReactivate = member.status === 'SUSPENDED' || member.status === 'EXPIRED';
+  const canRenew = can(Permission.MEMBERS_RENEW);
+  const canSuspend = can(Permission.MEMBERS_SUSPEND) && member.status === 'ACTIVE';
+  const canReactivate = can(Permission.MEMBERS_SUSPEND) && (member.status === 'SUSPENDED' || member.status === 'EXPIRED');
 
   return (
     <>
@@ -358,22 +410,25 @@ export default function MemberDetailScreen() {
         </View>
 
         {/* Actions */}
-        <Text style={styles.sectionLabel}>ACTIONS</Text>
+        {(canRenew || canSuspend || canReactivate) && <Text style={styles.sectionLabel}>ACTIONS</Text>}
+        {(canRenew || canSuspend || canReactivate) && (
         <View style={styles.actionsCard}>
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={() => setRenewModalOpen(true)}
-            disabled={actionLoading}
-            activeOpacity={0.75}
-          >
-            <View style={styles.actionIconWrap}>
-              <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
-            </View>
-            <Text style={styles.actionText}>Renew Membership</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
-          </TouchableOpacity>
+          {canRenew && (
+            <TouchableOpacity
+              style={styles.actionRow}
+              onPress={() => setRenewModalOpen(true)}
+              disabled={actionLoading}
+              activeOpacity={0.75}
+            >
+              <View style={styles.actionIconWrap}>
+                <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
+              </View>
+              <Text style={styles.actionText}>Renew Membership</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
 
-          {(canSuspend || canReactivate) && <View style={styles.divider} />}
+          {canRenew && (canSuspend || canReactivate) && <View style={styles.divider} />}
 
           {canSuspend && (
             <TouchableOpacity
@@ -413,6 +468,7 @@ export default function MemberDetailScreen() {
             </TouchableOpacity>
           )}
         </View>
+        )}
 
         {/* Renewal history */}
         <Text style={styles.sectionLabel}>RENEWAL HISTORY</Text>
@@ -444,6 +500,7 @@ export default function MemberDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  basicNote: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.md, paddingHorizontal: SPACING.lg },
   container: { flex: 1, backgroundColor: COLORS.background },
   content: { paddingBottom: SPACING.xxl },
   centered: {

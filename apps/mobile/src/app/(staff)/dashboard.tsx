@@ -11,6 +11,7 @@ import { usePendingSubmissions } from '../../hooks/leaderboard';
 import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
 import type { StaffCheckIn, MemberListItem } from '../../types';
+import { MEMBER_ROLE, Permission } from '../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -112,7 +113,7 @@ function ActiveRow({
           {item.member.user.fullName}
         </Text>
         <Text style={styles.activeSince}>
-          {item.member.membershipNumber} · {formatElapsed(item.checkedInAt)}
+          {[item.member.membershipNumber, formatElapsed(item.checkedInAt)].filter(Boolean).join(' · ')}
         </Text>
       </View>
       <TouchableOpacity
@@ -133,12 +134,14 @@ function ActiveRow({
 
 export default function StaffDashboardScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const activeCheckInsQ = useActiveCheckIns();
   const membersQ = useStaffMembers();
   const checkOutMutation = useCheckOut();
   const pendingSubmissionsQ = usePendingSubmissions();
-  const canViewReports = user?.permissions.includes('reports.view') ?? false;
+  const canViewReports = can(Permission.REPORTS_VIEW);
+  // Trainers don't receive expiry dates; they get their review queue instead.
+  const seesMemberDetails = can(Permission.MEMBERS_DETAILS);
 
   const activeCheckIns: StaffCheckIn[] = activeCheckInsQ.data ?? [];
   const members: MemberListItem[] = membersQ.data?.data ?? [];
@@ -161,7 +164,7 @@ export default function StaffDashboardScreen() {
   };
 
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
-  const staffRole = user?.roles.find((r) => r !== 'MEMBER') ?? 'STAFF';
+  const staffRole = user?.roles.find((r) => r !== MEMBER_ROLE) ?? 'STAFF';
   const previewList = activeCheckIns.slice(0, 5);
 
   const goToMembers = (filter?: 'active' | 'expiring' | 'expired') =>
@@ -224,14 +227,24 @@ export default function StaffDashboardScreen() {
             label="Total members"
             onPress={() => goToMembers()}
           />
-          <MetricTile
-            icon="time-outline"
-            value={expiringSoon}
-            label="Expiring soon"
-            accent={COLORS.warning}
-            badge="7 days"
-            onPress={() => goToMembers('expiring')}
-          />
+          {seesMemberDetails ? (
+            <MetricTile
+              icon="time-outline"
+              value={expiringSoon}
+              label="Expiring soon"
+              accent={COLORS.warning}
+              badge="7 days"
+              onPress={() => goToMembers('expiring')}
+            />
+          ) : (
+            <MetricTile
+              icon="trophy-outline"
+              value={pendingCount}
+              label="PRs to review"
+              accent={COLORS.warning}
+              onPress={() => router.navigate('/(staff)/leaderboard')}
+            />
+          )}
           <MetricTile
             icon="alert-circle-outline"
             value={expiredCount}
@@ -258,7 +271,8 @@ export default function StaffDashboardScreen() {
         </TouchableOpacity>
 
         {/* Pending reviews — status-colored alert, not another gray row */}
-        {pendingCount > 0 && (
+        {/* Trainers already have a "PRs to review" tile above. */}
+        {seesMemberDetails && pendingCount > 0 && (
           <TouchableOpacity
             style={styles.alert}
             onPress={() => router.push('/(staff)/leaderboard')}

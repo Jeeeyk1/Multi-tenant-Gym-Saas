@@ -12,6 +12,8 @@ import {
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import { formatApiError } from '../../lib/format-error';
 import type { StaffAnnouncement } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { Permission } from '../../constants/enums';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -280,11 +282,12 @@ function AnnouncementCard({
   archiving,
 }: {
   item: StaffAnnouncement;
-  onArchive: (id: string) => void;
+  /** Only passed to staff who can manage announcements. */
+  onArchive?: (id: string) => void;
   archiving: boolean;
 }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
-  const canArchive = item.status === 'PUBLISHED' || item.status === 'SCHEDULED';
+  const canArchive = Boolean(onArchive) && (item.status === 'PUBLISHED' || item.status === 'SCHEDULED');
 
   return (
     <View style={styles.card}>
@@ -331,7 +334,7 @@ function AnnouncementCard({
         {canArchive && (
           <TouchableOpacity
             style={styles.archiveBtn}
-            onPress={() => onArchive(item.id)}
+            onPress={() => onArchive?.(item.id)}
             disabled={archiving}
             activeOpacity={0.75}
           >
@@ -353,6 +356,8 @@ function AnnouncementCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AnnouncementsScreen() {
+  const { can } = useAuth();
+  const canManage = can(Permission.ANNOUNCEMENTS_MANAGE);
   const announcementsQ = useStaffAnnouncements();
   const createMutation = useCreateStaffAnnouncement();
   const archiveMutation = useArchiveStaffAnnouncement();
@@ -429,14 +434,16 @@ export default function AnnouncementsScreen() {
           title="Announcements"
           subtitle={`${announcements.length} total`}
           right={
-            <TouchableOpacity
-              style={[styles.newBtn, { backgroundColor: COLORS.primary }]}
-              onPress={() => setCreateOpen(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={18} color={COLORS.onPrimary} />
-              <Text style={styles.newBtnText}>New</Text>
-            </TouchableOpacity>
+            canManage ? (
+              <TouchableOpacity
+                style={[styles.newBtn, { backgroundColor: COLORS.primary }]}
+                onPress={() => setCreateOpen(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={18} color={COLORS.onPrimary} />
+                <Text style={styles.newBtnText}>New</Text>
+              </TouchableOpacity>
+            ) : undefined
           }
         />
 
@@ -447,7 +454,8 @@ export default function AnnouncementsScreen() {
           contentContainerStyle={styles.tabsRow}
           style={styles.tabsScroll}
         >
-          {STATUS_TABS.map((tab) => {
+          {/* Non-managers only receive published announcements, so the other tabs would always be empty. */}
+          {STATUS_TABS.filter((tab) => canManage || tab.key === undefined || tab.key === 'PUBLISHED').map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <TouchableOpacity
@@ -477,7 +485,7 @@ export default function AnnouncementsScreen() {
           renderItem={({ item }) => (
             <AnnouncementCard
               item={item}
-              onArchive={handleArchive}
+              onArchive={canManage ? handleArchive : undefined}
               archiving={archivingId === item.id}
             />
           )}
@@ -494,7 +502,7 @@ export default function AnnouncementsScreen() {
               <Text style={styles.emptyText}>
                 {activeTab ? `No ${activeTab.toLowerCase()} announcements` : 'No announcements yet'}
               </Text>
-              {!activeTab && (
+              {!activeTab && canManage && (
                 <TouchableOpacity
                   style={styles.emptyAction}
                   onPress={() => setCreateOpen(true)}

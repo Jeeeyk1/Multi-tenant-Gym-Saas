@@ -6,6 +6,8 @@ import { useTheme } from './ThemeContext';
 import { gymService } from '../services/gym.service';
 import { DARK_COLORS } from '../constants/theme';
 import type { AuthUser } from '../types';
+import { MEMBER_ROLE, Permission } from '../constants/enums';
+import { clearPreferredView } from '../lib/preferred-view';
 
 interface GymInfo {
   gymId: string;
@@ -19,6 +21,10 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   isStaff: boolean;
+  /** Staff who also have a membership here (e.g. a trainer who trains at the gym) can switch to the member view. */
+  isAlsoMember: boolean;
+  /** Shows or hides a tool; the API still checks every request. */
+  can: (permission: Permission) => boolean;
   subscriptionLocked: boolean;
   setGymInfo: (info: GymInfo) => void;
   signIn: (gymCode: string, email: string, password: string) => Promise<void>;
@@ -85,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     sessionGymRef.current = null;
     await authService.logout();
+    await clearPreferredView();
     setUser(null);
     setGymInfo(null);
     await themeRef.current.clearGymTheme();
@@ -118,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const refreshed = await authService.refresh();
       if (!refreshed) {
         await clearTokens();
+        await clearPreferredView();
         setIsLoading(false);
         return;
       }
@@ -155,7 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     registerPushToken(gymId).catch(() => {});
   };
 
-  const isStaff = user !== null && !user.roles.every((r) => r === 'MEMBER');
+  const isStaff = user !== null && !user.roles.every((r) => r === MEMBER_ROLE);
+  const isAlsoMember = isStaff && user.roles.includes(MEMBER_ROLE);
+  const can = useCallback((permission: Permission) => user?.permissions.includes(permission) ?? false, [user]);
 
   return (
     <AuthContext.Provider
@@ -165,6 +175,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: user !== null,
         isStaff,
+        isAlsoMember,
+        can,
         subscriptionLocked,
         setGymInfo,
         signIn,

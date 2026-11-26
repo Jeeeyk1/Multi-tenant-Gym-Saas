@@ -6,6 +6,10 @@ the NestJS API (PM2 cluster), and the Next.js web dashboard on one CPX31 (4 vCPU
 The mobile app is distributed via EAS Build / App Store — it is **not** deployed to this server.
 See `docs/deployment/mobile-release.md` when that time comes.
 
+> **Security target:** `docs/deployment/infrastructure-security.md` describes how production should be
+> protected. It uses Cloudflare Tunnel (no open ports), SSH over Tailscale, Cloudflare Access in front of the admin app, and least-privilege
+> Postgres roles. Where this guide differs (Nginx + Certbot, ports 80/443 open), follow that document.
+
 ---
 
 ## 1. Server provisioning
@@ -282,7 +286,8 @@ server {
         proxy_set_header   Connection 'upgrade';
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Overwrite, don't append: a client-supplied X-Forwarded-For must never reach the API.
+        proxy_set_header   X-Forwarded-For $remote_addr;
         proxy_set_header   X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         # Allow large file uploads (exercise photos, meal photos)

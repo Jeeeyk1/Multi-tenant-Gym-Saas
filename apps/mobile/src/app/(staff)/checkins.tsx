@@ -58,7 +58,7 @@ function CheckInRow({
       <View style={styles.rowInfo}>
         <Text style={styles.rowName} numberOfLines={1}>{item.member.user.fullName}</Text>
         <Text style={styles.rowSub}>
-          {item.member.membershipNumber} · In at {formatTime(item.checkedInAt)} · {formatElapsed(item.checkedInAt)}
+          {[item.member.membershipNumber, `In at ${formatTime(item.checkedInAt)}`, formatElapsed(item.checkedInAt)].filter(Boolean).join(' · ')}
         </Text>
       </View>
       <TouchableOpacity
@@ -103,7 +103,7 @@ function MemberRow({
       </View>
       <View style={styles.memberInfo}>
         <Text style={styles.memberName} numberOfLines={1}>{item.user.fullName}</Text>
-        <Text style={styles.memberSub}>{item.membershipNumber}</Text>
+        {item.membershipNumber ? <Text style={styles.memberSub}>{item.membershipNumber}</Text> : null}
       </View>
       <View style={[styles.statusDot, { backgroundColor: statusColor(item.status) }]} />
       {isLoading ? (

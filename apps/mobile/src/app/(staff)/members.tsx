@@ -8,6 +8,8 @@ import { StaffHeader } from '../../components/StaffHeader';
 import { useStaffMembers } from '../../hooks/staff';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
 import type { MemberListItem } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { Permission } from '../../constants/enums';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE: COLORS.active,
@@ -42,7 +44,8 @@ function isExpiring(m: MemberListItem): boolean {
   return m.status === 'ACTIVE' && daysUntil(m.expiryDate) >= 0 && daysUntil(m.expiryDate) <= 7;
 }
 
-function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => void }) {
+/** Without members.details (trainers) the API sends only name and status, so details are hidden. */
+function MemberRow({ item, showDetails, onPress }: { item: MemberListItem; showDetails: boolean; onPress: () => void }) {
   const statusColor = STATUS_COLOR[item.status] ?? COLORS.textMuted;
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
@@ -53,16 +56,18 @@ function MemberRow({ item, onPress }: { item: MemberListItem; onPress: () => voi
         <Text style={styles.memberName} numberOfLines={1}>
           {item.user.fullName}
         </Text>
-        <Text style={styles.memberSub} numberOfLines={1}>
-          {item.membershipNumber}
-          {item.membershipPlan ? ` · ${item.membershipPlan.name}` : ''}
-        </Text>
+        {showDetails && (
+          <Text style={styles.memberSub} numberOfLines={1}>
+            {item.membershipNumber}
+            {item.membershipPlan ? ` · ${item.membershipPlan.name}` : ''}
+          </Text>
+        )}
       </View>
       <View style={styles.rowRight}>
         <View style={[styles.statusBadge, { backgroundColor: statusColor + '1F' }]}>
           <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
         </View>
-        <Text style={styles.expiryText}>Exp {formatExpiry(item.expiryDate)}</Text>
+        {showDetails && <Text style={styles.expiryText}>Exp {formatExpiry(item.expiryDate)}</Text>}
       </View>
       <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
     </TouchableOpacity>
@@ -73,17 +78,21 @@ export default function MembersScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ filter?: string }>();
   const membersQ = useStaffMembers();
+  const { can } = useAuth();
+  const showDetails = can(Permission.MEMBERS_DETAILS);
+  // "Expiring" needs expiry dates, which only staff with members.details receive.
+  const filters = useMemo(() => (showDetails ? FILTERS : FILTERS.filter((f) => f.key !== 'expiring')), [showDetails]);
   const [search, setSearch] = useState('');
-  const initialFilter = (FILTERS.some((f) => f.key === params.filter) ? params.filter : 'all') as MemberFilter;
+  const initialFilter = (filters.some((f) => f.key === params.filter) ? params.filter : 'all') as MemberFilter;
   const [filter, setFilter] = useState<MemberFilter>(initialFilter);
 
   // Tabs stay mounted, so a fresh `filter` param from the dashboard tiles must be
   // applied on navigation — not only on first mount.
   useEffect(() => {
-    if (FILTERS.some((f) => f.key === params.filter)) {
+    if (filters.some((f) => f.key === params.filter)) {
       setFilter(params.filter as MemberFilter);
     }
-  }, [params.filter]);
+  }, [params.filter, filters]);
 
   const members: MemberListItem[] = membersQ.data?.data ?? [];
   const total = membersQ.data?.meta.total ?? members.length;
@@ -155,7 +164,7 @@ export default function MembersScreen() {
         contentContainerStyle={styles.chipsRow}
         style={styles.chipsScroll}
       >
-        {FILTERS.map((f) => {
+        {filters.map((f) => {
           const active = filter === f.key;
           const statusTint =
             f.key === 'expiring' ? COLORS.suspended : f.key === 'expired' ? COLORS.expired : undefined;
@@ -199,6 +208,7 @@ export default function MembersScreen() {
           <View style={index < filtered.length - 1 ? styles.rowBorder : undefined}>
             <MemberRow
               item={item}
+              showDetails={showDetails}
               onPress={() => router.push({ pathname: '/(staff)/member/[id]', params: { id: item.id } })}
             />
           </View>

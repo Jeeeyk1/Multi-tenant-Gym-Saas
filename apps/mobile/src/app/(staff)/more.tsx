@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { StaffHeader } from '../../components/StaffHeader';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
+import { setPreferredView } from '../../lib/preferred-view';
+import { MEMBER_ROLE, Permission } from '../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,21 +25,27 @@ function getInitials(name: string): string {
 
 export default function MoreScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAlsoMember, can } = useAuth();
 
-  const staffRoles = user?.roles.filter((r) => r !== 'MEMBER') ?? [];
+  async function switchToMemberView() {
+    await setPreferredView('member');
+    // Through the launch screen, so onboarding still runs for a member who hasn't done it.
+    router.replace('/');
+  }
+
+  const staffRoles = user?.roles.filter((r) => r !== MEMBER_ROLE) ?? [];
   const firstName = user?.fullName?.split(' ')[0] ?? 'Staff';
   const initials = user?.fullName ? getInitials(user.fullName) : '??';
 
-  const allTools: { label: string; icon: IoniconsName; route: string; permission?: string }[] = [
-    { label: 'Renewals', icon: 'refresh-outline', route: '/(staff)/renewals', permission: 'members.renew' },
-    { label: 'Chat', icon: 'chatbubbles-outline', route: '/(staff)/chat', permission: 'chat.manage' },
-    { label: 'Badges', icon: 'ribbon-outline', route: '/(staff)/badges', permission: 'badges.award' },
-    { label: 'Plans', icon: 'pricetags-outline', route: '/(staff)/plans', permission: 'plans.view' },
+  const allTools: { label: string; icon: IoniconsName; route: string; permission?: Permission }[] = [
+    { label: 'Renewals', icon: 'refresh-outline', route: '/(staff)/renewals', permission: Permission.MEMBERS_RENEW },
+    { label: 'Chat', icon: 'chatbubbles-outline', route: '/(staff)/chat', permission: Permission.CHAT_MANAGE },
+    { label: 'Badges', icon: 'ribbon-outline', route: '/(staff)/badges', permission: Permission.BADGES_AWARD },
+    { label: 'Plans', icon: 'pricetags-outline', route: '/(staff)/plans', permission: Permission.PLANS_VIEW },
     { label: 'Leaderboard', icon: 'trophy-outline', route: '/(staff)/leaderboard' },
-    { label: 'AI Assistant', icon: 'sparkles-outline', route: '/(staff)/insights', permission: 'insights.query' },
+    { label: 'AI Assistant', icon: 'sparkles-outline', route: '/(staff)/insights', permission: Permission.INSIGHTS_QUERY },
   ];
-  const tools = allTools.filter((t) => !t.permission || (user?.permissions.includes(t.permission) ?? false));
+  const tools = allTools.filter((t) => !t.permission || can(t.permission));
 
   return (
     <View style={styles.container}>
@@ -92,6 +100,23 @@ export default function MoreScreen() {
           <Text style={styles.infoValue}>{user?.permissions.length ?? 0} granted</Text>
         </View>
       </View>
+
+      {isAlsoMember && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>YOUR MEMBERSHIP</Text>
+          <TouchableOpacity
+            style={styles.navRow}
+            onPress={switchToMemberView}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityHint="Opens the member app: your workouts, check-in and membership"
+          >
+            <Ionicons name="swap-horizontal-outline" size={18} color={COLORS.textMuted} />
+            <Text style={styles.navLabel}>Switch to member view</Text>
+            <Ionicons name="chevron-forward" size={15} color={COLORS.border} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={signOut} activeOpacity={0.75}>

@@ -29,6 +29,7 @@ import { onAccent } from '../../theme/accent';
 import { PoweredByFitOps } from '../../components/Logo';
 import { APP_VERSION, PRIVACY_URL, TERMS_URL, VERSOLUTIONS_URL } from '../../constants/brand';
 import type { ColorPalette } from '../../constants/theme';
+import { setPreferredView } from '../../lib/preferred-view';
 
 // ─── Display label maps ───────────────────────────────────────────────────────
 
@@ -440,7 +441,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   // Tab screens hide the header, so keep content clear of the notch / status bar.
   const insets = useSafeAreaInsets();
-  const { user, gymInfo, signOut } = useAuth();
+  const { user, gymInfo, signOut, isStaff } = useAuth();
   const { theme, toggleColorScheme } = useTheme();
   const C = theme.colors;
 
@@ -496,6 +497,11 @@ export default function ProfileScreen() {
       paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm,
     },
     signOutText: { color: onAccent(C.error), fontSize: 16, ...FONT.semibold },
+    switchViewBtn: {
+      borderRadius: RADIUS.button, borderWidth: 1, borderColor: C.border,
+      paddingVertical: SPACING.md, alignItems: 'center', marginTop: SPACING.sm,
+    },
+    switchViewText: { color: C.text, fontSize: 16, ...FONT.semibold },
     gymCard: {
       flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
       backgroundColor: C.surface, borderRadius: RADIUS.xl,
@@ -640,6 +646,19 @@ export default function ProfileScreen() {
             thumbColor="#fff"
           />
         </Pressable>
+
+        {isStaff && (
+          <Pressable
+            style={({ pressed }) => [s.switchViewBtn, pressed && { opacity: 0.85 }]}
+            onPress={async () => {
+              await setPreferredView('staff');
+              router.replace('/(staff)/dashboard');
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={s.switchViewText}>Switch to staff view</Text>
+          </Pressable>
+        )}
 
         {/* Sign out */}
         <Pressable

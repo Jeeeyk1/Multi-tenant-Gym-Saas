@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform, StyleSheet } from 'react-native';
 import { STAFF_COLORS as COLORS } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
+import { Permission } from '../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -27,7 +28,7 @@ function TabIcon({
 }
 
 export default function StaffLayout() {
-  const { isAuthenticated, isLoading, isStaff } = useAuth();
+  const { isAuthenticated, isLoading, isStaff, can } = useAuth();
 
   if (!isLoading && !isAuthenticated) {
     return <Redirect href="/(auth)/entry" />;
@@ -61,6 +62,8 @@ export default function StaffLayout() {
       <Tabs.Screen
         name="checkins"
         options={{
+          // Gyms are set up differently: a tab only shows when the person's role can use it.
+          href: can(Permission.CHECKINS_VIEW) ? undefined : null,
           title: 'Check-ins',
           tabBarIcon: ({ focused }) => (
             <TabIcon
@@ -74,6 +77,7 @@ export default function StaffLayout() {
       <Tabs.Screen
         name="members"
         options={{
+          href: can(Permission.MEMBERS_VIEW) ? undefined : null,
           title: 'Members',
           tabBarIcon: ({ focused }) => (
             <TabIcon iconFocused="people" iconUnfocused="people-outline" focused={focused} />

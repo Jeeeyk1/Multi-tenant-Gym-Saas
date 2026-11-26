@@ -84,3 +84,25 @@ export enum BadgeRarity {
   EPIC      = 'EPIC',
   LEGENDARY = 'LEGENDARY',
 }
+
+/** Permission keys the app checks to show or hide tools. The API enforces them; this only shapes the UI. */
+export enum Permission {
+  MEMBERS_VIEW         = 'members.view',
+  MEMBERS_DETAILS      = 'members.details',
+  MEMBERS_CREATE       = 'members.create',
+  MEMBERS_RENEW        = 'members.renew',
+  MEMBERS_SUSPEND      = 'members.suspend',
+  CHECKINS_VIEW        = 'checkins.view',
+  CHECKINS_MANAGE      = 'checkins.manage',
+  ANNOUNCEMENTS_MANAGE = 'announcements.manage',
+  CHAT_MANAGE          = 'chat.manage',
+  PLANS_VIEW           = 'plans.view',
+  LEADERBOARD_REVIEW   = 'leaderboard.review',
+  LEADERBOARD_MANAGE   = 'leaderboard.manage',
+  BADGES_AWARD         = 'badges.award',
+  REPORTS_VIEW         = 'reports.view',
+  INSIGHTS_QUERY       = 'insights.query',
+}
+
+/** Not a stored role: in the token of anyone with a membership at the gym. */
+export const MEMBER_ROLE = 'MEMBER';

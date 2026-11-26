@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { RenewalsRepository } from '../../infrastructure/persistence/renewals.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess } from '../../../../common/auth/authorization';
 
 @Injectable()
 export class ListMyRenewalsUseCase {
   constructor(private readonly repo: RenewalsRepository) {}
 
   async execute(gymId: string, caller: AuthenticatedUser) {
-    if (caller.type === 'gym' && caller.gymId !== gymId) {
-      throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-    }
+    assertGymAccess(caller, gymId);
 
     const member = await this.repo.findMemberByUserId(caller.sub, gymId);
     if (!member) {

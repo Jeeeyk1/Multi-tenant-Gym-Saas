@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ForbiddenError, TooManyRequestsError } from '../../../../common/errors';
+import { TooManyRequestsError } from '../../../../common/errors';
 import { LLM_PORT, type LlmPort } from '../ports/llm.port';
 import { ToolRegistry } from '../tools/tool-registry';
 import { EntitlementsService } from '../entitlements.service';
@@ -7,6 +7,8 @@ import { RateLimiterService } from '../../../../common/rate-limiter/rate-limiter
 import { InsightsRepository } from '../../infrastructure/persistence/insights.repository';
 import type { LlmContent, LlmMessage } from '../../domain/llm.types';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 const MAX_STEPS = 5;
 const RATE_LIMIT = 15;
@@ -45,7 +47,7 @@ export class AnswerQueryUseCase {
     caller: AuthenticatedUser,
   ): Promise<InsightsQueryResult> {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'insights.query');
+    assertPermission(caller, Permission.INSIGHTS_QUERY);
 
     const allowed = await this.rateLimiter.hit(`insights:rate:${caller.sub}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
     if (!allowed) {
@@ -106,16 +108,4 @@ function textOf(message: LlmMessage): string {
     .map((block) => block.text)
     .join('')
     .trim();
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
-  }
 }

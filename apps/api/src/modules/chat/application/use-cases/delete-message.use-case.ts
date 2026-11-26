@@ -3,6 +3,8 @@ import { ChatRepository } from '../../infrastructure/persistence/chat.repository
 import { NotFoundError } from '../../../../common/errors/not-found.error';
 import { ForbiddenError } from '../../../../common/errors/forbidden.error';
 import type { GymAuthUser } from '../../../../common/types/auth.types';
+import { hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class DeleteMessageUseCase {
@@ -30,7 +32,7 @@ export class DeleteMessageUseCase {
     }
 
     const isSender = message.senderId === caller.sub;
-    const canModerate = caller.permissions.includes('chat.manage');
+    const canModerate = hasPermission(caller, Permission.CHAT_MANAGE);
     if (!isSender && !canModerate) {
       throw new ForbiddenError('Cannot delete this message', 'MESSAGE_CANNOT_DELETE');
     }

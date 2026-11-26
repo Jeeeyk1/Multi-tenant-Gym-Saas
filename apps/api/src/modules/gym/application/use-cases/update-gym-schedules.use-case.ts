@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ForbiddenError, ValidationError } from '../../../../common/errors';
 import { GymRepository } from '../../infrastructure/persistence/gym.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface ScheduleInput {
   dayOfWeek: number;
@@ -29,7 +31,7 @@ export class UpdateGymSchedulesUseCase {
       if (caller.gymId !== gymId) {
         throw new ForbiddenError('Access denied', 'GYM_ACCESS_DENIED');
       }
-      if (!caller.permissions.includes('gym.settings')) {
+      if (!hasPermission(caller, Permission.GYM_SETTINGS)) {
         throw new ForbiddenError(
           'gym.settings permission required',
           'PERMISSION_DENIED',

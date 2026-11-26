@@ -4,6 +4,8 @@ import { AnnouncementsRepository } from '../../infrastructure/persistence/announ
 import { CacheService } from '../../../../common/cache/cache.service';
 import { publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface UpdateAnnouncementInput {
   title?: string;
@@ -29,7 +31,7 @@ export class UpdateAnnouncementUseCase {
     caller: AuthenticatedUser,
   ) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'announcements.manage');
+    assertPermission(caller, Permission.ANNOUNCEMENTS_MANAGE);
 
     const announcement = await this.repo.findById(announcementId, gymId);
     if (!announcement) {
@@ -63,16 +65,4 @@ export class UpdateAnnouncementUseCase {
 function resolveStatus(publishAt?: Date): string {
   if (!publishAt || publishAt <= new Date()) return 'PUBLISHED';
   return 'SCHEDULED';
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
-  }
 }

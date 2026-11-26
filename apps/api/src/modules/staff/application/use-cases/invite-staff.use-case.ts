@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ConflictError, ForbiddenError } from '../../../../common/errors';
+import { ConflictError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface InviteStaffInput {
   email: string;
@@ -15,7 +17,7 @@ export class InviteStaffUseCase {
 
   async execute(gymId: string, input: InviteStaffInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertStaffManage(caller);
+    assertPermission(caller, Permission.STAFF_MANAGE);
 
     // Check if a user with this email already exists
     const existingUser = await this.repo.findUserByEmail(input.email);
@@ -45,17 +47,5 @@ export class InviteStaffUseCase {
       userId: result.userId,
       inviteToken: result.inviteToken,
     };
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertStaffManage(caller: AuthenticatedUser) {
-  if (caller.type === 'gym' && !caller.permissions.includes('staff.manage')) {
-    throw new ForbiddenError('Missing permission: staff.manage', 'PERMISSION_DENIED');
   }
 }

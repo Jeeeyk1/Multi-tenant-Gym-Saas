@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
-import { PrSubmissionStatus, PrSubmissionType } from '../../../../common/enums';
+import { PrSubmissionStatus, PrSubmissionType, Permission } from '../../../../common/enums';
 import { calculateEstimated1rm } from '../../domain/pr-calculator';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { leaderboardCacheKey } from '../leaderboard-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 
 export interface SubmitPrInput {
   exerciseId: string;
@@ -30,9 +31,9 @@ export class SubmitPrUseCase {
     const isStaffSubmission = !!input.targetMemberId;
 
     if (isStaffSubmission) {
-      assertPermission(caller, 'leaderboard.review');
+      assertPermission(caller, Permission.LEADERBOARD_REVIEW);
     } else {
-      assertPermission(caller, 'leaderboard.submit');
+      assertPermission(caller, Permission.LEADERBOARD_SUBMIT);
     }
 
     // Resolve the member being submitted for
@@ -89,17 +90,5 @@ export class SubmitPrUseCase {
     }
 
     return submission;
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

@@ -4,6 +4,8 @@ import { CheckInsRepository } from '../../infrastructure/persistence/check-ins.r
 import { isOutOfHours } from '../../domain/schedule-validator';
 import { BadgesService } from '../../../badges/badges.service';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 const VALID_METHODS = ['MANUAL_STAFF', 'QR_STAFF_SCAN', 'QR_SELF_SCAN', 'APP_SELF_CHECKIN'] as const;
 type CheckInMethod = (typeof VALID_METHODS)[number];
@@ -34,9 +36,9 @@ export class CheckInUseCase {
     const isSelfMethod = (SELF_METHODS as string[]).includes(method);
 
     if (isStaffMethod) {
-      assertPermission(caller, 'checkins.manage');
+      assertPermission(caller, Permission.CHECKINS_MANAGE);
     } else if (isSelfMethod) {
-      assertPermission(caller, 'checkins.self');
+      assertPermission(caller, Permission.CHECKINS_SELF);
     }
 
     // Load gym context (timezone, schedules, auto_checkout_hours)
@@ -120,17 +122,5 @@ export class CheckInUseCase {
         return this.repo.findMemberByUserId(caller.sub, gymId);
       }
     }
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

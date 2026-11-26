@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
-import { PrSubmissionStatus } from '../../../../common/enums';
+import { PrSubmissionStatus, Permission } from '../../../../common/enums';
 import { LeaderboardRepository } from '../../infrastructure/persistence/leaderboard.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
 
 @Injectable()
 export class RejectSubmissionUseCase {
@@ -15,7 +16,7 @@ export class RejectSubmissionUseCase {
     reason: string,
   ) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'leaderboard.review');
+    assertPermission(caller, Permission.LEADERBOARD_REVIEW);
 
     const submission = await this.repo.findSubmissionById(submissionId, gymId);
     if (!submission) {
@@ -25,17 +26,5 @@ export class RejectSubmissionUseCase {
       throw new ForbiddenError('Submission is not pending', 'SUBMISSION_NOT_PENDING');
     }
     return this.repo.rejectSubmission(submissionId, caller.sub, reason);
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

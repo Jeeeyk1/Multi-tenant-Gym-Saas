@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface CreateMilestoneBadgeInput {
   exerciseId: string;
@@ -18,7 +20,7 @@ export class CreateMilestoneBadgeUseCase {
 
   async execute(gymId: string, input: CreateMilestoneBadgeInput, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertPermission(caller, 'badges.manage');
+    assertPermission(caller, Permission.BADGES_MANAGE);
 
     // A global lift or one of this gym's own.
     const exercise = await this.repo.findExerciseForGym(gymId, input.exerciseId);
@@ -28,17 +30,5 @@ export class CreateMilestoneBadgeUseCase {
       ...input,
       createdByUserId: caller.sub,
     });
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertPermission(caller: AuthenticatedUser, permission: string) {
-  if (caller.type === 'gym' && !caller.permissions.includes(permission)) {
-    throw new ForbiddenError(`Missing permission: ${permission}`, 'PERMISSION_DENIED');
   }
 }

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { StaffRepository } from '../../infrastructure/persistence/staff.repository';
 import { assertCanManageStaff } from '../../domain/staff-management.rules';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class RemoveRoleUseCase {
@@ -10,7 +12,7 @@ export class RemoveRoleUseCase {
 
   async execute(gymId: string, staffId: string, roleId: string, caller: AuthenticatedUser) {
     assertGymAccess(caller, gymId);
-    assertStaffManage(caller);
+    assertPermission(caller, Permission.STAFF_MANAGE);
 
     const staff = await this.repo.findStaffById(staffId, gymId);
     if (!staff) {
@@ -26,17 +28,5 @@ export class RemoveRoleUseCase {
     }
 
     await this.repo.removeRole(staffId, roleId);
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-  }
-}
-
-function assertStaffManage(caller: AuthenticatedUser) {
-  if (caller.type === 'gym' && !caller.permissions.includes('staff.manage')) {
-    throw new ForbiddenError('Missing permission: staff.manage', 'PERMISSION_DENIED');
   }
 }

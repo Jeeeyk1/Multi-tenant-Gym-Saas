@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../../../common/errors';
+import { NotFoundError, ValidationError } from '../../../../common/errors';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { isValidLadder, ladderBadgeDescription, ladderBadgeName, type LadderWeights } from '../../domain/lift-ladder';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, assertPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 export interface SaveLadderInput {
   enabled: boolean;
@@ -17,12 +19,8 @@ export class SaveLadderUseCase {
   constructor(private readonly repo: BadgesRepository) {}
 
   async execute(gymId: string, exerciseId: string, input: SaveLadderInput, caller: AuthenticatedUser): Promise<void> {
-    if (caller.type === 'gym' && caller.gymId !== gymId) {
-      throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-    }
-    if (caller.type === 'gym' && !caller.permissions.includes('badges.manage')) {
-      throw new ForbiddenError('Missing permission: badges.manage', 'PERMISSION_DENIED');
-    }
+    assertGymAccess(caller, gymId);
+    assertPermission(caller, Permission.BADGES_MANAGE);
 
     const exercise = await this.repo.findExerciseForGym(gymId, exerciseId);
     if (!exercise) throw new NotFoundError('Exercise not found', 'EXERCISE_NOT_FOUND');

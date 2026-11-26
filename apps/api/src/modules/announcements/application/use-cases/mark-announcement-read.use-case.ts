@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError, NotFoundError } from '../../../../common/errors';
+import { NotFoundError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess } from '../../../../common/auth/authorization';
 
 @Injectable()
 export class MarkAnnouncementReadUseCase {
@@ -18,11 +19,5 @@ export class MarkAnnouncementReadUseCase {
     await this.repo.markRead(announcementId, caller.sub);
 
     return { ok: true };
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
   }
 }

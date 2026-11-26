@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { ForbiddenError } from '../../../../common/errors';
 import { AnnouncementsRepository } from '../../infrastructure/persistence/announcements.repository';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { ANNOUNCEMENTS_TTL_SECONDS, publishedAnnouncementsCacheKey } from '../announcements-cache';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, hasPermission } from '../../../../common/auth/authorization';
+import { Permission } from '../../../../common/enums';
 
 @Injectable()
 export class ListAnnouncementsUseCase {
@@ -16,7 +17,7 @@ export class ListAnnouncementsUseCase {
     assertGymAccess(caller, gymId);
 
     const canManage =
-      caller.type === 'org' || caller.permissions.includes('announcements.manage');
+      hasPermission(caller, Permission.ANNOUNCEMENTS_MANAGE);
 
     // Members (no manage permission) may only see PUBLISHED — the hot, cacheable path.
     if (!canManage) {
@@ -27,11 +28,5 @@ export class ListAnnouncementsUseCase {
 
     // Managers get variable filters (low traffic) — not cached.
     return this.repo.listByGym(gymId, statusFilter);
-  }
-}
-
-function assertGymAccess(caller: AuthenticatedUser, gymId: string) {
-  if (caller.type === 'gym' && caller.gymId !== gymId) {
-    throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
   }
 }

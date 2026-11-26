@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ForbiddenError, NotFoundError } from '../../../../common/errors';
-import { BadgeCategory, BadgeCriteriaType } from '../../../../common/enums';
+import { BadgeCategory, BadgeCriteriaType, Permission } from '../../../../common/enums';
 import { CacheService } from '../../../../common/cache/cache.service';
 import { BadgesRepository } from '../../infrastructure/persistence/badges.repository';
 import { catalogProgress, type Progress } from '../../domain/badge-stats';
@@ -9,6 +9,7 @@ import { loadBadgeStats } from '../badge-stats-loader';
 import { LadderService } from '../ladder.service';
 import { CheckAutoBadgesUseCase } from './check-auto-badges.use-case';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
+import { assertGymAccess, hasPermission } from '../../../../common/auth/authorization';
 
 const RARITY_TTL_SECONDS = 3600;
 const CATEGORY_ORDER = [BadgeCategory.CONSISTENCY, BadgeCategory.LOYALTY, BadgeCategory.STRENGTH];
@@ -76,14 +77,12 @@ export class GetBadgeCollectionUseCase {
   ) {}
 
   async execute(gymId: string, memberId: string, caller: AuthenticatedUser): Promise<BadgeCollection> {
-    if (caller.type === 'gym' && caller.gymId !== gymId) {
-      throw new ForbiddenError('Access denied to this gym', 'GYM_ACCESS_DENIED');
-    }
+    assertGymAccess(caller, gymId);
     const member = await this.repo.findMemberInGym(gymId, memberId);
     if (!member) throw new NotFoundError('Member not found in this gym', 'MEMBER_NOT_FOUND');
     const self = caller.type === 'gym' ? await this.repo.findMemberByUserId(gymId, caller.sub) : null;
     const isSelf = self?.id === memberId;
-    if (caller.type === 'gym' && !isSelf && !caller.permissions.includes('members.view')) {
+    if (caller.type === 'gym' && !isSelf && !hasPermission(caller, Permission.MEMBERS_VIEW)) {
       throw new ForbiddenError("Cannot view another member's badges", 'FORBIDDEN');
     }
 

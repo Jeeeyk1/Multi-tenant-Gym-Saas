@@ -27,3 +27,4 @@ export { FitnessPlanInputProblem } from './fitness-plan-input-problem.enum';
 export { AiFeature } from './ai-feature.enum';
 export { MealStyle } from './meal-style.enum';
 export { BadgeCategory } from './badge-category.enum';
+export { Permission } from './permission.enum';

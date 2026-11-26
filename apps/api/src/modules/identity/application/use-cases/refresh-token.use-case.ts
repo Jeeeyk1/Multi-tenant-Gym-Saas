@@ -40,12 +40,13 @@ export class RefreshTokenUseCase {
         orgRole: member.role as OrgAuthUser['orgRole'],
       };
     } else if (context.type === 'gym' && context.gymId) {
-      const [staff, member] = await Promise.all([
+      const [staff, member, overrides] = await Promise.all([
         this.repo.findGymStaffWithPermissions(stored.userId, context.gymId),
         this.repo.findGymMember(stored.userId, context.gymId),
+        this.repo.findGymRoleOverrides(context.gymId),
       ]);
       // Same rule as login: no longer staff and not a member means no new tokens.
-      const claims = gymClaims(staff, Boolean(member));
+      const claims = gymClaims(staff, Boolean(member), overrides);
       if (!claims) throw new TokenInvalidError();
       payload = { sub: stored.userId, type: 'gym', gymId: context.gymId, ...claims };
     } else {

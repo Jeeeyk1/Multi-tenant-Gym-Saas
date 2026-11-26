@@ -12,6 +12,7 @@ const mockRepo = {
   findUserByEmail: jest.fn(),
   findGymStaffWithPermissions: jest.fn(),
   findGymMember: jest.fn(),
+  findGymRoleOverrides: jest.fn().mockResolvedValue([]),
   generateRefreshTokenPair: jest.fn().mockReturnValue({ raw: 'raw-token', hash: 'hash' }),
   saveRefreshToken: jest.fn().mockResolvedValue(undefined),
 } as unknown as IdentityRepository;

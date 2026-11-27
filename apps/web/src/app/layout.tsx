@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Manrope, Inter, JetBrains_Mono } from 'next/font/google';
 import { UIProviders } from '@/providers/ui-providers';
+import '@gym-saas/ui/tokens.css';
 import './globals.css';
 
 // Headings and large numbers only; Inter carries all other text.

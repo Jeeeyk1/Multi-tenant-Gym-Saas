@@ -13,25 +13,53 @@ import { Text } from '../Text';
 
 const DOCK_HEIGHT = 58;
 
+/** Colours the dock draws with. Members get the gym's theme; staff pass their fixed palette. */
+export interface DockPalette {
+  background: string;
+  surface: string;
+  border: string;
+  /** Active icon. */
+  accent: string;
+  /** Active tab's tint. */
+  accentMuted: string;
+  /** Active label. */
+  label: string;
+  inactive: string;
+  badge: string;
+}
+
 /**
  * Floating tab bar. The active tab widens and shows its label; the others show only the icon.
  * Icons come from each screen's `tabBarIcon` option, labels from `title`. `tabBarBadge` shows a count;
  * an empty string shows a small status dot in `tabBarBadgeStyle.backgroundColor`.
  */
-export function DockTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function DockTabBar({ state, descriptors, navigation, palette }: BottomTabBarProps & { palette?: DockPalette }) {
   const { theme } = useTheme();
   const C = theme.colors;
   const insets = useSafeAreaInsets();
   const keyboardOpen = useAndroidKeyboardOpen();
+  const P: DockPalette = palette ?? {
+    background: C.background,
+    surface: C.surface,
+    border: C.border,
+    accent: theme.primary,
+    accentMuted: theme.primaryMuted,
+    // A light gym colour (e.g. volt) is unreadable as text on a white dock, so light mode labels use body text.
+    label: theme.colorScheme === 'dark' ? theme.primary : C.text,
+    inactive: C.textMuted,
+    badge: C.error,
+  };
 
   // On Android the window resizes for the keyboard, which would lift the dock above it (e.g. in Chat).
   if (keyboardOpen) return null;
 
   return (
-    <View style={[styles.outer, { backgroundColor: C.background, paddingBottom: Math.max(insets.bottom - 6, 10) }]}>
-      <View style={[styles.dock, SHADOW_1, { backgroundColor: C.surface, borderColor: C.border }]} accessibilityRole="tablist">
+    <View style={[styles.outer, { backgroundColor: P.background, paddingBottom: Math.max(insets.bottom - 6, 10) }]}>
+      <View style={[styles.dock, SHADOW_1, { backgroundColor: P.surface, borderColor: P.border }]} accessibilityRole="tablist">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
+          // expo-router marks `href: null` routes (detail screens, tabs the role can't use) as display: none.
+          if (StyleSheet.flatten(options.tabBarItemStyle)?.display === 'none') return null;
           const focused = state.index === index;
           const label = options.title ?? route.name;
 
@@ -54,10 +82,11 @@ export function DockTabBar({ state, descriptors, navigation }: BottomTabBarProps
               badgeColor={StyleSheet.flatten(options.tabBarBadgeStyle)?.backgroundColor as string | undefined}
               icon={options.tabBarIcon?.({
                 focused,
-                color: focused ? theme.primary : C.textMuted,
+                color: focused ? P.accent : P.inactive,
                 size: 22,
               })}
               accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+              palette={P}
             />
           );
         })}
@@ -89,6 +118,7 @@ function DockItem({
   onPress,
   onLongPress,
   accessibilityLabel,
+  palette,
 }: {
   label: string;
   focused: boolean;
@@ -98,9 +128,8 @@ function DockItem({
   onPress: () => void;
   onLongPress: () => void;
   accessibilityLabel: string;
+  palette: DockPalette;
 }) {
-  const { theme } = useTheme();
-  const C = theme.colors;
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
@@ -109,11 +138,8 @@ function DockItem({
 
   const animatedStyle = useAnimatedStyle(() => ({
     flexGrow: 1 + progress.value * 1.3,
-    backgroundColor: interpolateColor(progress.value, [0, 1], ['transparent', theme.primaryMuted]),
+    backgroundColor: interpolateColor(progress.value, [0, 1], ['transparent', palette.accentMuted]),
   }));
-
-  // A light gym colour (e.g. volt) is unreadable as text on a white dock, so light mode labels use body text.
-  const labelColor = theme.colorScheme === 'dark' ? theme.primary : C.text;
 
   return (
     <Animated.View style={[styles.itemWrap, animatedStyle]}>
@@ -129,15 +155,15 @@ function DockItem({
         <View>
           {icon}
           {badge === '' ? (
-            <Animated.View entering={FadeIn} style={[styles.dot, { backgroundColor: badgeColor ?? C.error, borderColor: C.surface }]} />
+            <Animated.View entering={FadeIn} style={[styles.dot, { backgroundColor: badgeColor ?? palette.badge, borderColor: palette.surface }]} />
           ) : badge != null ? (
-            <View style={[styles.badge, { backgroundColor: badgeColor ?? C.error, borderColor: C.surface }]}>
-              <Text style={[styles.badgeText, { color: C.background }]}>{badge}</Text>
+            <View style={[styles.badge, { backgroundColor: badgeColor ?? palette.badge, borderColor: palette.surface }]}>
+              <Text style={[styles.badgeText, { color: palette.background }]}>{badge}</Text>
             </View>
           ) : null}
         </View>
         {focused ? (
-          <Animated.Text entering={FadeIn.duration(180)} numberOfLines={1} style={[styles.label, { color: labelColor }]}>
+          <Animated.Text entering={FadeIn.duration(180)} numberOfLines={1} style={[styles.label, { color: palette.label }]}>
             {label}
           </Animated.Text>
         ) : null}

@@ -2,152 +2,173 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { logOutOutline, moonOutline, sunnyOutline } from 'ionicons/icons';
+import { Icon, cn } from '@gym-saas/ui';
 import { logout } from '@/lib/auth';
 import { normalizeHex, onAccent } from '@/lib/accent';
-import { FitOpsLockup } from '@/components/brand/fitops-mark';
+import { FitOpsLockup, FitOpsMark } from '@/components/brand/fitops-mark';
+import { isActiveHref, visibleNavGroups } from './nav-items';
+import { useTheme } from './use-theme';
 
-interface NavItem {
-  label: string;
-  href: string;
-  icon: string;
-  permission?: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: '⬡' },
-  { label: 'Check-ins', href: '/dashboard/check-ins', icon: '✓', permission: 'checkins.manage' },
-  { label: 'Members', href: '/dashboard/members', icon: '◎', permission: 'members.view' },
-  { label: 'Plans', href: '/dashboard/plans', icon: '◈', permission: 'plans.view' },
-  { label: 'Renewals', href: '/dashboard/renewals', icon: '↻', permission: 'members.renew' },
-  { label: 'Announcements', href: '/dashboard/announcements', icon: '◇', permission: 'announcements.manage' },
-  { label: 'Chat', href: '/dashboard/chat', icon: '◉', permission: 'chat.manage' },
-  { label: 'Leaderboard', href: '/dashboard/leaderboard', icon: '⬆', permission: 'leaderboard.view' },
-  // Lift ladders (leaderboard.manage) live here; owners also create custom badges on this page.
-  { label: 'Badges', href: '/dashboard/badges', icon: '◆', permission: 'leaderboard.manage' },
-  { label: 'AI Assistant', href: '/dashboard/insights', icon: '✦', permission: 'insights.query' },
-  { label: 'Staff', href: '/dashboard/staff', icon: '◈', permission: 'staff.manage' },
-  { label: 'Billing', href: '/dashboard/billing', icon: '₱', permission: 'billing.manage' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙', permission: 'gym.settings' },
-];
-
-interface SidebarProps {
+export interface SidebarProps {
   permissions: string[];
   userName: string;
+  roleLabel?: string;
   gymName?: string;
   gymCode?: string;
   gymLocation?: string | null;
   gymColor?: string | null;
   logoUrl?: string | null;
+  /** Icons only (desktop). Ignored inside the mobile drawer. */
+  collapsed?: boolean;
+  /** Called after a link is followed, so the mobile drawer can close. */
+  onNavigate?: () => void;
 }
 
-export function Sidebar({ permissions, userName, gymName, gymCode, gymLocation, gymColor, logoUrl }: SidebarProps) {
+export function Sidebar({
+  permissions,
+  userName,
+  roleLabel,
+  gymName,
+  gymCode,
+  gymLocation,
+  gymColor,
+  logoUrl,
+  collapsed = false,
+  onNavigate,
+}: SidebarProps) {
   const pathname = usePathname();
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  function toggleTheme() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle('dark', next);
-    try { localStorage.setItem('theme', next ? 'dark' : 'light'); } catch { /* localStorage unavailable */ }
-  }
-
+  const { dark, toggle } = useTheme();
+  const groups = visibleNavGroups(permissions);
   const badgeColor = logoUrl ? null : normalizeHex(gymColor);
 
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.permission || permissions.includes(item.permission),
-  );
+  // A bar that glides to the active link (bouncy spring), measured from the link's position.
+  const navRef = useRef<HTMLElement>(null);
+  const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    setBar(active ? { top: active.offsetTop, height: active.offsetHeight } : null);
+  }, [pathname, collapsed, permissions]);
 
   return (
-    <aside className="flex flex-col h-full w-60 bg-surface border-r border-border">
-      {/* Gym identity */}
-      <div className="px-4 py-5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden flex-shrink-0"
-            style={badgeColor ? { backgroundColor: badgeColor, borderColor: badgeColor, color: onAccent(badgeColor) } : undefined}
-          >
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={gymName ?? 'Gym logo'} className="w-full h-full object-cover" />
-            ) : (
-              <span className={cn('text-sm font-bold', !badgeColor && 'text-muted-foreground')}>
-                {gymName ? gymName[0].toUpperCase() : '?'}
-              </span>
-            )}
-          </div>
+    <aside
+      className={cn(
+        'flex h-full flex-col border-r border-border bg-surface transition-[width] duration-gentle ease-gentle',
+        collapsed ? 'w-[72px]' : 'w-64',
+      )}
+    >
+      {/* Gym identity: the gym's colour appears only here (brand rule) */}
+      <div className={cn('flex items-center gap-3 border-b border-border py-4', collapsed ? 'justify-center px-2' : 'px-4')}>
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-background"
+          style={badgeColor ? { backgroundColor: badgeColor, borderColor: badgeColor, color: onAccent(badgeColor) } : undefined}
+          title={collapsed ? gymName : undefined}
+        >
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={gymName ?? 'Gym logo'} className="h-full w-full object-cover" />
+          ) : (
+            <span className={cn('text-sm font-bold', !badgeColor && 'text-muted-foreground')}>
+              {gymName ? gymName[0].toUpperCase() : '?'}
+            </span>
+          )}
+        </div>
+        {!collapsed && (
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              {gymName ?? '—'}
-            </p>
+            <p className="truncate text-sm font-semibold text-foreground">{gymName ?? '—'}</p>
             {gymLocation ? (
-              <p className="text-xs text-muted-foreground truncate">{gymLocation}</p>
+              <p className="truncate text-xs text-muted-foreground">{gymLocation}</p>
             ) : gymCode ? (
-              <p className="text-xs text-muted-foreground font-mono uppercase tracking-widest">
-                {gymCode}
-              </p>
+              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{gymCode}</p>
             ) : null}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        {visibleItems.map((item) => {
-          const isActive =
-            item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname.startsWith(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 text-sm rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                isActive
-                  ? 'bg-nav-active text-nav-active-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-hover',
-              )}
-            >
-              <span className="text-base leading-none w-4 text-center">{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+      {/* Navigation */}
+      <nav ref={navRef} aria-label="Main" className="relative flex-1 overflow-y-auto px-3 py-3">
+        {bar && (
+          <span
+            aria-hidden
+            className="absolute left-1 w-[3px] rounded-full bg-nav-active-foreground transition-[top,height] duration-bouncy ease-bouncy"
+            style={{ top: bar.top + 8, height: bar.height - 16 }}
+          />
+        )}
+        {groups.map((group, gi) => (
+          <div key={group.label} className={cn(gi > 0 && 'mt-4')}>
+            {collapsed ? (
+              gi > 0 && <div className="mx-3 mb-3 border-t border-border" aria-hidden />
+            ) : (
+              <p className="px-3 pb-1.5 text-eyebrow uppercase text-muted">{group.label}</p>
+            )}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActiveHref(pathname, item.href);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-current={active ? 'page' : undefined}
+                      title={collapsed ? item.label : undefined}
+                      className={cn(
+                        'flex h-nav-item items-center gap-3 rounded-md text-sm transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                        collapsed ? 'justify-center px-0' : 'px-3',
+                        active
+                          ? 'bg-nav-active font-semibold text-nav-active-foreground'
+                          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                      )}
+                    >
+                      <Icon icon={item.icon} size={18} />
+                      {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
-      {/* User footer */}
-      <div className="border-t border-border px-4 py-3 space-y-1">
-        <div className="flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-sm text-foreground font-medium truncate">{userName}</p>
-            <p className="text-xs text-muted-foreground">Staff</p>
+      {/* Account */}
+      <div className={cn('space-y-1 border-t border-border py-3', collapsed ? 'px-2' : 'px-3')}>
+        {!collapsed && (
+          <div className="px-2 pb-1">
+            <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+            <p className="text-xs text-muted-foreground">{roleLabel ?? 'Staff'}</p>
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="text-xs text-muted-foreground hover:text-destructive-text transition px-2 py-1 rounded"
-              title="Sign out"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
+        )}
         <button
-          onClick={toggleTheme}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-hover transition"
+          type="button"
+          onClick={toggle}
+          title={collapsed ? (dark ? 'Light mode' : 'Dark mode') : undefined}
+          className={cn(
+            'flex h-9 w-full items-center gap-3 rounded-md text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            collapsed ? 'justify-center' : 'px-2',
+          )}
         >
-          <span>{dark ? '☀' : '☾'}</span>
-          {dark ? 'Light mode' : 'Dark mode'}
+          <Icon icon={dark ? sunnyOutline : moonOutline} size={18} />
+          {collapsed ? <span className="sr-only">{dark ? 'Light mode' : 'Dark mode'}</span> : dark ? 'Light mode' : 'Dark mode'}
         </button>
-        <div className="px-2 pt-2">
-          <FitOpsLockup size={14} />
+        <form action={logout}>
+          <button
+            type="submit"
+            title={collapsed ? 'Sign out' : undefined}
+            className={cn(
+              'flex h-9 w-full items-center gap-3 rounded-md text-sm text-muted-foreground transition-colors hover:bg-destructive-bg hover:text-destructive-text',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              collapsed ? 'justify-center' : 'px-2',
+            )}
+          >
+            <Icon icon={logOutOutline} size={18} />
+            {collapsed ? <span className="sr-only">Sign out</span> : 'Sign out'}
+          </button>
+        </form>
+        <div className={cn('pt-2', collapsed ? 'flex justify-center' : 'px-2')}>
+          {collapsed ? <FitOpsMark size={18} /> : <FitOpsLockup size={14} />}
         </div>
       </div>
     </aside>

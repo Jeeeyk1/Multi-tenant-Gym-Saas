@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
-import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
 import { CheckinsTrendChart } from '@/components/dashboard/checkins-trend-chart';
 import { cn } from '@/lib/utils';
 import type { StaffCheckIn, MembersPage, CheckinsTrendPoint } from '@/types/api';
@@ -105,9 +104,6 @@ export default async function DashboardPage() {
               {dateLabel}
             </span>
           </div>
-        </div>
-        <div className="shrink-0 pt-1">
-          <CheckInDialog gymId={user.gymId} />
         </div>
       </div>
 

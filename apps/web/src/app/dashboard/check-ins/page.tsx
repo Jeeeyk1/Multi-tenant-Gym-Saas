@@ -5,7 +5,6 @@ import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
-import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
 import type { StaffCheckIn, CheckInsPage } from '@/types/api';
 
 export const metadata: Metadata = { title: 'Check-ins' };
@@ -76,7 +75,6 @@ export default async function CheckInsPage({ searchParams }: Props) {
             {active.length} active now · {meta.total} total recorded
           </p>
         </div>
-        <CheckInDialog gymId={user.gymId} />
       </div>
 
       {/* Active now */}

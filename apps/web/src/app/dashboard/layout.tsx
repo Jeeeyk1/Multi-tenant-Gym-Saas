@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
-import { Sidebar } from '@/components/layout/sidebar';
+import { AppShell } from '@/components/layout/app-shell';
+import { CheckInDialog } from '@/components/dashboard/check-in-dialog';
 import { getSessionUser } from '@/lib/auth';
 import { getGymDetail } from '@/lib/actions/settings';
 import { SubscriptionPanel } from '@/components/billing/subscription-panel';
 import { SubscriptionInactiveNotice } from '@/components/billing/subscription-inactive-notice';
-import { usesWebDashboard } from '@/lib/roles';
+import { StaffRole } from '@gym-saas/contracts';
+import { roleLabel, usesWebDashboard } from '@/lib/roles';
 import { isStaffToken } from '@/lib/utils';
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -30,37 +32,31 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect(gymDetail?.code ? `/${gymDetail.code}/not-staff?as=${as}` : '/');
   }
 
+  // Show the highest role, e.g. "Owner" for someone who is both Owner and Staff.
+  const topRole = [StaffRole.OWNER, StaffRole.STAFF, StaffRole.TRAINER].find((r) => user.roles.includes(r));
+  const role = topRole ? roleLabel(topRole) : undefined;
+
   if (subscriptionLocked) {
     return (
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar permissions={user.permissions} userName={user.fullName || user.email} gymCode={user.gymCode} />
-        <main className="flex-1 overflow-y-auto">
-          {user.permissions.includes('billing.manage') ? (
-            <SubscriptionPanel gymId={user.gymId} />
-          ) : (
-            <SubscriptionInactiveNotice />
-          )}
-        </main>
-      </div>
+      <AppShell permissions={user.permissions} userName={user.fullName || user.email} roleLabel={role} gymCode={user.gymCode}>
+        {user.permissions.includes('billing.manage') ? <SubscriptionPanel gymId={user.gymId} /> : <SubscriptionInactiveNotice />}
+      </AppShell>
     );
   }
 
   return (
-    <>
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar
-          permissions={user.permissions}
-          userName={user.fullName || user.email}
-          gymCode={user.gymCode}
-          gymName={gymDetail?.name}
-          gymLocation={gymDetail?.city}
-          gymColor={gymDetail?.profile?.primaryColor}
-          logoUrl={gymDetail?.profile?.logoUrl}
-        />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-    </>
+    <AppShell
+      permissions={user.permissions}
+      userName={user.fullName || user.email}
+      roleLabel={role}
+      gymCode={user.gymCode}
+      gymName={gymDetail?.name}
+      gymLocation={gymDetail?.city}
+      gymColor={gymDetail?.profile?.primaryColor}
+      logoUrl={gymDetail?.profile?.logoUrl}
+      action={user.permissions.includes('checkins.manage') ? <CheckInDialog gymId={user.gymId} /> : undefined}
+    >
+      {children}
+    </AppShell>
   );
 }

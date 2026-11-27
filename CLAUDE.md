@@ -227,10 +227,14 @@ Every session where meaningful work is done must produce or update a progress en
 
 ### File location
 ```
-docs/progress/YYYY-MM-DD-progress.md
+docs/progress/YYYY-MM-DD-<stream>.md
 ```
 
-Use today's date. If a file for today already exists, append to it rather than creating a new one.
+`<stream>` is the workstream you are in: `design`, `security`, `features` or `enhancements`. Work runs in parallel,
+one git worktree per stream, and one file per stream per day keeps progress logs from conflicting at merge time.
+Work outside a stream uses `docs/progress/YYYY-MM-DD-progress.md`.
+
+Use today's date. If your file for today already exists, append to it rather than creating a new one.
 
 ### What to log
 - Which phase or task was worked on

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/Text';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMyMember, useMyRenewals } from '../../hooks/members';
 import { useTheme } from '../../context/ThemeContext';
@@ -44,7 +44,6 @@ function expiryCopy(member: GymMember, C: ColorPalette): { text: string; color: 
 }
 
 export default function MembershipScreen() {
-  const router = useRouter();
   const { theme } = useTheme();
   const C = theme.colors;
   const memberQ = useMyMember();
@@ -137,9 +136,6 @@ export default function MembershipScreen() {
           textAlign: 'center',
           paddingVertical: SPACING.xl,
         },
-
-        backBtn: { padding: SPACING.md, alignItems: 'center' },
-        backBtnText: { fontSize: 14, ...FONT.medium },
       }),
     [C],
   );
@@ -173,12 +169,6 @@ export default function MembershipScreen() {
           </Text>
         )}
 
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.8 }]}
-        >
-          <Text style={[styles.backBtnText, { color: theme.primary }]}>← Back</Text>
-        </Pressable>
       </ScrollView>
     </>
   );

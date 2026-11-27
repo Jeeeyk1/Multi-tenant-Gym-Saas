@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Image, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput, Modal, KeyboardAvoidingView, Platform, Alert, Image, TouchableOpacity, Linking } from 'react-native';
 import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,7 @@ import { useMyMember, useMyProfile } from '../../hooks/members';
 import { AiGeneratingLoader } from '../../components/AiGeneratingLoader';
 import { aiService } from '../../services/ai.service';
 import { formatApiError } from '../../lib/format-error';
+import { useToast } from '../../components/ui';
 import { SPACING, FONT, RADIUS, type ColorPalette } from '../../constants/theme';
 import type { FoodLog, MealAnalysis, MealPlan, MealPlanMode, MealPlanRequest, WorkoutWeekPlan, WorkoutDay, WorkoutExercise, ExerciseInstructions, WorkoutPlanRequest, WorkoutFocus, WorkoutEmphasis } from '../../types';
 
@@ -85,6 +86,7 @@ export default function AIScreen() {
 const TODAY_NAME = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
 function WorkoutTab({ gymId, memberId, theme }: TabProps) {
+  const toast = useToast();
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const profileQ = useMyProfile();
@@ -130,12 +132,12 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
         const res = await aiService.getWorkoutSuggestion(gymId, memberId, params);
         applyPlan(JSON.parse(res.suggestion), new Date().toISOString());
       } catch (err) {
-        Alert.alert('Error', formatApiError(err, 'Could not generate workout plan. Try again.'));
+        toast.show(formatApiError(err, 'Could not generate a workout plan. Try again.'), { tone: 'error' });
       } finally {
         setLoading(false);
       }
     },
-    [gymId, memberId],
+    [gymId, memberId, toast],
   );
 
   const swapExercise = useCallback(
@@ -152,12 +154,12 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
         });
         setWeekPlan((prev) => replaceExercise(prev, dayName, sectionTitle, ex.name, res.exercise));
       } catch {
-        Alert.alert('Swap failed', 'Could not find an alternative right now. Please try again.');
+        toast.show('Could not find an alternative right now. Try again.', { tone: 'error' });
       } finally {
         setSwappingKey(null);
       }
     },
-    [gymId, memberId],
+    [gymId, memberId, toast],
   );
 
   const profile = profileQ.data;
@@ -975,6 +977,7 @@ function parseMealPlan(raw: string | null): MealPlan | null {
 }
 
 function NutritionTab({ gymId, memberId, theme }: TabProps) {
+  const toast = useToast();
   const C = theme.colors;
   const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -1009,12 +1012,12 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
         setSuggestion(res.suggestion);
         setGeneratedAt(new Date().toISOString());
       } catch (err) {
-        Alert.alert('Error', formatApiError(err, 'Could not generate meal plan. Try again.'));
+        toast.show(formatApiError(err, 'Could not generate a meal plan. Try again.'), { tone: 'error' });
       } finally {
         setLoading(false);
       }
     },
-    [gymId, memberId],
+    [gymId, memberId, toast],
   );
 
   const plan = useMemo(() => parseMealPlan(suggestion), [suggestion]);
@@ -1447,7 +1450,11 @@ function LogMealModal({
       if (source === 'camera') {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) {
-          Alert.alert('Permission required', 'Camera access is needed to take a photo.');
+          // Once denied, iOS won't ask again, so point the member to Settings.
+          Alert.alert('Camera access needed', 'Allow camera access in Settings to photograph your meal.', [
+            { text: 'Not now', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]);
           return;
         }
         result = await ImagePicker.launchCameraAsync({

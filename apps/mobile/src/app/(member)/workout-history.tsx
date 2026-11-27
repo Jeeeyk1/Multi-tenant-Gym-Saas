@@ -4,6 +4,7 @@ import { View, ScrollView, Pressable, StyleSheet, RefreshControl, ActivityIndica
 import { Text } from '../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { useWorkoutSessions } from '../../hooks/workouts';
@@ -40,6 +41,7 @@ function groupByDay(sessions: WorkoutSession[]): { label: string; items: Workout
 
 export default function WorkoutHistoryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const C = theme.colors;
 
@@ -54,12 +56,12 @@ export default function WorkoutHistoryScreen() {
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingHorizontal: SPACING.lg,
-          paddingTop: 60,
           paddingBottom: SPACING.md,
         },
         headerTitle: { fontSize: 17, color: C.text, ...FONT.semibold },
-        headerSpacer: { width: 40 },
-        backBtn: { width: 40, alignItems: 'flex-start' },
+        headerSpacer: { width: 34 },
+        // 44pt tap target; pulled left so the chevron lines up with the content edge.
+  backBtn: { width: 44, height: 44, justifyContent: 'center', marginLeft: -10 },
 
         content: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: SPACING.xs },
 
@@ -180,7 +182,7 @@ export default function WorkoutHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={C.text} />
         </Pressable>

@@ -4,6 +4,7 @@ import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useWorkout } from '../../context/WorkoutContext';
@@ -36,6 +37,7 @@ interface SessionSummary {
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { theme } = useTheme();
   const C = theme.colors;
@@ -123,7 +125,7 @@ export default function WorkoutScreen() {
   if (stage === 'select') {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
           <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={C.text} />
           </Pressable>
@@ -183,7 +185,7 @@ export default function WorkoutScreen() {
         </Modal>
 
         <View style={styles.activeWrapper}>
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
             <View style={styles.headerSpacer} />
             <Text style={styles.headerTitle}>In Progress</Text>
             <View style={styles.headerSpacer} />
@@ -244,7 +246,7 @@ export default function WorkoutScreen() {
 
     return (
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.summaryContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.summaryContent, { paddingTop: insets.top + SPACING.lg }]} showsVerticalScrollIndicator={false}>
           <View style={styles.doneHeader}>
             <LinearGradient
               colors={theme.gradient}
@@ -371,12 +373,12 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: 60,
     paddingBottom: SPACING.md,
   },
   headerTitle: { fontSize: 17, color: C.text, ...FONT.semibold },
-  headerSpacer: { width: 40 },
-  backBtn: { width: 40, alignItems: 'flex-start' },
+  headerSpacer: { width: 34 },
+  // 44pt tap target; pulled left so the chevron lines up with the content edge.
+  backBtn: { width: 44, height: 44, justifyContent: 'center', marginLeft: -10 },
 
   // SELECT
   selectContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: SPACING.sm },
@@ -491,7 +493,7 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
   modalGhostBtnText: { fontSize: 14, color: C.textMuted, ...FONT.medium },
 
   // SUMMARY
-  summaryContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: 60 },
+  summaryContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
   doneHeader: { alignItems: 'center', marginBottom: SPACING.xl },
   doneCircle: {
     width: 88,

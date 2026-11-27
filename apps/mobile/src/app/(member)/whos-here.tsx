@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useActivePublicCheckins, useMyMember, useUpdateMyPrivacy } from '../../hooks/members';
 import { useEquippedBadgesMap } from '../../hooks/badges';
@@ -23,7 +23,6 @@ function relativeFromNow(iso: string): string {
 }
 
 export default function WhosHereScreen() {
-  const router = useRouter();
   const { theme } = useTheme();
   const C = theme.colors;
 
@@ -91,9 +90,6 @@ export default function WhosHereScreen() {
         },
         emptyTitle: { fontSize: 14, color: C.text, ...FONT.semibold },
         emptySub: { fontSize: 12, color: C.textSecondary, textAlign: 'center', lineHeight: 17 },
-
-        backBtn: { padding: SPACING.md, alignItems: 'center' },
-        backBtnText: { fontSize: 14, ...FONT.medium },
       }),
     [C],
   );
@@ -212,12 +208,6 @@ export default function WhosHereScreen() {
           </View>
         )}
 
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.8 }]}
-        >
-          <Text style={[styles.backBtnText, { color: theme.primary }]}>← Back</Text>
-        </Pressable>
       </ScrollView>
 
       <EquippedBadgesSheet

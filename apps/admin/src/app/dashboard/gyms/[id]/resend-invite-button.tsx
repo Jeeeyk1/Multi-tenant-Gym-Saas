@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm } from '@gym-saas/ui';
 import { useState } from 'react';
 import { clientApi } from '@/lib/client-api';
 
@@ -9,12 +10,18 @@ interface ResendInviteResult {
 
 export function ResendInviteButton({ gymId }: { gymId: string }) {
   const [pending, setPending] = useState(false);
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function handleResend() {
-    if (!confirm('Regenerate the activation link for this gym owner? The previous link will be invalidated.')) return;
+    const ok = await confirm({
+      title: 'Regenerate the activation link?',
+      message: 'The previous link stops working.',
+      confirmLabel: 'Regenerate link',
+    });
+    if (!ok) return;
     setPending(true);
     setError(null);
     setToken(null);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm } from '@gym-saas/ui';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clientApi } from '@/lib/client-api';
@@ -10,6 +11,7 @@ interface ExtendTrialResult {
 
 export function ExtendTrialButton({ gymId, lapsed }: { gymId: string; lapsed: boolean }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [days, setDays] = useState(7);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,8 @@ export function ExtendTrialButton({ gymId, lapsed }: { gymId: string; lapsed: bo
     const confirmMsg = lapsed
       ? `Reopen the trial and unlock this gym for ${days} more days? Any unpaid invoice will be voided.`
       : `Add ${days} more trial days to this gym?`;
-    if (!confirm(confirmMsg)) return;
+    const ok = await confirm({ title: lapsed ? 'Reopen the trial?' : 'Extend the trial?', message: confirmMsg, confirmLabel: lapsed ? 'Reopen trial' : 'Extend trial' });
+    if (!ok) return;
 
     setPending(true);
     setError(null);

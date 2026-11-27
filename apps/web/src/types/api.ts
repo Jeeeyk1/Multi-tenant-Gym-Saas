@@ -425,3 +425,13 @@ export interface MySubscriptionResponse {
   invoice: GymInvoice | null;
   paymentInstructions: { gcash: string | null; bank: string | null; note: string };
 }
+
+/** GET /gyms/:gymId/members/expiring — active memberships ending soon (gym's local dates). */
+export interface ExpiringMemberships {
+  days: number;
+  from: string;
+  to: string;
+  expiringSoon: number;
+  expired: number;
+  soonest: { id: string; fullName: string; membershipNumber: string; expiryDate: string }[];
+}

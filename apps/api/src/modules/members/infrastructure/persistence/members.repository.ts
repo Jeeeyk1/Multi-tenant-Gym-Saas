@@ -62,6 +62,31 @@ export interface ProfileUpdateData {
 export class MembersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getGymTimezone(gymId: string): Promise<string> {
+    const gym = await this.prisma.gym.findUnique({ where: { id: gymId }, select: { timezone: true } });
+    return gym?.timezone ?? 'UTC';
+  }
+
+  /** Active members whose expiry date falls in [from, to] (YYYY-MM-DD, inclusive). Uses the (gym_id, expiry_date, status) index. */
+  countActiveExpiringBetween(gymId: string, from: string, to: string) {
+    return this.prisma.gymMember.count({
+      where: { gymId, status: MemberStatus.ACTIVE, expiryDate: { gte: new Date(from), lte: new Date(to) } },
+    });
+  }
+
+  listActiveExpiringBetween(gymId: string, from: string, to: string, take: number) {
+    return this.prisma.gymMember.findMany({
+      where: { gymId, status: MemberStatus.ACTIVE, expiryDate: { gte: new Date(from), lte: new Date(to) } },
+      orderBy: [{ expiryDate: 'asc' }, { joinedAt: 'asc' }],
+      take,
+      select: { id: true, membershipNumber: true, expiryDate: true, user: { select: { fullName: true } } },
+    });
+  }
+
+  countExpiredMembers(gymId: string) {
+    return this.prisma.gymMember.count({ where: { gymId, status: MemberStatus.EXPIRED } });
+  }
+
   findUserByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },

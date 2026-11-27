@@ -566,6 +566,24 @@ An invitation email is automatically sent to the member.
 
 ---
 
+#### GET /gyms/:gymId/members/expiring?days=7
+Active memberships ending within `days` (1–60, default 7, today included), counted in the gym's own timezone,
+plus how many memberships are already expired. Used by the staff dashboard's renewal card.
+
+**Requires `members.renew` permission.**
+
+Response `200`:
+```json
+{
+  "days": 7, "from": "2026-12-01", "to": "2026-12-07",
+  "expiringSoon": 9, "expired": 3,
+  "soonest": [{ "id": "<memberId>", "fullName": "Jo Lim", "membershipNumber": "MBR-00123", "expiryDate": "2026-12-01" }]
+}
+```
+`soonest` lists up to 5, earliest first.
+
+---
+
 #### GET /gyms/:gymId/members/:id
 Member detail.
 

@@ -36,6 +36,7 @@ import { UpdateMyPrivacyUseCase } from '../../application/use-cases/update-my-pr
 import { ValidateBulkInviteUseCase } from '../../application/use-cases/validate-bulk-invite.use-case';
 import { BulkInviteMembersUseCase } from '../../application/use-cases/bulk-invite-members.use-case';
 import { DeleteMyAccountUseCase } from '../../application/use-cases/delete-my-account.use-case';
+import { GetExpiringMembershipsUseCase } from '../../application/use-cases/get-expiring-memberships.use-case';
 import { RegisterMemberDto } from '../dto/register-member.dto';
 import { BulkInviteDto } from '../dto/bulk-invite.dto';
 import { ListMembersQueryDto } from '../dto/list-members-query.dto';
@@ -44,6 +45,7 @@ import { LogWeightDto } from '../dto/log-weight.dto';
 import { RegisterDeviceTokenDto } from '../dto/register-device-token.dto';
 import { UpdateMyPrivacyDto } from '../dto/update-my-privacy.dto';
 import { DeleteMyAccountDto } from '../dto/delete-my-account.dto';
+import { ExpiringMembersQueryDto } from '../dto/expiring-members-query.dto';
 import type { AuthenticatedUser } from '../../../../common/types/auth.types';
 
 @Controller('gyms/:gymId/members')
@@ -54,6 +56,7 @@ export class MembersController {
     private readonly validateBulkInviteUseCase: ValidateBulkInviteUseCase,
     private readonly bulkInviteMembersUseCase: BulkInviteMembersUseCase,
     private readonly deleteMyAccountUseCase: DeleteMyAccountUseCase,
+    private readonly getExpiringMembershipsUseCase: GetExpiringMembershipsUseCase,
     private readonly listMembersUseCase: ListMembersUseCase,
     private readonly getMemberUseCase: GetMemberUseCase,
     private readonly getMyMemberUseCase: GetMyMemberUseCase,
@@ -146,6 +149,20 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.listMembersUseCase.execute(gymId, { page: query.page, limit: query.limit }, user);
+  }
+
+  /**
+   * GET /gyms/:gymId/members/expiring?days=7
+   * Active memberships ending within `days` (gym's local dates) plus the expired count.
+   * Requires members.renew. Declared before :memberId to avoid a route conflict.
+   */
+  @Get('expiring')
+  expiring(
+    @Param('gymId') gymId: string,
+    @Query() query: ExpiringMembersQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.getExpiringMembershipsUseCase.execute(gymId, query.days, user);
   }
 
   /**

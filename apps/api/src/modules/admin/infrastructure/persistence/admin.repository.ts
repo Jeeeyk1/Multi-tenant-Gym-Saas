@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../../common/prisma/prisma.service';
-import { BillingCycle, InvoiceStatus, MemberStatus, StaffRole, SubscriptionStatus } from '../../../../common/enums';
+import type { Prisma } from '@prisma/client';
+import { BillingCycle, GymStatus, InvoiceStatus, MemberStatus, StaffRole, SubscriptionStatus } from '../../../../common/enums';
 import {
   addBillingPeriod,
   addDays,
@@ -53,12 +54,24 @@ export class AdminRepository {
     ]);
   }
 
-  listGyms(page: number, limit: number) {
+  listGyms(page: number, limit: number, filters: { search?: string; status?: GymStatus } = {}) {
     const skip = (page - 1) * limit;
+    const { search, status } = filters;
+    const where: Prisma.GymWhereInput = {
+      ...(status && { status }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { code: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
     return this.prisma.$transaction([
       this.prisma.gym.findMany({
         skip,
         take: limit,
+        where,
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -72,7 +85,7 @@ export class AdminRepository {
           _count: { select: { members: { where: { status: { not: MemberStatus.DELETED } } }, staff: true } },
         },
       }),
-      this.prisma.gym.count(),
+      this.prisma.gym.count({ where }),
     ]);
   }
 
@@ -177,18 +190,19 @@ export class AdminRepository {
     });
   }
 
-  listUsers(page: number, limit: number, gymId?: string) {
+  listUsers(page: number, limit: number, filters: { search?: string; gymId?: string } = {}) {
     const skip = (page - 1) * limit;
+    const { search, gymId } = filters;
     // Anonymised logins and "Deleted member" placeholders are records, not users to manage.
-    const where = gymId
-      ? {
-          deletedAt: null,
-          OR: [
-            { gymMembers: { some: { gymId } } },
-            { gymStaff: { some: { gymId } } },
-          ],
-        }
-      : { deletedAt: null };
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
+      AND: [
+        ...(gymId ? [{ OR: [{ gymMembers: { some: { gymId } } }, { gymStaff: { some: { gymId } } }] }] : []),
+        ...(search
+          ? [{ OR: [{ fullName: { contains: search, mode: 'insensitive' as const } }, { email: { contains: search, mode: 'insensitive' as const } }] }]
+          : []),
+      ],
+    };
 
     return this.prisma.$transaction([
       this.prisma.user.findMany({

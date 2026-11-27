@@ -33,3 +33,4 @@ export { AssistantAction } from './assistant-action.enum';
 export { ReportReason } from './report-reason.enum';
 export { MessageReportStatus } from './message-report-status.enum';
 export { ReportAction } from './report-action.enum';
+export { GymStatus } from './gym-status.enum';

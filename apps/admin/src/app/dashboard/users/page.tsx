@@ -1,8 +1,14 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
+import { cloudOfflineOutline, peopleOutline } from 'ionicons/icons';
+import { EmptyState, PageHeader, Pagination, StatusPill } from '@gym-saas/ui';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { ListToolbar } from '@/components/tables/list-toolbar';
 
 export const metadata: Metadata = { title: 'Users' };
+
+const PAGE_SIZE = 20;
 
 interface User {
   id: string;
@@ -17,65 +23,87 @@ interface User {
 interface UsersResponse {
   users: User[];
   total: number;
+  pages: number;
 }
 
-export default async function UsersPage() {
-  const data = await api.get<UsersResponse>('/v1/admin/users?limit=50').catch(() => null);
+type Search = { page?: string; search?: string };
+
+export default async function UsersPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page) || 1);
+  const search = params.search?.trim() ?? '';
+
+  const query = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+  if (search) query.set('search', search);
+  const data = await api.get<UsersResponse>(`/v1/admin/users?${query}`).catch(() => null);
+
+  const hrefFor = (p: number) => {
+    const q = new URLSearchParams();
+    if (search) q.set('search', search);
+    if (p > 1) q.set('page', String(p));
+    const qs = q.toString();
+    return qs ? `/dashboard/users?${qs}` : '/dashboard/users';
+  };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <p className="text-[13px] text-muted-foreground">FitOps</p>
-        <h1 className="text-2xl font-bold text-foreground mb-1">Users</h1>
-        <p className="text-sm text-muted-foreground">{data?.total ?? 0} total across all gyms</p>
+    <div className="space-y-6 p-4 sm:p-8">
+      <PageHeader
+        eyebrow="FitOps"
+        title="Users"
+        description={data ? `${data.total.toLocaleString('en-US')} ${search ? 'matching' : 'across all gyms'}` : undefined}
+      />
+
+      <ListToolbar searchLabel="Search by name or email" />
+
+      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        {!data ? (
+          <EmptyState icon={cloudOfflineOutline} tone="error" title="Couldn't load users" message="Check that the API is running, then reload the page." />
+        ) : data.users.length === 0 ? (
+          <EmptyState icon={peopleOutline} title={search ? 'No users match' : 'No users yet'} message={search ? 'Try another name or email.' : undefined} />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-background text-left text-eyebrow uppercase text-muted">
+                  <th className="px-4 py-3 font-semibold">User</th>
+                  <th className="px-4 py-3 font-semibold">Gyms</th>
+                  <th className="px-4 py-3 font-semibold">Role</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.users.map((user) => {
+                  const staffGyms = user.gymStaff.map((s) => `${s.gym.name} (${s.roles.map((r) => r.role.name).join(', ')})`);
+                  const memberGyms = user.gymMembers.map((m) => m.gym.name);
+                  const gymLabel = [...staffGyms, ...memberGyms].join(', ') || '—';
+                  const roleLabel = user.gymStaff.length > 0 ? 'Staff' : user.gymMembers.length > 0 ? 'Member' : '—';
+                  return (
+                    <tr key={user.id} className="border-b border-border transition-colors last:border-0 hover:bg-hover">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-foreground">{user.fullName}</p>
+                        <p className="text-xs text-muted">{user.email}</p>
+                      </td>
+                      <td className="max-w-xs truncate px-4 py-3 text-xs text-muted" title={gymLabel}>
+                        {gymLabel}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-muted">{roleLabel}</td>
+                      <td className="px-4 py-3">
+                        <StatusPill tone={user.isActive ? 'success' : 'danger'}>{user.isActive ? 'Active' : 'Inactive'}</StatusPill>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted">{formatDate(user.createdAt)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {!data ? (
-        <p className="text-muted-foreground text-sm">Could not load users.</p>
-      ) : (
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground text-xs uppercase tracking-wide">
-                <th className="text-left px-4 py-3">User</th>
-                <th className="text-left px-4 py-3">Gym(s)</th>
-                <th className="text-left px-4 py-3">Role</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.map((user) => {
-                const staffGyms = user.gymStaff.map((s) => `${s.gym.name} (${s.roles.map((r) => r.role.name).join(', ')})`);
-                const memberGyms = user.gymMembers.map((m) => m.gym.name);
-                const gymLabel = [...staffGyms, ...memberGyms].join(', ') || '—';
-                const roleLabel = user.gymStaff.length > 0 ? 'Staff' : user.gymMembers.length > 0 ? 'Member' : '—';
-
-                return (
-                  <tr key={user.id} className="border-b border-border last:border-0 hover:bg-foreground/5 transition">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{user.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate">{gymLabel}</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-medium text-muted-foreground">{roleLabel}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                        user.isActive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                      }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(user.createdAt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {data && data.total > 0 ? (
+        <Pagination page={page} pages={data.pages} total={data.total} pageSize={PAGE_SIZE} hrefFor={hrefFor} linkAs={Link} noun="users" />
+      ) : null}
     </div>
   );
 }

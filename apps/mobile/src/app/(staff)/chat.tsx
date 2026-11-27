@@ -9,6 +9,7 @@ import { AppLoader } from '../../components/AppLoader';
 import { chatService } from '../../services/chat.service';
 import { getAccessToken } from '../../services/api';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
+import { useToast } from '../../components/ui';
 import { formatApiError } from '../../lib/format-error';
 import { useEquippedBadgesMap } from '../../hooks/badges';
 import { BadgeStack } from '../../components/badges/BadgeStack';
@@ -65,6 +66,7 @@ function MessageBubble({
 }
 
 export default function StaffChatScreen() {
+  const toast = useToast();
   const router = useRouter();
   const { user } = useAuth();
 
@@ -160,8 +162,9 @@ export default function StaffChatScreen() {
           if (!user || !convId) return;
           try {
             await chatService.deleteMessage(user.gymId, convId, msg.id);
+            toast.show('Message deleted');
           } catch (err: unknown) {
-            Alert.alert('Error', formatApiError(err, 'Failed to delete message'));
+            toast.show(formatApiError(err, 'Failed to delete message'), { tone: 'error' });
           }
         },
       },

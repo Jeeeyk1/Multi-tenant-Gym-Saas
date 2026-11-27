@@ -84,9 +84,8 @@ function ToastView({ toast, onHidden }: { toast: ToastState; onHidden: (id: numb
   const style = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: offset.value }] }));
 
   const icon = { success: 'checkmark-circle', error: 'alert-circle', info: 'information-circle' }[toast.tone ?? 'success'] as keyof typeof Ionicons.glyphMap;
-  // Light gym colours (e.g. volt) are unreadable on a white toast, so light mode uses the success green.
-  const successColor = theme.colorScheme === 'dark' ? theme.primary : C.success;
-  const iconColor = toast.tone === 'error' ? C.error : toast.tone === 'info' ? C.textSecondary : successColor;
+  // Semantic green, not the gym's colour: toasts also show on staff screens, which never use gym colours.
+  const iconColor = toast.tone === 'error' ? C.error : toast.tone === 'info' ? C.textSecondary : C.success;
 
   return (
     <Animated.View pointerEvents="box-none" style={[styles.wrap, { top: insets.top + SPACING.sm }, style]}>

@@ -12,6 +12,7 @@ import {
   useSuspendMember,
 } from '../../../hooks/staff';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { useToast } from '../../../components/ui';
 import { formatApiError } from '../../../lib/format-error';
 import type { RenewalRecord } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
@@ -239,6 +240,7 @@ function BasicMemberView({ name, userId, status, statusColor }: { name: string; 
 }
 
 export default function MemberDetailScreen() {
+  const toast = useToast();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -274,10 +276,8 @@ export default function MemberDetailScreen() {
           style: 'destructive',
           onPress: () => {
             suspendMutation.mutate(member.id, {
-              onError: (err: unknown) => {
-                const e = err as { message?: string };
-                Alert.alert('Error', e?.message ?? 'Failed to suspend member');
-              },
+              onSuccess: () => toast.show(`${member.user.fullName} suspended`),
+              onError: (err: unknown) => toast.show(formatApiError(err, 'Failed to suspend member'), { tone: 'error' }),
             });
           },
         },
@@ -288,10 +288,8 @@ export default function MemberDetailScreen() {
   const handleReactivate = () => {
     if (!member) return;
     reactivateMutation.mutate(member.id, {
-      onError: (err: unknown) => {
-        const e = err as { message?: string };
-        Alert.alert('Error', e?.message ?? 'Failed to reactivate member');
-      },
+      onSuccess: () => toast.show(`${member.user.fullName} reactivated`),
+      onError: (err: unknown) => toast.show(formatApiError(err, 'Failed to reactivate member'), { tone: 'error' }),
     });
   };
 
@@ -305,7 +303,9 @@ export default function MemberDetailScreen() {
     try {
       await renewMutation.mutateAsync(dto);
       setRenewModalOpen(false);
+      toast.show('Membership renewed');
     } catch (err) {
+      // The renewal sheet is still open here and would hide a toast, so this stays an alert.
       Alert.alert('Renewal Failed', formatApiError(err, 'Could not process renewal'));
       throw err;
     }

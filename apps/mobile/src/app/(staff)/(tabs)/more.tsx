@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
-import { StaffHeader } from '../../components/StaffHeader';
-import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
-import { setPreferredView } from '../../lib/preferred-view';
-import { MEMBER_ROLE, Permission } from '../../constants/enums';
+import { useAuth } from '../../../context/AuthContext';
+import { StaffHeader } from '../../../components/StaffHeader';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../../constants/theme';
+import { setPreferredView } from '../../../lib/preferred-view';
+import { MEMBER_ROLE, Permission } from '../../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 

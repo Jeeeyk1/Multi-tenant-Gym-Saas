@@ -1,17 +1,17 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
-import { AppLoader } from '../../components/AppLoader';
-import { StaffHeader } from '../../components/StaffHeader';
-import { useActiveCheckIns, useCheckOut, useStaffMembers } from '../../hooks/staff';
-import { usePendingSubmissions } from '../../hooks/leaderboard';
-import { CheckinsTrendChart } from '../../components/CheckinsTrendChart';
-import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../constants/theme';
-import type { StaffCheckIn, MemberListItem } from '../../types';
-import { MEMBER_ROLE, Permission } from '../../constants/enums';
+import { useAuth } from '../../../context/AuthContext';
+import { AppLoader } from '../../../components/AppLoader';
+import { StaffHeader } from '../../../components/StaffHeader';
+import { useActiveCheckIns, useCheckOut, useStaffMembers } from '../../../hooks/staff';
+import { usePendingSubmissions } from '../../../hooks/leaderboard';
+import { CheckinsTrendChart } from '../../../components/CheckinsTrendChart';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT, STAFF_SURFACE_RAISED } from '../../../constants/theme';
+import type { StaffCheckIn, MemberListItem } from '../../../types';
+import { MEMBER_ROLE, Permission } from '../../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -168,7 +168,7 @@ export default function StaffDashboardScreen() {
   const previewList = activeCheckIns.slice(0, 5);
 
   const goToMembers = (filter?: 'active' | 'expiring' | 'expired') =>
-    router.navigate({ pathname: '/(staff)/members', params: filter ? { filter } : {} });
+    router.navigate({ pathname: '/(staff)/(tabs)/members', params: filter ? { filter } : {} });
 
   if (isLoading) {
     return (
@@ -219,7 +219,7 @@ export default function StaffDashboardScreen() {
             label="Active right now"
             accent={COLORS.primary}
             primary
-            onPress={() => router.navigate('/(staff)/checkins')}
+            onPress={() => router.navigate('/(staff)/(tabs)/checkins')}
           />
           <MetricTile
             icon="people-outline"
@@ -257,7 +257,7 @@ export default function StaffDashboardScreen() {
         {/* Primary action */}
         <TouchableOpacity
           style={[styles.cta, { backgroundColor: COLORS.primary }]}
-          onPress={() => router.navigate('/(staff)/checkins')}
+          onPress={() => router.navigate('/(staff)/(tabs)/checkins')}
           activeOpacity={0.85}
         >
           <View style={styles.ctaIcon}>
@@ -297,7 +297,7 @@ export default function StaffDashboardScreen() {
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>CURRENTLY ACTIVE</Text>
           {activeCheckIns.length > 5 && (
-            <TouchableOpacity onPress={() => router.navigate('/(staff)/checkins')}>
+            <TouchableOpacity onPress={() => router.navigate('/(staff)/(tabs)/checkins')}>
               <Text style={[styles.seeAll, { color: COLORS.primary }]}>See all →</Text>
             </TouchableOpacity>
           )}

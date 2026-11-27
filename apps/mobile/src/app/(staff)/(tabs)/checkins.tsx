@@ -1,19 +1,19 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { AppLoader } from '../../components/AppLoader';
-import { StaffHeader } from '../../components/StaffHeader';
+import { AppLoader } from '../../../components/AppLoader';
+import { StaffHeader } from '../../../components/StaffHeader';
 import {
   useActiveCheckIns,
   useCheckInManual,
   useCheckInQrScan,
   useCheckOut,
   useStaffMembers,
-} from '../../hooks/staff';
-import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { StaffCheckIn, MemberListItem } from '../../types';
+} from '../../../hooks/staff';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import type { StaffCheckIn, MemberListItem } from '../../../types';
 
 function getInitials(name: string): string {
   const parts = name.trim().split(' ');

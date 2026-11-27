@@ -249,7 +249,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  backBtn: { padding: 4, marginRight: 4 },
+  // 44pt tap target; pulled left so the arrow lines up with the content edge.
+  backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10, marginRight: -6 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   screenTitle: { fontSize: 22, color: COLORS.text, ...FONT.bold },
   statusDot: { width: 8, height: 8, borderRadius: 4 },

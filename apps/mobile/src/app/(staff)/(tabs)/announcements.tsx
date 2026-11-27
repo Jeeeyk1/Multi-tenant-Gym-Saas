@@ -1,19 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { Ionicons } from '@expo/vector-icons';
-import { AppLoader } from '../../components/AppLoader';
-import { StaffHeader } from '../../components/StaffHeader';
+import { AppLoader } from '../../../components/AppLoader';
+import { StaffHeader } from '../../../components/StaffHeader';
 import {
   useArchiveStaffAnnouncement,
   useCreateStaffAnnouncement,
   useStaffAnnouncements,
-} from '../../hooks/staff';
-import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import { formatApiError } from '../../lib/format-error';
-import type { StaffAnnouncement } from '../../types';
-import { useAuth } from '../../context/AuthContext';
-import { Permission } from '../../constants/enums';
+} from '../../../hooks/staff';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { formatApiError } from '../../../lib/format-error';
+import type { StaffAnnouncement } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { Permission } from '../../../constants/enums';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

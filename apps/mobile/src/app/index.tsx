@@ -17,7 +17,7 @@ export default function IndexScreen() {
   if (!isAuthenticated) return <Redirect href="/(auth)/entry" />;
 
   // Staff go straight to their dashboard, unless they're also a member who chose the member view.
-  if (isStaff && !(isAlsoMember && preferred === 'member')) return <Redirect href="/(staff)/dashboard" />;
+  if (isStaff && !(isAlsoMember && preferred === 'member')) return <Redirect href="/(staff)/(tabs)/dashboard" />;
 
   // Profile query: data === undefined → still loading; data === null → no profile (treat as done);
   // data with onboardingDone false → onboarding pending.

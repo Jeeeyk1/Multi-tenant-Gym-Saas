@@ -697,7 +697,7 @@ export default function ProfileScreen() {
             style={({ pressed }) => [s.switchViewBtn, pressed && { opacity: 0.85 }]}
             onPress={async () => {
               await setPreferredView('staff');
-              router.replace('/(staff)/dashboard');
+              router.replace('/(staff)/(tabs)/dashboard');
             }}
             accessibilityRole="button"
           >

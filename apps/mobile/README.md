@@ -37,6 +37,9 @@ enabling Metro to resolve `workspace:*` packages like `@gym-saas/contracts`.
 - `src/app/(member)/(tabs)/_layout.tsx` holds the five tabs: Home, Train, Check In, Chat, Me. The tab bar is
   `components/navigation/DockTabBar.tsx` (floating dock; icons come from each screen's `tabBarIcon`).
 - Link to tabs with the group in the path, e.g. `/(member)/(tabs)/chat`; detail screens stay `/(member)/leaderboard`.
+- Staff work the same way: `src/app/(staff)/_layout.tsx` is a stack (sign-in and staff-only checks), the five staff
+  tabs live in `(staff)/(tabs)/` with the dock in fixed staff colours, and detail screens (member detail,
+  leaderboard, insights, renewals, plans, badges, chat) are stack screens, e.g. `/(staff)/(tabs)/members` and `/(staff)/member/[id]`.
 
 ## UI kit and motion
 

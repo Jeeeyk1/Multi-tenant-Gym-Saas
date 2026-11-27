@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, FlatList, TextInput, StyleSheet, RefreshControl, TouchableOpacity, ScrollView } from 'react-native';
-import { Text } from '../../components/Text';
+import { Text } from '../../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { AppLoader } from '../../components/AppLoader';
-import { StaffHeader } from '../../components/StaffHeader';
-import { useStaffMembers } from '../../hooks/staff';
-import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../constants/theme';
-import type { MemberListItem } from '../../types';
-import { useAuth } from '../../context/AuthContext';
-import { Permission } from '../../constants/enums';
+import { AppLoader } from '../../../components/AppLoader';
+import { StaffHeader } from '../../../components/StaffHeader';
+import { useStaffMembers } from '../../../hooks/staff';
+import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import type { MemberListItem } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { Permission } from '../../../constants/enums';
 
 const STATUS_COLOR: Record<string, string> = {
   ACTIVE: COLORS.active,

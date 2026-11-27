@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
+import { cloudOfflineOutline, enterOutline } from 'ionicons/icons';
+import { EmptyState, StatCard, StatusPill } from '@gym-saas/ui';
 import { getSessionUser } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { CheckOutButton } from '@/components/dashboard/check-out-button';
 import { CheckinsTrendChart } from '@/components/dashboard/checkins-trend-chart';
+import { RetryButton } from '@/components/dashboard/retry-button';
 import { cn } from '@/lib/utils';
 import type { StaffCheckIn, MembersPage, CheckinsTrendPoint } from '@/types/api';
 
 export const metadata: Metadata = { title: 'Dashboard' };
+
+/** A check-in this long is probably a missed check-out, so it is flagged for staff. */
+const LONG_STAY_MINUTES = 120;
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -22,7 +28,7 @@ function getInitials(name: string): string {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 function elapsedMinutes(iso: string): number {
@@ -36,32 +42,17 @@ function formatElapsed(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
-function StatCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent?: boolean;
-}) {
+/** "+12 vs yesterday", "4 fewer than yesterday", "Same as yesterday". */
+function versusYesterday(today: number, yesterday: number) {
+  const diff = today - yesterday;
+  if (diff === 0) return <span>Same as yesterday</span>;
   return (
-    <div
-      className={cn(
-        'bg-surface border border-border rounded-xl p-5',
-        accent ? 'border-l-4 border-l-primary' : '',
-      )}
-    >
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-        {label}
-      </p>
-      <p className={cn('text-4xl font-heading font-extrabold tracking-tight tabular', accent ? 'text-primary' : 'text-foreground')}>
-        {value}
-      </p>
-      {sub && <p className="text-sm text-muted-foreground mt-1.5">{sub}</p>}
-    </div>
+    <span>
+      <span className={cn('font-semibold', diff > 0 ? 'text-success' : 'text-foreground')}>
+        {diff > 0 ? `+${diff}` : diff}
+      </span>{' '}
+      vs yesterday
+    </span>
   );
 }
 
@@ -72,119 +63,116 @@ export default async function DashboardPage() {
   const firstName = user.fullName?.split(' ')[0] ?? user.email;
   const canViewReports = user.permissions.includes('reports.view');
 
-  const [activeCheckIns, membersPage, checkinsTrend] = await Promise.all([
-    api.get<StaffCheckIn[]>(`/gyms/${user.gymId}/checkins/active`).catch(() => [] as StaffCheckIn[]),
-    api.get<MembersPage>(`/gyms/${user.gymId}/members?page=1&limit=1`).catch(() => null),
+  // allSettled: one failing call shows an error in its own section instead of a misleading 0.
+  const [activeRes, membersRes, trendRes] = await Promise.allSettled([
+    api.get<StaffCheckIn[]>(`/gyms/${user.gymId}/checkins/active`),
+    api.get<MembersPage>(`/gyms/${user.gymId}/members?page=1&limit=1`),
     canViewReports
-      ? api.get<CheckinsTrendPoint[]>(`/gyms/${user.gymId}/reports/checkins-trend?days=7`).catch(() => [] as CheckinsTrendPoint[])
+      ? api.get<CheckinsTrendPoint[]>(`/gyms/${user.gymId}/reports/checkins-trend?days=7`)
       : Promise.resolve([] as CheckinsTrendPoint[]),
   ]);
 
-  const totalMembers = membersPage?.meta.total ?? '—';
+  const activeCheckIns = activeRes.status === 'fulfilled' ? activeRes.value : null;
+  const totalMembers = membersRes.status === 'fulfilled' ? membersRes.value.meta.total : null;
+  const trend = trendRes.status === 'fulfilled' ? trendRes.value : null;
 
-  const dateLabel = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  // The trend runs oldest → today, one point per day.
+  const today = trend && trend.length ? trend[trend.length - 1].count : null;
+  const yesterday = trend && trend.length > 1 ? trend[trend.length - 2].count : null;
+  const week = trend ? trend.reduce((sum, p) => sum + p.count, 0) : null;
+
+  const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="space-y-8 p-4 sm:p-8">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground mb-1.5">
-            {getGreeting()},{' '}
-            <span className="font-semibold text-foreground">{firstName}</span>
-          </p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-surface border border-border text-sm text-muted-foreground font-medium select-none">
-              {dateLabel}
-            </span>
-          </div>
-        </div>
+      <div>
+        <p className="text-sm text-muted-foreground">
+          {getGreeting()}, <span className="font-semibold text-foreground">{firstName}</span> · {dateLabel}
+        </p>
+        <h1 className="mt-1 font-heading text-heading text-foreground">Dashboard</h1>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* KPIs */}
+      <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2', canViewReports && 'xl:grid-cols-4')}>
         <StatCard
-          label="Active Right Now"
-          value={activeCheckIns.length}
-          sub={activeCheckIns.length === 1 ? 'member in gym' : 'members in gym'}
-          accent
+          live
+          label="In the gym now"
+          value={activeCheckIns ? activeCheckIns.length : '—'}
+          sub={activeCheckIns ? (activeCheckIns.length === 1 ? 'member checked in' : 'members checked in') : "Couldn't load"}
         />
+        {canViewReports && (
+          <StatCard
+            label="Check-ins today"
+            value={today ?? '—'}
+            sub={today !== null && yesterday !== null ? versusYesterday(today, yesterday) : "Couldn't load"}
+          />
+        )}
+        {canViewReports && (
+          <StatCard label="Last 7 days" value={week ?? '—'} sub={week !== null ? 'check-ins, including today' : "Couldn't load"} />
+        )}
         <StatCard
-          label="Total Members"
-          value={totalMembers}
-          sub="enrolled across all plans"
+          label="Members"
+          value={totalMembers ?? '—'}
+          sub={totalMembers !== null ? 'across all plans' : "Couldn't load"}
         />
       </div>
 
       {/* Check-ins trend */}
-      {canViewReports && <CheckinsTrendChart gymId={user.gymId} initialData={checkinsTrend} />}
+      {canViewReports && trend && <CheckinsTrendChart gymId={user.gymId} initialData={trend} />}
 
-      {/* Active check-ins */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Currently Active
+      {/* Who's in right now */}
+      <section aria-labelledby="active-heading">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 id="active-heading" className="text-eyebrow uppercase text-muted">
+            In the gym now
           </h2>
+          {activeCheckIns && activeCheckIns.length > 0 ? (
+            <span className="text-sm text-muted">{activeCheckIns.length} checked in</span>
+          ) : null}
         </div>
 
-        {activeCheckIns.length === 0 ? (
-          <div className="bg-surface border border-border rounded-xl p-12 text-center">
-            <p className="text-2xl mb-3">🏋️</p>
-            <p className="text-sm text-muted-foreground">No one is checked in right now.</p>
-          </div>
-        ) : (
-          <div className="bg-surface border border-border rounded-xl overflow-hidden">
-            {/* Table header */}
-            <div className="hidden sm:grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-5 py-3 border-b border-border">
-              <div />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Member</p>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Checked In</p>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Duration</p>
-              <div />
-            </div>
-
-            {/* Rows */}
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          {activeCheckIns === null ? (
+            <EmptyState
+              icon={cloudOfflineOutline}
+              tone="error"
+              title="Couldn't load who's in the gym"
+              message="Check your connection and try again."
+              action={<RetryButton />}
+            />
+          ) : activeCheckIns.length === 0 ? (
+            <EmptyState
+              icon={enterOutline}
+              title="No one is checked in right now"
+              message="Check-ins from the app, the QR scanner and the front desk appear here as they happen."
+            />
+          ) : (
             <ul className="divide-y divide-border">
               {activeCheckIns.map((checkin) => {
                 const elapsed = elapsedMinutes(checkin.checkedInAt);
+                const longStay = elapsed > LONG_STAY_MINUTES;
                 return (
                   <li key={checkin.id} className="flex items-center gap-4 px-5 py-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-primary">
-                        {getInitials(checkin.member.user.fullName)}
-                      </span>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
+                      <span className="text-xs font-bold text-primary">{getInitials(checkin.member.user.fullName)}</span>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {checkin.member.user.fullName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {checkin.member.membershipNumber}
-                        {checkin.isOutOfHours && (
-                          <span className="ml-2 text-warning">· out-of-hours</span>
-                        )}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{checkin.member.user.fullName}</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-mono">{checkin.member.membershipNumber}</span>
+                        {checkin.isOutOfHours && <StatusPill tone="warning">Out of hours</StatusPill>}
+                        {longStay && <StatusPill tone="warning">Over 2 hours, missed check-out?</StatusPill>}
+                      </div>
                     </div>
 
-                    <p className="text-sm text-muted-foreground hidden sm:block shrink-0">
-                      {formatTime(checkin.checkedInAt)}
-                    </p>
-
-                    <p
-                      className={cn(
-                        'text-sm font-medium shrink-0 hidden sm:block w-14 text-right',
-                        elapsed > 120 ? 'text-warning' : 'text-foreground',
-                      )}
-                    >
-                      {formatElapsed(elapsed)}
-                    </p>
+                    <div className="hidden shrink-0 text-right sm:block">
+                      <p className={cn('tabular text-sm font-semibold', longStay ? 'text-warning' : 'text-foreground')}>
+                        {formatElapsed(elapsed)}
+                      </p>
+                      <p className="text-xs text-muted">since {formatTime(checkin.checkedInAt)}</p>
+                    </div>
 
                     <div className="shrink-0">
                       <CheckOutButton gymId={user.gymId} checkinId={checkin.id} />
@@ -193,9 +181,9 @@ export default async function DashboardPage() {
                 );
               })}
             </ul>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

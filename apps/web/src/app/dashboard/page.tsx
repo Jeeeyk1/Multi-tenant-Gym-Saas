@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { cloudOfflineOutline, enterOutline } from 'ionicons/icons';
 import { EmptyState, StatCard, StatusPill } from '@gym-saas/ui';
 import { getSessionUser } from '@/lib/auth';
@@ -7,9 +8,21 @@ import { CheckOutButton } from '@/components/dashboard/check-out-button';
 import { CheckinsTrendChart } from '@/components/dashboard/checkins-trend-chart';
 import { RetryButton } from '@/components/dashboard/retry-button';
 import { cn } from '@/lib/utils';
-import type { StaffCheckIn, MembersPage, CheckinsTrendPoint } from '@/types/api';
+import type { StaffCheckIn, MembersPage, CheckinsTrendPoint, ExpiringMemberships } from '@/types/api';
 
 export const metadata: Metadata = { title: 'Dashboard' };
+
+/** Look-ahead for the "expiring soon" card and the renewals-due list. */
+const EXPIRING_DAYS = 7;
+
+/** Whole days from the gym's today (YYYY-MM-DD) to an expiry date. */
+function daysUntil(expiryDate: string, today: string): number {
+  return Math.round((Date.parse(`${expiryDate}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
+function formatDate(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
 
 /** A check-in this long is probably a missed check-out, so it is flagged for staff. */
 const LONG_STAY_MINUTES = 120;
@@ -62,24 +75,29 @@ export default async function DashboardPage() {
 
   const firstName = user.fullName?.split(' ')[0] ?? user.email;
   const canViewReports = user.permissions.includes('reports.view');
+  const canRenew = user.permissions.includes('members.renew');
 
   // allSettled: one failing call shows an error in its own section instead of a misleading 0.
-  const [activeRes, membersRes, trendRes] = await Promise.allSettled([
+  const [activeRes, membersRes, trendRes, expiringRes] = await Promise.allSettled([
     api.get<StaffCheckIn[]>(`/gyms/${user.gymId}/checkins/active`),
     api.get<MembersPage>(`/gyms/${user.gymId}/members?page=1&limit=1`),
     canViewReports
       ? api.get<CheckinsTrendPoint[]>(`/gyms/${user.gymId}/reports/checkins-trend?days=7`)
       : Promise.resolve([] as CheckinsTrendPoint[]),
+    canRenew
+      ? api.get<ExpiringMemberships>(`/gyms/${user.gymId}/members/expiring?days=${EXPIRING_DAYS}`)
+      : Promise.resolve(null),
   ]);
 
   const activeCheckIns = activeRes.status === 'fulfilled' ? activeRes.value : null;
   const totalMembers = membersRes.status === 'fulfilled' ? membersRes.value.meta.total : null;
   const trend = trendRes.status === 'fulfilled' ? trendRes.value : null;
+  const expiring = expiringRes.status === 'fulfilled' ? expiringRes.value : null;
+  const kpiCount = 2 + (canViewReports ? 1 : 0) + (canRenew ? 1 : 0);
 
   // The trend runs oldest → today, one point per day.
   const today = trend && trend.length ? trend[trend.length - 1].count : null;
   const yesterday = trend && trend.length > 1 ? trend[trend.length - 2].count : null;
-  const week = trend ? trend.reduce((sum, p) => sum + p.count, 0) : null;
 
   const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -94,7 +112,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2', canViewReports && 'xl:grid-cols-4')}>
+      <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2', kpiCount === 3 && 'xl:grid-cols-3', kpiCount === 4 && 'xl:grid-cols-4')}>
         <StatCard
           live
           label="In the gym now"
@@ -108,8 +126,24 @@ export default async function DashboardPage() {
             sub={today !== null && yesterday !== null ? versusYesterday(today, yesterday) : "Couldn't load"}
           />
         )}
-        {canViewReports && (
-          <StatCard label="Last 7 days" value={week ?? '—'} sub={week !== null ? 'check-ins, including today' : "Couldn't load"} />
+        {canRenew && (
+          <StatCard
+            label={`Expiring in ${EXPIRING_DAYS} days`}
+            value={expiring ? expiring.expiringSoon : '—'}
+            sub={
+              expiring ? (
+                expiring.expired > 0 ? (
+                  <span>
+                    <span className="font-semibold text-warning">{expiring.expired} already expired</span>
+                  </span>
+                ) : (
+                  'active memberships ending soon'
+                )
+              ) : (
+                "Couldn't load"
+              )
+            }
+          />
         )}
         <StatCard
           label="Members"
@@ -117,6 +151,42 @@ export default async function DashboardPage() {
           sub={totalMembers !== null ? 'across all plans' : "Couldn't load"}
         />
       </div>
+
+      {/* Renewals due: the soonest expiries, each linking to the member */}
+      {canRenew && expiring && expiring.soonest.length > 0 && (
+        <section aria-labelledby="renewals-heading">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="renewals-heading" className="text-eyebrow uppercase text-muted">
+              Renewals due
+            </h2>
+            <span className="text-sm text-muted">
+              {expiring.expiringSoon} in the next {EXPIRING_DAYS} days
+            </span>
+          </div>
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+            {expiring.soonest.map((m) => {
+              const days = daysUntil(m.expiryDate, expiring.from);
+              return (
+                <li key={m.id}>
+                  <Link
+                    href={`/dashboard/members/${m.id}`}
+                    className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{m.fullName}</p>
+                      <p className="font-mono text-xs text-muted-foreground">{m.membershipNumber}</p>
+                    </div>
+                    <StatusPill tone={days <= 1 ? 'danger' : 'warning'}>
+                      {days === 0 ? 'Ends today' : days === 1 ? 'Ends tomorrow' : `Ends in ${days} days`}
+                    </StatusPill>
+                    <span className="hidden text-xs text-muted sm:inline">{formatDate(m.expiryDate)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Check-ins trend */}
       {canViewReports && trend && <CheckinsTrendChart gymId={user.gymId} initialData={trend} />}

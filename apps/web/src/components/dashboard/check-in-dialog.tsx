@@ -1,5 +1,7 @@
 'use client';
 
+import { addOutline } from 'ionicons/icons';
+import { Icon, buttonClasses } from '@gym-saas/ui';
 import { useState, useMemo } from 'react';
 import { loadMembers, checkInMember } from '@/lib/actions/checkins';
 import { cn } from '@/lib/utils';
@@ -87,10 +89,11 @@ export function CheckInDialog({ gymId }: Props) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm py-2 font-semibold px-4 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={buttonClasses('primary', 'sm')}
+        aria-label="Check in member"
       >
-        <span className="text-base leading-none">+</span>
-        Check In Member
+        <Icon icon={addOutline} size={18} />
+        <span className="hidden sm:inline">Check in member</span>
       </button>
 
       {open && (

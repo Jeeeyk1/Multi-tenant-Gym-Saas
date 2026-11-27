@@ -526,6 +526,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-start',
+    minHeight: 44,
   },
   backLabel: { fontSize: 16, color: COLORS.text, ...FONT.regular },
 

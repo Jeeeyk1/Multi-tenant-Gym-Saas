@@ -10,6 +10,7 @@ import {
   useStaffAnnouncements,
 } from '../../../hooks/staff';
 import { STAFF_COLORS as COLORS, SPACING, RADIUS, FONT } from '../../../constants/theme';
+import { useToast } from '../../../components/ui';
 import { formatApiError } from '../../../lib/format-error';
 import type { StaffAnnouncement } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
@@ -356,6 +357,7 @@ function AnnouncementCard({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function AnnouncementsScreen() {
+  const toast = useToast();
   const { can } = useAuth();
   const canManage = can(Permission.ANNOUNCEMENTS_MANAGE);
   const announcementsQ = useStaffAnnouncements();
@@ -390,7 +392,9 @@ export default function AnnouncementsScreen() {
     try {
       await createMutation.mutateAsync(dto);
       setCreateOpen(false);
+      toast.show(dto.publishAt ? 'Announcement scheduled' : 'Announcement posted');
     } catch (err) {
+      // The create sheet is still open here and would hide a toast, so this stays an alert.
       Alert.alert('Error', formatApiError(err, 'Failed to create announcement'));
       throw err;
     }
@@ -407,10 +411,8 @@ export default function AnnouncementsScreen() {
           style: 'destructive',
           onPress: () => {
             archiveMutation.mutate(id, {
-              onError: (err: unknown) => {
-                const e = err as { message?: string };
-                Alert.alert('Error', e?.message ?? 'Failed to archive');
-              },
+              onSuccess: () => toast.show('Announcement archived'),
+              onError: (err: unknown) => toast.show(formatApiError(err, 'Failed to archive'), { tone: 'error' }),
             });
           },
         },

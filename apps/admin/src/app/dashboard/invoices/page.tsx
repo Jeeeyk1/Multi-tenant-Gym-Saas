@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import { cloudOfflineOutline, receiptOutline } from 'ionicons/icons';
+import { EmptyState, PageHeader, Pagination } from '@gym-saas/ui';
 import type { Metadata } from 'next';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
@@ -37,22 +40,23 @@ export default async function InvoicesPage({
   const page = Number(pageParam ?? '1');
   const limit = 50;
 
-  const [invoices, total] = await api
-    .get<[Invoice[], number]>(`/v1/admin/invoices?page=${page}&limit=${limit}`)
-    .catch(() => [[], 0] as [Invoice[], number]);
-
+  // null means the request failed; before, a failure looked like "No invoices yet".
+  const result = await api.get<[Invoice[], number]>(`/v1/admin/invoices?page=${page}&limit=${limit}`).catch(() => null);
+  const [invoices, total] = result ?? [[], 0];
   const pages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <p className="text-[13px] text-muted-foreground">FitOps</p>
-        <h1 className="text-2xl font-bold text-foreground mb-1">Invoices</h1>
-        <p className="text-sm text-muted-foreground">{total} total</p>
-      </div>
+    <div className="p-4 sm:p-8">
+      <PageHeader eyebrow="FitOps" title="Invoices" description={result ? `${total.toLocaleString('en-US')} total` : undefined} className="mb-6" />
 
-      {invoices.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No invoices yet.</p>
+      {!result ? (
+        <div className="rounded-xl border border-border bg-surface">
+          <EmptyState icon={cloudOfflineOutline} tone="error" title="Couldn't load invoices" message="Check that the API is running, then reload the page." />
+        </div>
+      ) : invoices.length === 0 ? (
+        <div className="rounded-xl border border-border bg-surface">
+          <EmptyState icon={receiptOutline} title="No invoices yet" message="Invoices appear here when gyms are billed." />
+        </div>
       ) : (
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
@@ -86,21 +90,18 @@ export default async function InvoicesPage({
         </div>
       )}
 
-      {pages > 1 && (
-        <div className="flex items-center gap-2 mt-4 text-sm">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-            <a
-              key={p}
-              href={`/dashboard/invoices?page=${p}`}
-              className={`px-3 py-1.5 rounded-lg border transition ${
-                p === page ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-foreground/5'
-              }`}
-            >
-              {p}
-            </a>
-          ))}
-        </div>
-      )}
+      {result && total > 0 ? (
+        <Pagination
+          className="mt-4"
+          page={page}
+          pages={pages}
+          total={total}
+          pageSize={limit}
+          hrefFor={(p) => (p > 1 ? `/dashboard/invoices?page=${p}` : '/dashboard/invoices')}
+          linkAs={Link}
+          noun="invoices"
+        />
+      ) : null}
     </div>
   );
 }

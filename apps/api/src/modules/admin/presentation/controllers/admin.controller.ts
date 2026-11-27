@@ -42,6 +42,7 @@ import { CreateGymClientDto } from '../dto/create-gym-client.dto';
 import { UpdateGymStatusDto } from '../dto/update-gym-status.dto';
 import { CreatePlanDto } from '../dto/create-plan.dto';
 import { UpdatePlanDto } from '../dto/update-plan.dto';
+import { ListGymsQueryDto, ListUsersQueryDto } from '../dto/list-admin-query.dto';
 import { RejectPaymentDto } from '../dto/reject-payment.dto';
 import { ExtendTrialDto } from '../dto/extend-trial.dto';
 import { UpdateBillingPlanAiCapsDto } from '../dto/update-billing-plan-ai-caps.dto';
@@ -138,12 +139,10 @@ export class AdminController {
     return this.getStats.execute();
   }
 
+  /** GET /admin/gyms?page&limit&search&status — newest first. */
   @Get('gyms')
-  gyms(
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
-  ) {
-    return this.listGyms.execute(+page, +limit);
+  gyms(@Query() query: ListGymsQueryDto) {
+    return this.listGyms.execute(query);
   }
 
   @Get('gyms/:id')
@@ -200,13 +199,10 @@ export class AdminController {
     return this.resendInvite.execute(id);
   }
 
+  /** GET /admin/users?page&limit&search&gymId — newest first. */
   @Get('users')
-  users(
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
-    @Query('gymId') gymId?: string,
-  ) {
-    return this.listUsers.execute(+page, +limit, gymId);
+  users(@Query() query: ListUsersQueryDto) {
+    return this.listUsers.execute(query);
   }
 
   @Get('plans')

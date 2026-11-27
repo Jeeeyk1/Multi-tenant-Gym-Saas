@@ -1,31 +1,29 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, StyleSheet } from 'react-native';
 import { STAFF_COLORS as COLORS } from '../../constants/theme';
+import { DockTabBar, type DockPalette } from '../../components/navigation/DockTabBar';
 import { useAuth } from '../../context/AuthContext';
 import { Permission } from '../../constants/enums';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-function TabIcon({
-  iconFocused,
-  iconUnfocused,
-  focused,
-  size = 22,
-}: {
-  iconFocused: IoniconsName;
-  iconUnfocused: IoniconsName;
-  focused: boolean;
-  size?: number;
-}) {
-  return (
-    <Ionicons
-      name={focused ? iconFocused : iconUnfocused}
-      size={size}
-      color={focused ? COLORS.primary : COLORS.textMuted}
-    />
-  );
+function icon(focusedName: IoniconsName, outlineName: IoniconsName) {
+  return function TabIcon({ focused, color, size }: { focused: boolean; color: string; size: number }) {
+    return <Ionicons name={focused ? focusedName : outlineName} size={size} color={color} />;
+  };
 }
+
+/** Staff use fixed FitOps colours, never the gym's theme. */
+const STAFF_DOCK: DockPalette = {
+  background: COLORS.background,
+  surface: COLORS.surface,
+  border: COLORS.border,
+  accent: COLORS.primary,
+  accentMuted: `${COLORS.primary}26`,
+  label: COLORS.primary,
+  inactive: COLORS.textMuted,
+  badge: COLORS.error,
+};
 
 export default function StaffLayout() {
   const { isAuthenticated, isLoading, isStaff, can } = useAuth();
@@ -40,23 +38,12 @@ export default function StaffLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textMuted,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
-      }}
-    >
+    <Tabs tabBar={(props) => <DockTabBar {...props} palette={STAFF_DOCK} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="dashboard"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="home" iconUnfocused="home-outline" focused={focused} />
-          ),
+          tabBarIcon: icon('home', 'home-outline'),
         }}
       />
       <Tabs.Screen
@@ -65,13 +52,7 @@ export default function StaffLayout() {
           // Gyms are set up differently: a tab only shows when the person's role can use it.
           href: can(Permission.CHECKINS_VIEW) ? undefined : null,
           title: 'Check-ins',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              iconFocused="checkmark-circle"
-              iconUnfocused="checkmark-circle-outline"
-              focused={focused}
-            />
-          ),
+          tabBarIcon: icon('checkmark-circle', 'checkmark-circle-outline'),
         }}
       />
       <Tabs.Screen
@@ -79,31 +60,21 @@ export default function StaffLayout() {
         options={{
           href: can(Permission.MEMBERS_VIEW) ? undefined : null,
           title: 'Members',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="people" iconUnfocused="people-outline" focused={focused} />
-          ),
+          tabBarIcon: icon('people', 'people-outline'),
         }}
       />
       <Tabs.Screen
         name="announcements"
         options={{
           title: 'Announce',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              iconFocused="megaphone"
-              iconUnfocused="megaphone-outline"
-              focused={focused}
-            />
-          ),
+          tabBarIcon: icon('megaphone', 'megaphone-outline'),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: 'More',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon iconFocused="menu" iconUnfocused="menu-outline" focused={focused} />
-          ),
+          tabBarIcon: icon('menu', 'menu-outline'),
         }}
       />
       {/* Detail screens — hidden from tab bar */}
@@ -138,22 +109,3 @@ export default function StaffLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: COLORS.surface,
-    borderTopColor: COLORS.border,
-    borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 80 : 64,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-    paddingTop: 8,
-  },
-  tabItem: {
-    paddingTop: 4,
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontFamily: 'Inter_500Medium',
-    marginBottom: 2,
-  },
-});

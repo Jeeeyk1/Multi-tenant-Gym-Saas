@@ -1,0 +1,120 @@
+/*
+ * FitOps design tokens: the one source of colours, motion and keyframes for staff web and admin.
+ * Import once per app, before globals.css:  import '@gym-saas/ui/tokens.css';
+ * Tailwind maps these through `@gym-saas/ui/tailwind-preset`. Values are HSL channels so
+ * utilities can add alpha, e.g. bg-primary/10.
+ */
+
+:root {
+  --background:              216 33.3% 97.1%;   /* #F5F7FA */
+  --surface:                 0 0% 100%;         /* #FFFFFF */
+  --surface-raised:          0 0% 100%;         /* #FFFFFF */
+  --surface-inverse:         210 73% 14.5%;     /* #0A2540 */
+  --scrim:                   210 73% 14.5%;     /* #0A2540 */
+  --border:                  214.3 31.8% 91.4%; /* #E2E8F0 */
+  --text:                    210 73% 14.5%;     /* #0A2540 */
+  --muted:                   215.3 19.3% 34.5%; /* #475569 */
+  --text-on-inverse:         0 0% 100%;         /* #FFFFFF */
+  --text-secondary-on-inverse: 212.7 26.8% 83.9%; /* #CBD5E1 */
+  --number-on-inverse:       211.7 96.4% 78.4%; /* #93C5FD */
+  --icon-muted:              213.8 22% 65.3%;   /* #93A4BA */
+  --hover:                   216 33.3% 97.1%;   /* #F5F7FA */
+  --disabled:                214.3 31.8% 91.4%; /* #E2E8F0 */
+  --disabled-fg:             215.4 16.3% 46.9%; /* #64748B */
+  --segment-track:           222.9 16.3% 91.6%; /* #E6E8ED */
+
+  --primary:                 224.3 76.3% 48%;   /* #1D4ED8 */
+  --primary-hover:           225.9 70.7% 40.2%; /* #1E40AF */
+  --primary-fg:              0 0% 100%;         /* #FFFFFF */
+  --link:                    224.3 76.3% 48%;   /* #1D4ED8 */
+  --nav-active:              214.3 94.6% 92.7%; /* #DBEAFE */
+  --nav-active-fg:           224.3 76.3% 48%;   /* #1D4ED8 */
+  --focus-ring:              217.2 91.2% 59.8%; /* #3B82F6 */
+  --chart-primary:           210 73% 14.5%;     /* #0A2540 */
+  --chart-highlight:         217.2 91.2% 59.8%; /* #3B82F6 */
+
+  --success:                 160.5 87.7% 25.5%; /* #087A55 */
+  --success-bg:              151.8 43.6% 92.4%; /* #E3F4EC */
+  --warning:                 15 79.1% 33.7%;    /* #9A3412 */
+  --warning-solid:           16.8 79.6% 50%;    /* #E5531A */
+  --warning-bg:              19.4 83.8% 92.7%;  /* #FCE7DD */
+  --destructive:             4.2 74.3% 48.8%;   /* #D92D20 */
+  --destructive-fg:          0 0% 100%;         /* #FFFFFF */
+  --destructive-bg:          6.3 82.6% 95.5%;   /* #FDECEA */
+  --destructive-text:        4.2 76.5% 40%;     /* #B42318 */
+
+  --shadow-1: 0 8px 24px rgba(10, 37, 64, 0.12);
+}
+
+.dark {
+  --background:              210.8 73.6% 10.4%; /* #071A2E */
+  --surface:                 210 73% 14.5%;     /* #0A2540 */
+  --surface-raised:          210.5 62.9% 19%;   /* #12304F */
+  --surface-inverse:         210.5 62.9% 19%;   /* #12304F */
+  --scrim:                   0 0% 0%;           /* #000000 */
+  --border:                  214.2 52% 24.5%;   /* #1E3A5F */
+  --text:                    216 33.3% 97.1%;   /* #F5F7FA */
+  --muted:                   212.7 26.8% 83.9%; /* #CBD5E1 */
+  --icon-muted:              213.8 22% 65.3%;   /* #93A4BA */
+  --hover:                   210.5 62.9% 19%;   /* #12304F */
+  --disabled:                214.2 52% 24.5%;   /* #1E3A5F */
+  --disabled-fg:             213.8 22% 65.3%;   /* #93A4BA */
+  --segment-track:           210.5 62.9% 19%;   /* #12304F */
+
+  --primary:                 211.7 96.4% 78.4%; /* #93C5FD */
+  --primary-hover:           213.3 96.9% 87.3%; /* #BFDBFE */
+  --primary-fg:              210 73% 14.5%;     /* #0A2540 */
+  --link:                    211.7 96.4% 78.4%; /* #93C5FD */
+  --nav-active:              210.5 62.9% 19%;   /* #12304F */
+  --nav-active-fg:           211.7 96.4% 78.4%; /* #93C5FD */
+  --focus-ring:              211.7 96.4% 78.4%; /* #93C5FD */
+  --chart-primary:           211.7 96.4% 78.4%; /* #93C5FD */
+  --chart-highlight:         217.2 91.2% 59.8%; /* #3B82F6 */
+
+  --success:                 141.9 69.2% 58%;   /* #4ADE80 */
+  --success-bg:              156.8 50.8% 12%;   /* #0F2E22 */
+  --warning:                 27 96% 61%;        /* #FB923C */
+  --warning-solid:           27 96% 61%;        /* #FB923C */
+  --warning-bg:              20.5 61.1% 14.1%;  /* #3A1D0E */
+  --destructive:             0 90.6% 70.8%;     /* #F87171 */
+  --destructive-fg:          210 73% 14.5%;     /* #0A2540 */
+  --destructive-bg:          0 48.7% 15.3%;     /* #3A1414 */
+  --destructive-text:        0 90.6% 70.8%;     /* #F87171 */
+
+}
+
+/*
+ * Motion: the same three springs as the mobile app (apps/mobile/src/theme/motion.ts),
+ * sampled into CSS linear() easing. Browsers without linear() get a close cubic-bezier.
+ */
+:root {
+  --ease-snappy: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --ease-gentle: cubic-bezier(0.25, 0.8, 0.3, 1);
+  --ease-bouncy: cubic-bezier(0.3, 1.4, 0.5, 1);
+  --duration-snappy: 350ms;
+  --duration-gentle: 500ms;
+  --duration-bouncy: 650ms;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-snappy: linear(0, 0.048, 0.16, 0.297, 0.437, 0.503, 0.624, 0.726, 0.808, 0.871, 0.918, 0.953, 0.976, 0.985, 0.997, 1.004, 1.008, 1.009, 1.009, 1.008, 1.007, 1.007, 1.005, 1.004, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1, 1);
+    --ease-gentle: linear(0, 0.021, 0.073, 0.183, 0.266, 0.35, 0.431, 0.544, 0.611, 0.671, 0.724, 0.771, 0.828, 0.86, 0.886, 0.908, 0.935, 0.948, 0.96, 0.969, 0.976, 0.984, 0.988, 0.992, 0.994, 0.996, 0.998, 0.999, 0.999, 1, 1, 1, 1);
+    --ease-bouncy: linear(0, 0.081, 0.275, 0.516, 0.751, 0.946, 1.085, 1.165, 1.194, 1.174, 1.134, 1.087, 1.042, 1.006, 0.98, 0.966, 0.962, 0.965, 0.972, 0.981, 0.99, 0.998, 1.003, 1.006, 1.007, 1.007, 1.005, 1.003, 1.002, 1, 0.999, 0.999, 1);
+  }
+}
+
+@keyframes fo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fo-pop-in { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes fo-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(4px) scale(0.98); } }
+@keyframes fo-toast-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes fo-shimmer { 0% { opacity: 1; } 50% { opacity: 0.45; } 100% { opacity: 1; } }
+@keyframes fo-spin { to { transform: rotate(360deg); } }
+@keyframes fo-draw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

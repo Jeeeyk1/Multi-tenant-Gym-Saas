@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gym-saas/contracts": "workspace:*",
+    "@gym-saas/ui": "workspace:*",
     "@gym-saas/utils": "workspace:*",
     "autoprefixer": "^10.5.0",
     "axios": "^1.17.0",

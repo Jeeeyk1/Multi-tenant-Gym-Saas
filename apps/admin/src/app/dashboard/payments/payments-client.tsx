@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm, usePrompt } from '@gym-saas/ui';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clientApi } from '@/lib/client-api';
@@ -12,11 +13,18 @@ function formatPhp(amount: number): string {
 
 export function PaymentsClient({ initialPayments }: { initialPayments: PendingPayment[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const prompt = usePrompt();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function verify(id: string) {
-    if (!confirm('Confirm you have checked this payment reference and it is valid?')) return;
+    const ok = await confirm({
+      title: 'Verify this payment?',
+      message: 'Confirm you have checked the payment reference and it matches the invoice. The gym is marked as paid.',
+      confirmLabel: 'Verify payment',
+    });
+    if (!ok) return;
     setPendingId(id);
     setError(null);
     try {
@@ -31,7 +39,14 @@ export function PaymentsClient({ initialPayments }: { initialPayments: PendingPa
   }
 
   async function reject(id: string) {
-    const reason = prompt('Reason for rejecting this payment reference:');
+    const reason = await prompt({
+      title: 'Reject this payment?',
+      message: 'The gym owner sees this reason and can submit a new reference.',
+      label: 'Reason',
+      required: true,
+      confirmLabel: 'Reject payment',
+      variant: 'destructive',
+    });
     if (!reason) return;
     setPendingId(id);
     setError(null);

@@ -3,7 +3,7 @@ export { cn } from './cn';
 export { AnimatedNumber } from './components/AnimatedNumber';
 export { Button, buttonClasses, type ButtonProps, type ButtonSize, type ButtonStatus, type ButtonVariant } from './components/Button';
 export { CommandPalette, type CommandItem } from './components/CommandPalette';
-export { ConfirmProvider, useConfirm, type ConfirmOptions } from './components/Confirm';
+export { ConfirmProvider, useConfirm, usePrompt, type ConfirmOptions, type PromptOptions } from './components/Confirm';
 export { Dialog, type DialogProps } from './components/Dialog';
 export { EmptyState } from './components/EmptyState';
 export { SelectField, TextAreaField, TextField } from './components/Field';

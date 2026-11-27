@@ -1,5 +1,6 @@
 'use client';
 
+import { usePrompt } from '@gym-saas/ui';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -16,6 +17,7 @@ const STATUS_STYLE: Record<SignupRequest['status'], string> = {
 
 export function LeadsClient({ initialLeads }: { initialLeads: SignupRequest[] }) {
   const router = useRouter();
+  const prompt = usePrompt();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,11 +36,19 @@ export function LeadsClient({ initialLeads }: { initialLeads: SignupRequest[] })
   }
 
   async function reject(id: string) {
-    const reason = prompt('Reason for rejecting this lead (optional):') ?? undefined;
+    const reason = await prompt({
+      title: 'Reject this lead?',
+      message: 'The lead moves to Rejected. Add a note for the team if it helps.',
+      label: 'Note',
+      confirmLabel: 'Reject lead',
+      variant: 'destructive',
+    });
+    // null means Cancel; an empty optional note is sent as no note.
+    if (reason === null) return;
     setPendingId(id);
     setError(null);
     try {
-      await clientApi.patch(`/api/admin/signup-requests/${id}/status`, { status: 'REJECTED', notes: reason });
+      await clientApi.patch(`/api/admin/signup-requests/${id}/status`, { status: 'REJECTED', notes: reason || undefined });
       router.refresh();
     } catch (err) {
       const e = err as { message?: string };

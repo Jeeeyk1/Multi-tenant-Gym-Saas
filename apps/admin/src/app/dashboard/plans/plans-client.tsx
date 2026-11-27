@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm, useToast } from '@gym-saas/ui';
 import { useState } from 'react';
 import { clientApi } from '@/lib/client-api';
 
@@ -57,6 +58,8 @@ function planToForm(p: SaasPlan): FormState {
 
 export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
   const [plans, setPlans] = useState<SaasPlan[]>(initialPlans);
+  const confirm = useConfirm();
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -122,12 +125,14 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this plan? This cannot be undone.')) return;
+    const ok = await confirm({ title: 'Delete this plan?', message: 'This cannot be undone.', confirmLabel: 'Delete plan', variant: 'destructive' });
+    if (!ok) return;
     try {
       await clientApi.delete(`/api/admin/plans/${id}`);
       setPlans((prev) => prev.filter((p) => p.id !== id));
+      toast.success('Plan deleted');
     } catch (e: any) {
-      alert(e.message ?? 'Failed to delete plan');
+      toast.error(e.message ?? 'Failed to delete plan');
     }
   }
 
@@ -136,7 +141,7 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
       const updated = await clientApi.patch<SaasPlan>(`/api/admin/plans/${plan.id}`, { isActive: !plan.isActive });
       setPlans((prev) => prev.map((p) => (p.id === plan.id ? updated : p)));
     } catch {
-      alert('Failed to update plan status');
+      toast.error('Failed to update plan status');
     }
   }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Manrope } from 'next/font/google';
+import '@gym-saas/ui/tokens.css';
 import './globals.css';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-heading', display: 'swap', weight: ['500', '700', '800'] });

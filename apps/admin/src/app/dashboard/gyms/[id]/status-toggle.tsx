@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm, useToast } from '@gym-saas/ui';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GymStatus } from '@gym-saas/contracts';
@@ -7,16 +8,31 @@ import { clientApi } from '@/lib/client-api';
 
 export function GymStatusToggle({ gymId, currentStatus }: { gymId: string; currentStatus: GymStatus }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [pending, setPending] = useState(false);
   const isActive = currentStatus === GymStatus.ACTIVE;
   const next = isActive ? GymStatus.SUSPENDED : GymStatus.ACTIVE;
 
   async function toggle() {
-    if (!confirm(`${isActive ? 'Suspend' : 'Activate'} this gym?`)) return;
+    const ok = await confirm(
+      isActive
+        ? {
+            title: 'Suspend this gym?',
+            message: 'Its staff and members lose access to FitOps until you activate it again.',
+            confirmLabel: 'Suspend gym',
+            variant: 'destructive',
+          }
+        : { title: 'Activate this gym?', message: 'Its staff and members get access again.', confirmLabel: 'Activate gym' },
+    );
+    if (!ok) return;
     setPending(true);
     try {
       await clientApi.patch(`/api/admin/gyms/${gymId}/status`, { status: next });
+      toast.success(isActive ? 'Gym suspended' : 'Gym activated');
       router.refresh();
+    } catch (err) {
+      toast.error((err as { message?: string }).message ?? 'Failed to update the gym');
     } finally {
       setPending(false);
     }

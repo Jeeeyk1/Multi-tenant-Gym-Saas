@@ -131,7 +131,7 @@ export function RegisterMemberForm({ gymId, plans }: Props) {
 
       {error && (
         <div className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive-text">{error}</p>
         </div>
       )}
 

@@ -93,7 +93,7 @@ function PlanRow({ plan }: { plan: BillingPlanCaps }) {
           {status && (
             <span
               role="status"
-              className={`text-xs ${status.kind === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
+              className={`text-xs ${status.kind === 'error' ? 'text-destructive-text' : 'text-muted-foreground'}`}
             >
               {status.text}
             </span>

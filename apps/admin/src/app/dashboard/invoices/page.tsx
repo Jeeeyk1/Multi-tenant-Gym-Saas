@@ -23,7 +23,7 @@ const STATUS_STYLE: Record<Invoice['status'], string> = {
   OPEN: 'bg-primary/10 text-primary',
   AWAITING_VERIFICATION: 'bg-warning/10 text-warning',
   PAID: 'bg-success/10 text-success',
-  REJECTED: 'bg-destructive/10 text-destructive',
+  REJECTED: 'bg-destructive/10 text-destructive-text',
   VOID: 'bg-foreground/5 text-muted-foreground',
 };
 

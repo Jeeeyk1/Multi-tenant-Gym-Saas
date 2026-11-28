@@ -106,7 +106,7 @@ function SubmissionCard({
           )}
 
           {error && (
-            <p className="text-xs text-destructive">{error}</p>
+            <p className="text-xs text-destructive-text">{error}</p>
           )}
 
           {rejecting ? (

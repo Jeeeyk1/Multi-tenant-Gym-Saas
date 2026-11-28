@@ -123,7 +123,7 @@ export function SchedulesForm({ gymId, schedules: initial }: Props) {
           {saving ? 'Saving…' : 'Save Hours'}
         </button>
         {success && <span className="text-sm text-success font-medium">✓ Saved</span>}
-        {error && <span className="text-sm text-destructive">{error}</span>}
+        {error && <span className="text-sm text-destructive-text">{error}</span>}
       </div>
     </section>
   );

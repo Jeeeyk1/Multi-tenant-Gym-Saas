@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Dialog, TextField } from '@gym-saas/ui';
 import { cn } from '@/lib/utils';
 import { inviteStaff, deactivateStaff, assignRole, removeRole } from '@/lib/actions/staff';
 import { StaffRole } from '@gym-saas/contracts';
@@ -140,11 +141,14 @@ function StaffRow({
                 {roleLabel(r.role.name)}
                 {member.isActive && (
                   <button
+                    type="button"
                     onClick={() => handleRemoveRole(r.role.id)}
                     disabled={removingRoleId === r.role.id}
-                    className="ml-0.5 opacity-60 hover:opacity-100 transition"
+                    aria-label={`Remove ${roleLabel(r.role.name)} role`}
+                    aria-busy={removingRoleId === r.role.id || undefined}
+                    className="ml-0.5 rounded-sm opacity-60 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring transition"
                   >
-                    {removingRoleId === r.role.id ? '…' : '×'}
+                    <span aria-hidden>{removingRoleId === r.role.id ? '…' : '×'}</span>
                   </button>
                 )}
               </span>
@@ -155,6 +159,7 @@ function StaffRow({
           {member.isActive && unassignedRoles.length > 0 && (
             <div className="flex items-center gap-2 mt-2">
               <select
+                aria-label={`Assign a role to ${member.user.fullName}`}
                 value={selectedRoleId}
                 onChange={(e) => setSelectedRoleId(e.target.value)}
                 className="text-xs bg-surface border border-border rounded-md px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring"
@@ -176,7 +181,7 @@ function StaffRow({
             </div>
           )}
 
-          {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+          {error && <p role="alert" className="text-xs text-destructive-text mt-1">{error}</p>}
         </div>
 
         {/* Deactivate */}
@@ -218,104 +223,76 @@ function InviteModal({ gymId, canGrantOwner, onClose }: { gymId: string; canGran
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-foreground">Invite to your team</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition text-lg px-1">✕</button>
+    <Dialog open onClose={onClose} title="Invite to your team" size="sm" dismissible={!isPending}>
+      {inviteToken ? (
+        <div className="space-y-4">
+          <p role="status" className="text-sm text-success font-medium">✓ Invitation created successfully!</p>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-wide font-medium">Activation Token</p>
+            <p className="text-xs font-mono bg-background border border-border rounded-lg px-3 py-2 break-all text-foreground">
+              {inviteToken}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Share this token with the staff member to activate their account.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            Done
+          </button>
         </div>
-
-        {inviteToken ? (
-          <div className="space-y-4">
-            <p className="text-sm text-success font-medium">✓ Invitation created successfully!</p>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-wide font-medium">Activation Token</p>
-              <p className="text-xs font-mono bg-background border border-border rounded-lg px-3 py-2 break-all text-foreground">
-                {inviteToken}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Share this token with the staff member to activate their account.
-              </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <TextField label="Full name" name="fullName" type="text" required placeholder="Jane Doe" disabled={isPending} />
+          <TextField label="Email" name="email" type="email" required placeholder="jane@example.com" disabled={isPending} />
+          <fieldset>
+            <legend className="text-label text-foreground mb-1.5">Role</legend>
+            <div className="space-y-2">
+              {roleChoices.map((r) => (
+                <label
+                  key={r}
+                  className={cn(
+                    'flex gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition focus-within:ring-2 focus-within:ring-focus-ring',
+                    role === r ? 'border-primary bg-primary/10' : 'border-border hover:bg-hover',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={r}
+                    checked={role === r}
+                    onChange={() => setRole(r)}
+                    disabled={isPending}
+                    className="mt-1 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-foreground">{ROLE_LABEL[r]}</span>
+                    <span className="block text-xs text-muted-foreground">{ROLE_DESCRIPTION[r]}</span>
+                  </span>
+                </label>
+              ))}
             </div>
-            <button
-              onClick={onClose}
-              className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              Done
+          </fieldset>
+          <TextField label="Phone" hint="Optional" name="phone" type="tel" placeholder="+63 912 345 6789" disabled={isPending} />
+          {error && (
+            <div role="alert" className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
+              <p className="text-sm text-destructive-text">{error}</p>
+            </div>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} disabled={isPending}
+              className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition disabled:opacity-50 font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+              Cancel
+            </button>
+            <button type="submit" disabled={isPending}
+              className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+              {isPending ? 'Inviting…' : 'Send Invite'}
             </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                Full Name <span className="text-destructive">*</span>
-              </label>
-              <input name="fullName" type="text" required placeholder="Jane Doe" disabled={isPending}
-                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                Email <span className="text-destructive">*</span>
-              </label>
-              <input name="email" type="email" required placeholder="jane@example.com" disabled={isPending}
-                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
-            </div>
-            <fieldset>
-              <legend className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                Role <span className="text-destructive">*</span>
-              </legend>
-              <div className="space-y-2">
-                {roleChoices.map((r) => (
-                  <label
-                    key={r}
-                    className={cn(
-                      'flex gap-3 rounded-md border px-3 py-2.5 cursor-pointer transition focus-within:ring-2 focus-within:ring-focus-ring',
-                      role === r ? 'border-primary bg-primary/10' : 'border-border hover:bg-hover',
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="role"
-                      value={r}
-                      checked={role === r}
-                      onChange={() => setRole(r)}
-                      disabled={isPending}
-                      className="mt-1 accent-primary"
-                    />
-                    <span>
-                      <span className="block text-sm font-semibold text-foreground">{ROLE_LABEL[r]}</span>
-                      <span className="block text-xs text-muted-foreground">{ROLE_DESCRIPTION[r]}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                Phone <span className="text-muted-foreground font-normal normal-case">(optional)</span>
-              </label>
-              <input name="phone" type="tel" placeholder="+63 912 345 6789" disabled={isPending}
-                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition" />
-            </div>
-            {error && (
-              <div className="bg-destructive-bg border border-destructive rounded-md px-3 py-2">
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            )}
-            <div className="flex gap-3 pt-1">
-              <button type="button" onClick={onClose} disabled={isPending}
-                className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition disabled:opacity-50 font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-                Cancel
-              </button>
-              <button type="submit" disabled={isPending}
-                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-                {isPending ? 'Inviting…' : 'Send Invite'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+        </form>
+      )}
+    </Dialog>
   );
 }

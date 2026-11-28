@@ -1,6 +1,6 @@
 'use client';
 
-import { useConfirm, useToast } from '@gym-saas/ui';
+import { Dialog, TextAreaField, TextField, useConfirm, useToast } from '@gym-saas/ui';
 import { useState } from 'react';
 import { clientApi } from '@/lib/client-api';
 
@@ -173,18 +173,20 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
                   onClick={() => openEdit(plan)}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
                   title="Edit"
+                  aria-label={`Edit ${plan.name}`}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </button>
                 <button
                   onClick={() => handleDelete(plan.id)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-400/5 transition"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive-text hover:bg-destructive/5 transition"
                   title="Delete"
+                  aria-label={`Delete ${plan.name}`}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                     <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                   </svg>
@@ -247,154 +249,119 @@ export function PlansClient({ initialPlans }: { initialPlans: SaasPlan[] }) {
         </button>
       </div>
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-semibold text-foreground">{editId ? 'Edit Plan' : 'New Plan'}</h2>
-              <button onClick={closeForm} className="text-muted-foreground hover:text-foreground transition">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+      <Dialog
+        open={showForm}
+        onClose={closeForm}
+        title={editId ? 'Edit Plan' : 'New Plan'}
+        dismissible={!saving}
+        footer={
+          <>
+            <button
+              onClick={closeForm}
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition"
+            >
+              {saving ? 'Saving…' : editId ? 'Save changes' : 'Create plan'}
+            </button>
+          </>
+        }
+      >
+        {error && (
+          <div role="alert" className="bg-destructive-bg border border-destructive/30 rounded-lg px-4 py-2 text-sm text-destructive-text">
+            {error}
+          </div>
+        )}
 
-            <div className="px-6 py-5 space-y-4">
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
+        <div className="grid grid-cols-2 gap-4">
+          <TextField
+            label="Plan name"
+            className="col-span-2"
+            required
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="Starter"
+          />
+          <TextAreaField
+            label="Description"
+            className="col-span-2"
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            placeholder="Perfect for small gyms just getting started"
+            rows={2}
+          />
+          <TextField
+            label="Monthly price (₱)"
+            required
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.priceMonthly}
+            onChange={(e) => setForm((f) => ({ ...f, priceMonthly: e.target.value }))}
+            placeholder="2499"
+          />
+          <TextField
+            label="Yearly price (₱)"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.priceYearly}
+            onChange={(e) => setForm((f) => ({ ...f, priceYearly: e.target.value }))}
+            placeholder="24990"
+          />
+          <TextField
+            label="Member limit"
+            hint="Shown as “Up to N members”"
+            type="number"
+            min="1"
+            step="1"
+            value={form.memberLimit}
+            onChange={(e) => setForm((f) => ({ ...f, memberLimit: e.target.value }))}
+            placeholder="200"
+          />
+          <TextAreaField
+            label="Features"
+            hint="One per line"
+            className="col-span-2"
+            value={form.features}
+            onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
+            placeholder={"Up to 100 members\nMobile app access\nBasic analytics"}
+            rows={5}
+          />
+          <TextField
+            label="Sort order"
+            type="number"
+            value={form.sortOrder}
+            onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
+          />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Plan name *</label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Starter"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Description</label>
-                  <textarea
-                    value={form.description}
-                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    placeholder="Perfect for small gyms just getting started"
-                    rows={2}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Monthly price (₱) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.priceMonthly}
-                    onChange={(e) => setForm((f) => ({ ...f, priceMonthly: e.target.value }))}
-                    placeholder="2499"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Yearly price (₱)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.priceYearly}
-                    onChange={(e) => setForm((f) => ({ ...f, priceYearly: e.target.value }))}
-                    placeholder="24990"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="plan-member-limit" className="block text-xs font-medium text-muted-foreground mb-1">
-                    Member limit <span className="font-normal">(shown as &ldquo;Up to N members&rdquo;)</span>
-                  </label>
-                  <input
-                    id="plan-member-limit"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={form.memberLimit}
-                    onChange={(e) => setForm((f) => ({ ...f, memberLimit: e.target.value }))}
-                    placeholder="200"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Features <span className="text-muted-foreground font-normal">(one per line)</span>
-                  </label>
-                  <textarea
-                    value={form.features}
-                    onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
-                    placeholder={"Up to 100 members\nMobile app access\nBasic analytics"}
-                    rows={5}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">Sort order</label>
-                  <input
-                    type="number"
-                    value={form.sortOrder}
-                    onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="flex flex-col justify-end gap-2">
-                  <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.isActive}
-                      onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    Active (visible on landing)
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={form.isPopular}
-                      onChange={(e) => setForm((f) => ({ ...f, isPopular: e.target.checked }))}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    Mark as Popular
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
-              <button
-                onClick={closeForm}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition"
-              >
-                {saving ? 'Saving…' : editId ? 'Save changes' : 'Create plan'}
-              </button>
-            </div>
+          <div className="flex flex-col justify-end gap-2">
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+                className="w-4 h-4 accent-primary"
+              />
+              Active (visible on landing)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isPopular}
+                onChange={(e) => setForm((f) => ({ ...f, isPopular: e.target.checked }))}
+                className="w-4 h-4 accent-primary"
+              />
+              Mark as Popular
+            </label>
           </div>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

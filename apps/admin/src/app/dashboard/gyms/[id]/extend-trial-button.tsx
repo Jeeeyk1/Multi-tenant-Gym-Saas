@@ -40,6 +40,7 @@ export function ExtendTrialButton({ gymId, lapsed }: { gymId: string; lapsed: bo
     <div className="flex items-center gap-2">
       <input
         type="number"
+        aria-label="Trial days to add"
         min={1}
         max={365}
         value={days}
@@ -54,7 +55,7 @@ export function ExtendTrialButton({ gymId, lapsed }: { gymId: string; lapsed: bo
       >
         {pending ? '…' : lapsed ? 'Extend & Reopen Trial' : 'Extend Trial'}
       </button>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive-text">{error}</p>}
     </div>
   );
 }

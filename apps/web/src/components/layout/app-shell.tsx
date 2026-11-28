@@ -58,6 +58,15 @@ export function AppShell({ action, children, ...sidebar }: AppShellProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    if (!drawerOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
   // Close the drawer whenever the route changes.
   useEffect(() => setDrawerOpen(false), [pathname]);
 

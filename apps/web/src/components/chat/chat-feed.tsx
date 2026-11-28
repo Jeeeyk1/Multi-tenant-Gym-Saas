@@ -221,7 +221,7 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
                         <button
                           onClick={() => handleDelete(msg.id)}
                           disabled={deletingId === msg.id}
-                          className="text-xs text-muted-foreground hover:text-destructive-text transition opacity-0 group-hover:opacity-100 disabled:opacity-40"
+                          className="rounded-sm text-xs text-muted-foreground hover:text-destructive-text transition opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring [@media(hover:none)]:opacity-100 disabled:opacity-40"
                         >
                           {deletingId === msg.id ? '…' : 'Delete'}
                         </button>
@@ -238,10 +238,11 @@ export function ChatFeed({ token, gymId, conversationId, initialMessages, curren
 
       {/* Send box */}
       <div className="border-t border-border p-4 shrink-0">
-        {sendError && <p className="text-xs text-destructive mb-2">{sendError}</p>}
+        {sendError && <p role="alert" className="text-xs text-destructive-text mb-2">{sendError}</p>}
         <form onSubmit={handleSend} className="flex gap-3">
           <input
             type="text"
+            aria-label="Message"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={connected ? 'Write a message…' : 'Connecting…'}

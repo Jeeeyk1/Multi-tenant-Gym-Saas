@@ -12,7 +12,7 @@ const STATUS_STYLE: Record<SignupRequest['status'], string> = {
   NEW: 'bg-primary/10 text-primary',
   CONTACTED: 'bg-warning/10 text-warning',
   CONVERTED: 'bg-success/10 text-success',
-  REJECTED: 'bg-destructive/10 text-destructive',
+  REJECTED: 'bg-destructive/10 text-destructive-text',
 };
 
 export function LeadsClient({ initialLeads }: { initialLeads: SignupRequest[] }) {
@@ -64,7 +64,7 @@ export function LeadsClient({ initialLeads }: { initialLeads: SignupRequest[] })
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive-text">{error}</p>}
       {initialLeads.map((lead) => (
         <div
           key={lead.id}
@@ -98,7 +98,7 @@ export function LeadsClient({ initialLeads }: { initialLeads: SignupRequest[] })
               <button
                 onClick={() => reject(lead.id)}
                 disabled={pendingId === lead.id}
-                className="text-sm font-semibold px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition disabled:opacity-50"
+                className="text-sm font-semibold px-4 py-2 rounded-lg bg-destructive/10 text-destructive-text hover:bg-destructive/20 transition disabled:opacity-50"
               >
                 Reject
               </button>

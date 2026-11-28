@@ -45,7 +45,7 @@ export function ForgotPasswordForm({ backCode }: { backCode?: string }) {
       </div>
 
       {state.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
+        <p className="text-sm text-destructive-text">{state.error}</p>
       )}
 
       <button

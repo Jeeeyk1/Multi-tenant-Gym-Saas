@@ -39,7 +39,7 @@ export function PaymentForm({ gymId, invoiceId }: { gymId: string; invoiceId: st
         />
       </div>
 
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {state.error && <p className="text-sm text-destructive-text">{state.error}</p>}
 
       <button
         type="submit"

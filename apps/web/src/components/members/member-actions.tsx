@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Dialog } from '@gym-saas/ui';
 import { suspendMember, reactivateMember, renewMember, removeMember } from '@/lib/actions/members';
 import { useToast } from '@/components/ui/toast-provider';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -133,143 +134,136 @@ export function MemberActions({ member, plans }: Props) {
         </button>
       </div>
 
-      {/* Remove confirmation dialog */}
-      {removeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={() => setRemoveOpen(false)} />
-          <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
-            <h3 className="text-base font-semibold text-foreground mb-2">Remove member?</h3>
-            <p className="text-sm text-muted-foreground mb-1">
+      <Dialog
+        open={removeOpen}
+        onClose={() => setRemoveOpen(false)}
+        title="Remove member?"
+        size="sm"
+        description={
+          <div className="space-y-1">
+            <p>
               This will permanently delete <strong className="text-foreground">{member.user.fullName}</strong>&apos;s membership, check-in history, and all associated data.
             </p>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p>
               If this is their only gym, their account will also be deleted and the email address <strong className="text-foreground">{member.user.email}</strong> can be reused.
             </p>
-            <div className="flex gap-3">
+          </div>
+        }
+      >
+        <div className="flex gap-3">
+          <button
+            onClick={() => setRemoveOpen(false)}
+            className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { setRemoveOpen(false); handleRemove(); }}
+            disabled={actionPending === 'remove'}
+            className="flex-1 bg-destructive text-destructive-foreground font-semibold py-2.5 rounded-md hover:opacity-90 transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            {actionPending === 'remove' ? 'Removing…' : 'Yes, remove'}
+          </button>
+        </div>
+      </Dialog>
+
+      {/* Renew dialog */}
+      <Dialog open={renewOpen} onClose={() => setRenewOpen(false)} title="Renew Membership" size="sm" dismissible={!renewPending}>
+
+        {renewSuccess ? (
+          <p role="status" className="text-center text-success font-medium py-4">✓ Renewed successfully</p>
+        ) : (
+          <form onSubmit={handleRenewSubmit} className="space-y-4">
+            {/* Plan (optional) */}
+            {activePlans.length > 0 && (
+              <div>
+                <label htmlFor="r-planId" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                  Plan <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+                </label>
+                <select
+                  id="r-planId"
+                  name="planId"
+                  defaultValue={member.membershipPlan?.id ?? ''}
+                  className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
+                >
+                  <option value="">— Keep current plan —</option>
+                  {activePlans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} · {p.durationDays}d · ₱{p.price.toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Amount paid */}
+            <div>
+              <label htmlFor="r-amount" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Amount Paid (₱) <span className="text-destructive">*</span>
+              </label>
+              <input
+                id="r-amount"
+                name="amountPaid"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="0.00"
+                required
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
+              />
+            </div>
+
+            {/* Payment method */}
+            <div>
+              <label htmlFor="r-method" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Payment Method <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+              </label>
+              <input
+                id="r-method"
+                name="paymentMethod"
+                type="text"
+                placeholder="Cash, GCash, card…"
+                className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label htmlFor="r-notes" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                Notes <span className="text-muted-foreground font-normal normal-case">(optional)</span>
+              </label>
+              <textarea
+                id="r-notes"
+                name="notes"
+                rows={2}
+                placeholder="Any notes about this renewal…"
+                className="w-full bg-surface border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition resize-none"
+              />
+            </div>
+
+            {renewError && (
+              <p role="alert" className="text-sm text-destructive-text">{renewError}</p>
+            )}
+
+            <div className="flex gap-3 pt-1">
               <button
-                onClick={() => setRemoveOpen(false)}
+                type="button"
+                onClick={() => setRenewOpen(false)}
                 className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 Cancel
               </button>
               <button
-                onClick={() => { setRemoveOpen(false); handleRemove(); }}
-                disabled={actionPending === 'remove'}
-                className="flex-1 bg-destructive text-destructive-foreground font-semibold py-2.5 rounded-md hover:opacity-90 transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                type="submit"
+                disabled={renewPending}
+                className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
-                {actionPending === 'remove' ? 'Removing…' : 'Yes, remove'}
+                {renewPending ? 'Processing…' : 'Confirm Renewal'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Renew dialog */}
-      {renewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-scrim/60 backdrop-blur-sm" onClick={() => setRenewOpen(false)} />
-          <div className="relative w-full max-w-sm bg-surface border border-border rounded-xl shadow-1 p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-foreground">Renew Membership</h3>
-              <button onClick={() => setRenewOpen(false)} className="text-muted-foreground hover:text-foreground transition text-lg px-1">✕</button>
-            </div>
-
-            {renewSuccess ? (
-              <p className="text-center text-success font-medium py-4">✓ Renewed successfully</p>
-            ) : (
-              <form onSubmit={handleRenewSubmit} className="space-y-4">
-                {/* Plan (optional) */}
-                {activePlans.length > 0 && (
-                  <div>
-                    <label htmlFor="r-planId" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                      Plan <span className="text-muted-foreground font-normal normal-case">(optional)</span>
-                    </label>
-                    <select
-                      id="r-planId"
-                      name="planId"
-                      defaultValue={member.membershipPlan?.id ?? ''}
-                      className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
-                    >
-                      <option value="">— Keep current plan —</option>
-                      {activePlans.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} · {p.durationDays}d · ₱{p.price.toLocaleString()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Amount paid */}
-                <div>
-                  <label htmlFor="r-amount" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                    Amount Paid (₱) <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    id="r-amount"
-                    name="amountPaid"
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                    className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
-                  />
-                </div>
-
-                {/* Payment method */}
-                <div>
-                  <label htmlFor="r-method" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                    Payment Method <span className="text-muted-foreground font-normal normal-case">(optional)</span>
-                  </label>
-                  <input
-                    id="r-method"
-                    name="paymentMethod"
-                    type="text"
-                    placeholder="Cash, GCash, card…"
-                    className="w-full bg-surface py-2.5 border border-border rounded-md px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <label htmlFor="r-notes" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                    Notes <span className="text-muted-foreground font-normal normal-case">(optional)</span>
-                  </label>
-                  <textarea
-                    id="r-notes"
-                    name="notes"
-                    rows={2}
-                    placeholder="Any notes about this renewal…"
-                    className="w-full bg-surface border border-border rounded-md px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition resize-none"
-                  />
-                </div>
-
-                {renewError && (
-                  <p className="text-sm text-destructive">{renewError}</p>
-                )}
-
-                <div className="flex gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setRenewOpen(false)}
-                    className="bg-surface flex-1 px-4 py-2.5 text-sm rounded-md border border-border text-foreground hover:text-foreground transition font-semibold hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={renewPending}
-                    className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  >
-                    {renewPending ? 'Processing…' : 'Confirm Renewal'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+          </form>
+        )}
+      </Dialog>
     </>
   );
 }

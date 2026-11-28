@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { TextField } from '@gym-saas/ui';
 import { PRIVACY_URL, TERMS_URL } from '@/lib/brand';
 import { activateMember, type ActivateMemberState } from './actions';
 
@@ -70,39 +71,31 @@ export function MemberActivateForm({ token, gymCode }: Props) {
     <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="password" value={password} readOnly />
 
-      <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-          Password
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => { setPassword(e.target.value); setClientError(null); }}
-          placeholder="Min. 8 characters"
-          required
-          minLength={8}
-          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
-          disabled={pending}
-        />
-      </div>
+      <TextField
+        label="Password"
+        type="password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(e) => { setPassword(e.target.value); setClientError(null); }}
+        placeholder="Min. 8 characters"
+        required
+        minLength={8}
+        disabled={pending}
+      />
 
-      <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
-          Confirm Password
-        </label>
-        <input
-          type="password"
-          value={confirm}
-          onChange={(e) => { setConfirm(e.target.value); setClientError(null); }}
-          placeholder="Repeat password"
-          required
-          className="w-full bg-surface py-2.5 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring focus:border-focus-ring transition"
-          disabled={pending}
-        />
-      </div>
+      <TextField
+        label="Confirm password"
+        type="password"
+        autoComplete="new-password"
+        value={confirm}
+        onChange={(e) => { setConfirm(e.target.value); setClientError(null); }}
+        placeholder="Repeat password"
+        required
+        disabled={pending}
+      />
 
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive-text">{error}</p>
       )}
 
       <button

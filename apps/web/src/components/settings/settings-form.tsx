@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { TextAreaField, TextField } from '@gym-saas/ui';
 import { cn } from '@/lib/utils';
 import { updateGymProfile, uploadGymLogo } from '@/lib/actions/settings';
 import { formatApiError } from '@/lib/format-error';
@@ -201,6 +202,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                 <button
                   key={preset.id}
                   type="button"
+                  aria-pressed={isActive}
                   onClick={() => selectPreset(preset.id)}
                   className={cn(
                     'rounded-lg overflow-hidden border-2 transition-all text-left',
@@ -224,6 +226,7 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
             {/* Custom card */}
             <button
               type="button"
+              aria-pressed={selected === 'custom'}
               onClick={() => selectPreset('custom')}
               className={cn(
                 'rounded-lg overflow-hidden border-2 transition-all text-left',
@@ -251,12 +254,14 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label="Primary colour"
                     value={primaryColor}
                     onChange={(e) => { setPrimaryColor(e.target.value.toUpperCase()); setSelected('custom'); }}
                     className="w-9 h-9 rounded-lg border border-border cursor-pointer bg-transparent p-0.5 flex-shrink-0"
                   />
                   <input
                     type="text"
+                    aria-label="Primary colour hex code"
                     value={primaryHex}
                     onChange={(e) => handlePrimaryHex(e.target.value)}
                     placeholder="#6EE7B7"
@@ -270,12 +275,14 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label="Secondary colour"
                     value={secondaryColor}
                     onChange={(e) => { setSecondaryColor(e.target.value.toUpperCase()); setSelected('custom'); }}
                     className="w-9 h-9 rounded-lg border border-border cursor-pointer bg-transparent p-0.5 flex-shrink-0"
                   />
                   <input
                     type="text"
+                    aria-label="Secondary colour hex code"
                     value={secondaryHex}
                     onChange={(e) => handleSecondaryHex(e.target.value)}
                     placeholder="#3B82F6"
@@ -305,63 +312,48 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
       <section className="bg-card border border-border rounded-xl p-6 space-y-4">
         <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Contact Info</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Email</label>
-            <input
-              type="email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-              placeholder="hello@yourgym.com"
-              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Phone</label>
-            <input
-              type="tel"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-              placeholder="+63 912 345 6789"
-              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
-            />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="A short description of your gym…"
-            rows={3}
-            className="w-full bg-surface border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground resize-none focus:border-focus-ring"
+          <TextField
+            label="Email"
+            type="email"
+            value={contactEmail}
+            onChange={(e) => setContactEmail(e.target.value)}
+            placeholder="hello@yourgym.com"
+          />
+          <TextField
+            label="Phone"
+            type="tel"
+            value={contactPhone}
+            onChange={(e) => setContactPhone(e.target.value)}
+            placeholder="+63 912 345 6789"
           />
         </div>
+        <TextAreaField
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="A short description of your gym…"
+          rows={3}
+        />
       </section>
 
       {/* Social links */}
       <section className="bg-card border border-border rounded-xl p-6 space-y-4">
         <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Social Links</h2>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Facebook URL</label>
-            <input
-              type="url"
-              value={facebookUrl}
-              onChange={(e) => setFbUrl(e.target.value)}
-              placeholder="https://facebook.com/yourgym"
-              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Instagram URL</label>
-            <input
-              type="url"
-              value={instagramUrl}
-              onChange={(e) => setIgUrl(e.target.value)}
-              placeholder="https://instagram.com/yourgym"
-              className="w-full bg-surface py-2 text-sm border border-border rounded-md px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-focus-ring placeholder:text-muted-foreground focus:border-focus-ring"
-            />
-          </div>
+          <TextField
+            label="Facebook URL"
+            type="url"
+            value={facebookUrl}
+            onChange={(e) => setFbUrl(e.target.value)}
+            placeholder="https://facebook.com/yourgym"
+          />
+          <TextField
+            label="Instagram URL"
+            type="url"
+            value={instagramUrl}
+            onChange={(e) => setIgUrl(e.target.value)}
+            placeholder="https://instagram.com/yourgym"
+          />
         </div>
       </section>
 
@@ -375,8 +367,8 @@ export function SettingsForm({ gymId, gymDetail }: Props) {
         >
           {uploadingLogo ? 'Uploading logo…' : saving ? 'Saving…' : 'Save Changes'}
         </button>
-        {success && <span className="text-sm text-success font-medium">✓ Saved</span>}
-        {error && <span className="text-sm text-destructive">{error}</span>}
+        {success && <span role="status" className="text-sm text-success font-medium">✓ Saved</span>}
+        {error && <span role="alert" className="text-sm text-destructive-text">{error}</span>}
       </div>
     </div>
   );

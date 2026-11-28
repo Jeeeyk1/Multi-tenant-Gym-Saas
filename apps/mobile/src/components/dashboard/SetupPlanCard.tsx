@@ -34,7 +34,7 @@ export function SetupPlanCard({
           {subtitle}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={theme.primary} />
+      <Ionicons name="chevron-forward" size={20} color={theme.accentText} />
     </Pressable>
   );
 }

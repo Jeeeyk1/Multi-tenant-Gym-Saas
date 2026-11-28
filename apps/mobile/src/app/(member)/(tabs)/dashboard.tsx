@@ -241,7 +241,7 @@ function LinkRow({
         <View style={[styles.dot, { backgroundColor: C.success }]} />
       ) : icon ? (
         <View style={[styles.rowIcon, { backgroundColor: accent ? theme.primaryMuted : C.background }]}>
-          <Ionicons name={icon} size={20} color={accent ? theme.primary : C.textSecondary} />
+          <Ionicons name={icon} size={20} color={accent ? theme.accentText : C.textSecondary} />
         </View>
       ) : null}
       <View style={styles.flex}>

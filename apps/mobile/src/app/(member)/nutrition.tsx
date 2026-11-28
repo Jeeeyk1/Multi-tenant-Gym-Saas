@@ -169,8 +169,8 @@ export default function NutritionScreen() {
                     pressed && { opacity: 0.85 },
                   ]}
                 >
-                  <Ionicons name="sparkles-outline" size={22} color={theme.primary} />
-                  <Text variant="label" style={{ color: theme.primary, fontFamily: 'Inter_600SemiBold' }}>
+                  <Ionicons name="sparkles-outline" size={22} color={theme.accentText} />
+                  <Text variant="label" style={{ color: theme.accentText, fontFamily: 'Inter_600SemiBold' }}>
                     Meal idea
                   </Text>
                 </Pressable>

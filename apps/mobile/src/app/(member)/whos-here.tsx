@@ -41,7 +41,7 @@ export default function WhosHereScreen() {
           gap: SPACING.xs,
         },
         totalRow: { flexDirection: 'row', alignItems: 'flex-end', gap: SPACING.sm },
-        totalNum: { fontSize: 36, color: C.text, ...FONT.bold },
+        totalNum: { fontSize: 36, lineHeight: 43, color: C.text, ...FONT.bold },
         totalLabel: { fontSize: 14, color: C.textSecondary, paddingBottom: 6, flexShrink: 1 },
         privateNote: { fontSize: 12, color: C.textMuted, marginTop: SPACING.xs },
 

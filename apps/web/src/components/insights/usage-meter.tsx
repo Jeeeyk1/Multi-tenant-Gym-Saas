@@ -56,7 +56,7 @@ export function UsageMeter({ usage }: { usage: AiUsageView | null }) {
         'flex items-center gap-3 text-xs max-w-3xl mx-auto mb-2',
         state === 'ok' && 'text-muted-foreground',
         state === 'warning' && 'text-warning',
-        state === 'paused' && 'text-destructive',
+        state === 'paused' && 'text-destructive-text',
       )}
     >
       <div

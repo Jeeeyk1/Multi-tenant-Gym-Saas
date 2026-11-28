@@ -16,7 +16,7 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
     const e = err as { message?: string };
     return (
       <div className="p-8 max-w-2xl mx-auto">
-        <p className="text-sm text-destructive">{e.message ?? 'Could not load subscription.'}</p>
+        <p className="text-sm text-destructive-text">{e.message ?? 'Could not load subscription.'}</p>
       </div>
     );
   }
@@ -39,14 +39,14 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
 
       {subscription.status === 'PENDING_PAYMENT' && (
         <div className="bg-destructive-bg border border-destructive/30 rounded-xl p-4">
-          <p className="text-sm text-destructive font-medium">
+          <p className="text-sm text-destructive-text font-medium">
             Your gym is locked until the first payment is verified.
           </p>
         </div>
       )}
       {subscription.status === 'SUSPENDED' && (
         <div className="bg-destructive-bg border border-destructive/30 rounded-xl p-4">
-          <p className="text-sm text-destructive font-medium">
+          <p className="text-sm text-destructive-text font-medium">
             Your subscription was suspended for non-payment. Submit a payment reference below to reactivate.
           </p>
         </div>
@@ -72,7 +72,7 @@ export async function SubscriptionPanel({ gymId }: { gymId: string }) {
           </div>
 
           {invoice.rejectionReason && (
-            <p className="text-sm text-destructive">
+            <p className="text-sm text-destructive-text">
               Previous submission rejected: {invoice.rejectionReason}
             </p>
           )}

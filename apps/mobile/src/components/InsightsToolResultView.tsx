@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill},
   badgeText: { fontSize: 11, ...FONT.semibold },
-  metricValue: { fontSize: 24, color: COLORS.text, ...FONT.bold },
+  metricValue: { fontSize: 24, lineHeight: 29, color: COLORS.text, ...FONT.bold },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
   barLabel: { fontSize: 11, color: COLORS.textMuted, width: 80 },
   barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: COLORS.border, overflow: 'hidden' },

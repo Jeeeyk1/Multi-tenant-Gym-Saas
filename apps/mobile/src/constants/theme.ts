@@ -59,19 +59,19 @@ export const LIGHT_COLORS = {
   // Text
   text: '#0A0A0F',
   textSecondary: '#6B6B80',
-  textMuted: '#9B9BAA',
+  textMuted: '#6C6C7E',
   onPrimary: '#FFFFFF',
 
   // Status
-  success: '#16a34a',
+  success: '#147A3A',
   successBg: '#DCFCE7',
   error: '#dc2626',
   errorBg: '#FEE2E2',
-  warning: '#d97706',
+  warning: '#AD5008',
   warningBg: '#FEF9C3',
   expired: '#dc2626',
-  suspended: '#d97706',
-  active: '#16a34a',
+  suspended: '#AD5008',
+  active: '#147A3A',
 };
 
 export type ColorPalette = typeof DARK_COLORS;

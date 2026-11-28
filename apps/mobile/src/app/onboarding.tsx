@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Text } from '../components/Text';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -374,7 +375,7 @@ export default function OnboardingScreen() {
             ['refresh-outline', 'You can withdraw this anytime in your profile; your plan is then deleted'],
           ].map(([icon, text]) => (
             <View key={text} style={styles.consentRow}>
-              <Ionicons name={icon as 'body-outline'} size={18} color={theme.primary} />
+              <Ionicons name={icon as 'body-outline'} size={18} color={theme.accentText} />
               <Text variant="label" style={{ color: colors.text, flex: 1 }}>
                 {text}
               </Text>
@@ -551,7 +552,7 @@ export default function OnboardingScreen() {
             <Ionicons
               name={healthCaution ? 'checkbox' : 'square-outline'}
               size={22}
-              color={healthCaution ? theme.primary : colors.textMuted}
+              color={healthCaution ? theme.accentText : colors.textMuted}
             />
             <Text variant="label" style={{ color: colors.text, flex: 1 }}>
               I&apos;m pregnant or have a medical condition
@@ -571,7 +572,7 @@ export default function OnboardingScreen() {
           </View>
         ) : (
           <View style={styles.calculating}>
-            <Ionicons name="calculator-outline" size={28} color={theme.primary} />
+            <Ionicons name="calculator-outline" size={28} color={theme.accentText} />
             <Text variant="bodyMed" style={{ color: colors.textSecondary }}>
               Calculating your plan…
             </Text>
@@ -647,6 +648,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <StatusBar style={theme.colorScheme === 'dark' ? 'light' : 'dark'} />
       <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.topBar}>
           {showBack ? (

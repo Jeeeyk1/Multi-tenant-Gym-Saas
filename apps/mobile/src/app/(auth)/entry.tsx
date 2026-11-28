@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated, AccessibilityInfo } from 'react-native';
 import { Text } from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -21,19 +21,32 @@ export default function EntryScreen() {
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentY = useRef(new Animated.Value(20)).current;
 
+  // Read the setting before the first frame animates; with reduce motion the screen appears in place.
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(logoScale, { toValue: 1, damping: 12, stiffness: 90, useNativeDriver: true }),
-      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.sequence([
-        Animated.delay(500),
-        Animated.parallel([
-          Animated.timing(contentOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.spring(contentY, { toValue: 0, damping: 14, useNativeDriver: true }),
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (cancelled) return;
+      if (reduceMotion) {
+        [logoScale, logoOpacity, contentOpacity].forEach((value) => value.setValue(1));
+        contentY.setValue(0);
+        return;
+      }
+      Animated.parallel([
+        Animated.spring(logoScale, { toValue: 1, damping: 12, stiffness: 90, useNativeDriver: true }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.sequence([
+          Animated.delay(500),
+          Animated.parallel([
+            Animated.timing(contentOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.spring(contentY, { toValue: 0, damping: 14, useNativeDriver: true }),
+          ]),
         ]),
-      ]),
-    ]).start();
-  }, []);
+      ]).start();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [logoScale, logoOpacity, contentOpacity, contentY]);
 
   const handleContinue = async () => {
     const trimmed = code.trim().toUpperCase();

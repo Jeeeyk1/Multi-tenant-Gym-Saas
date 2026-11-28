@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Dialog } from '@gym-saas/ui';
 import {
   validateBulkInvite,
   bulkInviteMembers,
@@ -95,121 +96,114 @@ export function BulkInviteButton() {
         Bulk Invite
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60 p-4" onClick={close}>
-          <div
-            className="bg-surface border border-border rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-1"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">Bulk invite members</h2>
-              <button onClick={close} className="text-muted-foreground hover:text-foreground text-sm">✕</button>
-            </div>
-
-            <div className="p-6 overflow-y-auto">
-              {step === 'upload' && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Upload an <strong>.xlsx</strong> or <strong>.csv</strong> file with columns{' '}
-                    <strong>Name</strong>, <strong>Email</strong>, and <strong>Expiry Date</strong>. You&apos;ll
-                    review everything before any invites go out. Plans are set later at renewal.
-                  </p>
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl py-10 cursor-pointer hover:border-primary/40 transition">
-                    <span className="text-sm font-medium text-foreground">
-                      {pending ? 'Reading file…' : 'Choose a spreadsheet'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{fileName ?? '.xlsx or .csv, up to 5MB'}</span>
-                    <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} disabled={pending} className="hidden" />
-                  </label>
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                </div>
-              )}
-
-              {step === 'preview' && preview && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-3 text-sm">
-                    <Stat label="Ready" value={preview.summary.ready} tone="text-success" />
-                    <Stat label="Will skip" value={preview.summary.skipped} tone="text-warning" />
-                    <Stat label="Invalid" value={preview.summary.invalid} tone="text-destructive" />
-                    <Stat label="Total rows" value={preview.summary.total} tone="text-muted-foreground" />
-                  </div>
-
-                  <div className="border border-border rounded-xl overflow-hidden">
-                    <div className="max-h-72 overflow-y-auto">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 bg-surface border-b border-border">
-                          <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                            <th className="px-3 py-2">Name</th>
-                            <th className="px-3 py-2">Email</th>
-                            <th className="px-3 py-2">Expiry</th>
-                            <th className="px-3 py-2">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {preview.rows.map((r, i) => (
-                            <tr key={i} className="border-b border-border last:border-0">
-                              <td className="px-3 py-2 text-foreground">{r.fullName || <span className="text-muted-foreground">—</span>}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{r.email || '—'}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{r.expiryDate || '—'}</td>
-                              <td className="px-3 py-2">
-                                <span className={`inline-block px-2 py-0.5 rounded-pill text-xs font-semibold ${STATUS_STYLE[r.status]}`} title={r.reason ?? ''}>
-                                  {STATUS_LABEL[r.status]}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    Skipped and invalid rows won&apos;t be invited. Fix them in your file and re-upload if needed.
-                  </p>
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                </div>
-              )}
-
-              {step === 'done' && result && (
-                <div className="space-y-3 text-center py-4">
-                  <p className="text-2xl font-heading font-extrabold text-foreground">{result.created} member{result.created !== 1 ? 's' : ''} added</p>
-                  <p className="text-sm text-muted-foreground">
-                    Invitations are sending in the background — members will get an email to activate their accounts.
-                    {result.skipped.length > 0 && ` ${result.skipped.length} row${result.skipped.length !== 1 ? 's were' : ' was'} skipped.`}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
-              {step === 'preview' && (
-                <>
-                  <button onClick={reset} disabled={pending} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition disabled:opacity-50 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-                    Choose different file
-                  </button>
-                  <button
-                    onClick={handleSend}
-                    disabled={pending || preview?.summary.ready === 0}
-                    className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  >
-                    {pending ? 'Sending…' : `Send ${preview?.summary.ready ?? 0} invite${preview?.summary.ready !== 1 ? 's' : ''}`}
-                  </button>
-                </>
-              )}
-              {step === 'done' && (
-                <button onClick={close} className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-                  Done
+      <Dialog
+        open={open}
+        onClose={close}
+        title="Bulk invite members"
+        size="lg"
+        dismissible={!pending}
+        footer={
+          <>
+            {step === 'preview' && (
+              <>
+                <button onClick={reset} disabled={pending} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition disabled:opacity-50 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+                  Choose different file
                 </button>
-              )}
-              {step === 'upload' && (
-                <button onClick={close} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
-                  Cancel
+                <button
+                  onClick={handleSend}
+                  disabled={pending || preview?.summary.ready === 0}
+                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition disabled:bg-disabled disabled:text-disabled-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  {pending ? 'Sending…' : `Send ${preview?.summary.ready ?? 0} invite${preview?.summary.ready !== 1 ? 's' : ''}`}
                 </button>
-              )}
-            </div>
+          </>
+        )}
+        {step === 'done' && (
+          <button onClick={close} className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground font-semibold hover:bg-primary-hover transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+            Done
+          </button>
+        )}
+        {step === 'upload' && (
+          <button onClick={close} className="bg-surface px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-hover transition font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring">
+            Cancel
+          </button>
+        )}
+          </>
+        }
+      >
+        {step === 'upload' && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Upload an <strong>.xlsx</strong> or <strong>.csv</strong> file with columns{' '}
+              <strong>Name</strong>, <strong>Email</strong>, and <strong>Expiry Date</strong>. You&apos;ll
+              review everything before any invites go out. Plans are set later at renewal.
+            </p>
+            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl py-10 cursor-pointer hover:border-primary/40 transition focus-within:ring-2 focus-within:ring-focus-ring">
+              <span className="text-sm font-medium text-foreground">
+                {pending ? 'Reading file…' : 'Choose a spreadsheet'}
+              </span>
+              <span className="text-xs text-muted-foreground">{fileName ?? '.xlsx or .csv, up to 5MB'}</span>
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} disabled={pending} className="sr-only" />
+            </label>
+            {error && <p role="alert" className="text-sm text-destructive-text">{error}</p>}
           </div>
-        </div>
-      )}
+        )}
+
+        {step === 'preview' && preview && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 text-sm">
+              <Stat label="Ready" value={preview.summary.ready} tone="text-success" />
+              <Stat label="Will skip" value={preview.summary.skipped} tone="text-warning" />
+              <Stat label="Invalid" value={preview.summary.invalid} tone="text-destructive" />
+              <Stat label="Total rows" value={preview.summary.total} tone="text-muted-foreground" />
+            </div>
+
+            <div className="border border-border rounded-xl overflow-hidden">
+              <div className="max-h-72 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-surface border-b border-border">
+                    <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="px-3 py-2">Name</th>
+                      <th className="px-3 py-2">Email</th>
+                      <th className="px-3 py-2">Expiry</th>
+                      <th className="px-3 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.rows.map((r, i) => (
+                      <tr key={i} className="border-b border-border last:border-0">
+                        <td className="px-3 py-2 text-foreground">{r.fullName || <span className="text-muted-foreground">—</span>}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{r.email || '—'}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{r.expiryDate || '—'}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-block px-2 py-0.5 rounded-pill text-xs font-semibold ${STATUS_STYLE[r.status]}`} title={r.reason ?? ''}>
+                            {STATUS_LABEL[r.status]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Skipped and invalid rows won&apos;t be invited. Fix them in your file and re-upload if needed.
+            </p>
+            {error && <p role="alert" className="text-sm text-destructive-text">{error}</p>}
+          </div>
+        )}
+
+        {step === 'done' && result && (
+          <div className="space-y-3 text-center py-4">
+            <p className="text-2xl font-heading font-extrabold text-foreground">{result.created} member{result.created !== 1 ? 's' : ''} added</p>
+            <p className="text-sm text-muted-foreground">
+              Invitations are sending in the background — members will get an email to activate their accounts.
+              {result.skipped.length > 0 && ` ${result.skipped.length} row${result.skipped.length !== 1 ? 's were' : ' was'} skipped.`}
+            </p>
+          </div>
+        )}
+      </Dialog>
     </>
   );
 }

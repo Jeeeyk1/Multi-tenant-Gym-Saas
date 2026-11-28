@@ -65,7 +65,7 @@ export function OptionList<T extends string | number>({
                 </Text>
               )}
             </View>
-            {selected && <Ionicons name="checkmark-circle" size={20} color={theme.primary} />}
+            {selected && <Ionicons name="checkmark-circle" size={20} color={theme.accentText} />}
           </Pressable>
         );
       })}

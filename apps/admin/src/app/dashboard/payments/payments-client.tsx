@@ -67,7 +67,7 @@ export function PaymentsClient({ initialPayments }: { initialPayments: PendingPa
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive-text">{error}</p>}
       {initialPayments.map((payment) => (
         <div
           key={payment.id}
@@ -93,7 +93,7 @@ export function PaymentsClient({ initialPayments }: { initialPayments: PendingPa
             <button
               onClick={() => reject(payment.id)}
               disabled={pendingId === payment.id}
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition disabled:opacity-50"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-destructive/10 text-destructive-text hover:bg-destructive/20 transition disabled:opacity-50"
             >
               Reject
             </button>

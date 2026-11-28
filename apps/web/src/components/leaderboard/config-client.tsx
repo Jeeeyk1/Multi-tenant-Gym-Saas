@@ -98,7 +98,7 @@ export function LeaderboardConfigClient({
         </p>
         <div className="flex items-center gap-3">
           {saved && <span className="text-xs text-success">✓ Saved</span>}
-          {error && <span className="text-xs text-destructive">{error}</span>}
+          {error && <span className="text-xs text-destructive-text">{error}</span>}
           <button
             onClick={handleSave}
             disabled={saving}

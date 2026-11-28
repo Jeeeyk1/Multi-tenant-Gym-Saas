@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Dialog, SelectField, TextField } from '@gym-saas/ui';
 import { BadgeCategory, BadgeTier } from '@gym-saas/contracts';
 import { createCustomBadge, saveLadder } from '@/lib/actions/badges';
 import { useToast } from '@/components/ui/toast-provider';
@@ -120,89 +121,75 @@ function CustomBadgesSection({
         )}
       </div>
 
-      {/* Create dialog */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60">
-          <div className="bg-surface border border-border rounded-xl w-full max-w-md mx-4 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-foreground">New Custom Badge</h3>
-              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground text-lg">×</button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Name *">
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  required maxLength={100}
-                  placeholder="e.g. Mr Bench Press 100kg"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Description">
-                <input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="What did the member achieve?"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Category *">
-                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Category">
-                  {CATEGORY_ORDER.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      role="radio"
-                      aria-checked={form.category === c}
-                      onClick={() => setForm({ ...form, category: c })}
-                      className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs transition ${
-                        form.category === c
-                          ? 'border-primary bg-primary/10 text-foreground'
-                          : 'border-border text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      <BadgeMedal category={c} tier={null} color={form.color} icon={form.icon} size={32} />
-                      {CATEGORY_LABEL[c]}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {CATEGORY_HINT[form.category]}. Members equip one badge per category.
-                </p>
-              </Field>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Icon">
-                  <select
-                    value={form.icon}
-                    onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                    className={inputCls}
-                  >
-                    {ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}
-                  </select>
-                </Field>
-                <Field label="Color">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={form.color}
-                      onChange={(e) => setForm({ ...form, color: e.target.value })}
-                      className="w-10 h-9 rounded cursor-pointer border border-border bg-transparent"
-                    />
-                    <span className="text-sm text-muted-foreground font-mono">{form.color}</span>
-                  </div>
-                </Field>
-              </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => setOpen(false)} className={cancelBtn}>Cancel</button>
-                <button type="submit" disabled={pending} className={submitBtn}>
-                  {pending ? 'Creating…' : 'Create Badge'}
+      <Dialog open={open} onClose={() => setOpen(false)} title="New Custom Badge" dismissible={!pending}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <TextField
+            label="Name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            maxLength={100}
+            placeholder="e.g. Mr Bench Press 100kg"
+          />
+          <TextField
+            label="Description"
+            hint="Optional"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="What did the member achieve?"
+          />
+          <div className="space-y-1.5">
+            <p id="badge-category-label" className="text-label text-foreground">Category</p>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="badge-category-label">
+              {CATEGORY_ORDER.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={form.category === c}
+                  onClick={() => setForm({ ...form, category: c })}
+                  className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring ${
+                    form.category === c
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-border text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <BadgeMedal category={c} tier={null} color={form.color} icon={form.icon} size={32} />
+                  {CATEGORY_LABEL[c]}
                 </button>
-              </div>
-            </form>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {CATEGORY_HINT[form.category]}. Members equip one badge per category.
+            </p>
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-4">
+            <SelectField label="Icon" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })}>
+              {ICON_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}
+            </SelectField>
+            <div className="space-y-1.5">
+              <label htmlFor="badge-color" className="block text-label text-foreground">Color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="badge-color"
+                  type="color"
+                  value={form.color}
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
+                  className="w-10 h-9 rounded cursor-pointer border border-border bg-transparent"
+                />
+                <span className="text-sm text-muted-foreground font-mono">{form.color}</span>
+              </div>
+            </div>
+          </div>
+          {error && <p role="alert" className="text-xs text-destructive-text">{error}</p>}
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setOpen(false)} className={cancelBtn}>Cancel</button>
+            <button type="submit" disabled={pending} className={submitBtn}>
+              {pending ? 'Creating…' : 'Create Badge'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }
@@ -332,8 +319,8 @@ function LadderRow({ gymId, ladder }: { gymId: string; ladder: BadgeLadder }) {
           {pending ? 'Saving…' : ladder.enabled ? 'Save' : 'Switch on'}
         </button>
       </div>
-      {validationError && <p className="text-xs text-destructive">{validationError}</p>}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {validationError && <p className="text-xs text-destructive-text">{validationError}</p>}
+      {error && <p role="alert" className="text-xs text-destructive-text">{error}</p>}
     </li>
   );
 }
@@ -362,15 +349,6 @@ function OlderMilestonesSection({ badges }: { badges: ExerciseMilestoneBadge[] }
           ))}
         </ul>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</label>
-      {children}
     </div>
   );
 }

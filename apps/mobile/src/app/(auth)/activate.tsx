@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xxl + SPACING.xl,
     paddingBottom: SPACING.xxl,
   },
-  title: { fontSize: 28, ...FONT.bold, color: COLORS.text, marginBottom: 6 },
+  title: { fontSize: 28, lineHeight: 34, ...FONT.bold, color: COLORS.text, marginBottom: 6 },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, marginBottom: SPACING.xl },
   errorBox: {
     backgroundColor: COLORS.errorBg,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     gap: SPACING.md,
   },
-  doneIcon: { fontSize: 64, color: COLORS.success },
-  doneTitle: { fontSize: 24, ...FONT.bold, color: COLORS.text },
+  doneIcon: { fontSize: 64, lineHeight: 76, color: COLORS.success },
+  doneTitle: { fontSize: 24, lineHeight: 29, ...FONT.bold, color: COLORS.text },
   doneText: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center' },
 });

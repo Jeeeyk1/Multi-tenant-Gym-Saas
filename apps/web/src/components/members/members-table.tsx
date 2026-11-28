@@ -41,6 +41,7 @@ export function MembersTable({ members }: Props) {
     <div className="space-y-4">
       <input
         type="text"
+        aria-label="Search members"
         placeholder="Search name, email, or membership #…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}

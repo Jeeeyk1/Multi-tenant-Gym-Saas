@@ -229,11 +229,12 @@ export function InsightsChatClient({ gymId, initialUsage }: { gymId: string; ini
             onKeyDown={handleKeyDown}
             disabled={isPending || paused}
             rows={1}
+            aria-label="Ask the assistant"
             placeholder={paused ? 'The assistant is paused for now' : 'Ask anything about your gym…'}
             className={cn(
               'flex-1 resize-none bg-surface border border-border rounded-md px-4 py-3',
               'text-sm text-foreground placeholder:text-muted-foreground',
-              'focus:outline-none focus:border-focus-ring',
+              'focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:opacity-50 transition',
             )}
             style={{ maxHeight: '120px', overflowY: 'auto' }}

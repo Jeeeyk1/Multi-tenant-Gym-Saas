@@ -14,7 +14,7 @@ import { EquippedBadgesSheet } from '../../../components/badges/EquippedBadgesSh
 import { PressableScale, ScreenHeader } from '../../../components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { SPACING, RADIUS, FONT, type ColorPalette } from '../../../constants/theme';
+import { SPACING, RADIUS, type ColorPalette } from '../../../constants/theme';
 import type { ChatMessage, EquippedBadge } from '../../../types';
 
 // Socket.io connects to the server root — strip the /api/v1 REST prefix.
@@ -335,8 +335,12 @@ export default function ChatScreen() {
           onPress={sendMessage}
           disabled={!input.trim() || !isConnected}
           activeOpacity={0.8}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel="Send message"
+          accessibilityState={{ disabled: !input.trim() || !isConnected }}
         >
-          <Text style={styles.sendIcon}>↑</Text>
+          <Ionicons name="arrow-up" size={20} color={theme.onPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -442,7 +446,6 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
-  sendIcon: { fontSize: 18, color: onPrimary, ...FONT.bold },
   inlineError: {
     backgroundColor: C.errorBg,
     paddingHorizontal: SPACING.md,

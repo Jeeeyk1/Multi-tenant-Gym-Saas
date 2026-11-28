@@ -171,7 +171,7 @@ function MemberCapUsage({ activeCount, cap }: { activeCount: number; cap: number
 
   const ratio = activeCount / cap;
   const barColor = ratio >= 1 ? 'bg-destructive' : ratio >= 0.8 ? 'bg-yellow-500' : 'bg-success';
-  const textColor = ratio >= 1 ? 'text-destructive' : ratio >= 0.8 ? 'text-yellow-500' : 'text-foreground';
+  const textColor = ratio >= 1 ? 'text-destructive-text' : ratio >= 0.8 ? 'text-warning' : 'text-foreground';
 
   return (
     <div className="pt-3 border-t border-border space-y-1.5">

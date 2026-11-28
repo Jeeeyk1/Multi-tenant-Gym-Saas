@@ -116,7 +116,7 @@ export function MealIdeaSheet({
           <View style={styles.items}>
             {meal.items.map((item) => (
               <View key={item} style={styles.itemRow}>
-                <Ionicons name="checkmark-circle" size={16} color={theme.primary} />
+                <Ionicons name="checkmark-circle" size={16} color={theme.accentText} />
                 <Text variant="label" style={{ color: C.text, flex: 1 }}>
                   {item}
                 </Text>
@@ -137,7 +137,7 @@ export function MealIdeaSheet({
     body = (
       <View style={styles.gap}>
         <View style={[styles.aim, { backgroundColor: theme.primaryMuted }]}>
-          <Ionicons name="restaurant-outline" size={20} color={theme.primary} />
+          <Ionicons name="restaurant-outline" size={20} color={theme.accentText} />
           <Text variant="label" style={{ color: C.text, flex: 1 }}>
             You have{' '}
             <Text variant="label" style={{ color: C.text, fontFamily: 'Inter_600SemiBold' }}>
@@ -171,8 +171,8 @@ export function MealIdeaSheet({
                   { borderColor: selected ? theme.primary : C.border, backgroundColor: selected ? theme.primaryMuted : C.surface },
                 ]}
               >
-                <Ionicons name={s.icon} size={16} color={selected ? theme.primary : C.textSecondary} />
-                <Text variant="label" style={{ color: selected ? theme.primary : C.text }}>
+                <Ionicons name={s.icon} size={16} color={selected ? theme.accentText : C.textSecondary} />
+                <Text variant="label" style={{ color: selected ? theme.accentText : C.text }}>
                   {s.label}
                 </Text>
               </Pressable>

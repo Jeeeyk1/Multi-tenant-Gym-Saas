@@ -11,10 +11,11 @@ export function LoginForm() {
   return (
     <form action={action} className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+        <label htmlFor="email" className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
           Email
         </label>
         <input
+          id="email"
           name="email"
           type="email"
           autoComplete="email"
@@ -26,10 +27,11 @@ export function LoginForm() {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+        <label htmlFor="password" className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
           Password
         </label>
         <input
+          id="password"
           name="password"
           type="password"
           autoComplete="current-password"
@@ -41,7 +43,7 @@ export function LoginForm() {
       </div>
 
       {state.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
+        <p role="alert" className="text-sm text-destructive-text">{state.error}</p>
       )}
 
       <button

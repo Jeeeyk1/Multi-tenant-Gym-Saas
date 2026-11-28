@@ -36,7 +36,7 @@ export default function AnnouncementsScreen() {
         container: { flex: 1, backgroundColor: C.background },
         centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
         content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
-        pageTitle: { fontSize: 24, ...FONT.bold, color: C.text, marginBottom: SPACING.lg },
+        pageTitle: { fontSize: 24, lineHeight: 29, ...FONT.bold, color: C.text, marginBottom: SPACING.lg },
         sectionLabel: { fontSize: 12, ...FONT.semibold, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: SPACING.sm, marginTop: SPACING.sm },
         sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: SPACING.sm, marginTop: SPACING.sm },
         chatBanner: {
@@ -56,8 +56,8 @@ export default function AnnouncementsScreen() {
         modal: { flex: 1, backgroundColor: C.background, padding: SPACING.lg },
         modalHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: SPACING.lg, marginBottom: SPACING.sm, gap: SPACING.md },
         modalTitle: { flex: 1, fontSize: 22, ...FONT.bold, color: C.text },
-        closeBtn: { padding: SPACING.xs },
-        closeText: { fontSize: 18, color: C.textSecondary },
+        // 44pt tap target; pulled up and right so the icon keeps its old position.
+        closeBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginTop: -10, marginRight: -10 },
         modalMeta: { fontSize: 12, color: C.textMuted, marginBottom: SPACING.lg },
         modalBody: { flex: 1 },
         modalContent: { fontSize: 15, color: C.text, lineHeight: 24, ...FONT.regular },
@@ -101,7 +101,7 @@ export default function AnnouncementsScreen() {
           onPress={() => router.push('/(member)/(tabs)/chat')}
           activeOpacity={0.75}
         >
-          <Ionicons name="chatbubbles" size={20} color={theme.primary} />
+          <Ionicons name="chatbubbles" size={20} color={theme.accentText} />
           <View style={{ flex: 1 }}>
             <Text style={styles.chatBannerTitle}>Community Chat</Text>
             <Text style={styles.chatBannerSub}>Talk with your gym community</Text>
@@ -144,8 +144,13 @@ export default function AnnouncementsScreen() {
           <View style={styles.modal}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={2}>{selected.title}</Text>
-              <TouchableOpacity onPress={() => setSelected(null)} style={styles.closeBtn}>
-                <Text style={styles.closeText}>✕</Text>
+              <TouchableOpacity
+                onPress={() => setSelected(null)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close announcement"
+              >
+                <Ionicons name="close" size={24} color={C.textSecondary} />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalMeta}>

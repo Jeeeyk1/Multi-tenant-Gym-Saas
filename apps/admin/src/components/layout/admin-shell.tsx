@@ -29,6 +29,15 @@ export function AdminShell({ email, banner, children }: { email: string; banner:
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    if (!drawerOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
   useEffect(() => setDrawerOpen(false), [pathname]);
 
   const title = ADMIN_NAV.find((i) => isActiveHref(pathname, i.href))?.label ?? 'Console';

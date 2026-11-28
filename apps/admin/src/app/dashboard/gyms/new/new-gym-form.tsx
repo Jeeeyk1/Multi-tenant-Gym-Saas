@@ -127,10 +127,11 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
           { name: 'ownerEmail', label: 'Owner Email', placeholder: 'juan@ironparadise.com', type: 'email', defaultValue: lead?.email },
         ].map((f) => (
           <div key={f.name}>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+            <label htmlFor={f.name} className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
               {f.label}
             </label>
             <input
+              id={f.name}
               name={f.name}
               type={f.type}
               placeholder={f.placeholder}
@@ -147,7 +148,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
             Plan
           </label>
           {plans.length === 0 ? (
-            <p className="text-sm text-destructive">No active billing plans found. Seed the `plans` table first.</p>
+            <p className="text-sm text-destructive-text">No active billing plans found. Seed the `plans` table first.</p>
           ) : (
             <div className="space-y-2">
               {plans.map((plan) => (
@@ -209,6 +210,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
             <div className="mt-2 flex items-center gap-2">
               <input
                 type="number"
+                aria-label="Trial days"
                 min={1}
                 max={365}
                 value={trialDays}
@@ -221,7 +223,7 @@ export function NewGymForm({ plans, leadId, lead }: { plans: BillingPlan[]; lead
           )}
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="text-sm text-destructive-text">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button

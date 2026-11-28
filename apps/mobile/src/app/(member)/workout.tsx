@@ -126,7 +126,7 @@ export default function WorkoutScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
             <Ionicons name="chevron-back" size={24} color={C.text} />
           </Pressable>
           <Text style={styles.headerTitle}>Start Workout</Text>
@@ -166,7 +166,7 @@ export default function WorkoutScreen() {
         <Modal visible={showIdlePrompt} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
-              <Ionicons name="alarm-outline" size={40} color={theme.primary} style={styles.modalIcon} />
+              <Ionicons name="alarm-outline" size={40} color={theme.accentText} style={styles.modalIcon} />
               <Text style={styles.modalTitle}>Still working out?</Text>
               <Text style={styles.modalBody}>
                 You've been active a while. Are you still training?
@@ -282,7 +282,7 @@ export default function WorkoutScreen() {
             </View>
             <View style={[styles.summaryRow, styles.summaryRowBorder]}>
               <Text style={styles.summaryLabel}>Duration</Text>
-              <Text style={[styles.summaryValue, { color: theme.primary }]}>
+              <Text style={[styles.summaryValue, { color: theme.accentText }]}>
                 {summary.durationMinutes} min
               </Text>
             </View>
@@ -382,7 +382,7 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
 
   // SELECT
   selectContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, paddingTop: SPACING.sm },
-  selectHeading: { fontSize: 24, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
+  selectHeading: { fontSize: 24, lineHeight: 29, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
   selectSub: { fontSize: 14, color: C.textSecondary, ...FONT.regular, marginBottom: SPACING.xl },
   typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   typeCard: {
@@ -435,7 +435,7 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timerText: { fontSize: 44, color: C.text, ...FONT.display, letterSpacing: -1 },
+  timerText: { fontSize: 44, lineHeight: 52, color: C.text, ...FONT.display, letterSpacing: -1 },
   timerLabel: { fontSize: 13, color: C.textMuted, ...FONT.regular, marginTop: 4 },
   startedAt: { fontSize: 13, color: C.textMuted, ...FONT.regular, marginBottom: SPACING.xxl },
   stopBtn: {
@@ -503,7 +503,7 @@ const makeStyles = (C: ColorPalette, onPrimary: string) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.md,
   },
-  doneTitle: { fontSize: 26, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
+  doneTitle: { fontSize: 26, lineHeight: 31, color: C.text, ...FONT.bold, marginBottom: SPACING.xs },
   doneSub: { fontSize: 14, color: C.textSecondary, ...FONT.regular },
   summaryCard: {
     backgroundColor: C.surface,

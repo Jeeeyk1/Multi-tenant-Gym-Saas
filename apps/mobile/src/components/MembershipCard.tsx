@@ -81,7 +81,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
     >
       <View style={s.header}>
         <View>
-          <Text style={[s.label, { color: accent + 'BB' }]}>Plan</Text>
+          <Text style={[s.label, { color: theme.accentText }]}>Plan</Text>
           <Text style={s.planName}>{member.plan.name}</Text>
         </View>
         <View style={[s.statusBadge, { backgroundColor: statusColor + '33', borderColor: statusColor }]}>
@@ -90,11 +90,11 @@ export function MembershipCard({ member }: MembershipCardProps) {
       </View>
 
       <Text style={s.memberName}>{member.user.fullName}</Text>
-      <Text style={[s.memberNumber, { color: accent + 'BB' }]}>{member.membershipNumber}</Text>
+      <Text style={[s.memberNumber, { color: theme.accentText }]}>{member.membershipNumber}</Text>
 
       <View style={[s.footer, { borderTopColor: accent + '26' }]}>
         <View>
-          <Text style={[s.label, { color: accent + 'BB' }]}>Expires</Text>
+          <Text style={[s.label, { color: theme.accentText }]}>Expires</Text>
           <Text style={s.value}>
             {new Date(member.expiryDate).toLocaleDateString('en-US', {
               month: 'short',
@@ -105,7 +105,7 @@ export function MembershipCard({ member }: MembershipCardProps) {
         </View>
         {member.status === 'ACTIVE' && (
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[s.label, { color: accent + 'BB' }]}>Days left</Text>
+            <Text style={[s.label, { color: theme.accentText }]}>Days left</Text>
             <Text style={[s.value, days <= 7 && { color: C.warning }]}>{days}</Text>
           </View>
         )}

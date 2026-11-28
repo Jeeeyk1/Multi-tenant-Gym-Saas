@@ -42,13 +42,14 @@ export function GymStatusToggle({ gymId, currentStatus }: { gymId: string; curre
     <button
       onClick={toggle}
       disabled={pending}
+      aria-busy={pending || undefined}
       className={`text-sm font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 ${
         isActive
-          ? 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+          ? 'bg-destructive/10 text-destructive-text hover:bg-destructive/20'
           : 'bg-success/10 text-success hover:bg-success/20'
       }`}
     >
-      {pending ? '…' : isActive ? 'Suspend Gym' : 'Activate Gym'}
+      {pending ? (isActive ? 'Suspending…' : 'Activating…') : isActive ? 'Suspend Gym' : 'Activate Gym'}
     </button>
   );
 }

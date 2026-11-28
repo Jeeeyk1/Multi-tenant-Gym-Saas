@@ -122,7 +122,7 @@ export function MealEstimateCard({
                 { borderColor: selected ? theme.primary : C.border, backgroundColor: selected ? theme.primaryMuted : 'transparent' },
               ]}
             >
-              <Text variant="label" style={{ color: selected ? theme.primary : C.textSecondary, fontFamily: 'Inter_600SemiBold' }}>
+              <Text variant="label" style={{ color: selected ? theme.accentText : C.textSecondary, fontFamily: 'Inter_600SemiBold' }}>
                 {PORTION_LABEL[p]}
               </Text>
             </Pressable>

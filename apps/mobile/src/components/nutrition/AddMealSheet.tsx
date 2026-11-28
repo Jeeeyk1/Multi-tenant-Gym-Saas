@@ -65,7 +65,7 @@ function Tile({
       ]}
     >
       <View style={[styles.tileIcon, { backgroundColor: theme.primaryMuted }]}>
-        <Ionicons name={icon} size={22} color={theme.primary} />
+        <Ionicons name={icon} size={22} color={theme.accentText} />
       </View>
       <Text variant="bodyMed" style={{ color: C.text }}>
         {title}

@@ -118,8 +118,8 @@ export function WeightCard({
           pressed && { opacity: 0.85 },
         ]}
       >
-        <Ionicons name="scale-outline" size={18} color={due ? theme.primary : C.textSecondary} />
-        <Text variant="label" style={{ color: due ? theme.primary : C.textSecondary, fontFamily: 'Inter_600SemiBold' }}>
+        <Ionicons name="scale-outline" size={18} color={due ? theme.accentText : C.textSecondary} />
+        <Text variant="label" style={{ color: due ? theme.accentText : C.textSecondary, fontFamily: 'Inter_600SemiBold' }}>
           {due ? 'Time for your weekly weigh-in' : 'Log weight'}
         </Text>
       </Pressable>

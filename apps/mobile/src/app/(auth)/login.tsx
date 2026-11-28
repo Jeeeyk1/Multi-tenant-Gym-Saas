@@ -65,7 +65,7 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={[styles.backText, { color: theme.primary }]}>← Change code</Text>
+          <Text style={[styles.backText, { color: theme.accentText }]}>← Change code</Text>
         </TouchableOpacity>
 
         {/* Gym identity header */}
@@ -120,7 +120,7 @@ export default function LoginScreen() {
                 style={styles.showHide}
                 onPress={() => setShowPassword((v) => !v)}
               >
-                <Text style={[styles.showHideText, { color: theme.primary }]}>
+                <Text style={[styles.showHideText, { color: theme.accentText }]}>
                   {showPassword ? 'Hide' : 'Show'}
                 </Text>
               </TouchableOpacity>
@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
   },
   gymNameTitle: {
     fontSize: 24,
+    lineHeight: 29,
     ...FONT.bold,
     color: COLORS.text,
     textAlign: 'center',

@@ -183,7 +183,7 @@ export default function WorkoutHistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={24} color={C.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Workout History</Text>
@@ -212,19 +212,19 @@ export default function WorkoutHistoryScreen() {
             {/* Summary strip */}
             <View style={styles.summaryStrip}>
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryNum, { color: theme.primary }]}>{sessions.length}</Text>
+                <Text style={[styles.summaryNum, { color: theme.accentText }]}>{sessions.length}</Text>
                 <Text style={styles.summaryLabel}>Sessions</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryNum, { color: theme.primary }]}>
+                <Text style={[styles.summaryNum, { color: theme.accentText }]}>
                   {sessions.reduce((acc, s) => acc + s.durationMinutes, 0)}
                 </Text>
                 <Text style={styles.summaryLabel}>Total min</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
-                <Text style={[styles.summaryNum, { color: theme.primary }]}>
+                <Text style={[styles.summaryNum, { color: theme.accentText }]}>
                   {Math.round(sessions.reduce((acc, s) => acc + s.durationMinutes, 0) / sessions.length)}
                 </Text>
                 <Text style={styles.summaryLabel}>Avg min</Text>
@@ -261,7 +261,7 @@ export default function WorkoutHistoryScreen() {
                       </View>
 
                       <View style={styles.sessionRight}>
-                        <Text style={[styles.sessionDuration, { color: theme.primary }]}>
+                        <Text style={[styles.sessionDuration, { color: theme.accentText }]}>
                           {session.durationMinutes} min
                         </Text>
                         {session.caloriesBurned != null && (
@@ -286,7 +286,7 @@ export default function WorkoutHistoryScreen() {
                 {isLoadingMore ? (
                   <ActivityIndicator color={theme.primary} size="small" />
                 ) : (
-                  <Text style={[styles.loadMoreText, { color: theme.primary }]}>Load more</Text>
+                  <Text style={[styles.loadMoreText, { color: theme.accentText }]}>Load more</Text>
                 )}
               </Pressable>
             )}

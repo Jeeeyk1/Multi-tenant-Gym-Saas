@@ -70,7 +70,7 @@ export function TargetsReveal({ targets }: { targets: DailyTargets }) {
             },
           ]}
         >
-          <Text variant="label" style={{ color: theme.primary, fontFamily: 'Inter_600SemiBold', letterSpacing: 1.5 }}>
+          <Text variant="label" style={{ color: theme.accentText, fontFamily: 'Inter_600SemiBold', letterSpacing: 1.5 }}>
             YOU&apos;RE IN
           </Text>
         </Animated.View>

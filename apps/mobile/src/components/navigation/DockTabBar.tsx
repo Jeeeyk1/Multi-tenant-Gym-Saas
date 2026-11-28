@@ -12,6 +12,8 @@ import { PressableScale } from '../ui/PressableScale';
 import { Text } from '../Text';
 
 const DOCK_HEIGHT = 58;
+// The dock has a fixed height, so its label and badge grow with Dynamic Type only up to this point.
+const DOCK_MAX_FONT_SCALE = 1.3;
 
 /** Colours the dock draws with. Members get the gym's theme; staff pass their fixed palette. */
 export interface DockPalette {
@@ -42,10 +44,9 @@ export function DockTabBar({ state, descriptors, navigation, palette }: BottomTa
     background: C.background,
     surface: C.surface,
     border: C.border,
-    accent: theme.primary,
+    accent: theme.accentText,
     accentMuted: theme.primaryMuted,
-    // A light gym colour (e.g. volt) is unreadable as text on a white dock, so light mode labels use body text.
-    label: theme.colorScheme === 'dark' ? theme.primary : C.text,
+    label: theme.accentText,
     inactive: C.textMuted,
     badge: C.error,
   };
@@ -158,12 +159,19 @@ function DockItem({
             <Animated.View entering={FadeIn} style={[styles.dot, { backgroundColor: badgeColor ?? palette.badge, borderColor: palette.surface }]} />
           ) : badge != null ? (
             <View style={[styles.badge, { backgroundColor: badgeColor ?? palette.badge, borderColor: palette.surface }]}>
-              <Text style={[styles.badgeText, { color: palette.background }]}>{badge}</Text>
+              <Text style={[styles.badgeText, { color: palette.background }]} maxFontSizeMultiplier={DOCK_MAX_FONT_SCALE}>
+                {badge}
+              </Text>
             </View>
           ) : null}
         </View>
         {focused ? (
-          <Animated.Text entering={FadeIn.duration(180)} numberOfLines={1} style={[styles.label, { color: palette.label }]}>
+          <Animated.Text
+            entering={FadeIn.duration(180)}
+            numberOfLines={1}
+            maxFontSizeMultiplier={DOCK_MAX_FONT_SCALE}
+            style={[styles.label, { color: palette.label }]}
+          >
             {label}
           </Animated.Text>
         ) : null}
@@ -197,6 +205,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontFamily: fonts.bodySemibold, fontSize: 9.5 },
+  badgeText: { fontFamily: fonts.bodySemibold, fontSize: 9.5, lineHeight: 12 },
   dot: { position: 'absolute', top: -2, right: -4, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { AppLoader } from '../../components/AppLoader';
 import { useAuth } from '../../context/AuthContext';
@@ -41,6 +42,7 @@ export default function AIScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('workout');
   const memberQ = useMyMember();
   const memberId = memberQ.data?.id ?? null;
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
@@ -48,20 +50,22 @@ export default function AIScreen() {
         colors={theme.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        style={styles.header}
+        style={[styles.header, { paddingTop: insets.top + SPACING.md }]}
       >
         <Ionicons name="flash" size={22} color={theme.onPrimary} />
         <Text style={styles.headerTitle}>AI Coach</Text>
       </LinearGradient>
 
-      <View style={styles.tabs}>
+      <View style={styles.tabs} accessibilityRole="tablist">
         {(['workout', 'nutrition', 'diary'] as Tab[]).map((t) => (
           <Pressable
             key={t}
             style={[styles.tab, activeTab === t && styles.tabActive, activeTab === t && { borderBottomColor: theme.primary }]}
             onPress={() => setActiveTab(t)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === t }}
           >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive, activeTab === t && { color: theme.primary }]}>
+            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive, activeTab === t && { color: theme.accentText }]}>
               {t === 'workout' ? 'Workout' : t === 'nutrition' ? 'Meal Plan' : 'Food Diary'}
             </Text>
           </Pressable>
@@ -235,8 +239,8 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
             <>
               <View style={[styles.planHeader, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '30' }]}>
                 <View style={styles.planHeaderRow}>
-                  <Ionicons name="barbell-outline" size={20} color={theme.primary} />
-                  <Text style={[styles.planFocus, { color: theme.primary }]}>{activeDay.focus}</Text>
+                  <Ionicons name="barbell-outline" size={20} color={theme.accentText} />
+                  <Text style={[styles.planFocus, { color: theme.accentText }]}>{activeDay.focus}</Text>
                 </View>
                 <View style={styles.planMeta}>
                   <View style={styles.planMetaItem}>
@@ -267,13 +271,13 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                         <View style={styles.exerciseStats}>
                           {ex.sets != null && (
                             <View style={[styles.statPill, { backgroundColor: theme.primary + '15' }]}>
-                              <Text style={[styles.statValue, { color: theme.primary }]}>{ex.sets}</Text>
+                              <Text style={[styles.statValue, { color: theme.accentText }]}>{ex.sets}</Text>
                               <Text style={styles.statLabel}>sets</Text>
                             </View>
                           )}
                           {ex.reps != null && (
                             <View style={[styles.statPill, { backgroundColor: theme.primary + '15' }]}>
-                              <Text style={[styles.statValue, { color: theme.primary }]}>{ex.reps}</Text>
+                              <Text style={[styles.statValue, { color: theme.accentText }]}>{ex.reps}</Text>
                               <Text style={styles.statLabel}>reps</Text>
                             </View>
                           )}
@@ -306,8 +310,8 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
                               <ActivityIndicator size="small" color={theme.primary} />
                             ) : (
                               <>
-                                <Ionicons name="swap-horizontal" size={13} color={theme.primary} />
-                                <Text style={[styles.swapBtnText, { color: theme.primary }]}>Swap</Text>
+                                <Ionicons name="swap-horizontal" size={13} color={theme.accentText} />
+                                <Text style={[styles.swapBtnText, { color: theme.accentText }]}>Swap</Text>
                               </>
                             )}
                           </Pressable>
@@ -326,7 +330,7 @@ function WorkoutTab({ gymId, memberId, theme }: TabProps) {
       {!weekPlan && !initialising && !loading && (
         <View style={styles.workoutEmpty}>
           <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18' }]}>
-            <Ionicons name="barbell-outline" size={32} color={theme.primary} />
+            <Ionicons name="barbell-outline" size={32} color={theme.accentText} />
           </View>
           <Text style={styles.heroTitle}>Weekly Workout Plan</Text>
           <Text style={styles.heroSub}>
@@ -407,7 +411,7 @@ function SwapExerciseModal({
         <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: SPACING.md }}>
           {target && (
             <View style={[styles.swapCurrentCard, { borderColor: theme.primary + '30' }]}>
-              <Ionicons name="barbell-outline" size={18} color={theme.primary} />
+              <Ionicons name="barbell-outline" size={18} color={theme.accentText} />
               <Text style={styles.swapCurrentName}>{target.ex.name}</Text>
             </View>
           )}
@@ -431,7 +435,7 @@ function SwapExerciseModal({
                     { borderColor: active ? theme.primary : C.border, backgroundColor: active ? theme.primary + '18' : 'transparent' },
                   ]}
                 >
-                  <Text style={[styles.swapChipText, { color: active ? theme.primary : C.textSecondary }]}>{r}</Text>
+                  <Text style={[styles.swapChipText, { color: active ? theme.accentText : C.textSecondary }]}>{r}</Text>
                 </Pressable>
               );
             })}
@@ -755,7 +759,7 @@ function OptionCard({
       onPress={onPress}
     >
       <View style={[styles.optionIcon, { backgroundColor: theme.primary + '18' }]}>
-        <Ionicons name={icon} size={20} color={theme.primary} />
+        <Ionicons name={icon} size={20} color={theme.accentText} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.optionTitle}>{title}</Text>
@@ -764,7 +768,7 @@ function OptionCard({
       <Ionicons
         name={selected ? 'checkmark-circle' : 'chevron-forward'}
         size={selected ? 22 : 18}
-        color={selected ? theme.primary : C.textMuted}
+        color={selected ? theme.accentText : C.textMuted}
       />
     </Pressable>
   );
@@ -854,10 +858,10 @@ function ExerciseDetailModal({
             {/* Sets / reps / rest summary */}
             <View style={styles.exModalStats}>
               {exercise.sets != null && (
-                <Text style={[styles.exModalStat, { color: theme.primary }]}>{exercise.sets} sets</Text>
+                <Text style={[styles.exModalStat, { color: theme.accentText }]}>{exercise.sets} sets</Text>
               )}
               {exercise.reps != null && (
-                <Text style={[styles.exModalStat, { color: theme.primary }]}>{exercise.reps} reps</Text>
+                <Text style={[styles.exModalStat, { color: theme.accentText }]}>{exercise.reps} reps</Text>
               )}
               {exercise.restSec != null && (
                 <Text style={styles.exModalStat}>{exercise.restSec}s rest</Text>
@@ -897,7 +901,7 @@ function ExerciseDetailModal({
               <View style={styles.muscleRow}>
                 {instructions.targetMuscles.map((m) => (
                   <View key={m} style={[styles.musclePill, { backgroundColor: theme.primary + '18' }]}>
-                    <Text style={[styles.musclePillText, { color: theme.primary }]}>{m}</Text>
+                    <Text style={[styles.musclePillText, { color: theme.accentText }]}>{m}</Text>
                   </View>
                 ))}
               </View>
@@ -939,9 +943,9 @@ function ExerciseDetailModal({
                   </View>
                 </View>
                 <View style={[styles.modRow, { marginTop: SPACING.sm }]}>
-                  <Ionicons name="arrow-up-circle-outline" size={16} color={theme.primary} />
+                  <Ionicons name="arrow-up-circle-outline" size={16} color={theme.accentText} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.modLabel, { color: theme.primary }]}>Harder</Text>
+                    <Text style={[styles.modLabel, { color: theme.accentText }]}>Harder</Text>
                     <Text style={styles.modText}>{instructions.harder}</Text>
                   </View>
                 </View>
@@ -951,7 +955,7 @@ function ExerciseDetailModal({
             {/* Form tip from plan */}
             {exercise.tip && (
               <View style={[styles.exSection, styles.tipCard]}>
-                <Ionicons name="bulb-outline" size={15} color={theme.primary} />
+                <Ionicons name="bulb-outline" size={15} color={theme.accentText} />
                 <Text style={styles.tipCardText}>{exercise.tip}</Text>
               </View>
             )}
@@ -1026,7 +1030,7 @@ function NutritionTab({ gymId, memberId, theme }: TabProps) {
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentInner}>
       <View style={styles.heroCard}>
         <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18' }]}>
-          <Ionicons name="nutrition-outline" size={32} color={theme.primary} />
+          <Ionicons name="nutrition-outline" size={32} color={theme.accentText} />
         </View>
         <Text style={styles.heroTitle}>Meal Plan</Text>
         <Text style={styles.heroSub}>
@@ -1232,7 +1236,7 @@ function ModeCard({
   return (
     <Pressable style={[styles.modeCard, { borderColor: theme.primary + '30' }]} onPress={onPress}>
       <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18', width: 48, height: 48, borderRadius: 24, marginBottom: 0 }]}>
-        <Ionicons name={icon} size={24} color={theme.primary} />
+        <Ionicons name={icon} size={24} color={theme.accentText} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.modeCardTitle}>{title}</Text>
@@ -1265,8 +1269,8 @@ function MealPlanView({
       {/* Summary header */}
       <View style={[styles.planHeader, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '30' }]}>
         <View style={styles.planHeaderRow}>
-          <Ionicons name="nutrition-outline" size={20} color={theme.primary} />
-          <Text style={[styles.planFocus, { color: theme.primary }]}>{plan.title}</Text>
+          <Ionicons name="nutrition-outline" size={20} color={theme.accentText} />
+          <Text style={[styles.planFocus, { color: theme.accentText }]}>{plan.title}</Text>
         </View>
         <View style={styles.planMeta}>
           <View style={styles.planMetaItem}>
@@ -1291,7 +1295,7 @@ function MealPlanView({
         <View key={i} style={styles.mealCard}>
           <View style={styles.mealCardHeader}>
             <Text style={styles.mealCardName}>{meal.name}</Text>
-            <Text style={[styles.mealCardCals, { color: theme.primary }]}>{meal.calories} kcal</Text>
+            <Text style={[styles.mealCardCals, { color: theme.accentText }]}>{meal.calories} kcal</Text>
           </View>
           <View style={styles.macroRow}>
             <MacroChip label="Protein" value={`${meal.proteinG}`} unit="g" theme={theme} />
@@ -1313,12 +1317,12 @@ function MealPlanView({
       {plan.tips.length > 0 && (
         <View style={styles.suggestionCard}>
           <View style={styles.suggestionCardHeader}>
-            <Ionicons name="bulb-outline" size={16} color={theme.primary} />
-            <Text style={[styles.suggestionCardLabel, { color: theme.primary }]}>Tips</Text>
+            <Ionicons name="bulb-outline" size={16} color={theme.accentText} />
+            <Text style={[styles.suggestionCardLabel, { color: theme.accentText }]}>Tips</Text>
           </View>
           {plan.tips.map((tip, i) => (
             <View key={i} style={styles.mistakeRow}>
-              <Ionicons name="checkmark-circle-outline" size={16} color={theme.primary} />
+              <Ionicons name="checkmark-circle-outline" size={16} color={theme.accentText} />
               <Text style={styles.mistakeText}>{tip}</Text>
             </View>
           ))}
@@ -1602,8 +1606,8 @@ function LogMealModal({
 
               <View style={[styles.analysisCard, { borderColor: theme.primary + '40' }]}>
                 <View style={styles.analysisHeader}>
-                  <Ionicons name="sparkles" size={14} color={theme.primary} />
-                  <Text style={[styles.analysisTitle, { color: theme.primary }]}>AI Analysis</Text>
+                  <Ionicons name="sparkles" size={14} color={theme.accentText} />
+                  <Text style={[styles.analysisTitle, { color: theme.accentText }]}>AI Analysis</Text>
                 </View>
                 <Text style={styles.analysisDesc}>{analysis.description}</Text>
                 <View style={styles.macroRow}>
@@ -1675,8 +1679,8 @@ function SuggestionCard({
   return (
     <View style={styles.suggestionCard}>
       <View style={styles.suggestionCardHeader}>
-        <Ionicons name={icon} size={16} color={theme.primary} />
-        <Text style={[styles.suggestionCardLabel, { color: theme.primary }]}>AI Response</Text>
+        <Ionicons name={icon} size={16} color={theme.accentText} />
+        <Text style={[styles.suggestionCardLabel, { color: theme.accentText }]}>AI Response</Text>
         {dateLabel && <Text style={styles.suggestionCardDate}>Generated {dateLabel}</Text>}
       </View>
       <Text style={styles.suggestionText}>{text}</Text>
@@ -1691,7 +1695,7 @@ function FoodLogRow({ log, theme }: { log: FoodLog; theme: ReturnType<typeof use
   return (
     <View style={styles.logRow}>
       <View style={[styles.logIcon, { backgroundColor: theme.primary + '18' }]}>
-        <Ionicons name="fast-food-outline" size={18} color={theme.primary} />
+        <Ionicons name="fast-food-outline" size={18} color={theme.accentText} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.logDesc}>{log.description}</Text>
@@ -1718,7 +1722,7 @@ function MacroChip({
   const styles = useMemo(() => makeStyles(C, theme.onPrimary), [C, theme.onPrimary]);
   return (
     <View style={[styles.macroChip, { backgroundColor: theme.primary + '12' }]}>
-      <Text style={[styles.macroValue, { color: theme.primary }]}>
+      <Text style={[styles.macroValue, { color: theme.accentText }]}>
         {value}{unit ? <Text style={styles.macroUnit}> {unit}</Text> : null}
       </Text>
       <Text style={styles.macroLabel}>{label}</Text>
@@ -1746,7 +1750,6 @@ const makeStyles = (C: ColorPalette, onAccent: string) => StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl + SPACING.lg,
     paddingBottom: SPACING.md,
   },
   headerTitle: {

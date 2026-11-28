@@ -71,7 +71,7 @@ export default function TrainScreen() {
     container: { flex: 1, backgroundColor: C.background },
     content: { padding: SPACING.lg, paddingBottom: SPACING.xxl },
     centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
-    pageTitle: { fontSize: 28, color: C.text, ...FONT.bold, marginBottom: SPACING.lg },
+    pageTitle: { fontSize: 28, lineHeight: 34, color: C.text, ...FONT.bold, marginBottom: SPACING.lg },
     resumeCard: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -238,15 +238,15 @@ export default function TrainScreen() {
 
       <View style={s.statsRow}>
         <View style={s.statCard}>
-          <Text style={[s.statNum, { color: theme.primary }]}>{weekSessions.length}</Text>
+          <Text style={[s.statNum, { color: theme.accentText }]}>{weekSessions.length}</Text>
           <Text style={s.statLabel}>This week</Text>
         </View>
         <View style={s.statCard}>
-          <Text style={[s.statNum, { color: theme.primary }]}>{weekMinutes}</Text>
+          <Text style={[s.statNum, { color: theme.accentText }]}>{weekMinutes}</Text>
           <Text style={s.statLabel}>Minutes</Text>
         </View>
         <View style={s.statCard}>
-          <Text style={[s.statNum, { color: theme.primary }]}>{streak}</Text>
+          <Text style={[s.statNum, { color: theme.accentText }]}>{streak}</Text>
           <Text style={s.statLabel}>Workout streak</Text>
         </View>
       </View>
@@ -281,7 +281,7 @@ export default function TrainScreen() {
         accessibilityRole="button"
         accessibilityLabel="Leaderboard"
       >
-        <Ionicons name="trophy-outline" size={22} color={theme.primary} />
+        <Ionicons name="trophy-outline" size={22} color={theme.accentText} />
         <View style={{ flex: 1 }}>
           <Text style={s.resumeTitle}>Leaderboard</Text>
           <Text style={s.resumeSub}>See where you rank on each lift</Text>
@@ -293,7 +293,7 @@ export default function TrainScreen() {
         <Text style={s.sectionTitle}>Recent Sessions</Text>
         {sessions.length > 0 && (
           <Pressable onPress={() => router.push('/(member)/workout-history')}>
-            <Text style={[s.sectionLink, { color: theme.primary }]}>View all</Text>
+            <Text style={[s.sectionLink, { color: theme.accentText }]}>View all</Text>
           </Pressable>
         )}
       </View>
@@ -323,7 +323,7 @@ export default function TrainScreen() {
                     {relativeDay(session.startedAt)} · {formatTime(session.startedAt)}
                   </Text>
                 </View>
-                <Text style={[s.sessionDuration, { color: theme.primary }]}>
+                <Text style={[s.sessionDuration, { color: theme.accentText }]}>
                   {session.durationMinutes} min
                 </Text>
               </View>

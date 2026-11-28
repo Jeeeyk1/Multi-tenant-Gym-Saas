@@ -127,7 +127,7 @@ export function GreetingBanner({ name, streak = 0, lastCheckInToday = false, kca
         accessibilityLabel={`${part.label.toLowerCase()}, ${name}. ${getSubtitle(streak, lastCheckInToday, kcalLeft)}`}
       >
         <View style={s.dayPart}>
-          <DayPartIcon part={part} color={theme.primary} />
+          <DayPartIcon part={part} color={theme.accentText} />
           <Text style={s.dayPartLabel}>{part.label}</Text>
         </View>
         <Text style={s.name} numberOfLines={1}>

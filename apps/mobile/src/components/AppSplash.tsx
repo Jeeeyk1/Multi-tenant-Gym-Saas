@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Logo, Wordmark } from './Logo';
 import { BRAND, FONT } from '../constants/theme';
 
 const TAGLINE = 'Train. Connect. Grow.';
+// With reduce motion on, the finished splash is shown still for this long instead of animating in.
+const STILL_SPLASH_MS = 1200;
 
 interface AppSplashProps {
   onDone: () => void;
@@ -25,46 +27,66 @@ export function AppSplash({ onDone }: AppSplashProps) {
 
   useEffect(() => {
     const fallback = setTimeout(onDone, 4000);
+    let stillTimer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
 
-    Animated.parallel([
-      Animated.spring(logoScale, { toValue: 1, damping: 10, stiffness: 120, useNativeDriver: true }),
-      Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-    ]).start();
+    const showStill = () => {
+      [logoScale, logoOpacity, nameOpacity, progressAnim, ...charAnims].forEach((value) => value.setValue(1));
+      nameY.setValue(0);
+      stillTimer = setTimeout(onDone, STILL_SPLASH_MS);
+    };
 
-    Animated.sequence([
-      Animated.delay(400),
+    const playIntro = () => {
       Animated.parallel([
-        Animated.timing(nameOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-        Animated.spring(nameY, { toValue: 0, damping: 14, stiffness: 130, useNativeDriver: true }),
-      ]),
-    ]).start();
+        Animated.spring(logoScale, { toValue: 1, damping: 10, stiffness: 120, useNativeDriver: true }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      ]).start();
 
-    Animated.sequence([
-      Animated.delay(800),
-      Animated.stagger(38, charAnims.map((anim) =>
-        Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: true }),
-      )),
-    ]).start();
-
-    Animated.sequence([
-      Animated.delay(600),
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(glowOpacity, { toValue: 0.55, duration: 500, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.delay(400),
+        Animated.parallel([
+          Animated.timing(nameOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.spring(nameY, { toValue: 0, damping: 14, stiffness: 130, useNativeDriver: true }),
         ]),
-        Animated.timing(glowScale, { toValue: 1.7, duration: 1000, useNativeDriver: true }),
-      ]),
-    ]).start();
+      ]).start();
 
-    Animated.timing(progressAnim, { toValue: 1, duration: 2000, useNativeDriver: false }).start();
+      Animated.sequence([
+        Animated.delay(800),
+        Animated.stagger(38, charAnims.map((anim) =>
+          Animated.timing(anim, { toValue: 1, duration: 100, useNativeDriver: true }),
+        )),
+      ]).start();
 
-    Animated.sequence([
-      Animated.delay(2300),
-      Animated.timing(screenOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
-    ]).start(({ finished }) => { if (finished) onDone(); });
+      Animated.sequence([
+        Animated.delay(600),
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(glowOpacity, { toValue: 0.55, duration: 500, useNativeDriver: true }),
+            Animated.timing(glowOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
+          ]),
+          Animated.timing(glowScale, { toValue: 1.7, duration: 1000, useNativeDriver: true }),
+        ]),
+      ]).start();
 
-    return () => clearTimeout(fallback);
+      Animated.timing(progressAnim, { toValue: 1, duration: 2000, useNativeDriver: false }).start();
+
+      Animated.sequence([
+        Animated.delay(2300),
+        Animated.timing(screenOpacity, { toValue: 0, duration: 350, useNativeDriver: true }),
+      ]).start(({ finished }) => { if (finished) onDone(); });
+    };
+
+    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
+      if (cancelled) return;
+      if (reduceMotion) showStill();
+      else playIntro();
+    });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(fallback);
+      clearTimeout(stillTimer);
+    };
   }, []);
 
   const progressWidth = progressAnim.interpolate({

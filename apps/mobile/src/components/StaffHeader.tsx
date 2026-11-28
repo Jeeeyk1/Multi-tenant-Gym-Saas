@@ -46,7 +46,7 @@ export function StaffHeader({
       <View style={styles.left}>
         {onBack ? (
           <View style={styles.backRow}>
-            <TouchableOpacity onPress={onBack} hitSlop={10} activeOpacity={0.7}>
+            <TouchableOpacity onPress={onBack} hitSlop={11} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Back">
               <Ionicons name="arrow-back" size={22} color={COLORS.text} />
             </TouchableOpacity>
             <Text style={styles.title}>{title}</Text>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   left: { flex: 1, minWidth: 0 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   greeting: { fontSize: 13, ...FONT.medium, marginBottom: 4 },
-  title: { fontSize: 26, color: COLORS.text, ...FONT.bold },
+  title: { fontSize: 26, lineHeight: 31, color: COLORS.text, ...FONT.bold },
   subtitle: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular, marginTop: 2 },
   right: { flexShrink: 0, marginTop: 2 },
 });

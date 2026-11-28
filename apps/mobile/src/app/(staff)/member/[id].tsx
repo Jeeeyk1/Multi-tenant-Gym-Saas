@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -202,12 +203,13 @@ function RenewalRow({ record }: { record: RenewalRecord }) {
 
 /** What a trainer sees: who the member is and whether their membership is active, plus their badges. */
 function BasicMemberView({ name, userId, status, statusColor }: { name: string; userId: string; status: string; statusColor: string }) {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const equippedQ = useEquippedBadgesMap();
   const badges = equippedQ.data?.get(userId) ?? [];
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + SPACING.sm }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backBtn}
@@ -240,6 +242,7 @@ function BasicMemberView({ name, userId, status, statusColor }: { name: string; 
 }
 
 export default function MemberDetailScreen() {
+  const insets = useSafeAreaInsets();
   const toast = useToast();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -350,8 +353,14 @@ export default function MemberDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Back header */}
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+        <View style={[styles.topBar, { paddingTop: insets.top + SPACING.sm }]}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Back to members"
+          >
             <Ionicons name="chevron-back" size={22} color={COLORS.text} />
             <Text style={styles.backLabel}>Members</Text>
           </TouchableOpacity>
@@ -517,7 +526,6 @@ const styles = StyleSheet.create({
 
   // Top bar
   topBar: {
-    paddingTop: Platform.OS === 'ios' ? 52 : SPACING.lg,
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.sm,
   },
@@ -548,7 +556,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.sm,
   },
-  bigAvatarText: { fontSize: 24, color: COLORS.primary, ...FONT.bold },
+  bigAvatarText: { fontSize: 24, lineHeight: 29, color: COLORS.primary, ...FONT.bold },
   fullName: { fontSize: 22, color: COLORS.text, ...FONT.bold, textAlign: 'center' },
   profileEmail: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular },
   profilePhone: { fontSize: 13, color: COLORS.textMuted, ...FONT.regular },

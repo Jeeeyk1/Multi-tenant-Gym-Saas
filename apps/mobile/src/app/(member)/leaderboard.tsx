@@ -229,7 +229,7 @@ function SubmitPrModal({
           </Pressable>
           <Text style={styles.modalTitle}>Submit PR</Text>
           <Pressable onPress={busy ? undefined : handleSubmit} style={[styles.modalHeaderBtn, busy && { opacity: 0.5 }]}>
-            <Text style={[styles.modalSave, { color: theme.primary }]}>
+            <Text style={[styles.modalSave, { color: theme.accentText }]}>
               {step === 'uploading' ? 'Uploading…' : step === 'submitting' ? 'Sending…' : 'Submit'}
             </Text>
           </Pressable>
@@ -296,7 +296,7 @@ function SubmitPrModal({
           {/* 1RM Preview */}
           {weightKg && reps && !isNaN(parseFloat(weightKg)) && !isNaN(parseInt(reps, 10)) && (
             <View style={[styles.est1rmBadge, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
-              <Text style={[styles.est1rmText, { color: theme.primary }]}>
+              <Text style={[styles.est1rmText, { color: theme.accentText }]}>
                 Est. 1RM: {(parseFloat(weightKg) * (1 + parseInt(reps, 10) / 30)).toFixed(1)} kg
               </Text>
             </View>
@@ -328,8 +328,8 @@ function SubmitPrModal({
           ) : (
             <View style={{ flexDirection: 'row', gap: SPACING.sm }}>
               <Pressable onPress={takePhoto} style={[styles.photoBtn, { borderColor: theme.primary + '60' }]}>
-                <Ionicons name="camera-outline" size={22} color={theme.primary} />
-                <Text style={[styles.photoBtnText, { color: theme.primary }]}>Camera</Text>
+                <Ionicons name="camera-outline" size={22} color={theme.accentText} />
+                <Text style={[styles.photoBtnText, { color: theme.accentText }]}>Camera</Text>
               </Pressable>
               <Pressable onPress={pickPhoto} style={[styles.photoBtn, { borderColor: C.border }]}>
                 <Ionicons name="image-outline" size={22} color={C.textSecondary} />
@@ -384,6 +384,7 @@ export default function LeaderboardScreen() {
         backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -10 },
         pageTitle: {
           fontSize: 24,
+          lineHeight: 29,
           ...FONT.bold,
           color: C.text,
         },
@@ -523,7 +524,7 @@ export default function LeaderboardScreen() {
                 onPress={() => setTab(t)}
                 style={[styles.tab, tab === t && { borderBottomColor: theme.primary }]}
               >
-                <Text style={[styles.tabText, tab === t && { color: theme.primary, ...FONT.semibold }]}>
+                <Text style={[styles.tabText, tab === t && { color: theme.accentText, ...FONT.semibold }]}>
                   {t === 'board' ? 'Rankings' : 'My PRs'}
                 </Text>
               </Pressable>
@@ -593,7 +594,7 @@ export default function LeaderboardScreen() {
                             />
                           </View>
                           <View style={styles.rankStats}>
-                            <Text style={[styles.rankORM, { color: theme.primary }]}>
+                            <Text style={[styles.rankORM, { color: theme.accentText }]}>
                               {Number(entry.estimated1rm).toFixed(1)} kg
                             </Text>
                             <Text style={styles.rankLifted}>
@@ -627,7 +628,7 @@ export default function LeaderboardScreen() {
                     <Text style={styles.prDate}>{fmtDate(pr.submittedAt)}</Text>
                   </View>
                   <View style={styles.prCardRight}>
-                    <Text style={[styles.prORM, { color: theme.primary }]}>
+                    <Text style={[styles.prORM, { color: theme.accentText }]}>
                       {Number(pr.estimated1rm).toFixed(1)} kg
                     </Text>
                     <Text style={styles.prORMLabel}>Est. 1RM</Text>

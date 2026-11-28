@@ -1,4 +1,5 @@
 import { Redirect, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -14,9 +15,13 @@ export default function MemberLayout() {
     return <Redirect href="/(auth)/entry" />;
   }
 
+  // Member screens follow the light/dark setting; staff, auth and the splash keep the root's light bar.
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <>
+      <StatusBar style={theme.colorScheme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </>
   );
 }

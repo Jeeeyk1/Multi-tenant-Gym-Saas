@@ -88,7 +88,7 @@ export function NewBadgeCelebration() {
     <Modal visible transparent animationType="fade" onRequestClose={close}>
       <View style={styles.backdrop}>
         <View style={[styles.card, { backgroundColor: C.background }]} accessibilityViewIsModal>
-          <Text variant="label" style={{ color: theme.primary, letterSpacing: 1.2 }}>
+          <Text variant="label" style={{ color: theme.accentText, letterSpacing: 1.2 }}>
             {view.rarity ? `NEW ${RARITY_LABEL[view.rarity].toUpperCase()} BADGE` : 'NEW BADGE'}
           </Text>
           <Animated.View style={{ opacity, transform: [{ scale }, { rotate }] }}>

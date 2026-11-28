@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DARK_COLORS, LIGHT_COLORS, type ColorPalette } from '../constants/theme';
-import { onAccent } from '../theme/accent';
+import { onAccent, readableAccent } from '../theme/accent';
 
 export interface GymTheme {
   primary: string;
@@ -11,6 +11,8 @@ export interface GymTheme {
   primaryMuted: string;
   /** Readable text color on `primary`. */
   onPrimary: string;
+  /** The gym colour shifted to be readable as text or an icon on `colors.background` and `colors.surface`. */
+  accentText: string;
   logoUrl: string | null;
   colorScheme: 'light' | 'dark';
   /** Full color palette for the current mode — use this in screens instead of importing COLORS */
@@ -35,15 +37,17 @@ function buildTheme(
   logoUrl: string | null = null,
   colorScheme: 'light' | 'dark' = 'dark',
 ): GymTheme {
+  const colors = colorScheme === 'light' ? LIGHT_COLORS : DARK_COLORS;
   return {
     primary,
     secondary,
     gradient: [primary, secondary],
     primaryMuted: `${primary}20`,
     onPrimary: onAccent(primary),
+    accentText: readableAccent(primary, [colors.background, colors.surface], colors.text),
     logoUrl,
     colorScheme,
-    colors: colorScheme === 'light' ? LIGHT_COLORS : DARK_COLORS,
+    colors,
   };
 }
 

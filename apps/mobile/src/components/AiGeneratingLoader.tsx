@@ -4,6 +4,7 @@ import { Text } from './Text';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
+import { useReduceMotion } from './onboarding/use-reduce-motion';
 import { FONT, SPACING } from '../constants/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -30,29 +31,36 @@ export function AiGeneratingLoader({
 }) {
   const { theme } = useTheme();
   const C = theme.colors;
+  const reduceMotion = useReduceMotion();
 
   const spin = useRef(new Animated.Value(0)).current;
   const fade = useRef(new Animated.Value(1)).current;
   const [msgIndex, setMsgIndex] = useState(0);
 
+  // With reduce motion the ring stays still; the cycling messages still show progress.
   useEffect(() => {
+    if (reduceMotion) return;
     const loop = Animated.loop(
       Animated.timing(spin, { toValue: 1, duration: 1100, easing: Easing.linear, useNativeDriver: true }),
     );
     loop.start();
     return () => loop.stop();
-  }, [spin]);
+  }, [spin, reduceMotion]);
 
   useEffect(() => {
     if (messages.length <= 1) return;
     const id = setInterval(() => {
+      if (reduceMotion) {
+        setMsgIndex((i) => (i + 1) % messages.length);
+        return;
+      }
       Animated.timing(fade, { toValue: 0, duration: 240, useNativeDriver: true }).start(() => {
         setMsgIndex((i) => (i + 1) % messages.length);
         Animated.timing(fade, { toValue: 1, duration: 240, useNativeDriver: true }).start();
       });
     }, 2000);
     return () => clearInterval(id);
-  }, [messages.length, fade]);
+  }, [messages.length, fade, reduceMotion]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
@@ -82,7 +90,7 @@ export function AiGeneratingLoader({
           </Svg>
         </Animated.View>
         <View style={styles.icon}>
-          <Ionicons name={icon} size={30} color={theme.primary} />
+          <Ionicons name={icon} size={30} color={theme.accentText} />
         </View>
       </View>
 

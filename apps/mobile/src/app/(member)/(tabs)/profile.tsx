@@ -112,6 +112,20 @@ function Row({ label, value, C }: { label: string; value: string; C: ColorPalett
   );
 }
 
+function AboutLink({ label, url, color }: { label: string; url: string; color: string }) {
+  return (
+    <Pressable onPress={() => Linking.openURL(url)} style={aboutLinkStyles.hit} accessibilityRole="link">
+      <Text style={[aboutLinkStyles.text, { color }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+const aboutLinkStyles = StyleSheet.create({
+  // 44pt tall tap target for small inline links.
+  hit: { minHeight: 44, justifyContent: 'center', paddingHorizontal: SPACING.xs },
+  text: { fontSize: 12, lineHeight: 16, ...FONT.regular, textDecorationLine: 'underline' },
+});
+
 function NavRow({ icon, label, onPress, C }: { icon: string; label: string; onPress: () => void; C: ColorPalette }) {
   return (
     <Pressable
@@ -180,10 +194,10 @@ function EquippedSlots({ equipped, hasBadges, onPress }: { equipped: EquippedBad
         })}
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: SPACING.md }}>
-        <Text style={{ color: theme.primary, fontSize: 14, ...FONT.medium }}>
+        <Text style={{ color: theme.accentText, fontSize: 14, ...FONT.medium }}>
           {hasBadges ? 'See all badges' : 'See badges you can earn'}
         </Text>
-        <Ionicons name="chevron-forward" size={14} color={theme.primary} />
+        <Ionicons name="chevron-forward" size={14} color={theme.accentText} />
       </View>
     </Pressable>
   );
@@ -408,7 +422,7 @@ function EditProfileModal({ visible, initialForm, imperial, onClose }: {
           </Pressable>
           <Text style={s.title}>Edit Profile</Text>
           <Pressable onPress={saving ? undefined : handleSave} style={[s.headerBtn, saving && { opacity: 0.5 }]}>
-            <Text style={{ color: theme.primary, fontSize: 16, ...FONT.semibold, textAlign: 'right' }}>
+            <Text style={{ color: theme.accentText, fontSize: 16, ...FONT.semibold, textAlign: 'right' }}>
               {saving ? 'Saving…' : 'Save'}
             </Text>
           </Pressable>
@@ -513,7 +527,7 @@ export default function ProfileScreen() {
     centered: { flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' },
     avatarWrap: { alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.lg },
     avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xs },
-    avatarInitials: { color: theme.onPrimary, fontSize: 28, ...FONT.bold },
+    avatarInitials: { color: theme.onPrimary, fontSize: 28, lineHeight: 34, ...FONT.bold },
     fullNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     fullName: { color: C.text, fontSize: 22, ...FONT.bold },
     email: { color: C.textSecondary, fontSize: 14 },
@@ -557,8 +571,9 @@ export default function ProfileScreen() {
     gymInitial: { fontSize: 18, ...FONT.bold },
     gymName: { flex: 1, fontSize: 16, color: C.text, ...FONT.semibold },
     about: { alignItems: 'center', gap: SPACING.xs, marginTop: SPACING.lg },
-    aboutLinks: { fontSize: 12, color: C.textMuted, ...FONT.regular, textAlign: 'center' },
-    aboutLink: { color: C.textMuted, textDecorationLine: 'underline' },
+    aboutRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' },
+    aboutLinks: { fontSize: 12, lineHeight: 16, color: C.textMuted, ...FONT.regular },
+
   }), [C, theme.onPrimary]);
 
   if (loading) {
@@ -627,8 +642,14 @@ export default function ProfileScreen() {
         <View style={s.card}>
           <View style={s.cardHeader}>
             <Text style={s.sectionTitle}>Fitness Profile</Text>
-            <Pressable onPress={() => setEditVisible(true)} style={{ paddingVertical: 4, paddingHorizontal: SPACING.sm }}>
-              <Text style={{ color: theme.primary, fontSize: 14, ...FONT.medium }}>Edit</Text>
+            <Pressable
+              onPress={() => setEditVisible(true)}
+              style={{ paddingVertical: 4, paddingHorizontal: SPACING.sm }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Edit fitness profile"
+            >
+              <Text style={{ color: theme.accentText, fontSize: 14, ...FONT.medium }}>Edit</Text>
             </Pressable>
           </View>
           {hasProfileData ? (
@@ -716,12 +737,14 @@ export default function ProfileScreen() {
         {/* About */}
         <View style={s.about}>
           <PoweredByFitOps />
-          <Text style={s.aboutLinks}>
-            Version {APP_VERSION} ·{' '}
-            <Text style={s.aboutLink} onPress={() => Linking.openURL(TERMS_URL)}>Terms</Text> ·{' '}
-            <Text style={s.aboutLink} onPress={() => Linking.openURL(PRIVACY_URL)}>Privacy</Text> ·{' '}
-            <Text style={s.aboutLink} onPress={() => Linking.openURL(VERSOLUTIONS_URL)}>VerSolutions</Text>
-          </Text>
+          <View style={s.aboutRow}>
+            <Text style={s.aboutLinks}>Version {APP_VERSION} ·</Text>
+            <AboutLink label="Terms" url={TERMS_URL} color={C.textMuted} />
+            <Text style={s.aboutLinks}>·</Text>
+            <AboutLink label="Privacy" url={PRIVACY_URL} color={C.textMuted} />
+            <Text style={s.aboutLinks}>·</Text>
+            <AboutLink label="VerSolutions" url={VERSOLUTIONS_URL} color={C.textMuted} />
+          </View>
         </View>
       </ScrollView>
 
